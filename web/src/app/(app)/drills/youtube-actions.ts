@@ -33,14 +33,18 @@ export async function generateDrillGuideFromYoutube(
   let transcript: string
   try {
     transcript = await fetchTranscript(videoId)
-  } catch {
+    console.log(`[guide] transcript length for ${videoId}: ${transcript.length}`)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error(`[guide] transcript fetch failed for ${videoId}:`, msg)
     return {
       success: false,
-      error: 'Could not fetch transcript. The video may not have captions, or may be private.',
+      error: `Could not fetch transcript: ${msg}`,
     }
   }
 
-  if (transcript.length < 50) {
+  if (transcript.length < 10) {
+    console.error(`[guide] transcript too short for ${videoId}: "${transcript}"`)
     return { success: false, error: 'Transcript is too short to generate a guide.' }
   }
 
