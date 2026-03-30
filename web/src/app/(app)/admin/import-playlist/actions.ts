@@ -104,6 +104,7 @@ export async function importPlaylistDrills(
 
       if (generateGuides) {
         const guideResult = await generateDrillGuideFromYoutube(youtubeUrl)
+        console.error(`[import] guide result for ${video.videoId}:`, JSON.stringify(guideResult).slice(0, 200))
         if (guideResult.success) aiGuide = guideResult.guide
       }
 
