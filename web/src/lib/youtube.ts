@@ -1,4 +1,4 @@
-import { YoutubeTranscript } from 'youtube-transcript'
+import { Innertube } from 'youtubei.js'
 
 export function extractYouTubeId(url: string): string | null {
   const patterns = [
@@ -21,6 +21,13 @@ export function youtubeThumbnail(videoId: string) {
 }
 
 export async function fetchTranscript(videoId: string): Promise<string> {
-  const segments = await YoutubeTranscript.fetchTranscript(videoId)
-  return segments.map(s => s.text).join(' ')
+  const yt = await Innertube.create({ retrieve_player: false })
+  const info = await yt.getInfo(videoId)
+  const transcriptData = await info.getTranscript()
+  const segments = transcriptData?.transcript?.content?.body?.initial_segments ?? []
+  return segments
+    .map((s: { snippet?: { text?: string } }) => s.snippet?.text ?? '')
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
