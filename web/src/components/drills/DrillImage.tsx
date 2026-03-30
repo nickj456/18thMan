@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { ImageOff } from 'lucide-react'
+import { ImageOff, PlayCircle } from 'lucide-react'
+import { VideoModal } from '@/components/drills/VideoModal'
 
 interface DrillImageProps {
   youtubeThumbnail: string | null
   canvasPreview: string | null
   alt: string
+  videoId?: string | null
 }
 
 function getFallback(src: string): string | null {
@@ -37,18 +39,33 @@ function SingleImage({ src, alt }: { src: string; alt: string }) {
   return <Image src={imgSrc} alt={alt} fill className="object-cover" onError={handleError} />
 }
 
-export function DrillImage({ youtubeThumbnail, canvasPreview, alt }: DrillImageProps) {
+export function DrillImage({ youtubeThumbnail, canvasPreview, alt, videoId }: DrillImageProps) {
   const hasBoth = !!youtubeThumbnail && !!canvasPreview
   const [active, setActive] = useState<'youtube' | 'canvas'>(youtubeThumbnail ? 'youtube' : 'canvas')
+  const [videoOpen, setVideoOpen] = useState(false)
 
   const src = active === 'youtube' ? youtubeThumbnail : canvasPreview
   if (!src) return null
 
   return (
     <div className="space-y-2">
-      <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800">
+      <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 group">
         <SingleImage src={src} alt={alt} />
+        {videoId && active === 'youtube' && (
+          <button
+            onClick={() => setVideoOpen(true)}
+            className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Play video"
+          >
+            <div className="rounded-full bg-black/60 p-3 backdrop-blur-sm">
+              <PlayCircle size={52} className="text-white" />
+            </div>
+          </button>
+        )}
       </div>
+      {videoId && (
+        <VideoModal videoId={videoId} title={alt} open={videoOpen} onClose={() => setVideoOpen(false)} />
+      )}
       {hasBoth && (
         <div className="flex gap-2">
           <button

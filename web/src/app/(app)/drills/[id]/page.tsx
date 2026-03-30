@@ -92,6 +92,7 @@ export default async function DrillDetailPage({
           youtubeThumbnail={drill.preview_image_url}
           canvasPreview={drill.canvas_preview_url}
           alt={drill.title}
+          videoId={drill.youtube_url ? extractYouTubeId(drill.youtube_url) : null}
         />
       )}
 
