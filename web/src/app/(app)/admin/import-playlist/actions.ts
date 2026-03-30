@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { generateDrillGuideFromYoutube } from '@/app/(app)/drills/youtube-actions'
+import { generateDrillGuideFromYoutube, generateDrillGuideFromMetadata } from '@/app/(app)/drills/youtube-actions'
 import { youtubeThumbnail } from '@/lib/youtube'
 
 export interface PlaylistVideo {
@@ -104,8 +104,14 @@ export async function importPlaylistDrills(
 
       if (generateGuides) {
         const guideResult = await generateDrillGuideFromYoutube(youtubeUrl)
-        console.error(`[import] guide result for ${video.videoId}:`, JSON.stringify(guideResult).slice(0, 200))
-        if (guideResult.success) aiGuide = guideResult.guide
+        if (guideResult.success) {
+          aiGuide = guideResult.guide
+        } else {
+          // Transcript unavailable (cloud IP block) — fall back to title/description
+          console.log(`[import] transcript failed for ${video.videoId}, falling back to metadata`)
+          const fallback = await generateDrillGuideFromMetadata(video.videoId, video.title, video.description)
+          if (fallback.success) aiGuide = fallback.guide
+        }
       }
 
       const { error } = await supabase.from('drills').insert({

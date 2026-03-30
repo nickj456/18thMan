@@ -30,35 +30,51 @@ export async function generateDrillGuideFromYoutube(
     return { success: false, error: 'Invalid YouTube URL — could not extract video ID.' }
   }
 
-  let transcript: string
+  let transcript: string | null = null
   try {
     transcript = await fetchTranscript(videoId)
     console.log(`[guide] transcript length for ${videoId}: ${transcript.length}`)
+    if (transcript.length < 10) transcript = null
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error(`[guide] transcript fetch failed for ${videoId}:`, msg)
-    return {
-      success: false,
-      error: `Could not fetch transcript: ${msg}`,
-    }
+    console.log(`[guide] transcript unavailable for ${videoId}: ${msg} — will generate from title`)
   }
 
-  if (transcript.length < 10) {
-    console.error(`[guide] transcript too short for ${videoId}: "${transcript}"`)
-    return { success: false, error: 'Transcript is too short to generate a guide.' }
-  }
+  return generateGuideFromContent(videoId, transcript)
+}
 
-  // Truncate to ~6000 words to stay within context limits
-  const trimmedTranscript = transcript.split(' ').slice(0, 6000).join(' ')
+export async function generateDrillGuideFromMetadata(
+  videoId: string,
+  title: string,
+  description: string
+): Promise<GenerateGuideResult> {
+  return generateGuideFromContent(videoId, null, title, description)
+}
+
+async function generateGuideFromContent(
+  videoId: string,
+  transcript: string | null,
+  title?: string,
+  description?: string
+): Promise<GenerateGuideResult> {
+  const hasTranscript = transcript && transcript.length >= 10
+
+  const prompt = hasTranscript
+    ? `Video transcript:\n\n${transcript.split(' ').slice(0, 6000).join(' ')}`
+    : `Drill title: ${title ?? videoId}\n${description ? `\nDescription: ${description}` : ''}`
+
+  const systemNote = hasTranscript
+    ? 'Extract a structured coaching guide from the provided video transcript.'
+    : 'Generate a structured coaching guide based on the drill title and description.'
 
   try {
     const { experimental_output } = await generateText({
       model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
       output: Output.object({ schema: GuideSchema }),
-      system: `You are an expert rugby league coach. Extract a structured coaching guide from the provided video transcript.
+      system: `You are an expert rugby league coach. ${systemNote}
 Be practical and specific. Use rugby league terminology. Focus on what coaches need to know to run this drill.
-If the transcript doesn't describe a drill clearly, do your best with the available content.`,
-      prompt: `Video transcript:\n\n${trimmedTranscript}`,
+If limited information is provided, use your rugby league expertise to create a sensible guide.`,
+      prompt,
     })
 
     return {
