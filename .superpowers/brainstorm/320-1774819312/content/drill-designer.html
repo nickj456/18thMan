@@ -1,0 +1,66 @@
+<h2>Drill Designer — Visual Canvas Feature</h2>
+<p class="subtitle">Rugby League-specific field canvas with drag-and-drop elements. Desktop-optimised (also accessible on tablet).</p>
+
+<div class="section">
+  <h3>What it does</h3>
+  <p>A browser-based canvas where coaches draw up drills visually — like a digital whiteboard with a rugby pitch background. Coaches place players, draw movement paths, add equipment, and annotate — then save, share, or export the diagram.</p>
+</div>
+
+<div class="section">
+  <h3>Canvas Elements</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:0.85em">
+    <div style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:6px;padding:12px">
+      <div class="label">Players</div>
+      <p>Drag attacker/defender circles. Number or label each one. Colour-coded (red = attack, blue = defence)</p>
+    </div>
+    <div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:6px;padding:12px">
+      <div class="label">Movement</div>
+      <p>Draw straight or curved arrows for player runs. Dashed lines for ball passes. Dotted for optional moves</p>
+    </div>
+    <div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:12px">
+      <div class="label">Equipment</div>
+      <p>Cones, tackle bags, pads, poles. Click to place on field, drag to reposition</p>
+    </div>
+    <div style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:12px">
+      <div class="label">Ball</div>
+      <p>Rugby ball icon to mark starting position and passing sequences</p>
+    </div>
+    <div style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);border-radius:6px;padding:12px">
+      <div class="label">Text Labels</div>
+      <p>Add coaching cues, phase numbers, zone labels anywhere on the pitch</p>
+    </div>
+    <div style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:12px">
+      <div class="label">Zones</div>
+      <p>Draw shaded rectangles to highlight areas of the field (e.g. red zone, kick zone)</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Pitch Backgrounds</h3>
+  <div style="display:flex;gap:10px;font-size:0.85em">
+    <div style="flex:1;background:rgba(255,255,255,0.05);padding:10px;border-radius:6px;text-align:center">🏉 Full pitch</div>
+    <div style="flex:1;background:rgba(255,255,255,0.05);padding:10px;border-radius:6px;text-align:center">📐 Half pitch</div>
+    <div style="flex:1;background:rgba(255,255,255,0.05);padding:10px;border-radius:6px;text-align:center">⬜ Blank grid</div>
+    <div style="flex:1;background:rgba(255,255,255,0.05);padding:10px;border-radius:6px;text-align:center">🎯 In-goal area</div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Save / Export / Share</h3>
+  <div style="display:flex;gap:10px;font-size:0.85em;flex-wrap:wrap">
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px">💾 Save as drill (linked to drill library)</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px">🖼️ Export as PNG/PDF</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px">🔗 Share direct link</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px">📋 Attach to session plan</div>
+  </div>
+</div>
+
+<div class="section">
+  <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:14px">
+    <div class="label" style="color:#f59e0b">Technology recommendation</div>
+    <p style="margin:6px 0 0"><strong>Konva.js (React Konva)</strong> — a performant HTML5 Canvas library with first-class React support. Used by professional drawing tools, handles touch events well for future tablet use, and supports undo/redo natively. This is a desktop-first feature but will be tablet-accessible.</p>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:20px">Does this capture what you had in mind for the drill designer?</p>

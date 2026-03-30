@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(browse)",
+      "Skill(browse:*)",
+      "Bash(vercel --version)",
+      "Bash(vercel whoami:*)",
+      "Bash(npm --version)",
+      "Bash(npm run:*)",
+      "Bash(npx supabase:*)",
+      "Bash(\"c:/Users/nickj/18th Man/web/.gitignore\")",
+      "Bash(B=~/.claude/skills/gstack/browse/dist/browse)",
+      "Bash($B click:*)",
+      "Bash($B url:*)",
+      "Bash($B screenshot:*)",
+      "Bash($B snapshot:*)",
+      "Bash(ls \"c:/Users/nickj/18th Man/web/src/app/\\(app\\)/\")",
+      "Bash(ls \"c:/Users/nickj/18th Man/web/src/app/\\(app\\)/sessions/\")",
+      "Bash(head -5 grep -n \"render\\\\|useRender\" \"c:/Users/nickj/18th Man/web/src/components/ui/button.tsx\")",
+      "Bash($B goto:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx shadcn@latest add select --yes)",
+      "Bash($B console:*)",
+      "Bash(node -e \":*)",
+      "WebFetch(domain:console.groq.com)",
+      "Bash(find 'c:/Users/nickj/18th Man/web/src/app/\\(app\\)/admin' -type f)",
+      "Bash(npx shadcn@latest add checkbox --yes)"
+    ]
+  }
+}

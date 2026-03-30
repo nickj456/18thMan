@@ -1,0 +1,60 @@
+<h2>18th Man — System Architecture</h2>
+<p class="subtitle">Next.js + Supabase + Vercel AI SDK</p>
+
+<div class="section">
+  <h3>Core Stack</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
+    <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:16px">
+      <div class="label">Frontend + Backend</div>
+      <h3 style="margin:4px 0">Next.js 16</h3>
+      <p style="font-size:0.85em;color:var(--text-muted)">App Router · TypeScript · Server Components · Mobile-first responsive</p>
+    </div>
+    <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:16px">
+      <div class="label">Database + Auth + Real-time</div>
+      <h3 style="margin:4px 0">Supabase</h3>
+      <p style="font-size:0.85em;color:var(--text-muted)">Postgres · Auth · Real-time subscriptions · Storage · RLS</p>
+    </div>
+    <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:16px">
+      <div class="label">AI Coaching Assistant</div>
+      <h3 style="margin:4px 0">Vercel AI SDK + Gateway</h3>
+      <p style="font-size:0.85em;color:var(--text-muted)">Streaming responses · Multiple AI providers · Cost tracking</p>
+    </div>
+    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:16px">
+      <div class="label">Deployment + CDN</div>
+      <h3 style="margin:4px 0">Vercel</h3>
+      <p style="font-size:0.85em;color:var(--text-muted)">Preview URLs · Edge Network · Auto-scaling · CI/CD from GitHub</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Authentication Flow</h3>
+  <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:16px;font-family:monospace;font-size:0.85em;line-height:2">
+    User visits /sign-in<br>
+    ↓<br>
+    <span style="color:#10b981">Supabase Auth</span> — email/password OR social login<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;→ Google&nbsp;&nbsp;→ Facebook&nbsp;&nbsp;→ Apple&nbsp;&nbsp;→ GitHub<br>
+    ↓<br>
+    Session JWT stored → <span style="color:#6366f1">Role assigned</span> (Admin / Coach / Viewer)<br>
+    ↓<br>
+    Redirected to /dashboard
+  </div>
+</div>
+
+<div class="section">
+  <h3>App Routes</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.85em">
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px"><span style="color:#6366f1;font-weight:600">/</span> — Landing page</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px"><span style="color:#6366f1;font-weight:600">/sign-in, /sign-up</span> — Auth</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px"><span style="color:#6366f1;font-weight:600">/dashboard</span> — Home feed</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px"><span style="color:#6366f1;font-weight:600">/profile/[id]</span> — Coach profiles</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px"><span style="color:#6366f1;font-weight:600">/chat</span> — All conversations</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px"><span style="color:#6366f1;font-weight:600">/chat/[id]</span> — Single conversation</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px"><span style="color:#6366f1;font-weight:600">/drills</span> — Browse drills</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px"><span style="color:#6366f1;font-weight:600">/drills/[id]</span> — Drill detail</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px"><span style="color:#6366f1;font-weight:600">/drills/new</span> — Share a drill</div>
+    <div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:6px"><span style="color:#6366f1;font-weight:600">/admin</span> — Admin panel</div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:20px">Does this architecture and route structure look right?</p>
