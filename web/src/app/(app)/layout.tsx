@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, role')
+    .select('display_name, role, avatar_url')
     .eq('id', user.id)
     .single()
 
@@ -21,6 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <AppSidebar
         role={(profile?.role ?? 'viewer') as UserRole}
         displayName={profile?.display_name ?? null}
+        avatarUrl={profile?.avatar_url ?? null}
       />
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b px-4">

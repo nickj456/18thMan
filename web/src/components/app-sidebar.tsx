@@ -26,6 +26,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
 } from '@/components/ui/sidebar'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { signOut } from '@/app/(app)/actions'
 import type { UserRole } from '@/lib/supabase/types'
 
@@ -44,9 +45,10 @@ const profileItems = [
 interface AppSidebarProps {
   role: UserRole
   displayName: string | null
+  avatarUrl: string | null
 }
 
-export function AppSidebar({ role, displayName }: AppSidebarProps) {
+export function AppSidebar({ role, displayName, avatarUrl }: AppSidebarProps) {
   const pathname = usePathname()
 
   return (
@@ -56,7 +58,7 @@ export function AppSidebar({ role, displayName }: AppSidebarProps) {
           <Image src="/logo.png" alt="18th Man" width={44} height={44} className="shrink-0" />
           <div>
             <p className="font-bold text-sm leading-tight">18th Man</p>
-            <p className="text-xs text-muted-foreground">{displayName ?? 'Coach'}</p>
+            <p className="text-xs text-muted-foreground">Rugby League Coaching</p>
           </div>
         </div>
       </SidebarHeader>
@@ -123,17 +125,23 @@ export function AppSidebar({ role, displayName }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <form action={signOut}>
-              <SidebarMenuButton type="submit" className="w-full text-muted-foreground hover:text-foreground">
-                <LogOut className="size-4" />
-                <span>Sign out</span>
-              </SidebarMenuButton>
-            </form>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarFooter className="border-t border-zinc-800">
+        <div className="flex items-center gap-3 px-2 py-2">
+          <Avatar size="sm">
+            <AvatarImage src={avatarUrl ?? undefined} alt={displayName ?? 'Coach'} />
+            <AvatarFallback className="bg-indigo-500/20 text-indigo-300 text-xs font-semibold">
+              {displayName ? displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : '?'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium truncate">{displayName ?? 'Coach'}</p>
+          </div>
+          <form action={signOut}>
+            <button type="submit" className="text-zinc-500 hover:text-zinc-300 transition-colors" title="Sign out">
+              <LogOut className="size-4" />
+            </button>
+          </form>
+        </div>
       </SidebarFooter>
     </Sidebar>
   )
