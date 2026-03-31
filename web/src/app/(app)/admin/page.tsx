@@ -70,7 +70,7 @@ export default async function AdminPage() {
           <ShieldCheck size={18} className="text-red-400" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Admin Panel</h1>
+          <h1 className="app-heading text-2xl">Admin Panel</h1>
           <p className="text-sm text-zinc-500 mt-0.5">Platform management and oversight</p>
         </div>
       </div>

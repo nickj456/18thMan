@@ -38,7 +38,7 @@ export default async function EditSessionPage({ params }: { params: Promise<{ id
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold">Edit Session</h1>
+        <h1 className="app-heading text-2xl">Edit Session</h1>
         <p className="text-sm text-muted-foreground mt-1">{sessionPlan.title}</p>
       </div>
       <SessionBuilder

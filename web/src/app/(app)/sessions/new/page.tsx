@@ -19,7 +19,7 @@ export default async function NewSessionPage() {
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold">New Session</h1>
+        <h1 className="app-heading text-2xl">New Session</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Build a training session from the drill library
         </p>

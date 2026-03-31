@@ -25,7 +25,11 @@
       "Bash(node -e \":*)",
       "WebFetch(domain:console.groq.com)",
       "Bash(find 'c:/Users/nickj/18th Man/web/src/app/\\(app\\)/admin' -type f)",
-      "Bash(npx shadcn@latest add checkbox --yes)"
+      "Bash(npx shadcn@latest add checkbox --yes)",
+      "Bash(npx next:*)",
+      "Bash(grep -rn declare.*revalidateTag node_modules/next/dist/ --include=*.d.ts)",
+      "Bash(find \"c:/Users/nickj/18th Man/web/src/app/\\(auth\\)\" -name \"*.tsx\" -o -name \"*.ts\")",
+      "Bash(ls \"c:/Users/nickj/18th Man/web/src/app/\\(auth\\)/\")"
     ]
   }
 }

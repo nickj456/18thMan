@@ -59,7 +59,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold">{sessionPlan.title}</h1>
+            <h1 className="app-heading text-2xl">{sessionPlan.title}</h1>
             {sessionPlan.is_shared && (
               <Badge variant="outline" className="border-indigo-500/40 text-indigo-400">
                 <Users size={11} className="mr-1" />

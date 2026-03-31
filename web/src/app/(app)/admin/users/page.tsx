@@ -58,7 +58,7 @@ export default async function AdminUsersPage({
 
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <h1 className="app-heading text-2xl flex items-center gap-2">
             <Users size={20} className="text-indigo-400" /> User Management
           </h1>
           <p className="text-sm text-zinc-500 mt-1">{counts.all} users total</p>

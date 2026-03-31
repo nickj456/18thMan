@@ -38,7 +38,7 @@ export default async function AdminCategoriesPage() {
 
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <h1 className="app-heading text-2xl flex items-center gap-2">
             <Tag size={20} className="text-emerald-400" /> Drill Categories
           </h1>
           <p className="text-sm text-zinc-500 mt-1">{categories?.length ?? 0} categories</p>

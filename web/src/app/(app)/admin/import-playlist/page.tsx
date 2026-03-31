@@ -19,7 +19,7 @@ export default async function ImportPlaylistPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Import YouTube Playlist</h1>
+        <h1 className="app-heading text-2xl">Import YouTube Playlist</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Bulk import videos from a YouTube playlist as drills. AI guides can be generated per video.
         </p>

@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -55,14 +54,17 @@ export function AppSidebar({ role, displayName, avatarUrl }: AppSidebarProps) {
 
   return (
     <Sidebar>
-      <SidebarHeader className="px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Image src="/logo.png" alt="18th Man" width={44} height={44} className="shrink-0" />
-          <div>
-            <p className="font-bold text-sm leading-tight">18th Man</p>
-            <p className="text-xs text-muted-foreground">Rugby League Coaching</p>
+      <SidebarHeader className="px-4 py-3 border-b border-sidebar-border">
+        <Link href="/dashboard" className="flex items-center gap-2.5 no-underline">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: '#e8560a' }}>
+            <span className="text-white font-bold text-sm leading-none">18</span>
           </div>
-        </div>
+          <div>
+            <p className="font-bold text-sm leading-tight tracking-wide">18TH MAN</p>
+            <p className="text-[10px] text-muted-foreground tracking-wider uppercase">Rugby League</p>
+          </div>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
@@ -149,7 +151,7 @@ export function AppSidebar({ role, displayName, avatarUrl }: AppSidebarProps) {
         <div className="flex items-center gap-3 px-2 py-2">
           <Avatar size="sm">
             <AvatarImage src={avatarUrl ?? undefined} alt={displayName ?? 'Coach'} />
-            <AvatarFallback className="bg-indigo-500/20 text-indigo-300 text-xs font-semibold">
+            <AvatarFallback className="text-xs font-semibold" style={{ background: 'rgba(232,86,10,0.2)', color: '#e8560a' }}>
               {displayName ? displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : '?'}
             </AvatarFallback>
           </Avatar>

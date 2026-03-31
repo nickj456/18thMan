@@ -5,7 +5,7 @@ export default function ChatPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold">Coach Chat</h1>
+        <h1 className="app-heading text-2xl">Coach Chat</h1>
         <p className="text-sm text-muted-foreground mt-1">AI coaching assistant and community discussions</p>
       </div>
 

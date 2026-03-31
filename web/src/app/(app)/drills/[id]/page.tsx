@@ -98,7 +98,7 @@ export default async function DrillDetailPage({
 
       {/* Header */}
       <div className="space-y-3">
-        <h1 className="text-3xl font-bold">{drill.title}</h1>
+        <h1 className="app-heading text-3xl">{drill.title}</h1>
         <div className="flex flex-wrap items-center gap-2">
           {drill.category && <Badge variant="secondary">{drill.category.name}</Badge>}
           {drill.difficulty && (

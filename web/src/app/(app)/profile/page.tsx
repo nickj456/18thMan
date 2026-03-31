@@ -20,7 +20,7 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-8 max-w-xl">
       <div>
-        <h1 className="text-2xl font-bold">My Profile</h1>
+        <h1 className="app-heading text-2xl">My Profile</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Manage your profile and how others see you
         </p>

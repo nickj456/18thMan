@@ -84,37 +84,46 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Background: slightly warm near-black, matching the landing page #07080d */
+  --background: oklch(0.13 0.004 260);
+  --foreground: oklch(0.95 0.005 60);
+  --card: oklch(0.17 0.004 260);
+  --card-foreground: oklch(0.95 0.005 60);
+  --popover: oklch(0.17 0.004 260);
+  --popover-foreground: oklch(0.95 0.005 60);
+
+  /* Primary: ember orange #e8560a — threads through all buttons & interactive states */
+  --primary: oklch(0.62 0.2 42);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.22 0.004 260);
+  --secondary-foreground: oklch(0.95 0.005 60);
+  --muted: oklch(0.22 0.004 260);
+  --muted-foreground: oklch(0.58 0.005 60);
+  --accent: oklch(0.22 0.004 260);
+  --accent-foreground: oklch(0.95 0.005 60);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+
+  /* Ring: ember orange for focus states */
+  --ring: oklch(0.62 0.2 42);
+
+  --chart-1: oklch(0.62 0.2 42);
+  --chart-2: oklch(0.72 0.16 150);
+  --chart-3: oklch(0.65 0.15 220);
+  --chart-4: oklch(0.75 0.14 85);
+  --chart-5: oklch(0.60 0.18 320);
+
+  /* Sidebar: slightly darker warm surface, ember active states */
+  --sidebar: oklch(0.15 0.005 260);
+  --sidebar-foreground: oklch(0.95 0.005 60);
+  --sidebar-primary: oklch(0.62 0.2 42);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.2 0.004 260);
+  --sidebar-accent-foreground: oklch(0.95 0.005 60);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.62 0.2 42);
 }
 
 @layer base {
@@ -127,6 +136,15 @@
   html {
     @apply font-sans;
   }
+}
+
+/* ── App page headings — Barlow Condensed for visual continuity with landing ── */
+.app-heading {
+  font-family: var(--font-barlow), var(--font-sans), system-ui, sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
 }
 
 /* ── AI markdown prose styles ──────────────────────────────── */
@@ -147,9 +165,9 @@
   color: oklch(1 0 0);
 }
 
-.ai-prose h1 { font-size: 1.2em; color: oklch(0.75 0.18 264); border-bottom: 1px solid oklch(1 0 0 / 10%); padding-bottom: 0.3em; }
-.ai-prose h2 { font-size: 1.05em; color: oklch(0.78 0.15 264); }
-.ai-prose h3 { font-size: 0.95em; color: oklch(0.82 0.1 264); }
+.ai-prose h1 { font-size: 1.2em; color: oklch(0.75 0.18 42); border-bottom: 1px solid oklch(1 0 0 / 10%); padding-bottom: 0.3em; }
+.ai-prose h2 { font-size: 1.05em; color: oklch(0.72 0.17 42); }
+.ai-prose h3 { font-size: 0.95em; color: oklch(0.68 0.15 42); }
 
 .ai-prose p {
   margin-top: 0.6em;
@@ -182,7 +200,7 @@
   content: "▸";
   position: absolute;
   left: 0;
-  color: oklch(0.65 0.2 264);
+  color: oklch(0.65 0.2 42);
   font-size: 0.8em;
   top: 0.1em;
 }
@@ -205,7 +223,7 @@
   content: counter(list-counter) ".";
   position: absolute;
   left: -1.5em;
-  color: oklch(0.65 0.2 264);
+  color: oklch(0.65 0.2 42);
   font-weight: 600;
 }
 

@@ -58,7 +58,7 @@ export default async function AiChatPage() {
   return (
     <div className="h-[calc(100vh-5rem)] flex flex-col max-w-3xl mx-auto">
       <div className="flex-shrink-0 pb-4">
-        <h1 className="text-2xl font-bold">AI Coach</h1>
+        <h1 className="app-heading text-2xl">AI Coach</h1>
         <p className="text-sm text-muted-foreground mt-1">Your personal rugby league coaching assistant</p>
       </div>
       {conversationId ? (

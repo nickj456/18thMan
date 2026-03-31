@@ -33,7 +33,7 @@ export default async function DrillsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Drill Library</h1>
+          <h1 className="app-heading text-2xl">Drill Library</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {drills.length} drill{drills.length !== 1 ? 's' : ''}
             {filters.q || filters.category || filters.difficulty || filters.age_group || filters.min_rating ? ' matching filters' : ''}

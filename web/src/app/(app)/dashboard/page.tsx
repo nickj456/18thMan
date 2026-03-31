@@ -311,7 +311,7 @@ export default async function DashboardPage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <p className="text-xs text-zinc-500 font-medium uppercase tracking-widest mb-1">{greeting}</p>
-          <h1 className="text-3xl font-bold tracking-tight">{displayName}</h1>
+          <h1 className="app-heading text-3xl">{displayName}</h1>
           {profile?.club && (
             <p className="text-sm text-zinc-500 mt-1">{profile.club}</p>
           )}

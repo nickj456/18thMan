@@ -59,7 +59,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
           {thread.is_pinned && (
             <Pin size={14} className="text-indigo-400 mt-1.5 flex-shrink-0" />
           )}
-          <h1 className="text-2xl font-bold">{thread.title}</h1>
+          <h1 className="app-heading text-2xl">{thread.title}</h1>
           {thread.is_closed && (
             <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-400 mt-1.5 flex-shrink-0">
               <Lock size={10} /> Closed
