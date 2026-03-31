@@ -285,7 +285,7 @@ export default async function LandingPage() {
             flexDirection: 'column',
             justifyContent: 'center',
             overflow: 'hidden',
-            padding: '6rem 2rem 5rem',
+            padding: 'clamp(3rem, 8vw, 6rem) clamp(1rem, 4vw, 2rem) 4rem',
           }}
         >
           {/* Pitch grid background SVG */}
@@ -374,8 +374,8 @@ export default async function LandingPage() {
               style={{
                 fontWeight: 800,
                 fontStyle: 'italic',
-                fontSize: 'clamp(4.5rem, 12vw, 10rem)',
-                lineHeight: 0.9,
+                fontSize: 'clamp(2.6rem, 11vw, 10rem)',
+                lineHeight: 0.92,
                 letterSpacing: '-0.02em',
                 textTransform: 'uppercase',
                 marginBottom: '0.15em',
