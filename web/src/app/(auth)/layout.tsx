@@ -71,16 +71,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         }
 
         .auth-logo-mark {
-          width: 40px;
-          height: 40px;
-          border-radius: 9px;
-          background: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          width: 44px;
+          height: 44px;
           flex-shrink: 0;
-          overflow: hidden;
-          padding: 3px;
         }
 
         .auth-logo-text {
@@ -139,9 +132,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="auth-card">
           {/* Logo */}
           <Link href="/" className="auth-logo">
-            <div className="auth-logo-mark">
-              <Image src="/logo.png" alt="18th Man" width={40} height={40} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-            </div>
+            <Image src="/logo.png" alt="18th Man" width={44} height={44} className="auth-logo-mark" />
             <span className="auth-logo-text">18TH MAN</span>
           </Link>
 

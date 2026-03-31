@@ -57,9 +57,7 @@ export function AppSidebar({ role, displayName, avatarUrl }: AppSidebarProps) {
     <Sidebar>
       <SidebarHeader className="px-4 py-3 border-b border-sidebar-border">
         <Link href="/dashboard" className="flex items-center gap-2.5 no-underline">
-          <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden p-0.5">
-            <Image src="/logo.png" alt="18th Man" width={36} height={36} className="w-full h-full object-contain" />
-          </div>
+          <Image src="/logo.png" alt="18th Man" width={36} height={36} className="shrink-0" />
           <div>
             <p className="font-bold text-sm leading-tight tracking-wide">18TH MAN</p>
             <p className="text-[10px] text-muted-foreground tracking-wider uppercase">Rugby League</p>

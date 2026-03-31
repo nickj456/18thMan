@@ -240,22 +240,7 @@ export default async function LandingPage() {
           >
             {/* Logo */}
             <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  background: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '3px',
-                  flexShrink: 0,
-                  overflow: 'hidden',
-                }}
-              >
-                <Image src="/logo.png" alt="18th Man" width={36} height={36} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              </div>
+              <Image src="/logo.png" alt="18th Man" width={36} height={36} style={{ flexShrink: 0 }} />
               <span
                 className="lp-display"
                 style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '0.04em', color: 'var(--text)' }}
@@ -1066,9 +1051,7 @@ export default async function LandingPage() {
           >
             {/* Logo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '30px', height: '30px', borderRadius: '6px', background: '#fff', padding: '2px', overflow: 'hidden', flexShrink: 0 }}>
-                <Image src="/logo.png" alt="18th Man" width={30} height={30} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              </div>
+              <Image src="/logo.png" alt="18th Man" width={30} height={30} style={{ flexShrink: 0 }} />
               <span
                 className="lp-display"
                 style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '0.06em', color: 'var(--text-muted)' }}
