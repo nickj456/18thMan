@@ -57,7 +57,10 @@ function createBackgroundClient(accessToken: string) {
 
 export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<SaveDrillDesignResult> {
   const supabase = await createClient()
-  const { data: { user, session } } = await supabase.auth.getSession()
+  const [{ data: { user } }, { data: { session } }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.auth.getSession(),
+  ])
   if (!user || !session) return { error: 'Not authenticated' }
 
   const canvasPreviewUrl = input.previewDataUrl
@@ -100,7 +103,7 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
   if (error) return { error: error.message }
 
   const drillId = data.id
-  revalidateTag('drills')
+  revalidateTag('drills', 'max')
 
   // Generate AI guide in the background after response is sent
   if (youtubeUrl) {
@@ -128,7 +131,10 @@ interface UpdateDrillDesignInput extends SaveDrillDesignInput {
 
 export async function updateDrillDesign(input: UpdateDrillDesignInput): Promise<SaveDrillDesignResult> {
   const supabase = await createClient()
-  const { data: { user, session } } = await supabase.auth.getSession()
+  const [{ data: { user } }, { data: { session } }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.auth.getSession(),
+  ])
   if (!user || !session) return { error: 'Not authenticated' }
 
   const canvasPreviewUrl = input.previewDataUrl
@@ -167,7 +173,7 @@ export async function updateDrillDesign(input: UpdateDrillDesignInput): Promise<
 
   if (error) return { error: error.message }
 
-  revalidateTag('drills')
+  revalidateTag('drills', 'max')
 
   // Regenerate AI guide in background if YouTube URL changed
   if (youtubeUrl && youtubeChanged) {
