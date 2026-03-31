@@ -1,6 +1,9 @@
 'use server'
 
+import { after } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createRawClient } from '@supabase/supabase-js'
 import type { DrillDifficulty } from '@/lib/supabase/types'
 import type { CanvasState } from '@/components/designer/types'
 import { generateDrillGuideFromYoutube } from './youtube-actions'
@@ -38,36 +41,40 @@ async function uploadCanvasPreview(supabase: Awaited<ReturnType<typeof createCli
       return urlData.publicUrl
     }
   } catch {
-    // Upload failed
+    // Upload failed silently
   }
   return null
 }
 
+/** Create a Supabase client using a captured JWT — safe to use inside after() callbacks */
+function createBackgroundClient(accessToken: string) {
+  return createRawClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
+  )
+}
+
 export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<SaveDrillDesignResult> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated' }
+  const { data: { user, session } } = await supabase.auth.getSession()
+  if (!user || !session) return { error: 'Not authenticated' }
 
-  // Upload canvas preview to its own column
   const canvasPreviewUrl = input.previewDataUrl
     ? await uploadCanvasPreview(supabase, user.id, input.previewDataUrl)
     : null
 
-  // YouTube thumbnail goes in preview_image_url (primary)
   const youtubeUrl = input.youtubeUrl?.trim() || null
   let previewImageUrl: string | null = null
-  let aiGuide = null
 
   if (youtubeUrl) {
     const videoId = extractYouTubeId(youtubeUrl)
     if (videoId) previewImageUrl = youtubeThumbnail(videoId)
-    const guideResult = await generateDrillGuideFromYoutube(youtubeUrl)
-    if (guideResult.success) aiGuide = guideResult.guide
   } else {
-    // No YouTube — use canvas preview as the main thumbnail for library cards
     previewImageUrl = canvasPreviewUrl
   }
 
+  // Save drill immediately — no waiting for AI guide
   const { data, error } = await supabase
     .from('drills')
     .insert({
@@ -83,7 +90,7 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
       youtube_url: youtubeUrl,
       tiktok_url: input.tiktokUrl,
       facebook_url: input.facebookUrl,
-      ai_guide: aiGuide,
+      ai_guide: null,
       author_id: user.id,
       is_public: true,
     })
@@ -91,7 +98,23 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
     .single()
 
   if (error) return { error: error.message }
-  return { drillId: data.id }
+
+  const drillId = data.id
+  revalidateTag('drills')
+
+  // Generate AI guide in the background after response is sent
+  if (youtubeUrl) {
+    const accessToken = session.access_token
+    after(async () => {
+      const guideResult = await generateDrillGuideFromYoutube(youtubeUrl)
+      if (guideResult.success) {
+        const bg = createBackgroundClient(accessToken)
+        await bg.from('drills').update({ ai_guide: guideResult.guide }).eq('id', drillId)
+      }
+    })
+  }
+
+  return { drillId }
 }
 
 interface UpdateDrillDesignInput extends SaveDrillDesignInput {
@@ -105,28 +128,21 @@ interface UpdateDrillDesignInput extends SaveDrillDesignInput {
 
 export async function updateDrillDesign(input: UpdateDrillDesignInput): Promise<SaveDrillDesignResult> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated' }
+  const { data: { user, session } } = await supabase.auth.getSession()
+  if (!user || !session) return { error: 'Not authenticated' }
 
-  // Upload new canvas preview if provided, otherwise keep existing
   const canvasPreviewUrl = input.previewDataUrl
     ? (await uploadCanvasPreview(supabase, user.id, input.previewDataUrl)) ?? input.existingCanvasPreviewUrl
     : input.existingCanvasPreviewUrl
 
   const youtubeUrl = input.youtubeUrl?.trim() || null
   const youtubeChanged = youtubeUrl !== (input.existingYoutubeUrl?.trim() || null)
-  let aiGuide: object | null = null
   let previewImageUrl: string | null = input.existingPreviewUrl
 
   if (youtubeUrl) {
     const videoId = extractYouTubeId(youtubeUrl)
     if (videoId) previewImageUrl = youtubeThumbnail(videoId)
-    if (youtubeChanged) {
-      const guideResult = await generateDrillGuideFromYoutube(youtubeUrl)
-      if (guideResult.success) aiGuide = guideResult.guide
-    }
   } else {
-    // No YouTube — use canvas preview as main thumbnail
     previewImageUrl = canvasPreviewUrl
   }
 
@@ -145,11 +161,26 @@ export async function updateDrillDesign(input: UpdateDrillDesignInput): Promise<
       youtube_url: youtubeUrl,
       tiktok_url: input.tiktokUrl,
       facebook_url: input.facebookUrl,
-      ...(aiGuide ? { ai_guide: aiGuide } : {}),
     })
     .eq('id', input.drillId)
     .eq('author_id', user.id)
 
   if (error) return { error: error.message }
+
+  revalidateTag('drills')
+
+  // Regenerate AI guide in background if YouTube URL changed
+  if (youtubeUrl && youtubeChanged) {
+    const accessToken = session.access_token
+    const drillId = input.drillId
+    after(async () => {
+      const guideResult = await generateDrillGuideFromYoutube(youtubeUrl)
+      if (guideResult.success) {
+        const bg = createBackgroundClient(accessToken)
+        await bg.from('drills').update({ ai_guide: guideResult.guide }).eq('id', drillId)
+      }
+    })
+  }
+
   return { drillId: input.drillId }
 }

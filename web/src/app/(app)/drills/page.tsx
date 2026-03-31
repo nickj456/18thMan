@@ -123,25 +123,13 @@ async function buildDrillQuery(supabase: any, filters: DrillFiltersType) {
   if (filters.min_rating) {
     const threshold = parseFloat(filters.min_rating)
     if (!isNaN(threshold)) {
-      // Get drill IDs where average rating meets threshold
-      const { data: ratings } = await supabase
-        .from('drill_ratings')
-        .select('drill_id, rating')
-      if (ratings) {
-        const avgByDrill = new Map<string, { sum: number; count: number }>()
-        for (const r of ratings) {
-          if (r.rating == null) continue
-          const cur = avgByDrill.get(r.drill_id) ?? { sum: 0, count: 0 }
-          avgByDrill.set(r.drill_id, { sum: cur.sum + r.rating, count: cur.count + 1 })
-        }
-        const qualifyingIds = [...avgByDrill.entries()]
-          .filter(([, { sum, count }]) => sum / count >= threshold)
-          .map(([id]) => id)
-        if (qualifyingIds.length === 0) {
-          query = query.in('id', ['00000000-0000-0000-0000-000000000000'])
-        } else {
-          query = query.in('id', qualifyingIds)
-        }
+      // Use SQL aggregation via RPC instead of fetching all ratings into JS
+      const { data: ids } = await supabase.rpc('drill_ids_above_rating', { min_rating: threshold })
+      const qualifyingIds = (ids as { drill_ids_above_rating: string }[] | null)?.map(r => r.drill_ids_above_rating) ?? []
+      if (qualifyingIds.length === 0) {
+        query = query.in('id', ['00000000-0000-0000-0000-000000000000'])
+      } else {
+        query = query.in('id', qualifyingIds)
       }
     }
   }

@@ -10,7 +10,7 @@ import { DrillRatingForm } from '@/components/drills/DrillRatingForm'
 import { AiGuideDisplay } from '@/components/drills/AiGuideDisplay'
 import { DrillImage } from '@/components/drills/DrillImage'
 import { extractYouTubeId } from '@/lib/youtube'
-import { Star, Users, ArrowLeft, PenTool } from 'lucide-react'
+import { Star, Users, ArrowLeft, PenTool, Sparkles, Loader2 } from 'lucide-react'
 import type { AiGuide } from '@/lib/supabase/types'
 
 const difficultyColour: Record<string, string> = {
@@ -184,12 +184,20 @@ export default async function DrillDetailPage({
       )}
 
       {/* AI Coaching Guide */}
-      {drill.ai_guide && (
+      {drill.ai_guide ? (
         <>
           <Separator />
           <AiGuideDisplay guide={drill.ai_guide as AiGuide} />
         </>
-      )}
+      ) : drill.youtube_url ? (
+        <>
+          <Separator />
+          <div className="flex items-center gap-3 text-sm text-muted-foreground py-2">
+            <Loader2 className="size-4 animate-spin text-indigo-400" />
+            <span>AI coaching guide is being generated — refresh in a moment.</span>
+          </div>
+        </>
+      ) : null}
 
       <Separator />
 

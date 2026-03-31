@@ -21,11 +21,7 @@ export default async function CommunityPage() {
 
   const { data: threads } = await supabase
     .from('conversations')
-    .select(`
-      id, title, created_at, updated_at, is_closed, is_pinned,
-      author:profiles!conversations_created_by_fkey ( display_name, username ),
-      messages ( id )
-    `)
+    .select('id, title, created_at, updated_at, is_closed, is_pinned, message_count, author:profiles!conversations_created_by_fkey ( display_name, username )')
     .eq('type', 'community')
     .order('is_pinned', { ascending: false })
     .order('updated_at', { ascending: false })
@@ -115,7 +111,7 @@ function ThreadList({ threads }: { threads: any[] }) {
             <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
               <span>by {thread.author?.display_name ?? thread.author?.username ?? 'Coach'}</span>
               <span>·</span>
-              <span>{thread.messages?.length ?? 0} {thread.messages?.length === 1 ? 'reply' : 'replies'}</span>
+              <span>{thread.message_count ?? 0} {thread.message_count === 1 ? 'reply' : 'replies'}</span>
             </div>
           </div>
           <div className="flex items-center gap-1 text-xs text-zinc-600 flex-shrink-0">
