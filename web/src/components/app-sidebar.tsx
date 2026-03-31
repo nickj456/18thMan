@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   LogOut,
   ListVideo,
+  Users,
+  Tag,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -107,6 +109,24 @@ export function AppSidebar({ role, displayName, avatarUrl }: AppSidebarProps) {
                     >
                       <ShieldCheck className="size-4" />
                       <span>Admin</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith('/admin/users')}
+                      render={<Link href="/admin/users" />}
+                    >
+                      <Users className="size-4" />
+                      <span>Users</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith('/admin/categories')}
+                      render={<Link href="/admin/categories" />}
+                    >
+                      <Tag className="size-4" />
+                      <span>Categories</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
