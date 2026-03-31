@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Barlow_Condensed } from 'next/font/google'
 
 const barlow = Barlow_Condensed({
@@ -70,14 +71,16 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         }
 
         .auth-logo-mark {
-          width: 36px;
-          height: 36px;
-          border-radius: 8px;
-          background: #e8560a;
+          width: 40px;
+          height: 40px;
+          border-radius: 9px;
+          background: #fff;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
+          overflow: hidden;
+          padding: 3px;
         }
 
         .auth-logo-text {
@@ -137,9 +140,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {/* Logo */}
           <Link href="/" className="auth-logo">
             <div className="auth-logo-mark">
-              <span style={{ color: '#fff', fontFamily: 'var(--font-barlow-auth)', fontWeight: 800, fontSize: '1rem' }}>
-                18
-              </span>
+              <Image src="/logo.png" alt="18th Man" width={40} height={40} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <span className="auth-logo-text">18TH MAN</span>
           </Link>

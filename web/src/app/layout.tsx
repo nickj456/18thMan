@@ -25,6 +25,10 @@ const barlowCondensed = Barlow_Condensed({
 export const metadata: Metadata = {
   title: "18th Man",
   description: "Rugby league coaching platform — drills, sessions, and community for coaches.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

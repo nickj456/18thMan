@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { Barlow_Condensed, Source_Serif_4 } from 'next/font/google'
 
@@ -241,18 +242,19 @@ export default async function LandingPage() {
             <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
               <div
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '6px',
-                  background: 'var(--ember)',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: '#fff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  padding: '3px',
+                  flexShrink: 0,
+                  overflow: 'hidden',
                 }}
               >
-                <span style={{ color: '#fff', fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: '1rem' }}>
-                  18
-                </span>
+                <Image src="/logo.png" alt="18th Man" width={36} height={36} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </div>
               <span
                 className="lp-display"
@@ -1064,18 +1066,8 @@ export default async function LandingPage() {
           >
             {/* Logo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '5px',
-                  background: 'var(--ember)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <span style={{ color: '#fff', fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: '0.85rem' }}>18</span>
+              <div style={{ width: '30px', height: '30px', borderRadius: '6px', background: '#fff', padding: '2px', overflow: 'hidden', flexShrink: 0 }}>
+                <Image src="/logo.png" alt="18th Man" width={30} height={30} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </div>
               <span
                 className="lp-display"
