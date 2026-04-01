@@ -9,13 +9,14 @@ export async function generateShareLink(sessionId: string): Promise<{ token: str
   if (!user) return { error: 'Not authenticated' }
 
   // Return existing token if already set
-  const { data: existing } = await supabase
+  const { data: existing, error: fetchError } = await supabase
     .from('session_plans')
     .select('share_token')
     .eq('id', sessionId)
     .eq('coach_id', user.id)
     .single()
 
+  if (fetchError) return { error: fetchError.message }
   if (!existing) return { error: 'Session not found' }
   if (existing.share_token) return { token: existing.share_token }
 
