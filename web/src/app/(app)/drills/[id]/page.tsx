@@ -216,7 +216,7 @@ export default async function DrillDetailPage({
       <Separator />
 
       {/* Ratings & comments */}
-      <div className="space-y-6">
+      <div id="ratings" className="space-y-6">
         <h2 className="text-lg font-semibold">
           Ratings & Comments {ratings.length > 0 && `(${ratings.length})`}
         </h2>

@@ -63,7 +63,7 @@ export default async function NotificationsPage() {
             return (
               <Link
                 key={n.id}
-                href={`/drills/${data.drill_id}`}
+                href={`/drills/${data.drill_id}#ratings`}
                 className={`flex gap-4 p-4 rounded-xl border transition-colors hover:border-zinc-600 ${
                   n.read
                     ? 'border-zinc-800 bg-zinc-900/40'
