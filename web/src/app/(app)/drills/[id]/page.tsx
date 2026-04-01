@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { SaveDrillButton } from '@/components/drills/SaveDrillButton'
 import { DrillRatingForm } from '@/components/drills/DrillRatingForm'
 import { AiGuideDisplay } from '@/components/drills/AiGuideDisplay'
+import { RegenerateGuideButton } from '@/components/drills/RegenerateGuideButton'
 import { DrillImage } from '@/components/drills/DrillImage'
 import { extractYouTubeId } from '@/lib/youtube'
 import { Star, Users, ArrowLeft, PenTool, Sparkles, Loader2 } from 'lucide-react'
@@ -187,14 +188,26 @@ export default async function DrillDetailPage({
       {drill.ai_guide ? (
         <>
           <Separator />
-          <AiGuideDisplay guide={drill.ai_guide as AiGuide} />
+          <div className="flex items-center justify-between gap-4">
+            <AiGuideDisplay guide={drill.ai_guide as AiGuide} />
+          </div>
+          {userRole === 'admin' && drill.youtube_url && (
+            <div className="flex justify-end">
+              <RegenerateGuideButton drillId={id} />
+            </div>
+          )}
         </>
       ) : drill.youtube_url ? (
         <>
           <Separator />
-          <div className="flex items-center gap-3 text-sm text-muted-foreground py-2">
-            <Loader2 className="size-4 animate-spin text-indigo-400" />
-            <span>AI coaching guide is being generated — refresh in a moment.</span>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground py-2">
+              <Loader2 className="size-4 animate-spin text-indigo-400" />
+              <span>AI coaching guide is being generated — refresh in a moment.</span>
+            </div>
+            {userRole === 'admin' && (
+              <RegenerateGuideButton drillId={id} />
+            )}
           </div>
         </>
       ) : null}
