@@ -111,6 +111,7 @@ export default async function LandingPage() {
           text-transform: uppercase;
           padding: 14px 32px;
           border-radius: 4px;
+          white-space: nowrap;
           transition: background 0.15s, transform 0.15s;
           animation: pulseGlow 3s ease-in-out 1.5s infinite;
         }
@@ -184,6 +185,15 @@ export default async function LandingPage() {
         }
         .nav-link:hover { color: var(--text); }
 
+        .nav-links {
+          display: flex;
+          align-items: center;
+          gap: 2rem;
+        }
+        @media (max-width: 639px) {
+          .nav-links { display: none; }
+        }
+
         .section-label {
           font-family: var(--font-barlow), system-ui, sans-serif;
           font-weight: 700;
@@ -250,7 +260,7 @@ export default async function LandingPage() {
             </Link>
 
             {/* Nav links (hidden on mobile) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }} className="hidden sm:flex">
+            <div className="nav-links">
               <a href="#features" className="nav-link" style={{ textDecoration: 'none' }}>Features</a>
               <a href="#how-it-works" className="nav-link" style={{ textDecoration: 'none' }}>How It Works</a>
               <a href="#community" className="nav-link" style={{ textDecoration: 'none' }}>Community</a>
