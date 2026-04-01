@@ -1,6 +1,6 @@
 'use server'
 
-import { generateText, Output } from 'ai'
+import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
@@ -74,10 +74,20 @@ async function generateGuideFromContent(
     ? 'Extract a structured coaching guide from the provided video transcript.'
     : 'Generate a structured coaching guide based on the video title and any description provided.'
 
+  const jsonInstructions = `
+Respond with valid JSON only — no markdown, no code fences, no extra text. Use exactly this structure:
+{
+  "overview": "string",
+  "how_to_perform": ["string"],
+  "coaching_points": ["string"],
+  "key_cues": ["string"],
+  "variations": ["string"],
+  "equipment": ["string"]
+}`
+
   try {
-    const { experimental_output } = await generateText({
+    const { text } = await generateText({
       model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
-      output: Output.object({ schema: GuideSchema }),
       system: `You are an expert rugby league coach creating a coaching resource from a YouTube video.
 ${systemNote}
 
@@ -87,13 +97,17 @@ Important guidelines:
 - For structured drills, provide clear step-by-step setup and execution.
 - Use rugby league terminology throughout.
 - Be honest to what the content actually covers — do not invent drill structures that aren't there.
-- If the content is specifically about kicking (bombs, grubbers, chip kicks, drop goals, conversions, restarts), focus the coaching points on foot placement, body position, ball contact, and timing.`,
+- If the content is specifically about kicking (bombs, grubbers, chip kicks, drop goals, conversions, restarts), focus the coaching points on foot placement, body position, ball contact, and timing.
+${jsonInstructions}`,
       prompt,
     })
 
+    const clean = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim()
+    const guide = GuideSchema.parse(JSON.parse(clean))
+
     return {
       success: true,
-      guide: experimental_output,
+      guide,
       videoId,
       thumbnail: youtubeThumbnail(videoId),
     }
