@@ -10,6 +10,7 @@ import { DrillRatingForm } from '@/components/drills/DrillRatingForm'
 import { AiGuideDisplay } from '@/components/drills/AiGuideDisplay'
 import { RegenerateGuideButton } from '@/components/drills/RegenerateGuideButton'
 import { RatingSummary } from '@/components/drills/RatingSummary'
+import { RatingCard } from '@/components/drills/RatingCard'
 import { DrillImage } from '@/components/drills/DrillImage'
 import { extractYouTubeId } from '@/lib/youtube'
 import { Star, Users, ArrowLeft, PenTool, Sparkles, Loader2 } from 'lucide-react'
@@ -234,32 +235,14 @@ export default async function DrillDetailPage({
         {ratings.length > 0 && (
           <div className="space-y-4">
             {ratings.map(r => (
-              <div key={r.id} className="flex gap-3">
-                <Avatar className="size-8 shrink-0">
-                  <AvatarImage src={r.author?.avatar_url ?? ''} />
-                  <AvatarFallback className="text-xs">
-                    {r.author?.display_name?.[0]?.toUpperCase() ?? '?'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">
-                      {r.author?.display_name ?? r.author?.username}
-                    </span>
-                    {r.rating && (
-                      <div className="flex">
-                        {[1, 2, 3, 4, 5].map(n => (
-                          <Star
-                            key={n}
-                            className={`size-3 ${n <= r.rating! ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {r.comment && <p className="text-sm text-muted-foreground">{r.comment}</p>}
-                </div>
-              </div>
+              <RatingCard
+                key={r.id}
+                displayName={r.author?.display_name ?? null}
+                username={r.author?.username ?? null}
+                avatarUrl={r.author?.avatar_url ?? null}
+                rating={r.rating ?? null}
+                comment={r.comment ?? null}
+              />
             ))}
           </div>
         )}
