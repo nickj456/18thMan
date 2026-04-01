@@ -16,6 +16,8 @@ import {
   Users,
   Tag,
   Bell,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -31,6 +33,7 @@ import {
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { signOut } from '@/app/(app)/actions'
+import { useTheme } from '@/components/ThemeProvider'
 import type { UserRole } from '@/lib/supabase/types'
 
 const navItems = [
@@ -55,6 +58,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }: AppSidebarProps) {
   const pathname = usePathname()
+  const { theme, toggle } = useTheme()
 
   return (
     <Sidebar>
@@ -159,6 +163,13 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium truncate">{displayName ?? 'Coach'}</p>
           </div>
+          <button
+            onClick={toggle}
+            className="text-zinc-500 hover:text-zinc-300 transition-colors"
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </button>
           <Link href="/notifications" className="relative text-zinc-500 hover:text-zinc-300 transition-colors" title="Notifications">
             <Bell className="size-4" />
             {unreadNotifications > 0 && (
