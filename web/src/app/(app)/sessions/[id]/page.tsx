@@ -8,6 +8,7 @@ import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown } from 'lucide-reac
 import { DeleteSessionButton } from '@/components/session/DeleteSessionButton'
 import { SessionSummaryCard } from '@/components/session/SessionSummaryCard'
 import { DrillVideoThumbnail } from '@/components/session/DrillVideoThumbnail'
+import { ShareSessionButton } from '@/components/session/ShareSessionButton'
 import type { SessionPlan, SessionDrillItem, Drill } from '@/lib/supabase/types'
 import type { SessionSummary } from '../actions'
 
@@ -88,6 +89,10 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
           </Button>
           {isOwner && (
             <>
+              <ShareSessionButton
+                sessionId={id}
+                existingToken={(sessionPlan as SessionPlan & { share_token?: string | null }).share_token ?? null}
+              />
               <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`/sessions/${id}/edit`} />}>
                 <Pencil size={13} className="mr-1.5" />
                 Edit
