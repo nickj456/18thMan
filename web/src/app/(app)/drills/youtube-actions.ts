@@ -5,17 +5,17 @@ import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { extractYouTubeId, fetchTranscript, youtubeThumbnail } from '@/lib/youtube'
+import { extractYouTubeId, fetchTranscript, fetchVideoTitle, youtubeThumbnail } from '@/lib/youtube'
 
 const groq = createGroq()
 
 const GuideSchema = z.object({
-  overview: z.string().describe('2-3 sentence overview of the drill and its purpose'),
-  how_to_perform: z.array(z.string()).describe('Step-by-step instructions, 4-8 steps'),
-  coaching_points: z.array(z.string()).describe('Key coaching points to emphasise, 3-6 items'),
-  key_cues: z.array(z.string()).describe('Short verbal cues coaches can shout during the drill, 3-5 items'),
-  variations: z.array(z.string()).describe('Ways to progress or regress the drill, 2-4 items'),
-  equipment: z.array(z.string()).describe('Equipment needed, e.g. cones, tackle bags'),
+  overview: z.string().describe('2-3 sentence overview of the drill or skill and its purpose in rugby league'),
+  how_to_perform: z.array(z.string()).describe('Step-by-step instructions for running this drill, or step-by-step technique breakdown for a skill demonstration. 4-8 steps.'),
+  coaching_points: z.array(z.string()).describe('Key coaching points to emphasise when observing players, 3-6 items'),
+  key_cues: z.array(z.string()).describe('Short verbal cues coaches can call out during practice, 3-5 items'),
+  variations: z.array(z.string()).describe('Ways to progress, regress, or vary the activity, 2-4 items'),
+  equipment: z.array(z.string()).describe('Equipment needed, e.g. cones, tackle bags, balls. Empty array if none beyond a ball.'),
 })
 
 export type GenerateGuideResult =
@@ -31,16 +31,23 @@ export async function generateDrillGuideFromYoutube(
   }
 
   let transcript: string | null = null
+  let videoTitle: string | null = null
+
   try {
     transcript = await fetchTranscript(videoId)
     console.log(`[guide] transcript length for ${videoId}: ${transcript.length}`)
     if (transcript.length < 10) transcript = null
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.log(`[guide] transcript unavailable for ${videoId}: ${msg} — will generate from title`)
+    console.log(`[guide] transcript unavailable for ${videoId}: ${msg} — fetching title via oEmbed`)
   }
 
-  return generateGuideFromContent(videoId, transcript)
+  if (!transcript) {
+    videoTitle = await fetchVideoTitle(videoId)
+    console.log(`[guide] oEmbed title for ${videoId}: ${videoTitle ?? '(none)'}`)
+  }
+
+  return generateGuideFromContent(videoId, transcript, videoTitle ?? undefined)
 }
 
 export async function generateDrillGuideFromMetadata(
@@ -65,15 +72,22 @@ async function generateGuideFromContent(
 
   const systemNote = hasTranscript
     ? 'Extract a structured coaching guide from the provided video transcript.'
-    : 'Generate a structured coaching guide based on the drill title and description.'
+    : 'Generate a structured coaching guide based on the video title and any description provided.'
 
   try {
     const { experimental_output } = await generateText({
       model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
       output: Output.object({ schema: GuideSchema }),
-      system: `You are an expert rugby league coach. ${systemNote}
-Be practical and specific. Use rugby league terminology. Focus on what coaches need to know to run this drill.
-If limited information is provided, use your rugby league expertise to create a sensible guide.`,
+      system: `You are an expert rugby league coach creating a coaching resource from a YouTube video.
+${systemNote}
+
+Important guidelines:
+- The video may show a structured drill OR a technique/skill demonstration (e.g. kicking technique, passing mechanics). Adapt accordingly.
+- For technique videos (kicking, passing, catching), frame the guide as a skill development activity: describe what the technique involves, the coaching points to observe, and how a coach can structure practice around it.
+- For structured drills, provide clear step-by-step setup and execution.
+- Use rugby league terminology throughout.
+- Be honest to what the content actually covers — do not invent drill structures that aren't there.
+- If the content is specifically about kicking (bombs, grubbers, chip kicks, drop goals, conversions, restarts), focus the coaching points on foot placement, body position, ball contact, and timing.`,
       prompt,
     })
 

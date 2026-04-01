@@ -20,6 +20,20 @@ export function youtubeThumbnail(videoId: string) {
   return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
 }
 
+export async function fetchVideoTitle(videoId: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=https://youtube.com/watch?v=${videoId}&format=json`,
+      { cache: 'force-cache' }
+    )
+    if (!res.ok) return null
+    const data = await res.json() as { title?: string }
+    return data.title ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function fetchTranscript(videoId: string): Promise<string> {
   const yt = await Innertube.create({ retrieve_player: false })
   const info = await yt.getInfo(videoId)
