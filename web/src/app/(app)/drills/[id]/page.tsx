@@ -9,6 +9,7 @@ import { SaveDrillButton } from '@/components/drills/SaveDrillButton'
 import { DrillRatingForm } from '@/components/drills/DrillRatingForm'
 import { AiGuideDisplay } from '@/components/drills/AiGuideDisplay'
 import { RegenerateGuideButton } from '@/components/drills/RegenerateGuideButton'
+import { RatingSummary } from '@/components/drills/RatingSummary'
 import { DrillImage } from '@/components/drills/DrillImage'
 import { extractYouTubeId } from '@/lib/youtube'
 import { Star, Users, ArrowLeft, PenTool, Sparkles, Loader2 } from 'lucide-react'
@@ -219,6 +220,8 @@ export default async function DrillDetailPage({
         <h2 className="text-lg font-semibold">
           Ratings & Comments {ratings.length > 0 && `(${ratings.length})`}
         </h2>
+
+        <RatingSummary ratings={ratings} />
 
         {canInteract && (
           <DrillRatingForm

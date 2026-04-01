@@ -65,13 +65,12 @@ export async function submitRating(drillId: string, rating: number, comment: str
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  const [profileResult, drillResult] = await Promise.all([
+    supabase.from('profiles').select('role, display_name').eq('id', user.id).single(),
+    supabase.from('drills').select('author_id, title').eq('id', drillId).single(),
+  ])
 
-  if (!profile || profile.role === 'viewer') return
+  if (!profileResult.data || profileResult.data.role === 'viewer') return
 
   await supabase.from('drill_ratings').upsert({
     drill_id: drillId,
@@ -79,6 +78,22 @@ export async function submitRating(drillId: string, rating: number, comment: str
     rating,
     comment: comment || null,
   }, { onConflict: 'drill_id,user_id' })
+
+  // Notify the drill author — but not if they're rating their own drill
+  const drill = drillResult.data
+  if (drill && drill.author_id !== user.id) {
+    await supabase.from('notifications').insert({
+      user_id: drill.author_id,
+      type: 'drill_rated',
+      data: {
+        drill_id: drillId,
+        drill_title: drill.title,
+        rater_display_name: profileResult.data.display_name ?? 'A coach',
+        rating,
+        comment: comment || null,
+      },
+    })
+  }
 
   revalidatePath(`/drills/${drillId}`)
 }

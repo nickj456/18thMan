@@ -15,6 +15,7 @@ import {
   ListVideo,
   Users,
   Tag,
+  Bell,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -42,15 +43,17 @@ const navItems = [
 
 const profileItems = [
   { href: '/profile', label: 'My Profile', icon: User },
+  { href: '/notifications', label: 'Notifications', icon: Bell },
 ]
 
 interface AppSidebarProps {
   role: UserRole
   displayName: string | null
   avatarUrl: string | null
+  unreadNotifications: number
 }
 
-export function AppSidebar({ role, displayName, avatarUrl }: AppSidebarProps) {
+export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }: AppSidebarProps) {
   const pathname = usePathname()
 
   return (
@@ -156,6 +159,14 @@ export function AppSidebar({ role, displayName, avatarUrl }: AppSidebarProps) {
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium truncate">{displayName ?? 'Coach'}</p>
           </div>
+          <Link href="/notifications" className="relative text-zinc-500 hover:text-zinc-300 transition-colors" title="Notifications">
+            <Bell className="size-4" />
+            {unreadNotifications > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-[#e8560a] text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
+                {unreadNotifications > 9 ? '9+' : unreadNotifications}
+              </span>
+            )}
+          </Link>
           <form action={signOut}>
             <button type="submit" className="text-zinc-500 hover:text-zinc-300 transition-colors" title="Sign out">
               <LogOut className="size-4" />

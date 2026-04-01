@@ -10,11 +10,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('display_name, role, avatar_url')
-    .eq('id', user.id)
-    .single()
+  const [profileResult, notifResult] = await Promise.all([
+    supabase.from('profiles').select('display_name, role, avatar_url').eq('id', user.id).single(),
+    supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
+  ])
+
+  const profile = profileResult.data
+  const unreadCount = notifResult.count ?? 0
 
   return (
     <SidebarProvider>
@@ -22,6 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         role={(profile?.role ?? 'viewer') as UserRole}
         displayName={profile?.display_name ?? null}
         avatarUrl={profile?.avatar_url ?? null}
+        unreadNotifications={unreadCount}
       />
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b px-4">
