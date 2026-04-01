@@ -43,3 +43,7 @@ Generate a clean, printable PDF of a session plan — layout, drill order, durat
 ---
 
 *Last updated: 2026-03-31*
+
+--- 
+
+###Light and Dark Mode

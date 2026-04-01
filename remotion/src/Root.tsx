@@ -2,6 +2,7 @@ import { Composition } from 'remotion'
 import { DrillCard, drillCardSchema } from './compositions/DrillCard'
 import { SessionRecap, sessionRecapSchema } from './compositions/SessionRecap'
 import { LogoReveal } from './compositions/LogoReveal'
+import { DrillAnimation, drillAnimationSchema } from './compositions/DrillAnimation'
 
 export const RemotionRoot = () => {
   return (
@@ -38,18 +39,7 @@ export const RemotionRoot = () => {
         width={1080}
         height={1080}
         schema={drillCardSchema}
-        defaultProps={{
-          drillTitle: 'Dummy Half Play',
-          category: 'Attack',
-          difficulty: 'intermediate',
-          playerCount: '13',
-          coachingCues: [
-            'Head up, scan the defence',
-            'Low body position off the line',
-            'Communicate early',
-          ],
-          canvasPreviewUrl: null,
-        }}
+        defaultProps={{"drillTitle":"Skill Drills","category":"Attack","difficulty":"intermediate" as const,"playerCount":"13","coachingCues":["Head up, scan the defence","Grip | Catch | Pass","Movement and Communication"],"canvasPreviewUrl":null}}
       />
 
       {/* 9:16 session recap */}
@@ -72,6 +62,26 @@ export const RemotionRoot = () => {
             { title: 'Completion Sets', duration: 20, category: 'Attack' },
             { title: 'Scrimmage', duration: 15, category: 'General' },
           ],
+        }}
+      />
+
+      {/* 16:9 animated drill — exported from designer */}
+      <Composition
+        id="DrillAnimation"
+        component={DrillAnimation}
+        durationInFrames={90}
+        fps={30}
+        width={1920}
+        height={1280}
+        schema={drillAnimationSchema}
+        defaultProps={{
+          drillTitle: 'Sample Drill',
+          canvasJson: {
+            background: 'full' as const,
+            elements: [],
+            keyframes: [],
+            duration: 90,
+          },
         }}
       />
 

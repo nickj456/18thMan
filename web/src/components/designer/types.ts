@@ -30,9 +30,16 @@ export interface CanvasElement {
   rotation?: number
 }
 
+export interface Keyframe {
+  time: number  // frame number at 30fps (e.g. 30 = 1 second)
+  elementStates: Record<string, Partial<CanvasElement>>  // elementId → animatable props
+}
+
 export interface CanvasState {
   background: PitchBackground
   elements: CanvasElement[]
+  keyframes?: Keyframe[]
+  duration?: number  // total frames, default 90 (3s at 30fps)
 }
 
 export const CANVAS_WIDTH = 900

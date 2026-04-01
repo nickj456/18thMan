@@ -3,7 +3,9 @@
 import { useState, useRef, useCallback, useTransition, useEffect } from 'react'
 import type Konva from 'konva'
 import { DrillCanvas } from './DrillCanvas'
-import { type CanvasState, type ToolType } from './types'
+import { Timeline, FPS } from './Timeline'
+import { AnimationPreview } from './AnimationPreview'
+import { type CanvasState, type CanvasElement, type ToolType, type Keyframe } from './types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,7 +15,7 @@ import type { DrillCategory } from '@/lib/supabase/types'
 import { saveDrillDesign, updateDrillDesign } from '@/app/(app)/drills/designer-actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, Monitor } from 'lucide-react'
+import { Loader2, Save, Monitor, Timer, Video } from 'lucide-react'
 
 const AGE_GROUPS = [
   'Mini (U6–U8)',
@@ -87,6 +89,116 @@ export function DrillDesigner({ categories, initialDrill }: DrillDesignerProps) 
   const [facebookUrl, setFacebookUrl] = useState(initialDrill?.facebook_url ?? '')
 
   const [isPending, startTransition] = useTransition()
+
+  // Timeline state
+  const [showTimeline, setShowTimeline] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const [currentFrame, setCurrentFrame] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const rafRef = useRef<number | null>(null)
+  const lastTickRef = useRef<number | null>(null)
+  const currentFrameRef = useRef(0)
+
+  // Keep ref in sync so RAF callback reads latest value
+  useEffect(() => { currentFrameRef.current = currentFrame }, [currentFrame])
+
+  // ── Playback loop ────────────────────────────────────────────
+  useEffect(() => {
+    if (!isPlaying) {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      lastTickRef.current = null
+      return
+    }
+    const duration = canvasState.duration ?? 90
+    function tick(ts: number) {
+      if (lastTickRef.current === null) lastTickRef.current = ts
+      const elapsed = ts - lastTickRef.current
+      const framesElapsed = (elapsed / 1000) * FPS
+      if (framesElapsed >= 1) {
+        lastTickRef.current = ts
+        setCurrentFrame(prev => {
+          const next = prev + Math.floor(framesElapsed)
+          if (next >= duration) { setIsPlaying(false); return 0 }
+          return next
+        })
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  }, [isPlaying, canvasState.duration])
+
+  // ── Interpolation ────────────────────────────────────────────
+  function lerp(a: number, b: number, t: number) { return a + (b - a) * t }
+
+  function getInterpolatedElements(frame: number): CanvasElement[] {
+    const keyframes = canvasState.keyframes
+    if (!keyframes || keyframes.length === 0) return canvasState.elements
+    return canvasState.elements.map(el => {
+      const elKfs = keyframes.filter(k => k.elementStates[el.id])
+      if (elKfs.length === 0) return el
+      // Find surrounding keyframes
+      const before = [...elKfs].reverse().find(k => k.time <= frame)
+      const after = elKfs.find(k => k.time > frame)
+      if (!before && !after) return el
+      if (!before) return { ...el, ...after!.elementStates[el.id] }
+      if (!after) return { ...el, ...before.elementStates[el.id] }
+      const t = (frame - before.time) / (after.time - before.time)
+      const bState = before.elementStates[el.id]
+      const aState = after.elementStates[el.id]
+      const interpolated: Partial<CanvasElement> = {}
+      const numKeys = ['x', 'y', 'x1', 'y1', 'x2', 'y2', 'width', 'height'] as const
+      type NumKey = typeof numKeys[number]
+      for (const key of numKeys) {
+        const bv = (bState as Record<NumKey, number | undefined>)[key]
+        const av = (aState as Record<NumKey, number | undefined>)[key]
+        if (bv !== undefined && av !== undefined) {
+          (interpolated as Record<NumKey, number>)[key] = lerp(bv, av, t)
+        }
+      }
+      return { ...el, ...interpolated }
+    })
+  }
+
+  // During playback show interpolated state; otherwise show editable state
+  const displayState: CanvasState = isPlaying
+    ? { ...canvasState, elements: getInterpolatedElements(currentFrame) }
+    : canvasState
+
+  function handleAddKeyframe() {
+    const elementStates: Keyframe['elementStates'] = {}
+    for (const el of canvasState.elements) {
+      if (el.type === 'arrow' || el.type === 'line' || el.type === 'dotted') {
+        elementStates[el.id] = { x1: el.x1, y1: el.y1, x2: el.x2, y2: el.y2 }
+      } else if (el.type === 'zone') {
+        elementStates[el.id] = { x: el.x, y: el.y, width: el.width, height: el.height }
+      } else {
+        elementStates[el.id] = { x: el.x, y: el.y }
+      }
+    }
+    const existing = (canvasState.keyframes ?? []).filter(k => k.time !== currentFrame)
+    const newKf: Keyframe = { time: currentFrame, elementStates }
+    pushState({
+      ...canvasState,
+      keyframes: [...existing, newKf].sort((a, b) => a.time - b.time),
+    })
+    toast.success(`Keyframe added at ${(currentFrame / FPS).toFixed(1)}s`)
+  }
+
+  function handleDeleteKeyframe(time: number) {
+    pushState({
+      ...canvasState,
+      keyframes: (canvasState.keyframes ?? []).filter(k => k.time !== time),
+    })
+  }
+
+  function handleTogglePlay() {
+    if ((canvasState.keyframes ?? []).length < 2) {
+      toast.error('Add at least 2 keyframes to preview animation')
+      return
+    }
+    setIsPlaying(v => !v)
+  }
 
   const pushState = useCallback((next: CanvasState) => {
     setHistory((prev) => {
@@ -293,20 +405,71 @@ export function DrillDesigner({ categories, initialDrill }: DrillDesignerProps) 
 
   // ── Desktop layout ───────────────────────────────────────────
   return (
-    <div className="flex h-full overflow-hidden relative">
-      <div className="flex flex-1 overflow-hidden">
-        <DrillCanvas
-          state={canvasState}
-          selectedId={selectedId}
-          activeTool={activeTool}
-          onStateChange={pushState}
-          onSelectId={setSelectedId}
-          onToolChange={setActiveTool}
-          onUndo={handleUndo}
-          onClear={handleClear}
-          canUndo={historyIndex > 0}
-          stageRef={stageRef}
-        />
+    <div className="flex h-full overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Canvas area */}
+        <div className="flex flex-1 min-h-0 overflow-hidden relative">
+          <DrillCanvas
+            state={displayState}
+            selectedId={isPlaying ? null : selectedId}
+            activeTool={isPlaying ? 'select' : activeTool}
+            onStateChange={isPlaying ? () => {} : pushState}
+            onSelectId={isPlaying ? () => {} : setSelectedId}
+            onToolChange={isPlaying ? () => {} : setActiveTool}
+            onUndo={handleUndo}
+            onClear={handleClear}
+            canUndo={historyIndex > 0}
+            stageRef={stageRef}
+          />
+          {isPlaying && (
+            <div className="absolute inset-0 pointer-events-none flex items-end justify-center pb-4">
+              <div className="flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 text-[11px] text-amber-400 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                Playing · {(currentFrame / FPS).toFixed(1)}s
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Timeline toggle bar */}
+        <div className="flex items-center justify-between px-3 h-7 bg-zinc-900 border-t border-zinc-800 shrink-0">
+          <span className="text-[11px] text-zinc-600">
+            {(canvasState.keyframes ?? []).length > 0
+              ? `${(canvasState.keyframes ?? []).length} keyframe${(canvasState.keyframes ?? []).length !== 1 ? 's' : ''}`
+              : 'No keyframes'}
+          </span>
+          <div className="flex items-center gap-3">
+            {(canvasState.keyframes ?? []).length >= 2 && (
+              <button
+                onClick={() => setShowPreview(true)}
+                className="flex items-center gap-1.5 text-[11px] text-amber-400 hover:text-amber-300 transition-colors"
+              >
+                <Video size={11} />
+                Preview & Export
+              </button>
+            )}
+            <button
+              onClick={() => setShowTimeline(v => !v)}
+              className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-white transition-colors"
+            >
+              <Timer size={11} />
+              {showTimeline ? 'Hide Timeline' : 'Animate'}
+            </button>
+          </div>
+        </div>
+
+        {/* Timeline panel */}
+        {showTimeline && (
+          <Timeline
+            state={canvasState}
+            currentFrame={currentFrame}
+            isPlaying={isPlaying}
+            onFrameChange={setCurrentFrame}
+            onAddKeyframe={handleAddKeyframe}
+            onDeleteKeyframe={handleDeleteKeyframe}
+            onTogglePlay={handleTogglePlay}
+          />
+        )}
       </div>
 
       <aside className="w-72 border-l border-zinc-800 bg-zinc-900 flex flex-col overflow-y-auto shrink-0">
@@ -317,6 +480,14 @@ export function DrillDesigner({ categories, initialDrill }: DrillDesignerProps) 
         {formFields}
         {saveButton}
       </aside>
+
+      {showPreview && (
+        <AnimationPreview
+          canvasJson={canvasState}
+          drillTitle={title || undefined}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
     </div>
   )
 }
