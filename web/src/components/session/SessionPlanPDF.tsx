@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 import type { SessionPlan, SessionDrillItem, AiGuide } from '@/lib/supabase/types'
 import type { SessionSummary } from '@/app/(app)/sessions/actions'
 
@@ -315,6 +315,14 @@ const s = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 6,
   },
+  canvasImage: {
+    width: '100%',
+    borderRadius: 4,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderStyle: 'solid',
+  },
 })
 
 // ── Types ─────────────────────────────────────────────────────
@@ -327,6 +335,7 @@ interface DrillWithMeta {
     difficulty: string | null
     age_group: string | null
     player_count: string | null
+    canvas_preview_url: string | null
     ai_guide: AiGuide | null
   }
   duration_minutes: number
@@ -511,6 +520,11 @@ export function SessionPlanPDF({ session, drillItems, coach }: Props) {
                         <Text key={i} style={s.drillTag}>{tag}</Text>
                       ))}
                     </View>
+                  )}
+
+                  {/* Canvas drawing */}
+                  {drill.canvas_preview_url && (
+                    <Image src={drill.canvas_preview_url} style={s.canvasImage} />
                   )}
 
                   {/* Description */}

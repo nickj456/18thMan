@@ -38,13 +38,14 @@ export async function GET(
       difficulty: string | null
       age_group: string | null
       player_count: string | null
+      canvas_preview_url: string | null
       ai_guide: AiGuide | null
     }>()
 
     if (drillIds.length > 0) {
       const { data: drills } = await supabase
         .from('drills')
-        .select('id, title, description, difficulty, age_group, player_count, ai_guide')
+        .select('id, title, description, difficulty, age_group, player_count, canvas_preview_url, ai_guide')
         .in('id', drillIds)
       for (const drill of drills ?? []) {
         drillsMap.set(drill.id, {
