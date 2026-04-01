@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Clock, BookOpen, Users, Pencil, ArrowLeft } from 'lucide-react'
+import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown } from 'lucide-react'
 import { DeleteSessionButton } from '@/components/session/DeleteSessionButton'
 import { SessionSummaryCard } from '@/components/session/SessionSummaryCard'
 import { DrillVideoThumbnail } from '@/components/session/DrillVideoThumbnail'
@@ -81,15 +81,21 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        {isOwner && (
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`/sessions/${id}/edit`} />}>
-              <Pencil size={13} className="mr-1.5" />
-              Edit
-            </Button>
-            <DeleteSessionButton sessionId={id} />
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button size="sm" variant="outline" nativeButton={false} render={<a href={`/api/sessions/${id}/pdf`} />}>
+            <FileDown size={13} className="mr-1.5" />
+            Export PDF
+          </Button>
+          {isOwner && (
+            <>
+              <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`/sessions/${id}/edit`} />}>
+                <Pencil size={13} className="mr-1.5" />
+                Edit
+              </Button>
+              <DeleteSessionButton sessionId={id} />
+            </>
+          )}
+        </div>
       </div>
 
       <Separator className="bg-zinc-800" />
