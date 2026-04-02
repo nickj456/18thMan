@@ -1,7 +1,10 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { generateText, Output, gateway } from 'ai'
+import { generateText, Output } from 'ai'
+import { createGroq } from '@ai-sdk/groq'
+
+const groq = createGroq()
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 
@@ -137,7 +140,7 @@ Generate a complete Game Sense session plan for this focus area following the 6-
 
   try {
     const { experimental_output: object } = await generateText({
-      model: gateway('anthropic/claude-sonnet-4.6'),
+      model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
       output: Output.object({ schema: SuggestionSchema }),
       system: GAME_SENSE_SYSTEM,
       prompt,
