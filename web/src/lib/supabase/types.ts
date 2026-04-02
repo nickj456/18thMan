@@ -52,6 +52,29 @@ export interface ClubInvitationWithRelations extends ClubInvitation {
   inviter: Pick<Profile, 'id' | 'display_name' | 'username'>
 }
 
+export interface GroupTrainingHistory {
+  id: string
+  group_id: string
+  focus_area: string
+  category: string
+  suggestion: GameSenseSuggestion
+  session_id: string | null
+  used: boolean
+  suggested_at: string
+}
+
+export interface GameSenseSuggestion {
+  focus_area: string
+  category: string
+  rationale: string
+  warm_up: { title: string; duration: string; description: string; setup: string }
+  modified_game_1: { title: string; duration: string; setup: string; constraint: string; coaching_focus: string }
+  reflect_questions: string[]
+  modified_game_2: { title: string; duration: string; setup: string; progression: string }
+  competition: { title: string; duration: string; setup: string; scoring_condition: string }
+  review_points: string[]
+}
+
 export interface CoachingGroup {
   id: string
   name: string

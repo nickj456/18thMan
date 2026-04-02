@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Users2, UserPlus, Clock, XCircle, CalendarDays, Plus } from 'lucide-react'
+import { ArrowLeft, Users2, UserPlus, Clock, XCircle, CalendarDays, Plus, Sparkles } from 'lucide-react'
 import { InviteGroupMemberForm } from './InviteGroupMemberForm'
 import { RemoveGroupMemberButton } from './RemoveGroupMemberButton'
 
@@ -84,14 +84,24 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
         <ArrowLeft size={12} /> Groups
       </Link>
 
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-          <Users2 size={18} className="text-indigo-400" />
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+            <Users2 size={18} className="text-indigo-400" />
+          </div>
+          <div>
+            <h1 className="app-heading text-2xl">{group.name}</h1>
+            <p className="text-xs text-zinc-600 mt-0.5">{memberInvites?.length ?? 0} members</p>
+          </div>
         </div>
-        <div>
-          <h1 className="app-heading text-2xl">{group.name}</h1>
-          <p className="text-xs text-zinc-600 mt-0.5">{memberInvites?.length ?? 0} members</p>
-        </div>
+        {isMember && (
+          <Link
+            href={`/groups/${group.id}/ai-guidance`}
+            className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg bg-[#e8560a]/10 border border-[#e8560a]/20 text-[#e8560a] hover:bg-[#e8560a]/20 transition-colors"
+          >
+            <Sparkles size={14} /> AI Guidance
+          </Link>
+        )}
       </div>
 
       {/* Invite */}
