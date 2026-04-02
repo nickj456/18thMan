@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp } from 'lucide-react'
+import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2 } from 'lucide-react'
 
 export const metadata = { title: 'Admin — 18th Man' }
 
@@ -21,6 +21,7 @@ export default async function AdminPage() {
     categoriesRes,
     coachesRes,
     viewersRes,
+    clubsRes,
   ] = await Promise.all([
     supabase.from('profiles').select('id', { count: 'exact', head: true }),
     supabase.from('drills').select('id', { count: 'exact', head: true }),
@@ -29,6 +30,7 @@ export default async function AdminPage() {
     supabase.from('drill_categories').select('id', { count: 'exact', head: true }),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'coach'),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'viewer'),
+    supabase.from('clubs').select('id', { count: 'exact', head: true }),
   ])
 
   const stats = [
@@ -52,6 +54,13 @@ export default async function AdminPage() {
       label: 'Drill Categories',
       description: `${categoriesRes.count ?? 0} categories configured`,
       colour: 'border-emerald-500/20 hover:border-emerald-500/40 text-emerald-400',
+    },
+    {
+      href: '/admin/clubs',
+      icon: Building2,
+      label: 'Clubs',
+      description: `${clubsRes.count ?? 0} clubs configured`,
+      colour: 'border-amber-500/20 hover:border-amber-500/40 text-amber-400',
     },
     {
       href: '/admin/import-playlist',

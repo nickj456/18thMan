@@ -1,16 +1,22 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Bell, Star } from 'lucide-react'
+import { Bell, Star, Building2 } from 'lucide-react'
 import { markAllNotificationsRead } from './actions'
 import { formatDistanceToNow } from 'date-fns'
 
-interface NotificationData {
+interface DrillRatingData {
   drill_id: string
   drill_title: string
   rater_display_name: string
   rating: number
   comment?: string | null
+}
+
+interface ClubInviteData {
+  club_id: string
+  club_name: string
+  invited_by_display_name: string
 }
 
 export default async function NotificationsPage() {
@@ -59,31 +65,54 @@ export default async function NotificationsPage() {
       ) : (
         <div className="space-y-2">
           {items.map(n => {
-            const data = n.data as NotificationData
+            const isClubInvite = n.type === 'club_invite'
+            const unreadDot = !n.read && (
+              <div className="flex-shrink-0 mt-2">
+                <div className="w-2 h-2 rounded-full bg-[#e8560a]" />
+              </div>
+            )
+            const itemClass = `flex gap-4 p-4 rounded-xl border transition-colors hover:border-zinc-600 ${
+              n.read ? 'border-zinc-800 bg-zinc-900/40' : 'border-zinc-700 bg-zinc-900'
+            }`
+
+            if (isClubInvite) {
+              const data = n.data as ClubInviteData
+              return (
+                <Link key={n.id} href="/clubs" className={itemClass}>
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-amber-500/15 border border-amber-500/20 flex items-center justify-center mt-0.5">
+                    <Building2 className="size-4 text-amber-400" />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-sm leading-snug">
+                      <span className="font-semibold">{data.invited_by_display_name}</span>
+                      {' invited you to join '}
+                      <span className="font-semibold text-white">{data.club_name}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                  {unreadDot}
+                </Link>
+              )
+            }
+
+            const data = n.data as DrillRatingData
             return (
               <Link
                 key={n.id}
                 href={`/drills/${data.drill_id}#ratings`}
-                className={`flex gap-4 p-4 rounded-xl border transition-colors hover:border-zinc-600 ${
-                  n.read
-                    ? 'border-zinc-800 bg-zinc-900/40'
-                    : 'border-zinc-700 bg-zinc-900'
-                }`}
+                className={itemClass}
               >
-                {/* Icon */}
                 <div className="flex-shrink-0 w-9 h-9 rounded-full bg-amber-500/15 border border-amber-500/20 flex items-center justify-center mt-0.5">
                   <Star className="size-4 fill-amber-400 text-amber-400" />
                 </div>
-
-                {/* Content */}
                 <div className="flex-1 min-w-0 space-y-1">
                   <p className="text-sm leading-snug">
                     <span className="font-semibold">{data.rater_display_name}</span>
                     {' rated your drill '}
                     <span className="font-semibold text-white">{data.drill_title}</span>
                   </p>
-
-                  {/* Stars */}
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map(star => (
                       <Star
@@ -93,25 +122,16 @@ export default async function NotificationsPage() {
                     ))}
                     <span className="text-xs text-muted-foreground ml-1">{data.rating}/5</span>
                   </div>
-
-                  {/* Comment */}
                   {data.comment && (
                     <p className="text-sm text-zinc-400 italic border-l-2 border-zinc-700 pl-2">
                       &ldquo;{data.comment}&rdquo;
                     </p>
                   )}
-
                   <p className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                   </p>
                 </div>
-
-                {/* Unread dot */}
-                {!n.read && (
-                  <div className="flex-shrink-0 mt-2">
-                    <div className="w-2 h-2 rounded-full bg-[#e8560a]" />
-                  </div>
-                )}
+                {unreadDot}
               </Link>
             )
           })}

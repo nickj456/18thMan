@@ -30,7 +30,7 @@ export default async function AdminUsersPage({
 
   let query = supabase
     .from('profiles')
-    .select('id, username, display_name, avatar_url, club, role, created_at')
+    .select('id, username, display_name, avatar_url, club, club_id, role, created_at, clubs(name)')
     .order('created_at', { ascending: false })
 
   if (roleFilter && ['admin', 'coach', 'viewer'].includes(roleFilter)) {
@@ -126,7 +126,9 @@ export default async function AdminUsersPage({
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-zinc-500 text-xs">{profile.club ?? '—'}</td>
+                    <td className="px-5 py-3.5 text-zinc-500 text-xs">
+                      {(profile as unknown as { clubs?: { name: string } | null }).clubs?.name ?? profile.club ?? '—'}
+                    </td>
                     <td className="px-5 py-3.5 text-zinc-500 text-xs">
                       {new Date(profile.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>

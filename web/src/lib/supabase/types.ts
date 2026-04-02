@@ -6,6 +6,7 @@
 export type UserRole = 'admin' | 'coach' | 'viewer'
 export type ConversationType = 'ai' | 'dm' | 'community'
 export type DrillDifficulty = 'beginner' | 'intermediate' | 'advanced'
+export type ClubInviteStatus = 'pending' | 'accepted' | 'declined'
 
 export interface Profile {
   id: string
@@ -13,11 +14,41 @@ export interface Profile {
   display_name: string | null
   avatar_url: string | null
   bio: string | null
-  club: string | null
+  club: string | null       // legacy text field — kept until fully migrated
+  club_id: string | null    // FK to clubs.id
   coaching_level: string | null
   role: UserRole
   created_at: string
   updated_at: string
+}
+
+export interface Club {
+  id: string
+  name: string
+  slug: string
+  created_by: string
+  created_at: string
+}
+
+export interface ClubInvitation {
+  id: string
+  club_id: string
+  user_id: string
+  invited_by: string
+  status: ClubInviteStatus
+  created_at: string
+  updated_at: string
+}
+
+// Joined
+export interface ClubWithMeta extends Club {
+  member_count: number
+  pending_count: number
+}
+
+export interface ClubInvitationWithRelations extends ClubInvitation {
+  club: Pick<Club, 'id' | 'name'>
+  inviter: Pick<Profile, 'id' | 'display_name' | 'username'>
 }
 
 export interface DrillCategory {
