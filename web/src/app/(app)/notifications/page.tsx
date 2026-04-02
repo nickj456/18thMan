@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Bell, Star, Building2, Users2 } from 'lucide-react'
+import { Bell, Star, Building2, Users2, CalendarDays } from 'lucide-react'
 import { markAllNotificationsRead } from './actions'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -23,6 +23,14 @@ interface GroupInviteData {
   group_id: string
   group_name: string
   invited_by_display_name: string
+}
+
+interface SessionScheduledData {
+  session_id: string
+  session_title: string
+  group_id: string
+  scheduled_at: string
+  scheduled_by_display_name: string
 }
 
 export default async function NotificationsPage() {
@@ -115,6 +123,33 @@ export default async function NotificationsPage() {
                       <span className="font-semibold">{data.invited_by_display_name}</span>
                       {' invited you to join the group '}
                       <span className="font-semibold text-white">{data.group_name}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                  {unreadDot}
+                </Link>
+              )
+            }
+
+            if (n.type === 'session_scheduled') {
+              const data = n.data as SessionScheduledData
+              const scheduled = new Date(data.scheduled_at).toLocaleString('en-GB', {
+                weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+              })
+              return (
+                <Link key={n.id} href={`/sessions/${data.session_id}`} className={itemClass}>
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-amber-500/15 border border-amber-500/20 flex items-center justify-center mt-0.5">
+                    <CalendarDays className="size-4 text-amber-400" />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-sm leading-snug">
+                      <span className="font-semibold">{data.scheduled_by_display_name}</span>
+                      {' scheduled '}
+                      <span className="font-semibold text-white">{data.session_title}</span>
+                      {' for '}
+                      <span className="text-amber-400">{scheduled}</span>
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}

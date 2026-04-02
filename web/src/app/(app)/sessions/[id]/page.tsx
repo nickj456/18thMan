@@ -4,11 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown } from 'lucide-react'
+import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown, Users2, CalendarDays } from 'lucide-react'
 import { DeleteSessionButton } from '@/components/session/DeleteSessionButton'
 import { SessionSummaryCard } from '@/components/session/SessionSummaryCard'
 import { DrillVideoThumbnail } from '@/components/session/DrillVideoThumbnail'
 import { ShareSessionButton } from '@/components/session/ShareSessionButton'
+import { LockBanner } from './LockBanner'
 import type { SessionPlan, SessionDrillItem, Drill } from '@/lib/supabase/types'
 import type { SessionSummary } from '../actions'
 
@@ -26,8 +27,41 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
 
   if (!session) notFound()
 
-  const sessionPlan = session as SessionPlan & { ai_summary?: SessionSummary }
+  const sessionPlan = session as SessionPlan & { ai_summary?: SessionSummary; share_token?: string | null }
   const isOwner = sessionPlan.coach_id === user.id
+  const isGroupSession = !!sessionPlan.group_id
+
+  // For group sessions, check membership and fetch group/locker info
+  let groupName: string | null = null
+  let lockerName: string | null = null
+  let isGroupMember = false
+
+  if (isGroupSession) {
+    const [groupResult, memberResult] = await Promise.all([
+      supabase.from('coaching_groups').select('name').eq('id', sessionPlan.group_id!).single(),
+      supabase.from('group_invitations')
+        .select('id')
+        .eq('group_id', sessionPlan.group_id!)
+        .eq('user_id', user.id)
+        .eq('status', 'accepted')
+        .single(),
+    ])
+    groupName = groupResult.data?.name ?? null
+    isGroupMember = !!memberResult.data
+
+    if (sessionPlan.locked_by) {
+      const { data: locker } = await supabase
+        .from('profiles')
+        .select('display_name, username')
+        .eq('id', sessionPlan.locked_by)
+        .single()
+      lockerName = locker?.display_name ?? locker?.username ?? null
+    }
+  }
+
+  // Non-owners need group membership to view group sessions
+  if (!isOwner && isGroupSession && !isGroupMember) notFound()
+  if (!isOwner && !isGroupSession) notFound()
 
   const drillIds = (sessionPlan.drills_order as SessionDrillItem[]).map(d => d.drill_id)
   const drillsMap = new Map<string, Drill>()
@@ -46,14 +80,21 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
     ? hours > 0 ? `${hours}h ${mins}min` : `${mins}min`
     : null
 
+  const scheduledLabel = sessionPlan.scheduled_at
+    ? new Date(sessionPlan.scheduled_at).toLocaleString('en-GB', {
+        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      })
+    : null
+
   return (
     <div className="space-y-6 max-w-3xl">
       <Link
-        href="/sessions"
+        href={isGroupSession ? `/groups/${sessionPlan.group_id}` : '/sessions'}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-white transition-colors"
       >
         <ArrowLeft size={14} />
-        Sessions
+        {isGroupSession && groupName ? groupName : 'Sessions'}
       </Link>
 
       {/* Header */}
@@ -67,8 +108,14 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                 Shared
               </Badge>
             )}
+            {isGroupSession && (
+              <Badge variant="outline" className="border-indigo-500/40 text-indigo-400">
+                <Users2 size={11} className="mr-1" />
+                {groupName ?? 'Group session'}
+              </Badge>
+            )}
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1.5">
               <BookOpen size={13} />
               {drillIds.length} drill{drillIds.length !== 1 ? 's' : ''}
@@ -79,29 +126,44 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
                 {durationLabel}
               </span>
             )}
+            {scheduledLabel && (
+              <span className="flex items-center gap-1.5 text-amber-400">
+                <CalendarDays size={13} />
+                {scheduledLabel}
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Button size="sm" variant="outline" nativeButton={false} render={<a href={`/api/sessions/${id}/pdf`} />}>
-            <FileDown size={13} className="mr-1.5" />
-            Export PDF
-          </Button>
-          {isOwner && (
-            <>
-              <ShareSessionButton
-                sessionId={id}
-                existingToken={(sessionPlan as SessionPlan & { share_token?: string | null }).share_token ?? null}
-              />
-              <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`/sessions/${id}/edit`} />}>
-                <Pencil size={13} className="mr-1.5" />
-                Edit
-              </Button>
-              <DeleteSessionButton sessionId={id} />
-            </>
-          )}
-        </div>
+        {/* Actions — only for owner of personal sessions */}
+        {isOwner && !isGroupSession && (
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button size="sm" variant="outline" nativeButton={false} render={<a href={`/api/sessions/${id}/pdf`} />}>
+              <FileDown size={13} className="mr-1.5" />
+              Export PDF
+            </Button>
+            <ShareSessionButton sessionId={id} existingToken={sessionPlan.share_token ?? null} />
+            <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`/sessions/${id}/edit`} />}>
+              <Pencil size={13} className="mr-1.5" />
+              Edit
+            </Button>
+            <DeleteSessionButton sessionId={id} />
+          </div>
+        )}
       </div>
+
+      {/* Lock banner for group sessions */}
+      {isGroupSession && isGroupMember && (
+        <LockBanner
+          sessionId={id}
+          groupId={sessionPlan.group_id!}
+          currentUserId={user.id}
+          initialLockedBy={sessionPlan.locked_by}
+          initialLockedAt={sessionPlan.locked_at}
+          lockerName={lockerName}
+          editHref={`/sessions/${id}/edit`}
+        />
+      )}
 
       <Separator className="bg-zinc-800" />
 

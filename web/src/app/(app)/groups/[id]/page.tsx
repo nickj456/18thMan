@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Users2, UserPlus, Clock, XCircle } from 'lucide-react'
+import { ArrowLeft, Users2, UserPlus, Clock, XCircle, CalendarDays, Plus } from 'lucide-react'
 import { InviteGroupMemberForm } from './InviteGroupMemberForm'
 import { RemoveGroupMemberButton } from './RemoveGroupMemberButton'
 
@@ -42,6 +42,13 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     .select('id, user_id, profiles!group_invitations_user_id_fkey(id, username, display_name)')
     .eq('group_id', id)
     .eq('status', 'pending')
+
+  // Group sessions
+  const { data: sessions } = await supabase
+    .from('session_plans')
+    .select('id, title, total_duration, scheduled_at, created_at, drills_order')
+    .eq('group_id', id)
+    .order('scheduled_at', { ascending: true, nullsFirst: false })
 
   const isMember = memberInvites?.some(m => m.user_id === user.id) ?? false
   const canManage = profile.role !== 'viewer' && (
@@ -160,6 +167,65 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
                         />
                       )}
                     </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      {/* Sessions */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+            <CalendarDays size={12} className="text-indigo-400" /> Sessions ({sessions?.length ?? 0})
+          </h2>
+          {isMember && profile.role !== 'viewer' && (
+            <Link
+              href={`/sessions/new?group=${group.id}`}
+              className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              <Plus size={12} /> New session
+            </Link>
+          )}
+        </div>
+        {!sessions?.length ? (
+          <div className="flex flex-col items-center gap-2 py-10 rounded-xl border border-zinc-800 text-center">
+            <CalendarDays size={24} className="text-zinc-700" />
+            <p className="text-sm text-zinc-600">No sessions yet.</p>
+            {isMember && profile.role !== 'viewer' && (
+              <Link href={`/sessions/new?group=${group.id}`} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                Create the first session →
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-zinc-800 overflow-hidden">
+            <ul className="divide-y divide-zinc-800 bg-zinc-900">
+              {sessions.map(s => {
+                const drillCount = Array.isArray(s.drills_order) ? s.drills_order.length : 0
+                const hours = s.total_duration ? Math.floor(s.total_duration / 60) : 0
+                const mins = s.total_duration ? s.total_duration % 60 : 0
+                const dur = s.total_duration ? (hours > 0 ? `${hours}h ${mins}min` : `${mins}min`) : null
+                const scheduled = s.scheduled_at
+                  ? new Date(s.scheduled_at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                  : null
+                return (
+                  <li key={s.id}>
+                    <Link href={`/sessions/${s.id}`} className="flex items-center justify-between px-5 py-3.5 hover:bg-zinc-800/40 transition-colors">
+                      <div>
+                        <p className="text-sm text-zinc-200 font-medium">{s.title}</p>
+                        <p className="text-xs text-zinc-600 mt-0.5">
+                          {drillCount} drill{drillCount !== 1 ? 's' : ''}{dur ? ` · ${dur}` : ''}
+                        </p>
+                      </div>
+                      {scheduled && (
+                        <span className="text-xs text-amber-400 flex items-center gap-1 shrink-0">
+                          <CalendarDays size={11} /> {scheduled}
+                        </span>
+                      )}
+                    </Link>
                   </li>
                 )
               })}

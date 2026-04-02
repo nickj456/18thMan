@@ -6,7 +6,10 @@ import { generateText, Output } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { createNotification } from '@/lib/notifications'
 import type { SessionDrillItem, AiGuide } from '@/lib/supabase/types'
+
+const LOCK_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes
 
 const groq = createGroq()
 
@@ -23,7 +26,9 @@ export type SessionSummary = z.infer<typeof SessionSummarySchema>
 export async function createSession(
   title: string,
   drillsOrder: SessionDrillItem[],
-  isShared: boolean
+  isShared: boolean,
+  groupId?: string,
+  scheduledAt?: string,
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -39,13 +44,48 @@ export async function createSession(
       drills_order: drillsOrder,
       total_duration: totalDuration || null,
       is_shared: isShared,
+      group_id: groupId ?? null,
+      scheduled_at: scheduledAt ?? null,
     })
     .select('id')
     .single()
 
   if (error) return { error: error.message }
 
+  // Notify group members when a session is scheduled
+  if (groupId && scheduledAt) {
+    const { data: me } = await supabase
+      .from('profiles')
+      .select('display_name, username')
+      .eq('id', user.id)
+      .single()
+
+    const { data: members } = await supabase
+      .from('group_invitations')
+      .select('user_id')
+      .eq('group_id', groupId)
+      .eq('status', 'accepted')
+      .neq('user_id', user.id)
+
+    await Promise.all(
+      (members ?? []).map(m =>
+        createNotification(supabase, {
+          userId: m.user_id,
+          type: 'session_scheduled',
+          data: {
+            session_id: data.id,
+            session_title: title,
+            group_id: groupId,
+            scheduled_at: scheduledAt,
+            scheduled_by_display_name: me?.display_name ?? me?.username ?? 'Coach',
+          },
+        })
+      )
+    )
+  }
+
   revalidatePath('/sessions')
+  if (groupId) revalidatePath(`/groups/${groupId}`)
   redirect(`/sessions/${data.id}`)
 }
 
@@ -149,4 +189,55 @@ export async function deleteSession(id: string) {
 
   revalidatePath('/sessions')
   redirect('/sessions')
+}
+
+export async function acquireLock(sessionId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: session } = await supabase
+    .from('session_plans')
+    .select('locked_by, locked_at, group_id, profiles!session_plans_locked_by_fkey(display_name, username)')
+    .eq('id', sessionId)
+    .single()
+
+  if (!session) return { error: 'Session not found' }
+  if (!session.group_id) return { error: 'Not a group session' }
+
+  // Check if lock is held and not expired
+  if (session.locked_by && session.locked_by !== user.id) {
+    const lockedAt = session.locked_at ? new Date(session.locked_at).getTime() : 0
+    if (Date.now() - lockedAt < LOCK_TIMEOUT_MS) {
+      const p = Array.isArray(session.profiles) ? session.profiles[0] : session.profiles
+      const holder = (p as { display_name: string | null; username: string } | null)
+      const name = holder?.display_name ?? holder?.username ?? 'Someone'
+      return { error: `${name} is currently editing this session` }
+    }
+  }
+
+  const { error } = await supabase
+    .from('session_plans')
+    .update({ locked_by: user.id, locked_at: new Date().toISOString() })
+    .eq('id', sessionId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/sessions/${sessionId}`)
+  return { success: true }
+}
+
+export async function releaseLock(sessionId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  await supabase
+    .from('session_plans')
+    .update({ locked_by: null, locked_at: null })
+    .eq('id', sessionId)
+    .eq('locked_by', user.id)
+
+  revalidatePath(`/sessions/${sessionId}`)
+  return { success: true }
 }

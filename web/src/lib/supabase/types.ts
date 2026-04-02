@@ -152,6 +152,10 @@ export interface SessionPlan {
   drills_order: SessionDrillItem[]
   total_duration: number | null
   is_shared: boolean
+  group_id: string | null
+  scheduled_at: string | null
+  locked_by: string | null
+  locked_at: string | null
   created_at: string
   updated_at: string
 }

@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { GripVertical, X, ChevronDown, ChevronUp, Clock, Plus, Search, Globe, Lock } from 'lucide-react'
+import { GripVertical, X, ChevronDown, ChevronUp, Clock, Plus, Search, Globe, Lock, Users2, Calendar } from 'lucide-react'
 import { createSession, updateSession } from '@/app/(app)/sessions/actions'
 import type { Drill, DrillCategory, SessionPlan, SessionDrillItem } from '@/lib/supabase/types'
 
@@ -26,17 +26,30 @@ interface SessionItem extends SessionDrillItem {
   _key: string
 }
 
+interface GroupOption {
+  id: string
+  name: string
+}
+
 interface SessionBuilderProps {
   allDrills: Drill[]
   categories: DrillCategory[]
   initialSession?: SessionPlan & { resolvedDrills: Drill[] }
+  groups?: GroupOption[]
+  initialGroupId?: string
 }
 
-export function SessionBuilder({ allDrills, categories, initialSession }: SessionBuilderProps) {
+export function SessionBuilder({ allDrills, categories, initialSession, groups, initialGroupId }: SessionBuilderProps) {
   const isEdit = !!initialSession
 
   const [title, setTitle] = useState(initialSession?.title ?? '')
   const [isShared, setIsShared] = useState(initialSession?.is_shared ?? false)
+  const [selectedGroupId, setSelectedGroupId] = useState(initialSession?.group_id ?? initialGroupId ?? '')
+  const [scheduledAt, setScheduledAt] = useState(
+    initialSession?.scheduled_at
+      ? new Date(initialSession.scheduled_at).toISOString().slice(0, 16)
+      : ''
+  )
   const [items, setItems] = useState<SessionItem[]>(() => {
     if (!initialSession) return []
     return (initialSession.drills_order as SessionDrillItem[]).flatMap((item, i) => {
@@ -113,7 +126,13 @@ export function SessionBuilder({ allDrills, categories, initialSession }: Sessio
       if (isEdit) {
         await updateSession(initialSession.id, title.trim(), drillsOrder, isShared)
       } else {
-        await createSession(title.trim(), drillsOrder, isShared)
+        await createSession(
+          title.trim(),
+          drillsOrder,
+          isShared,
+          selectedGroupId || undefined,
+          scheduledAt || undefined,
+        )
       }
     })
   }
@@ -124,6 +143,40 @@ export function SessionBuilder({ allDrills, categories, initialSession }: Sessio
 
   return (
     <div className="space-y-6">
+      {/* Group + schedule (new sessions only) */}
+      {!isEdit && groups && groups.length > 0 && (
+        <div className="flex flex-wrap gap-3 p-4 rounded-xl border border-zinc-800 bg-zinc-900/50">
+          <div className="flex-1 min-w-[200px] space-y-1.5">
+            <Label className="flex items-center gap-1.5 text-xs text-zinc-400">
+              <Users2 size={12} /> Group <span className="text-zinc-600">(optional)</span>
+            </Label>
+            <select
+              value={selectedGroupId}
+              onChange={e => setSelectedGroupId(e.target.value)}
+              className="w-full text-sm bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="">Personal session</option>
+              {groups.map(g => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+          {selectedGroupId && (
+            <div className="flex-1 min-w-[200px] space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs text-zinc-400">
+                <Calendar size={12} /> Schedule <span className="text-zinc-600">(optional)</span>
+              </Label>
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={e => setScheduledAt(e.target.value)}
+                className="w-full text-sm bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Title + share */}
       <div className="flex items-end gap-4">
         <div className="flex-1 space-y-1.5">
