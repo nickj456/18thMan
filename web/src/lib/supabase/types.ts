@@ -7,6 +7,7 @@ export type UserRole = 'admin' | 'coach' | 'viewer'
 export type ConversationType = 'ai' | 'dm' | 'community'
 export type DrillDifficulty = 'beginner' | 'intermediate' | 'advanced'
 export type ClubInviteStatus = 'pending' | 'accepted' | 'declined'
+export type GroupInviteStatus = 'pending' | 'accepted' | 'declined'
 
 export interface Profile {
   id: string
@@ -48,6 +49,33 @@ export interface ClubWithMeta extends Club {
 
 export interface ClubInvitationWithRelations extends ClubInvitation {
   club: Pick<Club, 'id' | 'name'>
+  inviter: Pick<Profile, 'id' | 'display_name' | 'username'>
+}
+
+export interface CoachingGroup {
+  id: string
+  name: string
+  club_id: string
+  created_by: string
+  created_at: string
+}
+
+export interface GroupInvitation {
+  id: string
+  group_id: string
+  user_id: string
+  invited_by: string
+  status: GroupInviteStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface CoachingGroupWithMeta extends CoachingGroup {
+  member_count: number
+}
+
+export interface GroupInvitationWithRelations extends GroupInvitation {
+  group: Pick<CoachingGroup, 'id' | 'name'>
   inviter: Pick<Profile, 'id' | 'display_name' | 'username'>
 }
 

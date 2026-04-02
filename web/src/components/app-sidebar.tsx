@@ -19,6 +19,7 @@ import {
   Sun,
   Moon,
   Building2,
+  Users2,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -44,6 +45,7 @@ const navItems = [
   { href: '/sessions', label: 'Session Planner', icon: CalendarDays },
   { href: '/chat', label: 'Coach Chat', icon: MessageSquare },
   { href: '/clubs', label: 'My Club', icon: Building2 },
+  { href: '/groups', label: 'My Groups', icon: Users2 },
 ]
 
 const profileItems = [

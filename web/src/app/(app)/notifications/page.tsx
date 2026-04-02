@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Bell, Star, Building2 } from 'lucide-react'
+import { Bell, Star, Building2, Users2 } from 'lucide-react'
 import { markAllNotificationsRead } from './actions'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -16,6 +16,12 @@ interface DrillRatingData {
 interface ClubInviteData {
   club_id: string
   club_name: string
+  invited_by_display_name: string
+}
+
+interface GroupInviteData {
+  group_id: string
+  group_name: string
   invited_by_display_name: string
 }
 
@@ -87,6 +93,28 @@ export default async function NotificationsPage() {
                       <span className="font-semibold">{data.invited_by_display_name}</span>
                       {' invited you to join '}
                       <span className="font-semibold text-white">{data.club_name}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                  {unreadDot}
+                </Link>
+              )
+            }
+
+            if (n.type === 'group_invite') {
+              const data = n.data as GroupInviteData
+              return (
+                <Link key={n.id} href="/groups" className={itemClass}>
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center mt-0.5">
+                    <Users2 className="size-4 text-indigo-400" />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-sm leading-snug">
+                      <span className="font-semibold">{data.invited_by_display_name}</span>
+                      {' invited you to join the group '}
+                      <span className="font-semibold text-white">{data.group_name}</span>
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
