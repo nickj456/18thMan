@@ -30,7 +30,7 @@ export default async function AdminUsersPage({
 
   let query = supabase
     .from('profiles')
-    .select('id, username, display_name, avatar_url, club, club_id, role, created_at, clubs(name)')
+    .select('id, username, display_name, avatar_url, club, club_id, role, created_at')
     .order('created_at', { ascending: false })
 
   if (roleFilter && ['admin', 'coach', 'viewer'].includes(roleFilter)) {
@@ -41,6 +41,13 @@ export default async function AdminUsersPage({
   }
 
   const { data: profiles } = await query
+
+  // Fetch club names separately to avoid PostgREST schema cache issues with new FK
+  const clubIds = [...new Set((profiles ?? []).map(p => p.club_id).filter(Boolean))] as string[]
+  const { data: clubsData } = clubIds.length > 0
+    ? await supabase.from('clubs').select('id, name').in('id', clubIds)
+    : { data: [] }
+  const clubMap = Object.fromEntries((clubsData ?? []).map(c => [c.id, c.name]))
 
   const counts = {
     all: profiles?.length ?? 0,
@@ -127,7 +134,7 @@ export default async function AdminUsersPage({
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-zinc-500 text-xs">
-                      {(profile as unknown as { clubs?: { name: string } | null }).clubs?.name ?? profile.club ?? '—'}
+                      {(profile.club_id ? clubMap[profile.club_id] : null) ?? profile.club ?? '—'}
                     </td>
                     <td className="px-5 py-3.5 text-zinc-500 text-xs">
                       {new Date(profile.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
