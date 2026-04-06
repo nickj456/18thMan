@@ -332,10 +332,10 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
       <div className="space-y-1.5">
         <Label className="text-xs">Visibility</Label>
         <Select value={visibility} onValueChange={(v) => setVisibility(v as DrillVisibility)}>
-          <SelectTrigger className="h-8 text-sm">
+          <SelectTrigger className="h-8 text-sm w-full">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="min-w-[var(--radix-select-trigger-width)]">
             <SelectItem value="public">🌐 Public</SelectItem>
             {userClubId && (
               <SelectItem value="club">🔒 {userClubName ?? 'My Club'} only</SelectItem>
