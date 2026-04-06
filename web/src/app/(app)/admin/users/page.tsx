@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ArrowLeft, Users } from 'lucide-react'
 import { UserRoleSelect } from './UserRoleSelect'
+import { DeleteUserButton } from './DeleteUserButton'
 import type { UserRole } from '@/lib/supabase/types'
 
 export const metadata = { title: 'User Management — Admin' }
@@ -107,6 +108,7 @@ export default async function AdminUsersPage({
                 <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Club</th>
                 <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Joined</th>
                 <th className="text-right text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Role</th>
+                <th className="px-5 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800 bg-zinc-900">
@@ -145,6 +147,14 @@ export default async function AdminUsersPage({
                         currentRole={profile.role as UserRole}
                         isSelf={profile.id === user.id}
                       />
+                    </td>
+                    <td className="px-3 py-3.5">
+                      {profile.id !== user.id && (
+                        <DeleteUserButton
+                          userId={profile.id}
+                          displayName={profile.display_name ?? profile.username ?? 'User'}
+                        />
+                      )}
                     </td>
                   </tr>
                 ))
