@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const FROM = 'The 18th Man <hello@18thman.app>'
+const FROM = 'The 18th Man <onboarding@resend.dev>'
 
 function getResend(): Resend | null {
   if (!process.env.RESEND_API_KEY) return null
