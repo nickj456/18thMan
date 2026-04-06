@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { SessionPlanPDF } from '@/components/session/SessionPlanPDF'
 import type { SessionPlan, SessionDrillItem, AiGuide } from '@/lib/supabase/types'
 import type { SessionSummary } from '@/app/(app)/sessions/actions'
+import { getEffectiveTier } from '@/lib/subscription'
 
 export async function GET(
   _request: Request,
@@ -15,6 +16,10 @@ export async function GET(
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return new Response('Unauthorized', { status: 401 })
+
+    // Feature gate: PDF export requires a club subscription or active trial
+    const tier = await getEffectiveTier(supabase, user.id)
+    if (tier === 'free') return new Response('PDF export requires a club subscription.', { status: 403 })
 
     const { data: session } = await supabase
       .from('session_plans')

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
+import { getEffectiveTier } from '@/lib/subscription'
 
 export async function createGroup(formData: FormData) {
   const supabase = await createClient()
@@ -18,6 +19,10 @@ export async function createGroup(formData: FormData) {
 
   if (!me?.club_id) return { error: 'You must be a member of a club to create a group' }
   if (me.role === 'viewer') return { error: 'Viewers cannot create groups' }
+
+  // Feature gate: coaching groups require a club subscription or active trial
+  const tier = await getEffectiveTier(supabase, user.id)
+  if (tier === 'free') return { error: 'Coaching groups require a club subscription. Upgrade to unlock this feature.' }
 
   const name = (formData.get('name') as string)?.trim()
   if (!name) return { error: 'Group name is required' }

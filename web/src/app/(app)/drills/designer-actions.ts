@@ -8,6 +8,8 @@ import type { DrillDifficulty, DrillVisibility } from '@/lib/supabase/types'
 import type { CanvasState } from '@/components/designer/types'
 import { generateDrillGuideFromYoutube } from './youtube-actions'
 import { extractYouTubeId, youtubeThumbnail, fetchChannelInfo } from '@/lib/youtube'
+import { canCreateDrill, activateTrial, FREE_DRILL_LIMIT } from '@/lib/subscription'
+import { sendTrialStartEmail, sendDrillLimitEmail } from '@/lib/email'
 
 interface SaveDrillDesignInput {
   title: string
@@ -65,6 +67,24 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
   ])
   if (!user || !session) return { error: 'Not authenticated' }
 
+  // Feature gate: free tier limited to 20 drills
+  const { allowed, count, tier } = await canCreateDrill(supabase, user.id)
+  if (!allowed) {
+    // Send a one-time nudge email when they first hit the limit
+    if (count === FREE_DRILL_LIMIT) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', user.id)
+        .single()
+      const email = user.email
+      if (email) {
+        after(async () => { await sendDrillLimitEmail(email, profile?.display_name ?? '') })
+      }
+    }
+    return { error: `You've reached the free limit of ${FREE_DRILL_LIMIT} drills. Upgrade your club to create unlimited drills.` }
+  }
+
   const canvasPreviewUrl = input.previewDataUrl
     ? await uploadCanvasPreview(supabase, user.id, input.previewDataUrl)
     : null
@@ -107,6 +127,22 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
 
   const drillId = data.id
   revalidateTag('drills', 'max')
+
+  // Trial trigger: activate 48-hour trial after the user creates their 3rd drill
+  if (count + 1 === 3 && tier === 'free') {
+    const accessToken = session.access_token
+    const userEmail = user.email
+    after(async () => {
+      const bg = createBackgroundClient(accessToken)
+      const activated = await activateTrial(bg, user.id)
+      if (activated && userEmail) {
+        const { data: profile } = await bg.from('profiles').select('display_name').eq('id', user.id).single()
+        const trialEnd = new Date()
+        trialEnd.setHours(trialEnd.getHours() + 48)
+        await sendTrialStartEmail(userEmail, profile?.display_name ?? '', trialEnd)
+      }
+    })
+  }
 
   // Fetch channel info + generate AI guide in the background after response is sent
   if (youtubeUrl) {
