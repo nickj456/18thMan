@@ -9,6 +9,8 @@ export type DrillDifficulty = 'beginner' | 'intermediate' | 'advanced'
 export type DrillVisibility = 'public' | 'club' | 'private'
 export type ClubInviteStatus = 'pending' | 'accepted' | 'declined'
 export type GroupInviteStatus = 'pending' | 'accepted' | 'declined'
+export type SubscriptionTier = 'free' | 'club'
+export type EffectiveTier = 'free' | 'trial' | 'club'
 
 export interface Profile {
   id: string
@@ -20,6 +22,8 @@ export interface Profile {
   club_id: string | null    // FK to clubs.id
   coaching_level: string | null
   role: UserRole
+  trial_ends_at: string | null
+  trial_used: boolean
   created_at: string
   updated_at: string
 }
@@ -28,6 +32,20 @@ export interface Club {
   id: string
   name: string
   slug: string
+  created_by: string
+  subscription_tier: SubscriptionTier
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  created_at: string
+}
+
+export interface FeatureOverride {
+  id: string
+  target_type: 'user' | 'club'
+  target_id: string
+  feature: string
+  enabled: boolean
+  expires_at: string | null
   created_by: string
   created_at: string
 }
