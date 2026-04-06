@@ -6,6 +6,7 @@
 export type UserRole = 'admin' | 'coach' | 'viewer'
 export type ConversationType = 'ai' | 'dm' | 'community'
 export type DrillDifficulty = 'beginner' | 'intermediate' | 'advanced'
+export type DrillVisibility = 'public' | 'club' | 'private'
 export type ClubInviteStatus = 'pending' | 'accepted' | 'declined'
 export type GroupInviteStatus = 'pending' | 'accepted' | 'declined'
 
@@ -133,6 +134,7 @@ export interface Drill {
   age_group: string | null
   player_count: string | null
   is_public: boolean
+  club_id: string | null
   youtube_url: string | null
   tiktok_url: string | null
   facebook_url: string | null

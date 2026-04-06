@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { DrillCategory } from '@/lib/supabase/types'
+import type { DrillCategory, DrillVisibility } from '@/lib/supabase/types'
 import { saveDrillDesign, updateDrillDesign } from '@/app/(app)/drills/designer-actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -49,14 +49,18 @@ interface InitialDrill {
   facebook_url: string | null
   preview_image_url: string | null
   canvas_preview_url: string | null
+  is_public: boolean
+  club_id: string | null
 }
 
 interface DrillDesignerProps {
   categories: DrillCategory[]
   initialDrill?: InitialDrill
+  userClubId?: string | null
+  userClubName?: string | null
 }
 
-export function DrillDesigner({ categories, initialDrill }: DrillDesignerProps) {
+export function DrillDesigner({ categories, initialDrill, userClubId, userClubName }: DrillDesignerProps) {
   const router = useRouter()
   const stageRef = useRef<Konva.Stage | null>(null)
   const isEditing = !!initialDrill
@@ -87,6 +91,11 @@ export function DrillDesigner({ categories, initialDrill }: DrillDesignerProps) 
   const [youtubeUrl, setYoutubeUrl] = useState(initialDrill?.youtube_url ?? '')
   const [tiktokUrl, setTiktokUrl] = useState(initialDrill?.tiktok_url ?? '')
   const [facebookUrl, setFacebookUrl] = useState(initialDrill?.facebook_url ?? '')
+
+  const initialVisibility: DrillVisibility = initialDrill
+    ? (initialDrill.club_id ? 'club' : initialDrill.is_public ? 'public' : 'private')
+    : 'public'
+  const [visibility, setVisibility] = useState<DrillVisibility>(initialVisibility)
 
   const [isPending, startTransition] = useTransition()
 
@@ -236,9 +245,11 @@ export function DrillDesigner({ categories, initialDrill }: DrillDesignerProps) 
         youtubeUrl: youtubeUrl.trim() || null,
         tiktokUrl: tiktokUrl.trim() || null,
         facebookUrl: facebookUrl.trim() || null,
+        visibility,
+        clubId: userClubId ?? null,
       }
       const result = isEditing
-        ? await updateDrillDesign({ ...base, drillId: initialDrill.id, existingPreviewUrl: initialDrill.preview_image_url, existingCanvasPreviewUrl: initialDrill.canvas_preview_url, existingYoutubeUrl: initialDrill.youtube_url, existingTiktokUrl: initialDrill.tiktok_url, existingFacebookUrl: initialDrill.facebook_url })
+        ? await updateDrillDesign({ ...base, drillId: initialDrill.id, existingPreviewUrl: initialDrill.preview_image_url, existingCanvasPreviewUrl: initialDrill.canvas_preview_url, existingYoutubeUrl: initialDrill.youtube_url, existingTiktokUrl: initialDrill.tiktok_url, existingFacebookUrl: initialDrill.facebook_url, existingClubId: initialDrill.club_id })
         : await saveDrillDesign(base)
       if (result.error) { toast.error(result.error) }
       else { toast.success(isEditing ? 'Drill updated!' : 'Drill saved!'); router.push(`/drills/${result.drillId}`) }
@@ -316,6 +327,25 @@ export function DrillDesigner({ categories, initialDrill }: DrillDesignerProps) 
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-xs">Visibility</Label>
+        <Select value={visibility} onValueChange={(v) => setVisibility(v as DrillVisibility)}>
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="public">🌐 Public</SelectItem>
+            {userClubId && (
+              <SelectItem value="club">🔒 {userClubName ?? 'My Club'} only</SelectItem>
+            )}
+            <SelectItem value="private">👁 Only me</SelectItem>
+          </SelectContent>
+        </Select>
+        {visibility === 'club' && (
+          <p className="text-[11px] text-zinc-500">Only members of your club can see this drill</p>
+        )}
       </div>
 
       <div className="space-y-3 pt-1 border-t border-zinc-800">

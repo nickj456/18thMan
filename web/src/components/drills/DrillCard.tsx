@@ -16,9 +16,10 @@ const difficultyColour: Record<string, string> = {
 interface DrillCardProps {
   drill: DrillWithRelations
   avgRating?: number
+  showClubBadge?: boolean
 }
 
-export function DrillCard({ drill, avgRating }: DrillCardProps) {
+export function DrillCard({ drill, avgRating, showClubBadge }: DrillCardProps) {
   const videoId = drill.youtube_url ? extractYouTubeId(drill.youtube_url) : null
 
   return (
@@ -67,6 +68,11 @@ export function DrillCard({ drill, avgRating }: DrillCardProps) {
             {videoId && (
               <Badge className="text-xs border bg-red-500/10 text-red-400 border-red-500/20">
                 ▶ Video
+              </Badge>
+            )}
+            {(showClubBadge || drill.club_id) && (
+              <Badge className="text-xs border bg-zinc-500/10 text-zinc-400 border-zinc-500/20">
+                🔒 Club
               </Badge>
             )}
           </div>

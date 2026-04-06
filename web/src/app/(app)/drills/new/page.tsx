@@ -10,10 +10,17 @@ export default async function NewDrillPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: categories } = await supabase
-    .from('drill_categories')
-    .select('*')
-    .order('sort_order')
+  const [categoriesResult, profileResult] = await Promise.all([
+    supabase.from('drill_categories').select('*').order('sort_order'),
+    supabase.from('profiles').select('club_id').eq('id', user.id).single(),
+  ])
+
+  const clubId = profileResult.data?.club_id ?? null
+  let clubName: string | null = null
+  if (clubId) {
+    const { data: club } = await supabase.from('clubs').select('name').eq('id', clubId).single()
+    clubName = club?.name ?? null
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -24,7 +31,11 @@ export default async function NewDrillPage() {
         <span className="text-zinc-700">/</span>
         <h1 className="text-sm font-semibold text-white">New Drill</h1>
       </header>
-      <DrillDesigner categories={categories ?? []} />
+      <DrillDesigner
+        categories={categoriesResult.data ?? []}
+        userClubId={clubId}
+        userClubName={clubName}
+      />
     </div>
   )
 }

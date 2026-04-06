@@ -4,7 +4,7 @@ import { after } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createRawClient } from '@supabase/supabase-js'
-import type { DrillDifficulty } from '@/lib/supabase/types'
+import type { DrillDifficulty, DrillVisibility } from '@/lib/supabase/types'
 import type { CanvasState } from '@/components/designer/types'
 import { generateDrillGuideFromYoutube } from './youtube-actions'
 import { extractYouTubeId, youtubeThumbnail } from '@/lib/youtube'
@@ -21,6 +21,8 @@ interface SaveDrillDesignInput {
   youtubeUrl: string | null
   tiktokUrl: string | null
   facebookUrl: string | null
+  visibility: DrillVisibility
+  clubId: string | null
 }
 
 interface SaveDrillDesignResult {
@@ -95,7 +97,8 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
       facebook_url: input.facebookUrl,
       ai_guide: null,
       author_id: user.id,
-      is_public: true,
+      is_public: input.visibility === 'public',
+      club_id: input.visibility === 'club' ? input.clubId : null,
     })
     .select('id')
     .single()
@@ -127,6 +130,7 @@ interface UpdateDrillDesignInput extends SaveDrillDesignInput {
   existingYoutubeUrl: string | null
   existingTiktokUrl: string | null
   existingFacebookUrl: string | null
+  existingClubId: string | null
 }
 
 export async function updateDrillDesign(input: UpdateDrillDesignInput): Promise<SaveDrillDesignResult> {
@@ -167,6 +171,8 @@ export async function updateDrillDesign(input: UpdateDrillDesignInput): Promise<
       youtube_url: youtubeUrl,
       tiktok_url: input.tiktokUrl,
       facebook_url: input.facebookUrl,
+      is_public: input.visibility === 'public',
+      club_id: input.visibility === 'club' ? input.clubId : null,
     })
     .eq('id', input.drillId)
     .eq('author_id', user.id)

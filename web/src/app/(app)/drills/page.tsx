@@ -16,18 +16,46 @@ export default async function DrillsPage({
   const filters = await searchParams
   const supabase = await createClient()
 
-  const [categoriesResult, drillsResult] = await Promise.all([
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Fetch user's club if logged in
+  let userClubId: string | null = null
+  let userClubName: string | null = null
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('club_id')
+      .eq('id', user.id)
+      .single()
+    userClubId = profile?.club_id ?? null
+    if (userClubId) {
+      const { data: club } = await supabase.from('clubs').select('name').eq('id', userClubId).single()
+      userClubName = club?.name ?? null
+    }
+  }
+
+  const [categoriesResult, drillsResult, clubDrillsResult] = await Promise.all([
     supabase.from('drill_categories').select('*').order('sort_order'),
     buildDrillQuery(supabase, filters),
+    // Club drills: separate query, only when user is in a club
+    userClubId
+      ? supabase
+          .from('drills')
+          .select(`
+            id, title, description, difficulty, age_group, player_count,
+            preview_image_url, youtube_url, is_public, club_id, created_at,
+            category_id, author_id,
+            category:drill_categories ( id, name, slug ),
+            author:profiles!drills_author_id_fkey ( id, username, display_name, avatar_url )
+          `)
+          .eq('club_id', userClubId)
+          .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
   ])
 
   const categories = categoriesResult.data ?? []
-
-  if (drillsResult.error) {
-    console.error('[DrillsPage] query error:', drillsResult.error)
-  }
-
   const drills = (drillsResult.data ?? []) as DrillWithRelations[]
+  const clubDrills = (clubDrillsResult.data ?? []) as DrillWithRelations[]
 
   return (
     <div className="space-y-6">
@@ -44,6 +72,24 @@ export default async function DrillsPage({
           New drill
         </Button>
       </div>
+
+      {/* Club-private drills section */}
+      {clubDrills.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold">🔒 {userClubName} Drills</span>
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+              {clubDrills.length} private
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {clubDrills.map(drill => (
+              <DrillCard key={drill.id} drill={drill} showClubBadge />
+            ))}
+          </div>
+          <div className="border-t border-border pt-2" />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
         {/* Filters sidebar */}
