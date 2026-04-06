@@ -43,8 +43,9 @@ export default async function DrillsPage({
           .from('drills')
           .select(`
             id, title, description, difficulty, age_group, player_count,
-            preview_image_url, youtube_url, is_public, club_id, created_at,
-            category_id, author_id,
+            preview_image_url, canvas_preview_url, youtube_url, tiktok_url,
+            facebook_url, is_public, club_id, created_at, canvas_json,
+            category_id, author_id, ai_guide, updated_at,
             category:drill_categories ( id, name, slug ),
             author:profiles!drills_author_id_fkey ( id, username, display_name, avatar_url )
           `)
@@ -55,7 +56,7 @@ export default async function DrillsPage({
 
   const categories = categoriesResult.data ?? []
   const drills = (drillsResult.data ?? []) as DrillWithRelations[]
-  const clubDrills = (clubDrillsResult.data ?? []) as DrillWithRelations[]
+  const clubDrills = (clubDrillsResult.data ?? []) as unknown as DrillWithRelations[]
 
   return (
     <div className="space-y-6">
