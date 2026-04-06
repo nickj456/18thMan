@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, Users2 } from 'lucide-react'
 import { createGroup } from '../actions'
+import { getEffectiveTier } from '@/lib/subscription'
+import { UpgradePrompt } from '@/components/ui/UpgradePrompt'
 
 export const metadata = { title: 'New Group — 18th Man' }
 
@@ -19,6 +21,10 @@ export default async function NewGroupPage() {
 
   if (!profile?.club_id) redirect('/clubs')
   if (profile.role === 'viewer') redirect('/groups')
+
+  // Feature gate: coaching groups require club/trial tier
+  const tier = await getEffectiveTier(supabase, user.id)
+  const isGated = tier === 'free'
 
   // Check group count
   const { count } = await supabase
@@ -44,7 +50,12 @@ export default async function NewGroupPage() {
         </div>
       </div>
 
-      {atLimit ? (
+      {isGated ? (
+        <UpgradePrompt
+          feature="Coaching groups"
+          description="Coaching groups are available on the club subscription. Upgrade to collaborate with your coaching staff on shared session plans."
+        />
+      ) : atLimit ? (
         <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-sm text-amber-300">
           Your club has reached the maximum of 5 groups. Delete an existing group to create a new one.
         </div>
@@ -72,5 +83,6 @@ export default async function NewGroupPage() {
         </form>
       )}
     </div>
+
   )
 }

@@ -16,6 +16,7 @@ import { saveDrillDesign, updateDrillDesign } from '@/app/(app)/drills/designer-
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Loader2, Save, Monitor, Timer, Video } from 'lucide-react'
+import { UpgradePrompt, useUpgradePrompt } from '@/components/ui/UpgradePrompt'
 
 const AGE_GROUPS = [
   'Mini (U6–U8)',
@@ -64,6 +65,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   const router = useRouter()
   const stageRef = useRef<Konva.Stage | null>(null)
   const isEditing = !!initialDrill
+  const { show: showUpgrade, checkError, dismiss: dismissUpgrade } = useUpgradePrompt()
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -251,8 +253,12 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
       const result = isEditing
         ? await updateDrillDesign({ ...base, drillId: initialDrill.id, existingPreviewUrl: initialDrill.preview_image_url, existingCanvasPreviewUrl: initialDrill.canvas_preview_url, existingYoutubeUrl: initialDrill.youtube_url, existingTiktokUrl: initialDrill.tiktok_url, existingFacebookUrl: initialDrill.facebook_url, existingClubId: initialDrill.club_id })
         : await saveDrillDesign(base)
-      if (result.error) { toast.error(result.error) }
-      else { toast.success(isEditing ? 'Drill updated!' : 'Drill saved!'); router.push(`/drills/${result.drillId}`) }
+      if (result.error) {
+        if (!checkError(result.error)) toast.error(result.error)
+      } else {
+        toast.success(isEditing ? 'Drill updated!' : 'Drill saved!')
+        router.push(`/drills/${result.drillId}`)
+      }
     })
   }
 
@@ -435,6 +441,15 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
 
   // ── Desktop layout ───────────────────────────────────────────
   return (
+    <>
+    {showUpgrade && (
+      <UpgradePrompt
+        modal
+        feature="Unlimited drills"
+        description="You've created 20 drills — the free limit. Upgrade your club subscription to create unlimited drills."
+        onDismiss={dismissUpgrade}
+      />
+    )}
     <div className="flex h-full overflow-hidden">
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Canvas area */}
@@ -519,5 +534,6 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         />
       )}
     </div>
+    </>
   )
 }

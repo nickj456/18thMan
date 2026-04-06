@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown, Users2, CalendarDays } from 'lucide-react'
+import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown, Users2, CalendarDays, Lock } from 'lucide-react'
 import { DeleteSessionButton } from '@/components/session/DeleteSessionButton'
 import { SessionSummaryCard } from '@/components/session/SessionSummaryCard'
 import { DrillVideoThumbnail } from '@/components/session/DrillVideoThumbnail'
@@ -12,12 +12,16 @@ import { ShareSessionButton } from '@/components/session/ShareSessionButton'
 import { LockBanner } from './LockBanner'
 import type { SessionPlan, SessionDrillItem, Drill } from '@/lib/supabase/types'
 import type { SessionSummary } from '../actions'
+import { getEffectiveTier } from '@/lib/subscription'
 
 export default async function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const tier = await getEffectiveTier(supabase, user.id)
+  const canExportPdf = tier !== 'free'
 
   const { data: session } = await supabase
     .from('session_plans')
@@ -138,10 +142,17 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
         {/* Actions — only for owner of personal sessions */}
         {isOwner && !isGroupSession && (
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Button size="sm" variant="outline" nativeButton={false} render={<a href={`/api/sessions/${id}/pdf`} />}>
-              <FileDown size={13} className="mr-1.5" />
-              Export PDF
-            </Button>
+            {canExportPdf ? (
+              <Button size="sm" variant="outline" nativeButton={false} render={<a href={`/api/sessions/${id}/pdf`} />}>
+                <FileDown size={13} className="mr-1.5" />
+                Export PDF
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" nativeButton={false} render={<Link href="/pricing" />} className="opacity-60">
+                <Lock size={13} className="mr-1.5" />
+                Export PDF
+              </Button>
+            )}
             <ShareSessionButton sessionId={id} existingToken={sessionPlan.share_token ?? null} />
             <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`/sessions/${id}/edit`} />}>
               <Pencil size={13} className="mr-1.5" />
