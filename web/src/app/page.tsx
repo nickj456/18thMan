@@ -336,12 +336,10 @@ export default async function LandingPage() {
             <line x1="310" y1="20" x2="310" y2="70" stroke="white" strokeWidth="2" />
             <line x1="370" y1="20" x2="370" y2="70" stroke="white" strokeWidth="2" />
             <line x1="310" y1="48" x2="370" y2="48" stroke="white" strokeWidth="2" />
-            <line x1="340" y1="48" x2="340" y2="100" stroke="white" strokeWidth="1.5" />
             {/* Goalposts bottom */}
             <line x1="310" y1="980" x2="310" y2="930" stroke="white" strokeWidth="2" />
             <line x1="370" y1="980" x2="370" y2="930" stroke="white" strokeWidth="2" />
             <line x1="310" y1="952" x2="370" y2="952" stroke="white" strokeWidth="2" />
-            <line x1="340" y1="952" x2="340" y2="900" stroke="white" strokeWidth="1.5" />
           </svg>
 
           {/* Ember glow top-right */}
