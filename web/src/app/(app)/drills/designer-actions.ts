@@ -7,7 +7,7 @@ import { createClient as createRawClient } from '@supabase/supabase-js'
 import type { DrillDifficulty, DrillVisibility } from '@/lib/supabase/types'
 import type { CanvasState } from '@/components/designer/types'
 import { generateDrillGuideFromYoutube } from './youtube-actions'
-import { extractYouTubeId, youtubeThumbnail } from '@/lib/youtube'
+import { extractYouTubeId, youtubeThumbnail, fetchChannelInfo } from '@/lib/youtube'
 
 interface SaveDrillDesignInput {
   title: string
@@ -108,14 +108,24 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
   const drillId = data.id
   revalidateTag('drills', 'max')
 
-  // Generate AI guide in the background after response is sent
+  // Fetch channel info + generate AI guide in the background after response is sent
   if (youtubeUrl) {
     const accessToken = session.access_token
+    const videoId = extractYouTubeId(youtubeUrl)
     after(async () => {
-      const guideResult = await generateDrillGuideFromYoutube(youtubeUrl)
-      if (guideResult.success) {
-        const bg = createBackgroundClient(accessToken)
-        await bg.from('drills').update({ ai_guide: guideResult.guide }).eq('id', drillId)
+      const bg = createBackgroundClient(accessToken)
+      const [guideResult, channelInfo] = await Promise.all([
+        generateDrillGuideFromYoutube(youtubeUrl),
+        videoId ? fetchChannelInfo(videoId) : Promise.resolve(null),
+      ])
+      const update: Record<string, unknown> = {}
+      if (guideResult.success) update.ai_guide = guideResult.guide
+      if (channelInfo) {
+        update.youtube_channel_title = channelInfo.channelTitle
+        update.youtube_channel_id = channelInfo.channelId
+      }
+      if (Object.keys(update).length > 0) {
+        await bg.from('drills').update(update).eq('id', drillId)
       }
     })
   }
@@ -181,15 +191,25 @@ export async function updateDrillDesign(input: UpdateDrillDesignInput): Promise<
 
   revalidateTag('drills', 'max')
 
-  // Regenerate AI guide in background if YouTube URL changed
+  // Regenerate AI guide + channel info in background if YouTube URL changed
   if (youtubeUrl && youtubeChanged) {
     const accessToken = session.access_token
     const drillId = input.drillId
+    const videoId = extractYouTubeId(youtubeUrl)
     after(async () => {
-      const guideResult = await generateDrillGuideFromYoutube(youtubeUrl)
-      if (guideResult.success) {
-        const bg = createBackgroundClient(accessToken)
-        await bg.from('drills').update({ ai_guide: guideResult.guide }).eq('id', drillId)
+      const bg = createBackgroundClient(accessToken)
+      const [guideResult, channelInfo] = await Promise.all([
+        generateDrillGuideFromYoutube(youtubeUrl),
+        videoId ? fetchChannelInfo(videoId) : Promise.resolve(null),
+      ])
+      const update: Record<string, unknown> = {}
+      if (guideResult.success) update.ai_guide = guideResult.guide
+      if (channelInfo) {
+        update.youtube_channel_title = channelInfo.channelTitle
+        update.youtube_channel_id = channelInfo.channelId
+      }
+      if (Object.keys(update).length > 0) {
+        await bg.from('drills').update(update).eq('id', drillId)
       }
     })
   }

@@ -34,6 +34,29 @@ export async function fetchVideoTitle(videoId: string): Promise<string | null> {
   }
 }
 
+export interface ChannelInfo {
+  channelTitle: string
+  channelId: string
+}
+
+export async function fetchChannelInfo(videoId: string): Promise<ChannelInfo | null> {
+  const apiKey = process.env.YOUTUBE_DATA_API_KEY
+  if (!apiKey) return null
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet&key=${apiKey}`,
+      { cache: 'force-cache' }
+    )
+    if (!res.ok) return null
+    const data = await res.json() as { items?: { snippet?: { channelTitle?: string; channelId?: string } }[] }
+    const snippet = data.items?.[0]?.snippet
+    if (!snippet?.channelTitle || !snippet?.channelId) return null
+    return { channelTitle: snippet.channelTitle, channelId: snippet.channelId }
+  } catch {
+    return null
+  }
+}
+
 export async function fetchTranscript(videoId: string): Promise<string> {
   const yt = await Innertube.create({ retrieve_player: false })
   const info = await yt.getInfo(videoId)

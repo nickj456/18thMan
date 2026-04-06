@@ -136,6 +136,8 @@ export interface Drill {
   is_public: boolean
   club_id: string | null
   youtube_url: string | null
+  youtube_channel_title: string | null
+  youtube_channel_id: string | null
   tiktok_url: string | null
   facebook_url: string | null
   ai_guide: AiGuide | null

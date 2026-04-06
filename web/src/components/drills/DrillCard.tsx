@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Users, Star } from 'lucide-react'
+import { Users, Star, PlayCircle } from 'lucide-react'
 import { DrillCardPlayButton } from '@/components/drills/DrillCardPlayButton'
 import { extractYouTubeId } from '@/lib/youtube'
 import type { DrillWithRelations } from '@/lib/supabase/types'
@@ -77,6 +77,21 @@ export function DrillCard({ drill, avgRating, showClubBadge }: DrillCardProps) {
             )}
           </div>
         </CardContent>
+
+        {drill.youtube_channel_title && (
+          <div className="px-4 pb-2 pt-0">
+            <a
+              href={`https://www.youtube.com/channel/${drill.youtube_channel_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors w-fit"
+            >
+              <PlayCircle className="size-3 text-red-500 shrink-0" />
+              <span className="truncate max-w-[160px]">{drill.youtube_channel_title}</span>
+            </a>
+          </div>
+        )}
 
         <CardFooter className="px-4 pb-4 pt-0 flex items-center justify-between text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
