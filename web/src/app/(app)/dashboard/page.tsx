@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { PenTool, CalendarDays, MessageSquare, Sparkles, ArrowRight, Clock, Users, BookOpen } from 'lucide-react'
+import { PenTool, CalendarDays, MessageSquare, Sparkles, ArrowRight, Clock, Users, BookOpen, LayoutList, ChevronRight } from 'lucide-react'
 import { OnboardingChecklist } from './OnboardingChecklist'
 
 export const metadata = { title: 'Dashboard — 18th Man' }
@@ -75,6 +75,131 @@ function ActivitySkeleton() {
           ))}
         </div>
       ))}
+    </div>
+  )
+}
+
+// ── Upcoming block sessions ──────────────────────────────────────
+function BlockSessionsSkeleton() {
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden animate-pulse">
+      <div className="px-5 py-4 border-b border-zinc-800 flex items-center gap-2">
+        <div className="h-3.5 w-3.5 bg-zinc-800 rounded" />
+        <div className="h-3 w-32 bg-zinc-800 rounded" />
+      </div>
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="px-5 py-3.5 border-b border-zinc-800 last:border-0 flex items-center gap-3">
+          <div className="w-7 h-7 rounded-full bg-zinc-800 shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 w-1/2 bg-zinc-800 rounded" />
+            <div className="h-2.5 w-1/3 bg-zinc-800 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const categoryColour: Record<string, string> = {
+  'Attack': 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+  'Defence': 'text-red-400 bg-red-500/10 border-red-500/20',
+  'Completions & Game Management': 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+  'Skills in Context': 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
+}
+
+async function UpcomingBlockSessions({ userId }: { userId: string }) {
+  const supabase = await createClient()
+
+  // Get groups the user is a member of
+  const { data: memberships } = await supabase
+    .from('group_invitations')
+    .select('group_id')
+    .eq('user_id', userId)
+    .eq('status', 'accepted')
+
+  if (!memberships?.length) return null
+
+  const groupIds = memberships.map(m => m.group_id)
+
+  // Get active blocks for those groups
+  const { data: blocks } = await supabase
+    .from('coaching_blocks')
+    .select('id, name, group_id, total_sessions, coaching_groups(name)')
+    .in('group_id', groupIds)
+    .eq('status', 'active')
+
+  if (!blocks?.length) return null
+
+  const blockIds = blocks.map(b => b.id)
+  const blockMap = new Map(blocks.map(b => [b.id, b]))
+
+  // Get next upcoming sessions (not completed)
+  const { data: sessions } = await supabase
+    .from('block_sessions')
+    .select('id, block_id, session_number, focus_area, category, status, scheduled_date')
+    .in('block_id', blockIds)
+    .neq('status', 'completed')
+    .order('session_number', { ascending: true })
+    .limit(6)
+
+  if (!sessions?.length) return null
+
+  // Show only the next 1-2 sessions per block to avoid clutter
+  const seenBlocks = new Map<string, number>()
+  const upcoming = sessions.filter(s => {
+    const count = seenBlocks.get(s.block_id) ?? 0
+    if (count >= 2) return false
+    seenBlocks.set(s.block_id, count + 1)
+    return true
+  })
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+        <div className="flex items-center gap-2">
+          <LayoutList size={14} className="text-[#e8560a]" />
+          <h2 className="text-sm font-semibold">Upcoming Block Sessions</h2>
+        </div>
+        <Link href="/groups" className="text-xs text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
+          My groups <ArrowRight size={11} />
+        </Link>
+      </div>
+      <div className="divide-y divide-zinc-800">
+        {upcoming.map(session => {
+          const block = blockMap.get(session.block_id)
+          const groupName = (block?.coaching_groups as any)?.name ?? ''
+          const catClass = categoryColour[session.category] ?? 'text-zinc-400 bg-zinc-800 border-zinc-700'
+          const shortCat = session.category === 'Completions & Game Management' ? 'Completions' : session.category
+          return (
+            <Link
+              key={session.id}
+              href={`/groups/${block?.group_id}/blocks/${session.block_id}/session/${session.session_number}`}
+              className="flex items-center gap-3 px-5 py-3.5 hover:bg-zinc-800/50 transition-colors group"
+            >
+              <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                <span className="text-xs font-mono text-zinc-400">{session.session_number}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-white transition-colors">
+                  {session.focus_area}
+                </p>
+                <p className="text-xs text-zinc-600 mt-0.5">
+                  {groupName} · {block?.name}
+                  {session.scheduled_date && (
+                    <span className="text-amber-400 ml-1.5">
+                      · {new Date(session.scheduled_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </span>
+                  )}
+                </p>
+              </div>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium shrink-0 ${catClass}`}>
+                {shortCat}
+              </span>
+              <ChevronRight size={13} className="text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
+            </Link>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -341,6 +466,11 @@ export default async function DashboardPage() {
 
       {/* Quick actions ── static, no DB */}
       <QuickActions />
+
+      {/* Upcoming block sessions */}
+      <Suspense fallback={<BlockSessionsSkeleton />}>
+        <UpcomingBlockSessions userId={user.id} />
+      </Suspense>
 
       {/* Stats ── parallel queries, suspense fallback */}
       <section>
