@@ -9,6 +9,7 @@ import { SwapSessionsButton } from './SwapSessionsButton'
 import { CompleteSessionButton } from './CompleteSessionButton'
 import { ArchiveBlockButton } from './ArchiveBlockButton'
 import { DeleteBlockButton } from './DeleteBlockButton'
+import { DeleteSessionButton } from './DeleteSessionButton'
 import type { CoachingBlock, BlockSession } from '@/lib/supabase/types'
 
 export const metadata = { title: 'Coaching Block — 18th Man' }
@@ -220,6 +221,14 @@ export default async function BlockOverviewPage({
 
                     {session.status === 'completed' && (
                       <CheckCircle size={14} className="text-emerald-400" />
+                    )}
+
+                    {canAct && (
+                      <DeleteSessionButton
+                        blockSessionId={session.id}
+                        groupId={groupId}
+                        sessionNumber={session.session_number}
+                      />
                     )}
                   </div>
                 </div>

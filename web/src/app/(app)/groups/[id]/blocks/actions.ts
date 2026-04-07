@@ -420,3 +420,28 @@ export async function deleteCoachingBlock(blockId: string, groupId: string) {
   revalidatePath(`/groups/${groupId}`)
   redirect(`/groups/${groupId}`)
 }
+
+// ── Delete a single session ───────────────────────────────────────────────────
+
+export async function deleteBlockSession(blockSessionId: string, groupId: string) {
+  const { error, supabase } = await requireClubAdminForGroup(groupId)
+  if (error) return { error }
+
+  const { data: bs } = await supabase
+    .from('block_sessions')
+    .select('block_id')
+    .eq('id', blockSessionId)
+    .single()
+
+  if (!bs) return { error: 'Session not found' }
+
+  const { error: delErr } = await supabase
+    .from('block_sessions')
+    .delete()
+    .eq('id', blockSessionId)
+
+  if (delErr) return { error: delErr.message }
+
+  revalidatePath(`/groups/${groupId}/blocks/${bs.block_id}`)
+  return { success: true }
+}
