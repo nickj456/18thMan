@@ -6,18 +6,33 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Clock, BookOpen, Users } from 'lucide-react'
 import type { SessionPlan } from '@/lib/supabase/types'
 
+type SessionWithGroup = SessionPlan & {
+  coaching_groups?: { name: string } | { name: string }[] | null
+}
+
 export default async function SessionsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: sessions } = await supabase
-    .from('session_plans')
-    .select('*')
-    .eq('coach_id', user.id)
-    .order('updated_at', { ascending: false })
+  const [ownResult, groupResult] = await Promise.all([
+    supabase
+      .from('session_plans')
+      .select('*')
+      .eq('coach_id', user.id)
+      .order('updated_at', { ascending: false }),
+    supabase
+      .from('session_plans')
+      .select('*, coaching_groups!session_plans_group_id_fkey(name)')
+      .not('group_id', 'is', null)
+      .neq('coach_id', user.id)
+      .order('updated_at', { ascending: false }),
+  ])
 
-  const mySessions = (sessions ?? []) as SessionPlan[]
+  // Deduplicate in case user is also the owner of a group session
+  const ownIds = new Set((ownResult.data ?? []).map(s => s.id))
+  const groupSessions = (groupResult.data ?? []).filter(s => !ownIds.has(s.id))
+  const mySessions = [...(ownResult.data ?? []), ...groupSessions] as SessionWithGroup[]
 
   return (
     <div className="space-y-6">
@@ -50,6 +65,9 @@ export default async function SessionsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {mySessions.map(session => {
             const drillCount = Array.isArray(session.drills_order) ? session.drills_order.length : 0
+            const groupName = session.coaching_groups
+              ? (Array.isArray(session.coaching_groups) ? session.coaching_groups[0]?.name : session.coaching_groups?.name) ?? null
+              : null
             const hours = session.total_duration ? Math.floor(session.total_duration / 60) : 0
             const mins = session.total_duration ? session.total_duration % 60 : 0
             const durationLabel = session.total_duration
@@ -66,7 +84,13 @@ export default async function SessionsPage() {
                   <h2 className="font-semibold leading-snug group-hover:text-white transition-colors line-clamp-2">
                     {session.title}
                   </h2>
-                  {session.is_shared && (
+                  {groupName && (
+                    <Badge variant="outline" className="text-xs flex-shrink-0 border-indigo-500/40 text-indigo-400">
+                      <Users size={10} className="mr-1" />
+                      {groupName}
+                    </Badge>
+                  )}
+                  {session.is_shared && !groupName && (
                     <Badge variant="outline" className="text-xs flex-shrink-0 border-indigo-500/40 text-indigo-400">
                       <Users size={10} className="mr-1" />
                       Shared

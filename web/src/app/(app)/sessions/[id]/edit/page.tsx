@@ -9,12 +9,25 @@ export default async function EditSessionPage({ params }: { params: Promise<{ id
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: session } = await supabase
+  // Try as owner first; if that fails, allow a group member who currently holds the lock
+  const { data: sessionAsOwner } = await supabase
     .from('session_plans')
     .select('*')
     .eq('id', id)
     .eq('coach_id', user.id)
-    .single()
+    .maybeSingle()
+
+  const { data: sessionAsLocker } = !sessionAsOwner
+    ? await supabase
+        .from('session_plans')
+        .select('*')
+        .eq('id', id)
+        .not('group_id', 'is', null)
+        .eq('locked_by', user.id)
+        .maybeSingle()
+    : { data: null }
+
+  const session = sessionAsOwner ?? sessionAsLocker
 
   if (!session) notFound()
 

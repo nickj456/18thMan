@@ -99,6 +99,19 @@ export async function updateSession(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
+  // Verify the user is authorised: either the owner, or a group member holding the lock
+  const { data: session } = await supabase
+    .from('session_plans')
+    .select('coach_id, group_id, locked_by')
+    .eq('id', id)
+    .single()
+
+  if (!session) return { error: 'Session not found' }
+
+  const isOwner = session.coach_id === user.id
+  const isLockHolder = session.group_id !== null && session.locked_by === user.id
+  if (!isOwner && !isLockHolder) return { error: 'Not authorised to edit this session' }
+
   const totalDuration = drillsOrder.reduce((sum, d) => sum + (d.duration_minutes || 0), 0)
 
   const { error } = await supabase
@@ -110,12 +123,20 @@ export async function updateSession(
       is_shared: isShared,
     })
     .eq('id', id)
-    .eq('coach_id', user.id)
 
   if (error) return { error: error.message }
 
+  // Release the lock after saving (group sessions only)
+  if (isLockHolder) {
+    await supabase
+      .from('session_plans')
+      .update({ locked_by: null, locked_at: null })
+      .eq('id', id)
+  }
+
   revalidatePath('/sessions')
   revalidatePath(`/sessions/${id}`)
+  if (session.group_id) revalidatePath(`/groups/${session.group_id}`)
   redirect(`/sessions/${id}`)
 }
 
