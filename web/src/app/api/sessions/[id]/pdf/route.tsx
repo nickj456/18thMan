@@ -1,9 +1,11 @@
+import { after } from 'next/server'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { createClient } from '@/lib/supabase/server'
 import { SessionPlanPDF } from '@/components/session/SessionPlanPDF'
 import type { SessionPlan, SessionDrillItem, AiGuide } from '@/lib/supabase/types'
 import type { SessionSummary } from '@/app/(app)/sessions/actions'
 import { getEffectiveTier } from '@/lib/subscription'
+import { sendUpgradeNudgeEmail } from '@/lib/email'
 
 export async function GET(
   _request: Request,
@@ -19,7 +21,13 @@ export async function GET(
 
     // Feature gate: PDF export requires a club subscription or active trial
     const tier = await getEffectiveTier(supabase, user.id)
-    if (tier === 'free') return new Response('PDF export requires a club subscription.', { status: 403 })
+    if (tier === 'free') {
+      if (user.email) {
+        const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single()
+        after(async () => { await sendUpgradeNudgeEmail(user.email!, profile?.display_name ?? '', 'PDF Export') })
+      }
+      return new Response('PDF export requires a club subscription. Upgrade your club to unlock this feature.', { status: 403 })
+    }
 
     const { data: session } = await supabase
       .from('session_plans')

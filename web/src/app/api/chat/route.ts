@@ -1,6 +1,9 @@
+import { after } from 'next/server'
 import { streamText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
 import { createClient } from '@/lib/supabase/server'
+import { canSendAiMessage, FREE_AI_CHAT_DAILY_LIMIT } from '@/lib/subscription'
+import { sendUpgradeNudgeEmail } from '@/lib/email'
 
 const groq = createGroq()
 
@@ -88,6 +91,19 @@ export async function POST(req: Request) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return new Response('Unauthorized', { status: 401 })
+
+    // Feature gate: free users capped at 20 AI messages/day
+    const { allowed, count } = await canSendAiMessage(supabase, user.id)
+    if (!allowed) {
+      if (count === FREE_AI_CHAT_DAILY_LIMIT && user.email) {
+        const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single()
+        after(async () => { await sendUpgradeNudgeEmail(user.email!, profile?.display_name ?? '', 'AI coaching chat') })
+      }
+      return new Response(
+        JSON.stringify({ error: `Daily limit reached (${FREE_AI_CHAT_DAILY_LIMIT} messages). Upgrade your club for unlimited AI chat.` }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
 
     const body = await req.json()
     const { messages, conversationId } = body

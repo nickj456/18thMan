@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Send, Loader2, Bot, Copy, Check, BookOpen } from 'lucide-react'
 import { MessageResponse } from '@/components/ai-elements/message'
+import { UpgradePrompt } from '@/components/ui/UpgradePrompt'
 import Link from 'next/link'
 
 interface HistoryMessage {
@@ -137,11 +138,18 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName }
   const prevStatusRef = useRef<string>('')
   const lastUserTextRef = useRef<string>('')
 
+  const [limitHit, setLimitHit] = useState(false)
+
   const { messages: liveMessages, status, sendMessage } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
       body: { conversationId },
     }),
+    onError: (err) => {
+      if (err.message?.includes('Daily limit') || err.message?.includes('Upgrade')) {
+        setLimitHit(true)
+      }
+    },
   })
 
   const isLoading = status === 'streaming' || status === 'submitted'
@@ -281,7 +289,13 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName }
       </div>
 
       {/* Input */}
-      <div className="border-t border-zinc-800 p-4">
+      <div className="border-t border-zinc-800 p-4 space-y-3">
+        {limitHit && (
+          <UpgradePrompt
+            feature="AI coaching chat"
+            description="You've reached the 20 messages/day limit on the free plan. Upgrade your club for unlimited AI chat."
+          />
+        )}
         <div className="flex gap-2 items-end">
           <Textarea
             value={input}
@@ -290,12 +304,12 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName }
             placeholder="Ask your AI coach… (Enter to send, Shift+Enter for new line)"
             className="resize-none min-h-[44px] max-h-32 text-sm"
             rows={1}
-            disabled={isLoading}
+            disabled={isLoading || limitHit}
           />
           <Button
             size="sm"
             onClick={submit}
-            disabled={isLoading || !input.trim()}
+            disabled={isLoading || !input.trim() || limitHit}
             className="flex-shrink-0 h-10 w-10 p-0"
           >
             <Send size={15} />
