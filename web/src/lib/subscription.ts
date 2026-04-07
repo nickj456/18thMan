@@ -19,11 +19,14 @@ export async function getEffectiveTier(
 ): Promise<EffectiveTier> {
   const { data } = await supabase
     .from('profiles')
-    .select('club_id, trial_ends_at, clubs(subscription_tier)')
+    .select('role, club_id, trial_ends_at, clubs(subscription_tier)')
     .eq('id', userId)
     .single()
 
   if (!data) return 'free'
+
+  // 0. Admins always get full access — no paywall
+  if (data.role === 'admin') return 'club'
 
   // 1. Check admin override for this user (all-features override)
   const userOverride = await getActiveOverride(supabase, 'user', userId, 'all')
