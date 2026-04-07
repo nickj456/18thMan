@@ -48,11 +48,14 @@ export async function updateProfile(formData: FormData): Promise<void> {
   const club = (formData.get('club') as string)?.trim() || null
   const coaching_level = (formData.get('coaching_level') as string)?.trim() || null
 
-  await supabase
+  const { data: profile } = await supabase
     .from('profiles')
     .update({ display_name, bio, club, coaching_level })
     .eq('id', user.id)
+    .select('username')
+    .single()
 
   revalidatePath('/profile')
+  revalidatePath(`/profile/${profile?.username}`)
   revalidatePath('/', 'layout')
 }
