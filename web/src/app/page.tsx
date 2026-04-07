@@ -406,9 +406,9 @@ export default async function LandingPage() {
                 fontWeight: 300,
               }}
             >
-              18th Man gives rugby league coaches the tools to design better drills,
-              plan more effective sessions, and share knowledge that lifts the entire
-              game. Backed by AI. Built for the coaching room.
+              Design drills, plan sessions, and let AI build your entire coaching
+              block upfront — every focus area covered, every session ready before
+              the season starts. Built for rugby league. Backed by AI.
             </p>
 
             {/* CTAs */}
@@ -437,8 +437,9 @@ export default async function LandingPage() {
             >
               {[
                 { num: 'Free', label: 'to join' },
-                { num: 'AI', label: 'coaching assistant' },
+                { num: 'AI', label: 'session planning' },
                 { num: '∞', label: 'drills to share' },
+                { num: 'Club', label: 'team collaboration' },
               ].map(({ num, label }) => (
                 <div key={label}>
                   <div
@@ -477,10 +478,10 @@ export default async function LandingPage() {
               <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
                 {[
                   '🏉 Design drills on a digital canvas',
-                  '⚡ AI coaching assistant, instant advice',
+                  '⚡ AI-planned coaching blocks, every session covered',
                   '📋 Build and share session plans',
-                  '👥 Connect with a coaching community',
-                  '🎯 Improve player development',
+                  '👥 Club groups with private content',
+                  '🎯 Game Sense session structure built in',
                   '📊 Track drills, sessions, and progress',
                 ].map(item => (
                   <span key={item} className="stat-pill">
@@ -518,44 +519,32 @@ export default async function LandingPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
               gap: '1.5rem',
             }}
           >
-            {/* Feature 1 — Drill Designer */}
-            <div className="feature-card">
+            {/* Feature 1 — Coaching Blocks */}
+            <div className="feature-card" style={{ borderColor: 'rgba(232,86,10,0.2)', background: 'linear-gradient(135deg, var(--surface2) 0%, rgba(232,86,10,0.05) 100%)' }}>
               <div
                 style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '10px',
-                  background: 'rgba(232,86,10,0.12)',
-                  border: '1px solid rgba(232,86,10,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.4rem',
-                  marginBottom: '1.5rem',
+                  width: '48px', height: '48px', borderRadius: '10px',
+                  background: 'rgba(232,86,10,0.15)', border: '1px solid rgba(232,86,10,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.4rem', marginBottom: '1.5rem',
                 }}
               >
-                ✏️
+                🗓️
               </div>
-              <h3
-                className="lp-display"
-                style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}
-              >
-                Drill Designer
+              <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                Coaching Blocks
               </h3>
               <p style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--text-muted)', fontWeight: 300 }}>
-                Draw your drills on a digital canvas exactly as you would on a whiteboard — add players,
-                cones, movement arrows, and zones. Save, share, and build your library of go-to sessions.
+                Name your block, choose how many sessions, and AI plans every single one upfront —
+                balanced across Attack, Defence, Completions, and Skills. The whole season, sorted before it starts.
               </p>
               <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
-                {['Player markers & formations', 'Movement arrows & zones', 'Preview images & video links', 'AI coaching guide generation'].map(f => (
-                  <div
-                    key={f}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}
-                  >
+                {['AI-generated Game Sense session plans', 'Balanced focus area rotation', 'Swap sessions when the team struggles', 'Track progress across the block'].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     <span style={{ color: 'var(--ember)', fontWeight: 700 }}>→</span> {f}
                   </div>
                 ))}
@@ -563,41 +552,28 @@ export default async function LandingPage() {
             </div>
 
             {/* Feature 2 — AI Coach */}
-            <div className="feature-card" style={{ borderColor: 'rgba(232,86,10,0.15)', background: 'linear-gradient(135deg, var(--surface2) 0%, rgba(232,86,10,0.04) 100%)' }}>
+            <div className="feature-card">
               <div
                 style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '10px',
-                  background: 'rgba(232,86,10,0.15)',
-                  border: '1px solid rgba(232,86,10,0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.4rem',
-                  marginBottom: '1.5rem',
+                  width: '48px', height: '48px', borderRadius: '10px',
+                  background: 'rgba(232,86,10,0.12)', border: '1px solid rgba(232,86,10,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.4rem', marginBottom: '1.5rem',
                 }}
               >
                 ⚡
               </div>
-              <h3
-                className="lp-display"
-                style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}
-              >
+              <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
                 AI Coaching Assistant
               </h3>
               <p style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--text-muted)', fontWeight: 300 }}>
                 Ask anything. Get instant, structured advice on drills, tactics, player development,
                 and session planning from an AI that understands rugby league coaching.
               </p>
-              {/* Chat example */}
               <div
                 style={{
-                  marginTop: '1.5rem',
-                  background: 'rgba(0,0,0,0.3)',
-                  borderRadius: '8px',
-                  padding: '1rem',
-                  border: '1px solid var(--border-subtle)',
+                  marginTop: '1.5rem', background: 'rgba(0,0,0,0.3)',
+                  borderRadius: '8px', padding: '1rem', border: '1px solid var(--border-subtle)',
                 }}
               >
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginBottom: '8px', fontFamily: 'var(--font-barlow)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
@@ -612,40 +588,56 @@ export default async function LandingPage() {
               </div>
             </div>
 
-            {/* Feature 3 — Session Planner */}
+            {/* Feature 3 — Drill Designer */}
             <div className="feature-card">
               <div
                 style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '10px',
-                  background: 'rgba(74,222,128,0.08)',
-                  border: '1px solid rgba(74,222,128,0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.4rem',
-                  marginBottom: '1.5rem',
+                  width: '48px', height: '48px', borderRadius: '10px',
+                  background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.4rem', marginBottom: '1.5rem',
                 }}
               >
-                📋
+                ✏️
               </div>
-              <h3
-                className="lp-display"
-                style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}
-              >
-                Session Planner
+              <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                Drill Designer
               </h3>
               <p style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--text-muted)', fontWeight: 300 }}>
-                Build structured training sessions by sequencing drills from your library.
-                Set durations, track total time, and export a clean PDF for the training ground.
+                Draw drills on a digital canvas exactly as you would on a whiteboard — players,
+                cones, arrows, zones. Build your private library and share with the community.
               </p>
               <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
-                {['Drag-and-drop drill ordering', 'Auto-calculated session duration', 'PDF export for print', 'Reuse across multiple sessions'].map(f => (
-                  <div
-                    key={f}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}
-                  >
+                {['Player markers & formations', 'Movement arrows & zones', 'Video links & preview images', 'AI coaching guide per drill'].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'rgba(99,102,241,0.8)', fontWeight: 700 }}>→</span> {f}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Feature 4 — Club Groups */}
+            <div className="feature-card">
+              <div
+                style={{
+                  width: '48px', height: '48px', borderRadius: '10px',
+                  background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.4rem', marginBottom: '1.5rem',
+                }}
+              >
+                👥
+              </div>
+              <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                Club & Groups
+              </h3>
+              <p style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--text-muted)', fontWeight: 300 }}>
+                Create a club, invite your coaching staff into private groups, and collaborate on
+                session plans. Share coaching blocks across the team so everyone is working from the same plan.
+              </p>
+              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                {['Private club drill libraries', 'Coaching groups for your staff', 'Shared session planning', 'AI guidance per group'].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     <span style={{ color: 'rgba(74,222,128,0.7)', fontWeight: 700 }}>→</span> {f}
                   </div>
                 ))}
@@ -695,22 +687,22 @@ export default async function LandingPage() {
                 {
                   n: '01',
                   title: 'Create Your Account',
-                  body: 'Sign up free. Set your coaching profile, add your club, and tell us about your experience level. It takes two minutes.',
+                  body: 'Sign up free. Set your coaching profile, join or create your club, and invite your coaching staff. Two minutes to get started.',
                 },
                 {
                   n: '02',
-                  title: 'Design Your First Drill',
-                  body: 'Use the visual canvas to map out a drill exactly how you see it in your head. Add player positions, movement arrows, cones, and zones.',
+                  title: 'Generate a Coaching Block',
+                  body: 'Name your block, choose the number of sessions, and let AI plan every one upfront — balanced across all four focus areas. Your whole season structured before you step on the field.',
                 },
                 {
                   n: '03',
-                  title: 'Build Your Session',
-                  body: 'Sequence your drills into a full training session with timing. Export to PDF, or share directly with your coaching staff.',
+                  title: 'Prepare Each Session',
+                  body: 'A week before each session, open it, review the AI plan, set the date, and add your own drills. If the team struggled on the weekend, swap sessions — the rotation stays intact.',
                 },
                 {
                   n: '04',
                   title: 'Share & Learn',
-                  body: 'Publish drills to the community library. Discover what coaches across the game are running. Rate, comment, and improve together.',
+                  body: 'Publish drills to the community library. Discover what coaches across the game are running. Rate, comment, and build a coaching reputation.',
                 },
               ].map(({ n, title, body }) => (
                 <div key={n}>
