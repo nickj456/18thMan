@@ -345,7 +345,7 @@ function ZoneEl({ el, selected, onSelect, onChange }: ElementProps) {
 }
 
 // ── Text label ────────────────────────────────────────────────────────────────
-function TextEl({ el, selected, onSelect, onChange }: ElementProps) {
+function TextEl({ el, selected, onSelect, onChange, onDblClick }: ElementProps) {
   return (
     <Text
       x={el.x} y={el.y}
@@ -357,6 +357,8 @@ function TextEl({ el, selected, onSelect, onChange }: ElementProps) {
       strokeWidth={selected ? 4 : undefined}
       draggable
       onClick={onSelect} onTap={onSelect}
+      onDblClick={onDblClick}
+      onDblTap={onDblClick}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
     />
   )
@@ -368,16 +370,19 @@ interface ElementProps {
   selected: boolean
   onSelect: () => void
   onChange: (updated: CanvasElement) => void
+  onDblClick?: () => void
 }
 
 interface CanvasElementsProps {
   elements: CanvasElement[]
   selectedId: string | null
+  editingTextId: string | null
   onSelect: (id: string) => void
   onChange: (updated: CanvasElement) => void
+  onEditText: (id: string) => void
 }
 
-export function CanvasElements({ elements, selectedId, onSelect, onChange }: CanvasElementsProps) {
+export function CanvasElements({ elements, selectedId, editingTextId: _editingTextId, onSelect, onChange, onEditText }: CanvasElementsProps) {
   return (
     <>
       {elements.map((el) => {
@@ -386,6 +391,7 @@ export function CanvasElements({ elements, selectedId, onSelect, onChange }: Can
           selected: el.id === selectedId,
           onSelect: () => onSelect(el.id),
           onChange,
+          onDblClick: el.type === 'text' ? () => onEditText(el.id) : undefined,
         }
         switch (el.type) {
           case 'attacker': return <AttackerEl key={el.id} {...props} />

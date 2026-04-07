@@ -37,6 +37,14 @@ interface DrawingState {
   color: string
 }
 
+interface EditingText {
+  id: string
+  x: number
+  y: number
+  label: string
+  color: string
+}
+
 interface DrillCanvasProps {
   state: CanvasState
   selectedId: string | null
@@ -65,6 +73,17 @@ export function DrillCanvas({
   const attackerCount = useRef(0)
   const defenderCount = useRef(0)
   const [drawingEl, setDrawingEl] = useState<DrawingState | null>(null)
+  // Store all editing data directly — don't look up from state.elements (timing issues)
+  const [editingText, setEditingText] = useState<EditingText | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Focus textarea whenever a new text edit session starts
+  useEffect(() => {
+    if (editingText) {
+      textareaRef.current?.focus()
+      textareaRef.current?.select()
+    }
+  }, [editingText?.id])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -109,6 +128,11 @@ export function DrillCanvas({
     const el = makeElement(activeTool, pos.x, pos.y, count)
     onStateChange({ ...state, elements: [...state.elements, el] })
     onSelectId(el.id)
+
+    if (activeTool === 'text') {
+      // Set editing data directly — don't look up from state (parent hasn't re-rendered yet)
+      setEditingText({ id: el.id, x: el.x, y: el.y, label: 'Label', color: '#ffffff' })
+    }
   }, [activeTool, state, onStateChange, onSelectId])
 
   // ── Drag-to-draw (arrow / line / dotted) ─────────────────────────────────
@@ -165,6 +189,25 @@ export function DrillCanvas({
     onSelectId(null)
   }
 
+  function startTextEdit(id: string) {
+    const el = state.elements.find((e) => e.id === id)
+    if (!el) return
+    setEditingText({ id, x: el.x, y: el.y, label: el.label ?? 'Label', color: el.color ?? '#ffffff' })
+    onSelectId(id)
+  }
+
+  function finishTextEdit(value: string | null) {
+    if (editingText && value !== null) {
+      onStateChange({
+        ...state,
+        elements: state.elements.map((el) =>
+          el.id === editingText.id ? { ...el, label: value.trim() || 'Label' } : el
+        ),
+      })
+    }
+    setEditingText(null)
+  }
+
   const attackers = state.elements.filter((e) => e.type === 'attacker').length
   const defenders = state.elements.filter((e) => e.type === 'defender').length
   const isDraw = DRAW_TOOLS.includes(activeTool)
@@ -185,7 +228,52 @@ export function DrillCanvas({
       />
 
       <div className="flex-1 overflow-auto bg-zinc-950 flex items-center justify-center p-4">
-        <div style={{ cursor: activeTool === 'select' ? 'default' : isDraw ? 'crosshair' : 'copy' }}>
+        <div style={{ position: 'relative', cursor: activeTool === 'select' ? 'default' : isDraw ? 'crosshair' : 'copy' }}>
+          {/* Text editing overlay — absolutely positioned over the canvas */}
+          {editingText && (
+            <textarea
+              key={editingText.id}
+              ref={textareaRef}
+              rows={1}
+              style={{
+                position: 'absolute',
+                left: editingText.x,
+                top: editingText.y - 2,
+                minWidth: 80,
+                fontSize: 15,
+                fontWeight: 'bold',
+                fontFamily: 'sans-serif',
+                color: editingText.color,
+                background: 'rgba(0,0,0,0.75)',
+                border: '1px dashed rgba(255,255,255,0.6)',
+                borderRadius: 3,
+                outline: 'none',
+                padding: '1px 4px',
+                resize: 'none',
+                overflow: 'hidden',
+                lineHeight: '1.5',
+                zIndex: 20,
+                whiteSpace: 'pre',
+                boxSizing: 'border-box',
+              }}
+              defaultValue={editingText.label}
+              onBlur={(e) => finishTextEdit(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  finishTextEdit((e.target as HTMLTextAreaElement).value)
+                }
+                if (e.key === 'Escape') {
+                  finishTextEdit(null)
+                }
+              }}
+              onInput={(e) => {
+                const ta = e.target as HTMLTextAreaElement
+                ta.style.width = 'auto'
+                ta.style.width = Math.max(80, ta.scrollWidth) + 'px'
+              }}
+            />
+          )}
           <Stage
             ref={stageRef}
             width={CANVAS_WIDTH}
@@ -202,8 +290,10 @@ export function DrillCanvas({
               <CanvasElements
                 elements={state.elements}
                 selectedId={selectedId}
+                editingTextId={editingText?.id ?? null}
                 onSelect={onSelectId}
                 onChange={handleElementChange}
+                onEditText={startTextEdit}
               />
               {/* Live preview while drawing */}
               {drawingEl && drawingEl.type === 'arrow' && (
@@ -239,11 +329,14 @@ export function DrillCanvas({
         {activeTool !== 'select' && isDraw && (
           <span className="text-zinc-400">Click and drag to draw · Esc to cancel</span>
         )}
-        {activeTool !== 'select' && !isDraw && (
+        {activeTool !== 'select' && !isDraw && !editingText && (
           <span className="text-zinc-400">Click canvas to place · Esc to cancel</span>
         )}
-        {selectedId && (
-          <span className="text-zinc-400">Del to delete · drag handles to resize</span>
+        {selectedId && !editingText && (
+          <span className="text-zinc-400">Del to delete · double-click text to edit</span>
+        )}
+        {editingText && (
+          <span className="text-zinc-400">Type your label · Enter or click away to save · Esc to cancel</span>
         )}
       </div>
     </div>
