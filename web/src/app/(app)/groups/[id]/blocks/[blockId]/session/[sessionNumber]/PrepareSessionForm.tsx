@@ -2,7 +2,7 @@
 
 import { useTransition, useState } from 'react'
 import { Check, Loader2, CalendarDays } from 'lucide-react'
-import { prepareBlockSession } from '../../../../actions'
+import { prepareBlockSession } from '../../../actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
