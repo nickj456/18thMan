@@ -202,12 +202,12 @@ export default async function BlockOverviewPage({
                       <StatusIcon size={11} /> {sc.label}
                     </span>
 
-                    {canAct && session.status !== 'completed' && (
+                    {session.status !== 'completed' && (
                       <Link
                         href={`/groups/${groupId}/blocks/${blockId}/session/${session.session_number}`}
                         className="flex items-center gap-1 text-xs text-zinc-500 hover:text-white transition-colors"
                       >
-                        {session.status === 'planned' ? 'Prepare' : 'Edit'} <ChevronRight size={12} />
+                        {canAct ? (session.status === 'planned' ? 'Prepare' : 'Edit') : 'View'} <ChevronRight size={12} />
                       </Link>
                     )}
 
@@ -220,7 +220,12 @@ export default async function BlockOverviewPage({
                     )}
 
                     {session.status === 'completed' && (
-                      <CheckCircle size={14} className="text-emerald-400" />
+                      <Link
+                        href={`/groups/${groupId}/blocks/${blockId}/session/${session.session_number}`}
+                        className="flex items-center gap-1 text-xs text-zinc-500 hover:text-white transition-colors"
+                      >
+                        <CheckCircle size={11} className="text-emerald-400" /> View <ChevronRight size={12} />
+                      </Link>
                     )}
 
                     {isClubAdmin && (

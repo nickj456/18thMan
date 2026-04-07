@@ -53,7 +53,8 @@ export default async function PrepareSessionPage({
     .single()
 
   if (!profile?.club_id) redirect('/clubs')
-  if (profile.club_role !== 'admin' && profile.role !== 'admin') redirect(`/groups/${groupId}/blocks/${blockId}`)
+
+  const isClubAdmin = profile.club_role === 'admin' || profile.role === 'admin'
 
   const { data: group } = await supabase
     .from('coaching_groups')
@@ -62,6 +63,18 @@ export default async function PrepareSessionPage({
     .single()
 
   if (!group || group.club_id !== profile.club_id) redirect('/groups')
+
+  // Must be a group member or club admin to view
+  if (!isClubAdmin) {
+    const { data: membership } = await supabase
+      .from('group_invitations')
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('user_id', user.id)
+      .eq('status', 'accepted')
+      .maybeSingle()
+    if (!membership) redirect(`/groups/${groupId}`)
+  }
 
   const { data: block } = await supabase
     .from('coaching_blocks')
@@ -112,15 +125,31 @@ export default async function PrepareSessionPage({
         <h1 className="app-heading text-2xl">{bs.focus_area}</h1>
       </div>
 
-      {/* Preparation form */}
-      <PrepareSessionForm
-        blockSessionId={bs.id}
-        groupId={groupId}
-        blockId={blockId}
-        initialDate={bs.scheduled_date}
-        initialNotes={bs.notes}
-        status={bs.status}
-      />
+      {/* Preparation form — admins only */}
+      {isClubAdmin ? (
+        <PrepareSessionForm
+          blockSessionId={bs.id}
+          groupId={groupId}
+          blockId={blockId}
+          initialDate={bs.scheduled_date}
+          initialNotes={bs.notes}
+          status={bs.status}
+        />
+      ) : (
+        <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-2">
+          {bs.scheduled_date && (
+            <p className="text-xs text-zinc-400 flex items-center gap-1.5">
+              <CalendarDays size={12} /> {new Date(bs.scheduled_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          )}
+          {bs.notes && (
+            <p className="text-sm text-zinc-300 italic">{bs.notes}</p>
+          )}
+          {!bs.scheduled_date && !bs.notes && (
+            <p className="text-xs text-zinc-600">No date or notes set yet.</p>
+          )}
+        </div>
+      )}
 
       {/* AI Session Plan */}
       {plan ? (
