@@ -20,6 +20,7 @@ import {
   Moon,
   Building2,
   Users2,
+  HelpCircle,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -51,6 +52,7 @@ const navItems = [
 const profileItems = [
   { href: '/profile', label: 'My Profile', icon: User },
   { href: '/notifications', label: 'Notifications', icon: Bell },
+  { href: '/how-to', label: 'How To', icon: HelpCircle },
 ]
 
 interface AppSidebarProps {

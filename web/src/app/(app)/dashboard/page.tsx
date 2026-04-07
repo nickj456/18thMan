@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { PenTool, CalendarDays, MessageSquare, Sparkles, ArrowRight, Clock, Users, BookOpen } from 'lucide-react'
+import { OnboardingChecklist } from './OnboardingChecklist'
 
 export const metadata = { title: 'Dashboard — 18th Man' }
 
@@ -286,9 +287,19 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, role, club')
+    .select('display_name, role, club, club_id')
     .eq('id', user.id)
     .single()
+
+  // Onboarding data — fetched in parallel, lightweight
+  const [drillCountRes, sessionCountRes] = await Promise.all([
+    supabase.from('drills').select('id', { count: 'exact', head: true }).eq('author_id', user.id),
+    supabase.from('session_plans').select('id', { count: 'exact', head: true }).eq('coach_id', user.id),
+  ])
+  const drillCount = drillCountRes.count ?? 0
+  const hasSession = (sessionCountRes.count ?? 0) > 0
+  const hasClub = !!profile?.club_id
+  const isNewUser = drillCount === 0 && !hasSession && !hasClub
 
   const displayName = profile?.display_name ?? user.email?.split('@')[0] ?? 'Coach'
   const greeting = (() => {
@@ -320,6 +331,13 @@ export default async function DashboardPage() {
           {profile?.role ?? 'viewer'}
         </span>
       </div>
+
+      {/* Onboarding checklist ── shown until all steps complete */}
+      <OnboardingChecklist
+        drillCount={drillCount}
+        hasClub={hasClub}
+        hasSession={hasSession}
+      />
 
       {/* Quick actions ── static, no DB */}
       <QuickActions />
