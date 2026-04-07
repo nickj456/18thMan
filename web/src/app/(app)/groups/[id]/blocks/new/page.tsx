@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, Sparkles, LayoutList } from 'lucide-react'
-import { createCoachingBlock } from '../actions'
+import { CreateBlockForm } from './CreateBlockForm'
 
 export const metadata = { title: 'New Coaching Block — 18th Man' }
 
@@ -56,52 +56,7 @@ export default async function NewBlockPage({ params }: { params: Promise<{ id: s
         </ul>
       </div>
 
-      <form
-        action={async (fd: FormData) => {
-          'use server'
-          await createCoachingBlock(id, fd)
-        }}
-        className="space-y-5"
-      >
-        <div className="space-y-1.5">
-          <label htmlFor="name" className="block text-xs font-medium text-zinc-400">
-            Block Name <span className="text-red-400">*</span>
-          </label>
-          <input
-            id="name"
-            name="name"
-            required
-            autoFocus
-            placeholder="e.g. Pre-season 2025, Rounds 1–8"
-            className="w-full text-sm bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-[#e8560a]/60"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor="total_sessions" className="block text-xs font-medium text-zinc-400">
-            Number of Sessions <span className="text-red-400">*</span>
-          </label>
-          <select
-            id="total_sessions"
-            name="total_sessions"
-            required
-            defaultValue="8"
-            className="w-full text-sm bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-zinc-200 focus:outline-none focus:ring-1 focus:ring-[#e8560a]/60"
-          >
-            {[4, 6, 8, 10, 12, 15].map(n => (
-              <option key={n} value={n}>{n} sessions</option>
-            ))}
-          </select>
-          <p className="text-xs text-zinc-600">AI will plan one focus area per session, balanced across all categories</p>
-        </div>
-
-        <button
-          type="submit"
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-[#e8560a] hover:bg-[#d14d09] text-white text-sm font-medium transition-colors"
-        >
-          <Sparkles size={14} /> Generate Block Plan
-        </button>
-      </form>
+      <CreateBlockForm groupId={id} />
     </div>
   )
 }
