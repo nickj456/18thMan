@@ -139,21 +139,22 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        {/* Actions — only for owner of personal sessions */}
-        {isOwner && !isGroupSession && (
+        {/* Actions — for session owner */}
+        {isOwner && (
           <div className="flex items-center gap-2 flex-shrink-0">
-            {canExportPdf ? (
+            {!isGroupSession && canExportPdf && (
               <Button size="sm" variant="outline" nativeButton={false} render={<a href={`/api/sessions/${id}/pdf`} />}>
                 <FileDown size={13} className="mr-1.5" />
                 Export PDF
               </Button>
-            ) : (
+            )}
+            {!isGroupSession && !canExportPdf && (
               <Button size="sm" variant="outline" nativeButton={false} render={<Link href="/pricing" />} className="opacity-60">
                 <Lock size={13} className="mr-1.5" />
                 Export PDF
               </Button>
             )}
-            <ShareSessionButton sessionId={id} existingToken={sessionPlan.share_token ?? null} />
+            {!isGroupSession && <ShareSessionButton sessionId={id} existingToken={sessionPlan.share_token ?? null} />}
             <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`/sessions/${id}/edit`} />}>
               <Pencil size={13} className="mr-1.5" />
               Edit
