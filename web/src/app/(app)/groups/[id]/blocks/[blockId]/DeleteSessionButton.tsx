@@ -29,10 +29,10 @@ export function DeleteSessionButton({ blockSessionId, groupId, sessionNumber }: 
     return (
       <button
         onClick={() => setConfirming(true)}
-        className="flex items-center gap-1 text-xs text-zinc-600 hover:text-red-400 transition-colors"
+        className="flex items-center gap-1 text-xs text-zinc-400 hover:text-red-400 transition-colors px-1.5 py-1 rounded hover:bg-red-500/10"
         title="Delete session"
       >
-        <Trash2 size={12} />
+        <Trash2 size={13} />
       </button>
     )
   }

@@ -223,7 +223,7 @@ export default async function BlockOverviewPage({
                       <CheckCircle size={14} className="text-emerald-400" />
                     )}
 
-                    {canAct && (
+                    {isClubAdmin && (
                       <DeleteSessionButton
                         blockSessionId={session.id}
                         groupId={groupId}
