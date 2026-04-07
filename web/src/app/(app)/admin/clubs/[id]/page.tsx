@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, Building2, UserPlus, Clock, CheckCircle, XCircle, Shield, Settings } from 'lucide-react'
 import { updateClubSettings } from '../actions'
 import { InviteUserForm } from './InviteUserForm'
+import { DeleteClubButton } from './DeleteClubButton'
 import { RemoveMemberButton } from './RemoveMemberButton'
 import { SetClubAdminButton } from './SetClubAdminButton'
 
@@ -221,6 +222,19 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
             </table>
           </div>
         )}
+      </section>
+      {/* Danger zone */}
+      <section className="space-y-3 pt-4 border-t border-red-500/10">
+        <h2 className="text-xs font-semibold text-red-500/60 uppercase tracking-widest">Danger Zone</h2>
+        <div className="flex items-center justify-between rounded-xl border border-red-500/15 bg-red-500/5 px-5 py-4">
+          <div>
+            <p className="text-sm text-zinc-300 font-medium">Delete this club</p>
+            <p className="text-xs text-zinc-600 mt-0.5">
+              Removes the club and clears all {members?.length ?? 0} member{members?.length !== 1 ? 's' : ''}. Cannot be undone.
+            </p>
+          </div>
+          <DeleteClubButton clubId={club.id} clubName={club.name} />
+        </div>
       </section>
     </div>
   )

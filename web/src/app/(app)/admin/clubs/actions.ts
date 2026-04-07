@@ -187,3 +187,32 @@ export async function removeClubAdmin(clubId: string, userId: string) {
   revalidatePath(`/admin/clubs/${clubId}`)
   return { success: true }
 }
+
+/**
+ * Permanently delete a club.
+ * - Clears club_role on all members (club_id is cleared by ON DELETE SET NULL)
+ * - club_invitations cascade-delete automatically
+ */
+export async function deleteClub(clubId: string) {
+  const { error } = await requireAdmin()
+  if (error) return { error }
+
+  const service = createServiceClient()
+
+  // Clear club_role on all members first (ON DELETE SET NULL only clears club_id)
+  await service
+    .from('profiles')
+    .update({ club_role: null })
+    .eq('club_id', clubId)
+
+  // Delete the club — invitations cascade, profiles.club_id set null by FK
+  const { error: delErr } = await service
+    .from('clubs')
+    .delete()
+    .eq('id', clubId)
+
+  if (delErr) return { error: delErr.message }
+
+  revalidatePath('/admin/clubs')
+  redirect('/admin/clubs')
+}
