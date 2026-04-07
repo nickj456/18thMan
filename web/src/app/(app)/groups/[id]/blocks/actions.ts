@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { generateText, Output } from 'ai'
+import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
@@ -127,16 +127,29 @@ async function generateSinglePlan(focusArea: string, category: string, sessionNu
   const prompt = `Session ${sessionNumber} of ${totalSessions}.
 Focus area: "${focusArea}" (${category})
 
-Generate a complete Game Sense session plan for this focus area. Be specific about player numbers, grid sizes, and constraints. Make it immediately usable by a rugby league coach.`
+Generate a complete Game Sense session plan for this focus area. Be specific about player numbers, grid sizes, and constraints. Make it immediately usable by a rugby league coach.
 
-  const { experimental_output } = await generateText({
+Respond with ONLY a valid JSON object matching this exact structure (no markdown, no code blocks):
+{
+  "warm_up": { "title": string, "duration": string, "description": string, "setup": string },
+  "modified_game_1": { "title": string, "duration": string, "setup": string, "constraint": string, "coaching_focus": string },
+  "reflect_questions": [string, string, string],
+  "modified_game_2": { "title": string, "duration": string, "setup": string, "progression": string },
+  "competition": { "title": string, "duration": string, "setup": string, "scoring_condition": string },
+  "review_points": [string, string, string],
+  "coaching_tips": string
+}`
+
+  const { text } = await generateText({
     model: groq('llama-3.3-70b-versatile'),
-    output: Output.object({ schema: SessionPlanSchema }),
     system: GAME_SENSE_SYSTEM,
     prompt,
   })
 
-  return experimental_output as BlockSessionPlan
+  // Strip markdown code fences if the model wraps the JSON
+  const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+  const parsed = JSON.parse(cleaned)
+  return SessionPlanSchema.parse(parsed) as BlockSessionPlan
 }
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
