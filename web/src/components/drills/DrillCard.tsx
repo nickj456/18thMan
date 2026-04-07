@@ -94,17 +94,27 @@ export function DrillCard({ drill, avgRating, showClubBadge }: DrillCardProps) {
         )}
 
         <CardFooter className="px-4 pb-4 pt-0 flex items-center justify-between text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Users className="size-3" />
-            {drill.player_count ?? 'Any'}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1">
+              <Users className="size-3" />
+              {drill.player_count ?? 'Any'}
+            </span>
+            {drill.author?.username && (
+              <Link
+                href={`/profile/${drill.author.username}`}
+                onClick={e => e.stopPropagation()}
+                className="hover:text-white transition-colors truncate max-w-[120px]"
+              >
+                {drill.author.display_name ?? drill.author.username}
+              </Link>
+            )}
+          </div>
           {avgRating !== undefined && (
             <span className="flex items-center gap-1">
               <Star className="size-3 fill-amber-400 text-amber-400" />
               {avgRating.toFixed(1)}
             </span>
           )}
-          {drill.age_group && <span>{drill.age_group}</span>}
         </CardFooter>
       </Link>
     </Card>

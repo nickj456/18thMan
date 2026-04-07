@@ -125,15 +125,20 @@ export default async function DrillDetailPage({
         </div>
 
         {/* Author */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link
+          href={`/profile/${drill.author?.username ?? ''}`}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors group"
+        >
           <Avatar className="size-6">
             <AvatarImage src={drill.author?.avatar_url ?? ''} />
             <AvatarFallback className="text-xs">
               {drill.author?.display_name?.[0]?.toUpperCase() ?? '?'}
             </AvatarFallback>
           </Avatar>
-          <span>by {drill.author?.display_name ?? drill.author?.username ?? 'Unknown'}</span>
-        </div>
+          <span className="group-hover:underline underline-offset-2">
+            by {drill.author?.display_name ?? drill.author?.username ?? 'Unknown'}
+          </span>
+        </Link>
       </div>
 
       {/* Description */}
