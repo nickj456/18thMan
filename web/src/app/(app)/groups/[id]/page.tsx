@@ -15,7 +15,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, club_id')
+    .select('role, club_role, club_id')
     .eq('id', user.id)
     .single()
 
@@ -51,9 +51,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     .order('scheduled_at', { ascending: true, nullsFirst: false })
 
   const isMember = memberInvites?.some(m => m.user_id === user.id) ?? false
-  const canManage = profile.role !== 'viewer' && (
-    group.created_by === user.id || profile.role === 'admin'
-  )
+  const canManage = profile.club_role === 'admin' || profile.role === 'admin'
 
   // Club members not already in this group or pending
   const memberIds = (memberInvites ?? []).map(m => m.user_id)

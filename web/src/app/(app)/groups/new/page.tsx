@@ -15,12 +15,12 @@ export default async function NewGroupPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, club_id')
+    .select('role, club_role, club_id')
     .eq('id', user.id)
     .single()
 
   if (!profile?.club_id) redirect('/clubs')
-  if (profile.role === 'viewer') redirect('/groups')
+  if (profile.club_role !== 'admin' && profile.role !== 'admin') redirect('/groups')
 
   // Feature gate: coaching groups require club/trial tier
   const tier = await getEffectiveTier(supabase, user.id)

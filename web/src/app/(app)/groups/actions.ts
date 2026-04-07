@@ -13,12 +13,12 @@ export async function createGroup(formData: FormData) {
 
   const { data: me } = await supabase
     .from('profiles')
-    .select('role, club_id, display_name, username')
+    .select('role, club_role, club_id, display_name, username')
     .eq('id', user.id)
     .single()
 
   if (!me?.club_id) return { error: 'You must be a member of a club to create a group' }
-  if (me.role === 'viewer') return { error: 'Viewers cannot create groups' }
+  if (me.club_role !== 'admin' && me.role !== 'admin') return { error: 'Only club admins can create groups' }
 
   // Feature gate: coaching groups require a club subscription or active trial
   const tier = await getEffectiveTier(supabase, user.id)
@@ -57,11 +57,13 @@ export async function inviteUserToGroup(groupId: string, userId: string) {
 
   const { data: me } = await supabase
     .from('profiles')
-    .select('role, club_id, display_name, username')
+    .select('role, club_role, club_id, display_name, username')
     .eq('id', user.id)
     .single()
 
-  if (me?.role === 'viewer') return { error: 'Viewers cannot invite members' }
+  const isClubAdmin = me?.club_role === 'admin'
+  const isPlatformAdmin = me?.role === 'admin'
+  if (!isClubAdmin && !isPlatformAdmin) return { error: 'Only club admins can invite members' }
 
   // Verify group is in the same club
   const { data: group } = await supabase
@@ -71,7 +73,7 @@ export async function inviteUserToGroup(groupId: string, userId: string) {
     .single()
 
   if (!group) return { error: 'Group not found' }
-  if (group.club_id !== me?.club_id && me?.role !== 'admin') return { error: 'Not authorised' }
+  if (group.club_id !== me?.club_id && !isPlatformAdmin) return { error: 'Not authorised' }
 
   // Check the user being invited is in the same club (or admin can invite anyone)
   const { data: target } = await supabase
@@ -112,8 +114,8 @@ export async function removeUserFromGroup(groupId: string, userId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (me?.role === 'viewer') return { error: 'Not authorised' }
+  const { data: me } = await supabase.from('profiles').select('role, club_role').eq('id', user.id).single()
+  if (me?.club_role !== 'admin' && me?.role !== 'admin') return { error: 'Not authorised' }
 
   const { error } = await supabase
     .from('group_invitations')
