@@ -45,6 +45,21 @@ export default async function NewClubPage() {
           />
         </div>
 
+        <div className="space-y-1.5">
+          <label htmlFor="max_members" className="block text-xs font-medium text-zinc-400">
+            Max Members <span className="text-zinc-600 font-normal">(optional)</span>
+          </label>
+          <input
+            id="max_members"
+            name="max_members"
+            type="number"
+            min={1}
+            placeholder="Unlimited"
+            className="w-full text-sm bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-amber-500/60"
+          />
+          <p className="text-xs text-zinc-600">Leave blank for no limit</p>
+        </div>
+
         <button
           type="submit"
           className="w-full py-2.5 rounded-lg bg-[#e8560a] hover:bg-[#d14d09] text-white text-sm font-medium transition-colors"

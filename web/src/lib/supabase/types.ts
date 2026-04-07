@@ -38,6 +38,7 @@ export interface Club {
   subscription_tier: SubscriptionTier
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
+  max_members: number | null
   created_at: string
 }
 

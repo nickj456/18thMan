@@ -85,6 +85,24 @@ export async function clubAdminInviteUser(clubId: string, userId: string) {
   if (!target) return { error: 'User not found' }
   if (target.club_id) return { error: 'User is already a member of a club' }
 
+  // Enforce max_members cap
+  const { data: clubData } = await supabase
+    .from('clubs')
+    .select('max_members')
+    .eq('id', clubId)
+    .single()
+
+  if (clubData?.max_members !== null && clubData?.max_members !== undefined) {
+    const { count } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('club_id', clubId)
+
+    if ((count ?? 0) >= clubData.max_members) {
+      return { error: `This club has reached its member limit (${clubData.max_members})` }
+    }
+  }
+
   const { error: invErr } = await supabase
     .from('club_invitations')
     .upsert(

@@ -28,10 +28,12 @@ export async function createClub(formData: FormData) {
   if (!name) return { error: 'Club name is required' }
 
   const slug = toSlug(name)
+  const maxRaw = formData.get('max_members') as string
+  const max_members = maxRaw && maxRaw.trim() !== '' ? parseInt(maxRaw, 10) : null
 
   const { data: club, error: dbErr } = await supabase
     .from('clubs')
-    .insert({ name, slug, created_by: user.id })
+    .insert({ name, slug, created_by: user.id, max_members })
     .select('id')
     .single()
 
@@ -58,6 +60,24 @@ export async function inviteUserToClub(clubId: string, userId: string) {
 
   if (!target) return { error: 'User not found' }
   if (target.club_id) return { error: 'User is already a member of a club' }
+
+  // Enforce max_members cap
+  const { data: clubData } = await supabase
+    .from('clubs')
+    .select('max_members')
+    .eq('id', clubId)
+    .single()
+
+  if (clubData?.max_members !== null && clubData?.max_members !== undefined) {
+    const { count } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('club_id', clubId)
+
+    if ((count ?? 0) >= clubData.max_members) {
+      return { error: `This club has reached its member limit (${clubData.max_members})` }
+    }
+  }
 
   const { error: invErr } = await supabase
     .from('club_invitations')
@@ -123,6 +143,30 @@ export async function setClubAdmin(clubId: string, userId: string) {
   if (promoteErr) return { error: promoteErr.message }
 
   revalidatePath(`/admin/clubs/${clubId}`)
+  return { success: true }
+}
+
+/** Update club name and/or max_members cap. */
+export async function updateClubSettings(clubId: string, formData: FormData) {
+  const { error } = await requireAdmin()
+  if (error) return { error }
+
+  const name = (formData.get('name') as string)?.trim()
+  if (!name) return { error: 'Club name is required' }
+
+  const maxRaw = formData.get('max_members') as string
+  const max_members = maxRaw && maxRaw.trim() !== '' ? parseInt(maxRaw, 10) : null
+
+  const supabase = await createClient()
+  const { error: dbErr } = await supabase
+    .from('clubs')
+    .update({ name, slug: toSlug(name), max_members })
+    .eq('id', clubId)
+
+  if (dbErr) return { error: dbErr.message }
+
+  revalidatePath(`/admin/clubs/${clubId}`)
+  revalidatePath('/admin/clubs')
   return { success: true }
 }
 

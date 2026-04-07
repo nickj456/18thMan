@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Building2, UserPlus, Clock, CheckCircle, XCircle, Shield } from 'lucide-react'
+import { ArrowLeft, Building2, UserPlus, Clock, CheckCircle, XCircle, Shield, Settings } from 'lucide-react'
+import { updateClubSettings } from '../actions'
 import { InviteUserForm } from './InviteUserForm'
 import { RemoveMemberButton } from './RemoveMemberButton'
 import { SetClubAdminButton } from './SetClubAdminButton'
@@ -19,7 +20,7 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
 
   const { data: club } = await supabase
     .from('clubs')
-    .select('id, name, slug, created_at')
+    .select('id, name, slug, max_members, created_at')
     .eq('id', id)
     .single()
 
@@ -82,6 +83,59 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
           </div>
         </div>
       </div>
+
+      {/* Club settings */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+          <Settings size={12} /> Settings
+        </h2>
+        <form
+          action={async (fd: FormData) => {
+            'use server'
+            await updateClubSettings(id, fd)
+          }}
+          className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 space-y-4"
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label htmlFor="name" className="block text-xs font-medium text-zinc-400">Club Name</label>
+              <input
+                id="name"
+                name="name"
+                required
+                defaultValue={club.name}
+                className="w-full text-sm bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:ring-1 focus:ring-amber-500/60"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="max_members" className="block text-xs font-medium text-zinc-400">
+                Max Members <span className="text-zinc-600 font-normal">(blank = unlimited)</span>
+              </label>
+              <input
+                id="max_members"
+                name="max_members"
+                type="number"
+                min={1}
+                defaultValue={club.max_members ?? ''}
+                placeholder="Unlimited"
+                className="w-full text-sm bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-amber-500/60"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-zinc-600">
+              {members?.length ?? 0} current member{members?.length !== 1 ? 's' : ''}
+              {club.max_members ? ` · limit ${club.max_members}` : ' · no limit'}
+            </p>
+            <button
+              type="submit"
+              className="text-sm px-4 py-1.5 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-zinc-200 font-medium transition-colors"
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      </section>
 
       {/* Invite user */}
       <section className="space-y-3">

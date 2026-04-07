@@ -15,7 +15,7 @@ export default async function AdminClubsPage() {
 
   const { data: clubs } = await supabase
     .from('clubs')
-    .select('id, name, slug, created_at')
+    .select('id, name, slug, max_members, created_at')
     .order('created_at', { ascending: false })
 
   // Get member counts per club
@@ -78,7 +78,9 @@ export default async function AdminClubsPage() {
                   </td>
                   <td className="px-5 py-3.5">
                     <span className="inline-flex items-center gap-1.5 text-xs text-zinc-400">
-                      <Users size={12} /> {memberCounts[club.id] ?? 0}
+                      <Users size={12} />
+                      {memberCounts[club.id] ?? 0}
+                      {club.max_members ? <span className="text-zinc-600">/ {club.max_members}</span> : null}
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-xs text-zinc-500">
