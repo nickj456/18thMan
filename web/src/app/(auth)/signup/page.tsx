@@ -10,37 +10,41 @@ export default async function SignupPage({
 
   if (success === 'check-email') {
     return (
-      <>
-        <style>{`
-          .auth-check-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            background: rgba(74,222,128,0.1);
-            border: 1px solid rgba(74,222,128,0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.25rem;
-            font-size: 1.4rem;
-          }
-        `}</style>
-        <div style={{ textAlign: 'center' }}>
-          <div className="auth-check-icon">✉️</div>
-          <h1 style={{ fontFamily: 'var(--font-barlow-auth)', fontWeight: 800, fontSize: '1.6rem', color: '#e8e4dc', marginBottom: '0.5rem' }}>
-            Check your email
-          </h1>
-          <p style={{ fontSize: '0.875rem', color: '#7a7875', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-            We&apos;ve sent a confirmation link to your inbox. Click it to activate your account and start coaching.
-          </p>
-          <p style={{ fontSize: '0.82rem', color: '#4a4845' }}>
+      <div style={{ textAlign: 'center' }}>
+        {/* Icon */}
+        <div style={{
+          width: 64, height: 64, borderRadius: '50%',
+          background: 'rgba(232,86,10,0.12)',
+          border: '1px solid rgba(232,86,10,0.25)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 1.5rem',
+        }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#e8560a" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2" />
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+          </svg>
+        </div>
+
+        <h1 style={{ fontFamily: 'var(--font-barlow-auth)', fontWeight: 800, fontSize: '1.6rem', color: '#e8e4dc', marginBottom: '0.5rem' }}>
+          Check your email
+        </h1>
+        <p style={{ fontSize: '0.875rem', color: '#7a7875', lineHeight: 1.7, marginBottom: '0.5rem' }}>
+          We&apos;ve sent a confirmation link to your inbox.
+        </p>
+        <p style={{ fontSize: '0.875rem', color: '#7a7875', lineHeight: 1.7, marginBottom: '1.75rem' }}>
+          Click the link in the email to activate your account and start coaching.
+        </p>
+
+        <div style={{ fontSize: '0.8rem', color: '#4a4845', lineHeight: 1.8 }}>
+          <p>Didn&apos;t get it? Check your spam folder.</p>
+          <p>
             Already confirmed?{' '}
-            <Link href="/login" style={{ color: '#e8e4dc', fontWeight: 600, textDecoration: 'none' }}>
+            <Link href="/login" style={{ color: '#e8560a', fontWeight: 600, textDecoration: 'none' }}>
               Sign in →
             </Link>
           </p>
         </div>
-      </>
+      </div>
     )
   }
 
