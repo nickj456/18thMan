@@ -386,7 +386,7 @@ export async function completeBlockSession(blockSessionId: string, groupId: stri
   return { success: true }
 }
 
-// ── Archive / delete a block ──────────────────────────────────────────────────
+// ── Archive a block ───────────────────────────────────────────────────────────
 
 export async function archiveBlock(blockId: string, groupId: string) {
   const { error, supabase } = await requireClubAdminForGroup(groupId)
@@ -398,6 +398,24 @@ export async function archiveBlock(blockId: string, groupId: string) {
     .eq('id', blockId)
 
   if (upErr) return { error: upErr.message }
+
+  revalidatePath(`/groups/${groupId}`)
+  redirect(`/groups/${groupId}`)
+}
+
+// ── Delete a block permanently ────────────────────────────────────────────────
+
+export async function deleteCoachingBlock(blockId: string, groupId: string) {
+  const { error, supabase } = await requireClubAdminForGroup(groupId)
+  if (error) return { error }
+
+  // block_sessions cascade via FK — just delete the block
+  const { error: delErr } = await supabase
+    .from('coaching_blocks')
+    .delete()
+    .eq('id', blockId)
+
+  if (delErr) return { error: delErr.message }
 
   revalidatePath(`/groups/${groupId}`)
   redirect(`/groups/${groupId}`)

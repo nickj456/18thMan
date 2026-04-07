@@ -8,6 +8,7 @@ import {
 import { SwapSessionsButton } from './SwapSessionsButton'
 import { CompleteSessionButton } from './CompleteSessionButton'
 import { ArchiveBlockButton } from './ArchiveBlockButton'
+import { DeleteBlockButton } from './DeleteBlockButton'
 import type { CoachingBlock, BlockSession } from '@/lib/supabase/types'
 
 export const metadata = { title: 'Coaching Block — 18th Man' }
@@ -109,8 +110,13 @@ export default async function BlockOverviewPage({
             <p className="text-xs text-zinc-600 mt-0.5">{sessionList.length} sessions · {group.name}</p>
           </div>
         </div>
-        {isClubAdmin && blockData.status === 'active' && (
-          <ArchiveBlockButton blockId={blockId} groupId={groupId} blockName={blockData.name} />
+        {isClubAdmin && (
+          <div className="flex items-center gap-2">
+            {blockData.status === 'active' && (
+              <ArchiveBlockButton blockId={blockId} groupId={groupId} blockName={blockData.name} />
+            )}
+            <DeleteBlockButton blockId={blockId} groupId={groupId} blockName={blockData.name} />
+          </div>
         )}
       </div>
 
