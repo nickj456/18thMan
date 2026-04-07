@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Building2, UserPlus, UserMinus, Clock, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowLeft, Building2, UserPlus, Clock, CheckCircle, XCircle, Shield } from 'lucide-react'
 import { InviteUserForm } from './InviteUserForm'
 import { RemoveMemberButton } from './RemoveMemberButton'
+import { SetClubAdminButton } from './SetClubAdminButton'
 
 export const metadata = { title: 'Manage Club — Admin' }
 
@@ -24,14 +25,12 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
 
   if (!club) redirect('/admin/clubs')
 
-  // Current members
   const { data: members } = await supabase
     .from('profiles')
-    .select('id, username, display_name, avatar_url, role, created_at')
+    .select('id, username, display_name, avatar_url, club_role, created_at')
     .eq('club_id', id)
     .order('created_at')
 
-  // Pending / declined invitations
   const { data: invitations } = await supabase
     .from('club_invitations')
     .select('id, user_id, status, created_at, profiles!club_invitations_user_id_fkey(id, username, display_name)')
@@ -39,7 +38,6 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
     .neq('status', 'accepted')
     .order('created_at', { ascending: false })
 
-  // All users not in any club and not already invited (pending) — for invite dropdown
   const pendingUserIds = (invitations ?? [])
     .filter(i => i.status === 'pending')
     .map(i => i.user_id)
@@ -58,6 +56,8 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
   }
 
   const { data: availableUsers } = await availableQuery
+
+  const clubAdminId = members?.find(m => m.club_role === 'admin')?.id
 
   const statusBadge = (status: string) => {
     if (status === 'pending') return <span className="flex items-center gap-1 text-[10px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full"><Clock size={9} /> Pending</span>
@@ -125,6 +125,11 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
         <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
           <CheckCircle size={12} className="text-emerald-400" /> Members ({members?.length ?? 0})
         </h2>
+        {!clubAdminId && (members?.length ?? 0) > 0 && (
+          <p className="text-xs text-amber-400/80 bg-amber-400/5 border border-amber-400/15 rounded-lg px-3 py-2">
+            No club admin designated — use the &ldquo;Make admin&rdquo; button below to assign one.
+          </p>
+        )}
         {!members?.length ? (
           <p className="text-sm text-zinc-600">No members yet — invite some users above.</p>
         ) : (
@@ -134,12 +139,27 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
                 {members.map(m => (
                   <tr key={m.id} className="hover:bg-zinc-800/40 transition-colors">
                     <td className="px-5 py-3.5">
-                      <p className="text-zinc-200 font-medium">{m.display_name ?? m.username}</p>
-                      <p className="text-xs text-zinc-600">@{m.username}</p>
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <p className="text-zinc-200 font-medium">{m.display_name ?? m.username}</p>
+                          <p className="text-xs text-zinc-600">@{m.username}</p>
+                        </div>
+                        {m.club_role === 'admin' && (
+                          <span className="flex items-center gap-1 text-[10px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
+                            <Shield size={9} /> Club Admin
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-zinc-500">{m.role}</td>
                     <td className="px-5 py-3.5 text-right">
-                      <RemoveMemberButton clubId={club.id} userId={m.id} />
+                      <div className="flex items-center justify-end gap-4">
+                        <SetClubAdminButton
+                          clubId={club.id}
+                          userId={m.id}
+                          isAdmin={m.club_role === 'admin'}
+                        />
+                        <RemoveMemberButton clubId={club.id} userId={m.id} />
+                      </div>
                     </td>
                   </tr>
                 ))}

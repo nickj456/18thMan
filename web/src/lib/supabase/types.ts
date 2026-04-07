@@ -4,6 +4,7 @@
 // Until generated, this file provides the basic shape for type safety.
 
 export type UserRole = 'admin' | 'coach' | 'viewer'
+export type ClubRole = 'admin' | 'member'
 export type ConversationType = 'ai' | 'dm' | 'community'
 export type DrillDifficulty = 'beginner' | 'intermediate' | 'advanced'
 export type DrillVisibility = 'public' | 'club' | 'private'
@@ -20,6 +21,7 @@ export interface Profile {
   bio: string | null
   club: string | null       // legacy text field — kept until fully migrated
   club_id: string | null    // FK to clubs.id
+  club_role: ClubRole | null
   coaching_level: string | null
   role: UserRole
   trial_ends_at: string | null

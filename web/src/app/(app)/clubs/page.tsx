@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Building2, Users, CheckCircle, Clock } from 'lucide-react'
+import { Building2, Users, CheckCircle, Clock, Shield } from 'lucide-react'
 import { AcceptDeclineButtons } from './AcceptDeclineButtons'
+import { ClubAdminPanel } from './ClubAdminPanel'
 
 export const metadata = { title: 'My Club — 18th Man' }
 
@@ -12,23 +14,50 @@ export default async function ClubPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, display_name, club_id')
+    .select('id, display_name, club_id, club_role')
     .eq('id', user.id)
     .single()
 
-  // If already in a club — show club details and members
+  // ── Member of a club ──────────────────────────────────────────────────────
   if (profile?.club_id) {
-    const { data: club } = await supabase
-      .from('clubs')
-      .select('id, name, slug, created_at')
-      .eq('id', profile.club_id)
-      .single()
+    const [{ data: club }, { data: members }] = await Promise.all([
+      supabase
+        .from('clubs')
+        .select('id, name, slug, created_at')
+        .eq('id', profile.club_id)
+        .single(),
+      supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, club_role')
+        .eq('club_id', profile.club_id)
+        .order('display_name'),
+    ])
 
-    const { data: members } = await supabase
-      .from('profiles')
-      .select('id, username, display_name, avatar_url, role')
-      .eq('club_id', profile.club_id)
-      .order('display_name')
+    // Club admin needs the list of users not yet in a club to invite
+    let availableUsers: { id: string; username: string; display_name: string | null }[] = []
+    if (profile.club_role === 'admin') {
+      const memberIds = (members ?? []).map(m => m.id)
+      let q = supabase
+        .from('profiles')
+        .select('id, username, display_name')
+        .is('club_id', null)
+        .order('display_name')
+
+      // Exclude users with a pending invitation too
+      const { data: pending } = await supabase
+        .from('club_invitations')
+        .select('user_id')
+        .eq('club_id', profile.club_id)
+        .eq('status', 'pending')
+
+      const excludeIds = [...memberIds, ...(pending ?? []).map(p => p.user_id)]
+      if (excludeIds.length > 0) {
+        q = q.not('id', 'in', `(${excludeIds.join(',')})`)
+      }
+
+      const { data } = await q
+      availableUsers = data ?? []
+    }
 
     return (
       <div className="space-y-8 max-w-2xl">
@@ -39,11 +68,19 @@ export default async function ClubPage() {
           <div>
             <h1 className="app-heading text-2xl">{club?.name}</h1>
             <p className="text-xs text-zinc-600 mt-0.5 flex items-center gap-1.5">
-              <CheckCircle size={11} className="text-emerald-400" /> You&apos;re a member
+              <CheckCircle size={11} className="text-emerald-400" />
+              {profile.club_role === 'admin' ? (
+                <span className="flex items-center gap-1">
+                  <Shield size={11} className="text-amber-400" /> Club Admin
+                </span>
+              ) : (
+                'Member'
+              )}
             </p>
           </div>
         </div>
 
+        {/* Members list */}
         <section className="space-y-3">
           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
             <Users size={12} /> Members ({members?.length ?? 0})
@@ -56,17 +93,31 @@ export default async function ClubPage() {
                     <p className="text-sm text-zinc-200 font-medium">{m.display_name ?? m.username}</p>
                     <p className="text-xs text-zinc-600">@{m.username}</p>
                   </div>
-                  <span className="text-xs text-zinc-600 capitalize">{m.role}</span>
+                  {m.club_role === 'admin' && (
+                    <span className="flex items-center gap-1 text-[10px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
+                      <Shield size={9} /> Admin
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
           </div>
         </section>
+
+        {/* Club admin management panel */}
+        {profile.club_role === 'admin' && (
+          <ClubAdminPanel
+            clubId={profile.club_id}
+            members={members ?? []}
+            availableUsers={availableUsers}
+            currentUserId={user.id}
+          />
+        )}
       </div>
     )
   }
 
-  // No club — check for pending invitations
+  // ── No club — check for pending invitations ───────────────────────────────
   const { data: invitations } = await supabase
     .from('club_invitations')
     .select('id, club_id, status, created_at, clubs(id, name)')
