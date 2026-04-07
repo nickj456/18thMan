@@ -5,6 +5,7 @@ import { getEffectiveTier, hasClubAccess } from '@/lib/subscription'
 import { ManageSubscriptionButton } from '@/components/pricing/ManageSubscriptionButton'
 import { CreditCard, CheckCircle2, ArrowRight } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Settings — 18th Man' }
 
 const TIER_LABEL: Record<string, string> = {
@@ -35,7 +36,7 @@ export default async function SettingsPage({
 
   const profile = profileResult.data
   const clubId = profile?.club_id ?? null
-  const hasIndividualSub = profile?.stripe_customer_id && profile.subscription_tier === 'coach'
+  const hasIndividualSub = profile?.subscription_tier === 'coach'
   const isClub = hasClubAccess(tier)
 
   return (

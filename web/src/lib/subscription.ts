@@ -20,7 +20,7 @@ export async function getEffectiveTier(
 ): Promise<EffectiveTier> {
   const { data } = await supabase
     .from('profiles')
-    .select('role, club_id, trial_ends_at, subscription_tier, clubs(subscription_tier)')
+    .select('role, club_id, trial_ends_at, subscription_tier')
     .eq('id', userId)
     .single()
 
@@ -40,9 +40,14 @@ export async function getEffectiveTier(
   }
 
   // 3. Club subscription
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const clubTier = (data.clubs as any)?.subscription_tier
-  if (clubTier === 'club') return 'club'
+  if (data.club_id) {
+    const { data: club } = await supabase
+      .from('clubs')
+      .select('subscription_tier')
+      .eq('id', data.club_id)
+      .single()
+    if (club?.subscription_tier === 'club') return 'club'
+  }
 
   // 4. Active trial
   if (data.trial_ends_at && new Date(data.trial_ends_at) > new Date()) return 'trial'

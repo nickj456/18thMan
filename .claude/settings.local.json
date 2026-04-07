@@ -29,7 +29,18 @@
       "Bash(npx next:*)",
       "Bash(grep -rn declare.*revalidateTag node_modules/next/dist/ --include=*.d.ts)",
       "Bash(find \"c:/Users/nickj/18th Man/web/src/app/\\(auth\\)\" -name \"*.tsx\" -o -name \"*.ts\")",
-      "Bash(ls \"c:/Users/nickj/18th Man/web/src/app/\\(auth\\)/\")"
+      "Bash(ls \"c:/Users/nickj/18th Man/web/src/app/\\(auth\\)/\")",
+      "Bash(ls \"c:\\\\Users\\\\nickj\\\\18th Man\\\\web\\\\src\\\\app\\\\\\(app\\)\\\\drills\\\\[id]\")",
+      "Bash(mkdir -p \"c:\\\\Users\\\\nickj\\\\18th Man\\\\remotion\")",
+      "Bash(npm init:*)",
+      "Bash(npm pkg:*)",
+      "Bash(B=~/.claude/skills/gstack/browse/dist/browse $B goto \"https://www.youtube.com/watch?v=bhtV7ugIlM8\")",
+      "Read(//c/Users/nickj/18th Man/**)",
+      "Bash(B=~/.claude/skills/gstack/browse/dist/browse $B goto \"https://www.youtube.com/results?search_query=AnimationSlate+tutorial\")",
+      "Bash(ls \"c:/Users/nickj/18th Man/web/src/app/\\(app\\)/admin/\")",
+      "Bash(cat \"c:/Users/nickj/18th Man/web/src/app/\\(app\\)/admin/users/page.tsx\")",
+      "Bash(cat \"c:/Users/nickj/18th Man/web/src/app/\\(app\\)/notifications/page.tsx\")",
+      "mcp__claude_ai_Supabase__apply_migration"
     ]
   }
 }

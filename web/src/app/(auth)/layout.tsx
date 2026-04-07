@@ -142,10 +142,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </div>
 
           {/* Legal footer */}
-          <div style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '0.72rem', color: '#3a3835' }}>
-            <a href="/legal/terms" style={{ color: '#3a3835', textDecoration: 'none' }} onMouseOver={e => (e.currentTarget.style.color = '#7a7875')} onMouseOut={e => (e.currentTarget.style.color = '#3a3835')}>Terms</a>
+          <div className="mt-5 text-center text-[0.72rem] text-[#3a3835]">
+            <a href="/legal/terms" className="text-[#3a3835] no-underline hover:text-[#7a7875] transition-colors">Terms</a>
             {' · '}
-            <a href="/legal/privacy" style={{ color: '#3a3835', textDecoration: 'none' }} onMouseOver={e => (e.currentTarget.style.color = '#7a7875')} onMouseOut={e => (e.currentTarget.style.color = '#3a3835')}>Privacy</a>
+            <a href="/legal/privacy" className="text-[#3a3835] no-underline hover:text-[#7a7875] transition-colors">Privacy</a>
           </div>
         </div>
       </div>

@@ -1,0 +1,64 @@
+{
+  "canvasJson": {
+    "background": "full",
+    "elements": [
+      {
+        "id": "K22M1wTUGpcsBPdbsIRy4",
+        "type": "attacker",
+        "x": 497.5,
+        "y": 180,
+        "color": "#ef4444",
+        "label": "1"
+      },
+      {
+        "id": "SHhwZhyYZwhsdNX6efa__",
+        "type": "attacker",
+        "x": 503.5,
+        "y": 333,
+        "color": "#ef4444",
+        "label": "2"
+      },
+      {
+        "id": "-uLVs2MRLqIwWTALQBq8Z",
+        "type": "attacker",
+        "x": 245.5,
+        "y": 155,
+        "color": "#ef4444",
+        "label": "3"
+      }
+    ],
+    "keyframes": [
+      {
+        "time": 0,
+        "elementStates": {
+          "K22M1wTUGpcsBPdbsIRy4": {
+            "x": 256.5,
+            "y": 175
+          },
+          "SHhwZhyYZwhsdNX6efa__": {
+            "x": 268.5,
+            "y": 314
+          }
+        }
+      },
+      {
+        "time": 21,
+        "elementStates": {
+          "K22M1wTUGpcsBPdbsIRy4": {
+            "x": 497.5,
+            "y": 180
+          },
+          "SHhwZhyYZwhsdNX6efa__": {
+            "x": 503.5,
+            "y": 333
+          },
+          "-uLVs2MRLqIwWTALQBq8Z": {
+            "x": 245.5,
+            "y": 155
+          }
+        }
+      }
+    ]
+  },
+  "drillTitle": ""
+}

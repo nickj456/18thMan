@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getStripe, getPriceId, type CheckoutPlan } from '@/lib/stripe'
 
 export async function POST(req: NextRequest) {
@@ -21,11 +22,12 @@ export async function POST(req: NextRequest) {
     }
 
     const stripe = getStripe()
+    const serviceClient = createServiceClient()
     const origin = req.headers.get('origin') ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
     if (isClubPlan) {
       // Club plan — customer is the club
-      const { data: club } = await supabase
+      const { data: club } = await serviceClient
         .from('clubs')
         .select('id, name, stripe_customer_id')
         .eq('id', clubId)
@@ -40,7 +42,7 @@ export async function POST(req: NextRequest) {
           metadata: { club_id: club.id },
         })
         customerId = customer.id
-        await supabase.from('clubs').update({ stripe_customer_id: customerId }).eq('id', club.id)
+        await serviceClient.from('clubs').update({ stripe_customer_id: customerId }).eq('id', club.id)
       }
 
       const session = await stripe.checkout.sessions.create({
@@ -48,6 +50,7 @@ export async function POST(req: NextRequest) {
         mode: 'subscription',
         line_items: [{ price: priceId, quantity: 1 }],
         metadata: { club_id: club.id, plan },
+        subscription_data: { metadata: { club_id: club.id, plan } },
         success_url: `${origin}/settings?upgraded=club`,
         cancel_url: `${origin}/pricing`,
       })
@@ -55,7 +58,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: session.url })
     } else {
       // Coach Pro plan — customer is the individual user
-      const { data: profile } = await supabase
+      const { data: profile } = await serviceClient
         .from('profiles')
         .select('display_name, stripe_customer_id')
         .eq('id', user.id)
@@ -69,7 +72,7 @@ export async function POST(req: NextRequest) {
           metadata: { user_id: user.id },
         })
         customerId = customer.id
-        await supabase.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id)
+        await serviceClient.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id)
       }
 
       const session = await stripe.checkout.sessions.create({
@@ -77,6 +80,7 @@ export async function POST(req: NextRequest) {
         mode: 'subscription',
         line_items: [{ price: priceId, quantity: 1 }],
         metadata: { user_id: user.id, plan },
+        subscription_data: { metadata: { user_id: user.id, plan } },
         success_url: `${origin}/settings?upgraded=coach`,
         cancel_url: `${origin}/pricing`,
       })
