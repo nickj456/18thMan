@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
-import { getEffectiveTier } from '@/lib/subscription'
+import { getEffectiveTier, hasClubAccess } from '@/lib/subscription'
 import { sendUpgradeNudgeEmail } from '@/lib/email'
 
 export async function createGroup(formData: FormData) {
@@ -22,9 +22,9 @@ export async function createGroup(formData: FormData) {
   if (!me?.club_id) return { error: 'You must be a member of a club to create a group' }
   if (me.club_role !== 'admin' && me.role !== 'admin') return { error: 'Only club admins can create groups' }
 
-  // Feature gate: coaching groups require a club subscription or active trial
+  // Feature gate: coaching groups require a club subscription (not just Coach Pro)
   const tier = await getEffectiveTier(supabase, user.id)
-  if (tier === 'free') {
+  if (!hasClubAccess(tier)) {
     if (user.email) {
       after(async () => { await sendUpgradeNudgeEmail(user.email!, me?.display_name ?? '', 'Coaching Groups') })
     }

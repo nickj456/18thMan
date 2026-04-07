@@ -10,8 +10,8 @@ export type DrillDifficulty = 'beginner' | 'intermediate' | 'advanced'
 export type DrillVisibility = 'public' | 'club' | 'private'
 export type ClubInviteStatus = 'pending' | 'accepted' | 'declined'
 export type GroupInviteStatus = 'pending' | 'accepted' | 'declined'
-export type SubscriptionTier = 'free' | 'club'
-export type EffectiveTier = 'free' | 'trial' | 'club'
+export type SubscriptionTier = 'free' | 'coach' | 'club'
+export type EffectiveTier = 'free' | 'trial' | 'coach' | 'club'
 
 export interface Profile {
   id: string
@@ -24,6 +24,9 @@ export interface Profile {
   club_role: ClubRole | null
   coaching_level: string | null
   role: UserRole
+  subscription_tier: SubscriptionTier
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
   trial_ends_at: string | null
   trial_used: boolean
   created_at: string

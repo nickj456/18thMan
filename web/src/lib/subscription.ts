@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { EffectiveTier } from '@/lib/supabase/types'
+export type { EffectiveTier }
 
 export const FREE_DRILL_LIMIT = 20
 export const FREE_AI_CHAT_DAILY_LIMIT = 20
@@ -19,7 +20,7 @@ export async function getEffectiveTier(
 ): Promise<EffectiveTier> {
   const { data } = await supabase
     .from('profiles')
-    .select('role, club_id, trial_ends_at, clubs(subscription_tier)')
+    .select('role, club_id, trial_ends_at, subscription_tier, clubs(subscription_tier)')
     .eq('id', userId)
     .single()
 
@@ -46,7 +47,27 @@ export async function getEffectiveTier(
   // 4. Active trial
   if (data.trial_ends_at && new Date(data.trial_ends_at) > new Date()) return 'trial'
 
+  // 5. Individual coach subscription
+  if (data.subscription_tier === 'coach') return 'coach'
+
   return 'free'
+}
+
+/**
+ * True if the tier includes club-only features:
+ * private drills, coaching groups, collaborative sessions, GameSense.
+ */
+export function hasClubAccess(tier: EffectiveTier): boolean {
+  return tier === 'club' || tier === 'trial'
+}
+
+/**
+ * True if the tier includes individual premium features:
+ * unlimited drills, PDF export, unlimited AI chat.
+ * Coach Pro and Club both qualify.
+ */
+export function hasPremiumAccess(tier: EffectiveTier): boolean {
+  return tier !== 'free'
 }
 
 /**
