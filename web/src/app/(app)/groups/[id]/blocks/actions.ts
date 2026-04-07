@@ -3,12 +3,12 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { generateText, Output } from 'ai'
-import { createGateway } from '@ai-sdk/gateway'
+import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import type { BlockSessionPlan } from '@/lib/supabase/types'
 
-const gateway = createGateway()
+const groq = createGroq()
 
 // ── Focus area rotation ───────────────────────────────────────────────────────
 
@@ -130,7 +130,7 @@ Focus area: "${focusArea}" (${category})
 Generate a complete Game Sense session plan for this focus area. Be specific about player numbers, grid sizes, and constraints. Make it immediately usable by a rugby league coach.`
 
   const { experimental_output } = await generateText({
-    model: gateway('anthropic/claude-haiku-4.5'),
+    model: groq('llama-3.3-70b-versatile'),
     output: Output.object({ schema: SessionPlanSchema }),
     system: GAME_SENSE_SYSTEM,
     prompt,
