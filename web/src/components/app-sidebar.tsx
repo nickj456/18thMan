@@ -21,6 +21,7 @@ import {
   Building2,
   Users2,
   HelpCircle,
+  Scale,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -53,6 +54,7 @@ const profileItems = [
   { href: '/profile', label: 'My Profile', icon: User },
   { href: '/notifications', label: 'Notifications', icon: Bell },
   { href: '/how-to', label: 'How To', icon: HelpCircle },
+  { href: '/legal/terms', label: 'Legal', icon: Scale },
 ]
 
 interface AppSidebarProps {

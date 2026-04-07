@@ -188,6 +188,33 @@ export default async function SignupPage({
           <p className="auth-hint">Minimum 8 characters</p>
         </div>
 
+        <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+          <input
+            id="terms"
+            name="terms"
+            type="checkbox"
+            required
+            style={{
+              marginTop: '2px',
+              width: 15,
+              height: 15,
+              flexShrink: 0,
+              accentColor: '#e8560a',
+              cursor: 'pointer',
+            }}
+          />
+          <label htmlFor="terms" style={{ fontSize: '0.78rem', color: '#7a7875', lineHeight: 1.5, cursor: 'pointer' }}>
+            I agree to the{' '}
+            <Link href="/legal/terms" target="_blank" style={{ color: '#e8e4dc', textDecoration: 'underline' }}>
+              Terms of Service
+            </Link>
+            {' '}and{' '}
+            <Link href="/legal/privacy" target="_blank" style={{ color: '#e8e4dc', textDecoration: 'underline' }}>
+              Privacy Policy
+            </Link>
+          </label>
+        </div>
+
         <button type="submit" className="auth-btn-primary">Create Account</button>
       </form>
 
