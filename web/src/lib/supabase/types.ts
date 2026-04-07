@@ -224,6 +224,67 @@ export interface DrillRatingWithAuthor extends DrillRating {
   author: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>
 }
 
+// Coaching Blocks
+export type BlockStatus = 'active' | 'completed' | 'archived'
+export type BlockSessionStatus = 'planned' | 'prepared' | 'completed'
+
+export interface CoachingBlock {
+  id: string
+  group_id: string
+  name: string
+  total_sessions: number
+  status: BlockStatus
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface BlockSession {
+  id: string
+  block_id: string
+  session_number: number
+  focus_area: string
+  category: string
+  ai_plan: BlockSessionPlan | null
+  scheduled_date: string | null
+  session_plan_id: string | null
+  status: BlockSessionStatus
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface BlockSessionPlan {
+  warm_up: {
+    title: string
+    duration: string
+    description: string
+    setup: string
+  }
+  modified_game_1: {
+    title: string
+    duration: string
+    setup: string
+    constraint: string
+    coaching_focus: string
+  }
+  reflect_questions: string[]
+  modified_game_2: {
+    title: string
+    duration: string
+    setup: string
+    progression: string
+  }
+  competition: {
+    title: string
+    duration: string
+    setup: string
+    scoring_condition: string
+  }
+  review_points: string[]
+  coaching_tips: string
+}
+
 export interface DrillFilters {
   q?: string
   category?: string

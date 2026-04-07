@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Users2, UserPlus, Clock, XCircle, CalendarDays, Plus, Sparkles } from 'lucide-react'
+import { ArrowLeft, Users2, UserPlus, Clock, XCircle, CalendarDays, Plus, Sparkles, LayoutList, ChevronRight } from 'lucide-react'
 import { InviteGroupMemberForm } from './InviteGroupMemberForm'
 import { RemoveGroupMemberButton } from './RemoveGroupMemberButton'
 
@@ -69,6 +69,14 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
   }
 
   const { data: availableUsers } = canManage ? await availableQuery : { data: [] }
+
+  // Coaching blocks for this group
+  const { data: blocks } = await supabase
+    .from('coaching_blocks')
+    .select('id, name, total_sessions, status')
+    .eq('group_id', id)
+    .neq('status', 'archived')
+    .order('created_at', { ascending: false })
 
   const statusBadge = (label: string) => (
     <span className="flex items-center gap-1 text-[10px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
@@ -179,6 +187,59 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
                 )
               })}
             </ul>
+          </div>
+        )}
+      </section>
+
+      {/* Coaching Blocks */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+            <LayoutList size={12} className="text-[#e8560a]" /> Coaching Blocks
+          </h2>
+          {canManage && (
+            <Link
+              href={`/groups/${id}/blocks/new`}
+              className="flex items-center gap-1 text-xs text-[#e8560a] hover:text-[#d14d09] transition-colors"
+            >
+              <Plus size={12} /> New Block
+            </Link>
+          )}
+        </div>
+        {!blocks?.length ? (
+          <div className="flex flex-col items-center gap-2 py-8 rounded-xl border border-zinc-800 text-center">
+            <LayoutList size={24} className="text-zinc-700" />
+            <p className="text-sm text-zinc-600">No coaching blocks yet.</p>
+            {canManage && (
+              <Link href={`/groups/${id}/blocks/new`} className="text-xs text-[#e8560a] hover:text-[#d14d09] transition-colors">
+                Create the first block →
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {blocks.map(block => {
+              const statusLabel = block.status === 'completed' ? 'Complete' : 'Active'
+              const statusColour = block.status === 'completed' ? 'text-emerald-400' : 'text-zinc-400'
+              return (
+                <Link
+                  key={block.id}
+                  href={`/groups/${id}/blocks/${block.id}`}
+                  className="flex items-center justify-between gap-4 p-4 rounded-xl border border-zinc-800 bg-zinc-900 hover:border-zinc-700 hover:bg-zinc-800/60 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#e8560a]/10 border border-[#e8560a]/20 flex items-center justify-center shrink-0">
+                      <LayoutList size={14} className="text-[#e8560a]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-zinc-200">{block.name}</p>
+                      <p className="text-xs text-zinc-600">{block.total_sessions} sessions · <span className={statusColour}>{statusLabel}</span></p>
+                    </div>
+                  </div>
+                  <ChevronRight size={14} className="text-zinc-600 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              )
+            })}
           </div>
         )}
       </section>
