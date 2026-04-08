@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { sendWelcomeEmail } from '@/lib/email'
 
 export async function signup(formData: FormData) {
   const supabase = await createClient()
@@ -22,6 +23,8 @@ export async function signup(formData: FormData) {
   if (error) {
     redirect(`/signup?error=${encodeURIComponent(error.message)}`)
   }
+
+  await sendWelcomeEmail(email, username)
 
   redirect('/signup?success=check-email')
 }
