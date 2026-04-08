@@ -131,6 +131,24 @@ export async function clubAdminInviteUser(clubId: string, userId: string) {
   return { success: true }
 }
 
+export async function regenerateInviteToken(clubId: string) {
+  const { error, user } = await requireClubAdmin(clubId)
+  if (error || !user) return { error: error ?? 'Not authorised' }
+
+  const service = createServiceClient()
+  const newToken = crypto.randomUUID()
+
+  const { error: updateErr } = await service
+    .from('clubs')
+    .update({ invite_token: newToken })
+    .eq('id', clubId)
+
+  if (updateErr) return { error: updateErr.message }
+
+  revalidatePath('/clubs')
+  return { token: newToken }
+}
+
 export async function clubAdminRemoveMember(clubId: string, userId: string) {
   const { error, user } = await requireClubAdmin(clubId)
   if (error || !user) return { error: error ?? 'Not authorised' }

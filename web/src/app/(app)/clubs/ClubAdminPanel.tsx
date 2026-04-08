@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { UserPlus, UserMinus, Loader2, ChevronDown } from 'lucide-react'
-import { clubAdminInviteUser, clubAdminRemoveMember } from './actions'
+import { UserPlus, UserMinus, Loader2, ChevronDown, Link2, RefreshCw, Check } from 'lucide-react'
+import { clubAdminInviteUser, clubAdminRemoveMember, regenerateInviteToken } from './actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -21,16 +21,43 @@ interface AvailableUser {
 
 interface Props {
   clubId: string
+  inviteToken: string
   members: Member[]
   availableUsers: AvailableUser[]
   currentUserId: string
 }
 
-export function ClubAdminPanel({ clubId, members, availableUsers, currentUserId }: Props) {
+export function ClubAdminPanel({ clubId, inviteToken, members, availableUsers, currentUserId }: Props) {
   const router = useRouter()
   const [inviteId, setInviteId] = useState('')
   const [invitePending, startInvite] = useTransition()
   const [removePending, startRemove] = useTransition()
+  const [regenPending, startRegen] = useTransition()
+  const [copied, setCopied] = useState(false)
+  const [currentToken, setCurrentToken] = useState(inviteToken)
+
+  const inviteUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/join/${currentToken}`
+    : `/join/${currentToken}`
+
+  function handleCopy() {
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  function handleRegen() {
+    if (!confirm('Regenerate invite link? The current link will stop working.')) return
+    startRegen(async () => {
+      const result = await regenerateInviteToken(clubId)
+      if (result?.error) toast.error(result.error)
+      else if (result?.token) {
+        setCurrentToken(result.token)
+        toast.success('Invite link regenerated')
+      }
+    })
+  }
 
   function handleInvite() {
     if (!inviteId) return
@@ -54,7 +81,33 @@ export function ClubAdminPanel({ clubId, members, availableUsers, currentUserId 
     <div className="space-y-6 border-t border-zinc-800 pt-6 mt-6">
       <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Club Admin</h2>
 
-      {/* Invite */}
+      {/* Invite link */}
+      <div className="space-y-2">
+        <p className="text-xs text-zinc-500">Share this link with your coaching staff</p>
+        <div className="flex gap-2">
+          <div className="flex-1 flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 min-w-0">
+            <Link2 size={13} className="text-zinc-600 shrink-0" />
+            <span className="text-xs text-zinc-400 truncate">/join/{currentToken}</span>
+          </div>
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-white transition-colors whitespace-nowrap"
+          >
+            {copied ? <Check size={13} className="text-emerald-400" /> : <Link2 size={13} />}
+            {copied ? 'Copied!' : 'Copy link'}
+          </button>
+          <button
+            onClick={handleRegen}
+            disabled={regenPending}
+            title="Regenerate link"
+            className="flex items-center justify-center size-9 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={13} className={regenPending ? 'animate-spin' : ''} />
+          </button>
+        </div>
+      </div>
+
+      {/* Invite by username */}
       {availableUsers.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs text-zinc-500">Invite a coach to your club</p>

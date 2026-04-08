@@ -264,6 +264,7 @@ export default async function LandingPage() {
               <a href="#features" className="nav-link" style={{ textDecoration: 'none' }}>Features</a>
               <a href="#how-it-works" className="nav-link" style={{ textDecoration: 'none' }}>How It Works</a>
               <a href="#community" className="nav-link" style={{ textDecoration: 'none' }}>Community</a>
+              <a href="#pricing" className="nav-link" style={{ textDecoration: 'none' }}>Pricing</a>
             </div>
 
             {/* Auth CTA */}
@@ -972,6 +973,191 @@ export default async function LandingPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* ── PRICING ─────────────────────────────────────────────── */}
+        <section
+          id="pricing"
+          style={{
+            padding: '7rem 2rem',
+            background: 'var(--surface)',
+            borderTop: '1px solid var(--border-subtle)',
+            borderBottom: '1px solid var(--border-subtle)',
+          }}
+        >
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
+              <span className="section-label">Simple Pricing</span>
+              <h2
+                className="lp-display"
+                style={{
+                  fontWeight: 800,
+                  fontStyle: 'italic',
+                  fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+                  lineHeight: 0.95,
+                  textTransform: 'uppercase',
+                  color: 'var(--text)',
+                  marginTop: '1rem',
+                }}
+              >
+                Start free.<br />
+                <span style={{ color: 'var(--ember)' }}>Upgrade when ready.</span>
+              </h2>
+              <p style={{ marginTop: '1.25rem', fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, maxWidth: '480px', margin: '1.25rem auto 0' }}>
+                No credit card required to start. Upgrade to Coach Pro for unlimited tools, or get Club for your entire coaching staff.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+
+              {/* Free */}
+              <div className="feature-card" style={{ position: 'relative' }}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Free</p>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                    <span className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '3rem', color: 'var(--text)', lineHeight: 1 }}>£0</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/forever</span>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Everything you need to get started</p>
+                </div>
+                <div style={{ height: '1px', background: 'var(--border-subtle)', marginBottom: '1.5rem' }} />
+                {[
+                  'Up to 20 drills',
+                  'Public drill library',
+                  'Session planning',
+                  'AI coaching chat (20/day)',
+                  'Community access',
+                  'Public profile page',
+                ].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--ember)', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                  </div>
+                ))}
+                <div style={{ marginTop: '2rem' }}>
+                  <Link href="/signup" className="cta-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                    Get Started Free
+                  </Link>
+                </div>
+              </div>
+
+              {/* Coach Pro */}
+              <div
+                className="feature-card"
+                style={{
+                  position: 'relative',
+                  borderColor: 'rgba(99,102,241,0.4)',
+                  background: 'linear-gradient(135deg, var(--surface2) 0%, rgba(99,102,241,0.06) 100%)',
+                  transform: 'scale(1.02)',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '-12px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'rgba(99,102,241,1)',
+                    color: '#fff',
+                    fontFamily: 'var(--font-barlow)',
+                    fontWeight: 700,
+                    fontSize: '0.7rem',
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    padding: '4px 14px',
+                    borderRadius: '20px',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Most Popular
+                </div>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(99,102,241,0.9)', marginBottom: '0.5rem' }}>Coach Pro</p>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                    <span className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '3rem', color: 'var(--text)', lineHeight: 1 }}>£9.99</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/month</span>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>£89/year — save 26%</p>
+                </div>
+                <div style={{ height: '1px', background: 'var(--border-subtle)', marginBottom: '1.5rem' }} />
+                {[
+                  'Unlimited drills',
+                  'PDF export',
+                  'Unlimited AI coaching chat',
+                  'All free features included',
+                ].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'rgba(99,102,241,0.9)', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                  </div>
+                ))}
+                <div style={{ marginTop: '2rem' }}>
+                  <Link href="/signup" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px', background: 'rgba(99,102,241,1)' }}>
+                    Start Coach Pro →
+                  </Link>
+                </div>
+              </div>
+
+              {/* Club */}
+              <div
+                className="feature-card"
+                style={{
+                  borderColor: 'rgba(232,86,10,0.3)',
+                  background: 'linear-gradient(135deg, var(--surface2) 0%, rgba(232,86,10,0.05) 100%)',
+                  position: 'relative',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '-12px',
+                    right: '1.5rem',
+                    background: 'rgba(232,86,10,0.15)',
+                    color: 'var(--ember)',
+                    border: '1px solid rgba(232,86,10,0.3)',
+                    fontFamily: 'var(--font-barlow)',
+                    fontWeight: 700,
+                    fontSize: '0.7rem',
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    padding: '4px 14px',
+                    borderRadius: '20px',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Best Value
+                </div>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Club</p>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                    <span className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '3rem', color: 'var(--text)', lineHeight: 1 }}>£24.99</span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/month</span>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>£219/year — covers your whole club</p>
+                </div>
+                <div style={{ height: '1px', background: 'var(--border-subtle)', marginBottom: '1.5rem' }} />
+                {[
+                  'Everything in Coach Pro',
+                  'Unlimited coaches in your club',
+                  'Club private drill library',
+                  'Coaching groups (up to 5)',
+                  'Collaborative session plans',
+                  'AI session guidance (GameSense)',
+                ].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--ember)', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                  </div>
+                ))}
+                <div style={{ marginTop: '2rem' }}>
+                  <Link href="/signup" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                    Get Club Plan →
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <p style={{ textAlign: 'center', marginTop: '2.5rem', fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+              Prices in GBP. Club plan covers all coaches in one club — no per-seat fees. Cancel anytime.
+            </p>
           </div>
         </section>
 

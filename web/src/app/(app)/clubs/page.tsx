@@ -6,8 +6,14 @@ import { AcceptDeclineButtons } from './AcceptDeclineButtons'
 import { ClubAdminPanel } from './ClubAdminPanel'
 
 export const metadata = { title: 'My Club — 18th Man' }
+export const dynamic = 'force-dynamic'
 
-export default async function ClubPage() {
+export default async function ClubPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ joined?: string }>
+}) {
+  const { joined } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -23,7 +29,7 @@ export default async function ClubPage() {
     const [{ data: club }, { data: members }] = await Promise.all([
       supabase
         .from('clubs')
-        .select('id, name, slug, created_at')
+        .select('id, name, slug, created_at, invite_token')
         .eq('id', profile.club_id)
         .single(),
       supabase
@@ -61,6 +67,13 @@ export default async function ClubPage() {
 
     return (
       <div className="space-y-8 max-w-2xl">
+        {joined && (
+          <div className="flex items-center gap-3 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 text-sm text-emerald-300">
+            <CheckCircle size={16} className="shrink-0" />
+            <p>You&apos;ve joined the club!</p>
+          </div>
+        )}
+
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
             <Building2 size={18} className="text-amber-400" />
@@ -105,9 +118,10 @@ export default async function ClubPage() {
         </section>
 
         {/* Club admin management panel */}
-        {profile.club_role === 'admin' && (
+        {profile.club_role === 'admin' && club?.invite_token && (
           <ClubAdminPanel
             clubId={profile.club_id}
+            inviteToken={club.invite_token}
             members={members ?? []}
             availableUsers={availableUsers}
             currentUserId={user.id}
@@ -131,8 +145,8 @@ export default async function ClubPage() {
         <h1 className="app-heading text-2xl">My Club</h1>
         <div className="flex flex-col items-center gap-3 py-16 rounded-xl border border-zinc-800 text-center">
           <Building2 size={32} className="text-zinc-700" />
-          <p className="text-sm text-zinc-500">You haven&apos;t been assigned to a club yet.</p>
-          <p className="text-xs text-zinc-600">Ask an admin to invite you to a club.</p>
+          <p className="text-sm text-zinc-500">You&apos;re not a member of any club yet.</p>
+          <p className="text-xs text-zinc-600">Ask your club admin to share their invite link with you.</p>
         </div>
       </div>
     )
