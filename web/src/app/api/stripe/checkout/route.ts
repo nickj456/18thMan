@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
     const { plan, clubId } = await req.json() as { plan: CheckoutPlan; clubId?: string }
 
     const priceId = getPriceId(plan)
+    console.log('[stripe/checkout] priceId:', priceId, 'plan:', plan)
     if (!priceId) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
 
     const isClubPlan = plan.startsWith('club')
