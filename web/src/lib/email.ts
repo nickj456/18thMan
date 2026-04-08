@@ -233,3 +233,31 @@ export async function sendUpgradeNudgeEmail(to: string, displayName: string, fea
     ${sign()}
   `))
 }
+
+/** Sent when a Coach Pro or Club subscription is activated */
+export async function sendSubscriptionConfirmationEmail(
+  to: string,
+  displayName: string,
+  plan: 'coach' | 'club',
+): Promise<EmailResult> {
+  const isClub = plan === 'club'
+  const planName = isClub ? 'Club' : 'Coach Pro'
+  const tagline = isClub
+    ? 'Your whole club now has full access to 18th Man.'
+    : 'You now have full access to 18th Man.'
+  const features = isClub
+    ? ['Unlimited coaches in your club', 'Club private drills', 'Coaching groups (up to 5)', 'Collaborative session plans', 'AI session guidance (GameSense)']
+    : ['Unlimited drills', 'PDF export', 'Unlimited AI coaching chat', 'All free features included']
+
+  return send(to, `You're on ${planName} — welcome aboard`, layout(`
+    ${heading(`You're on ${planName}.`)}
+    ${para(tagline)}
+    ${divider()}
+    ${greeting(displayName)}
+    ${para("Here's what you've unlocked:")}
+    ${featureList(features)}
+    ${ctaButton('Go to your dashboard', `${SITE_URL}/dashboard`)}
+    ${para(`You can manage your billing at any time from your <a href="${SITE_URL}/settings" style="color:#e8560a;">settings page</a>.`)}
+    ${sign()}
+  `))
+}

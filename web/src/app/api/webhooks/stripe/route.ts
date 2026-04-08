@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getStripe } from '@/lib/stripe'
+import { sendSubscriptionConfirmationEmail } from '@/lib/email'
 import type Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
@@ -39,6 +40,31 @@ export async function POST(req: NextRequest) {
               stripe_subscription_id: sub.id,
             })
             .eq('stripe_customer_id', sub.customer as string)
+
+          // Send confirmation email to club creator on new subscription
+          if (isActive && event.type === 'customer.subscription.created') {
+            const { data: club } = await supabase
+              .from('clubs')
+              .select('created_by')
+              .eq('stripe_customer_id', sub.customer as string)
+              .single()
+            if (club?.created_by) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('display_name, username')
+                .eq('id', club.created_by)
+                .single()
+              const { data: authUser } = await supabase.auth.admin.getUserById(club.created_by)
+              const email = authUser?.user?.email
+              if (email) {
+                await sendSubscriptionConfirmationEmail(
+                  email,
+                  profile?.display_name ?? profile?.username ?? 'Coach',
+                  'club',
+                )
+              }
+            }
+          }
         } else if (userId) {
           await supabase
             .from('profiles')
@@ -47,6 +73,24 @@ export async function POST(req: NextRequest) {
               stripe_subscription_id: sub.id,
             })
             .eq('id', userId)
+
+          // Send confirmation email on new subscription
+          if (isActive && event.type === 'customer.subscription.created') {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('display_name, username')
+              .eq('id', userId)
+              .single()
+            const { data: authUser } = await supabase.auth.admin.getUserById(userId)
+            const email = authUser?.user?.email
+            if (email) {
+              await sendSubscriptionConfirmationEmail(
+                email,
+                profile?.display_name ?? profile?.username ?? 'Coach',
+                'coach',
+              )
+            }
+          }
         }
         break
       }
