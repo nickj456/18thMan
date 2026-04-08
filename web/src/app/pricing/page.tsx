@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getEffectiveTier, hasClubAccess } from '@/lib/subscription'
 import { Check, Lock } from 'lucide-react'
 import { CheckoutButton } from '@/components/pricing/CheckoutButton'
+import { ClubCheckoutButton } from '@/components/pricing/ClubCheckoutButton'
 
 export const metadata = { title: 'Pricing — 18th Man' }
 
@@ -200,12 +201,8 @@ export default async function PricingPage() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <Link href="/dashboard" style={{ display: 'block', padding: '9px 0', borderRadius: 8, background: '#f59e0b', color: '#000', fontSize: 13, textAlign: 'center', textDecoration: 'none', fontWeight: 700 }}>
-                  Create a club to get started
-                </Link>
-                <p style={{ fontSize: 11, color: '#71717a', textAlign: 'center', margin: 0 }}>
-                  Club plan is billed to your club, not your personal account
-                </p>
+                <ClubCheckoutButton plan="club_monthly" label="Monthly — £24.99/mo" variant="amber" />
+                <ClubCheckoutButton plan="club_annual" label="Annual — £219/year (save 27%)" variant="secondary" />
               </div>
             )}
           </div>
