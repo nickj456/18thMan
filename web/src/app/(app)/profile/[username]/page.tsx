@@ -3,7 +3,13 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { PenTool, CalendarDays, Star, MapPin, Award, ArrowLeft } from 'lucide-react'
+import { PenTool, CalendarDays, Star, MapPin, Award, ArrowLeft, MessageSquare } from 'lucide-react'
+import { startDm } from '@/app/(app)/chat/dm/actions'
+
+async function startDmAction(userId: string) {
+  'use server'
+  await startDm(userId)
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params
@@ -108,14 +114,26 @@ export default async function PublicProfilePage({
             </div>
           </div>
 
-          {isOwnProfile && (
-            <Link
-              href={`/profile/${profile.username}/edit`}
-              className="text-xs text-zinc-500 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-1.5 rounded-lg transition-colors shrink-0"
-            >
-              Edit Profile
-            </Link>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {!isOwnProfile && currentUser && (
+              <form action={startDmAction.bind(null, profile.id)}>
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  <MessageSquare size={12} /> Message
+                </button>
+              </form>
+            )}
+            {isOwnProfile && (
+              <Link
+                href={`/profile/${profile.username}/edit`}
+                className="text-xs text-zinc-500 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                Edit Profile
+              </Link>
+            )}
+          </div>
         </div>
 
         {profile.bio && (
