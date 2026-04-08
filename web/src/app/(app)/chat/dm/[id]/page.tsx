@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { ArrowLeft, User } from 'lucide-react'
 import { DmView } from '@/components/chat/DmView'
 
@@ -12,9 +13,10 @@ export default async function DmConversationPage({ params }: { params: Promise<{
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  const service = createServiceClient()
 
-  // Verify this is a DM and user is a participant
-  const { data: conv } = await supabase
+  // Verify this is a DM and user is a participant (service client bypasses RLS)
+  const { data: conv } = await service
     .from('conversations')
     .select('id, type')
     .eq('id', id)
@@ -23,7 +25,7 @@ export default async function DmConversationPage({ params }: { params: Promise<{
 
   if (!conv) notFound()
 
-  const { data: myParticipation } = await supabase
+  const { data: myParticipation } = await service
     .from('conversation_participants')
     .select('user_id')
     .eq('conversation_id', id)
@@ -33,7 +35,7 @@ export default async function DmConversationPage({ params }: { params: Promise<{
   if (!myParticipation) notFound()
 
   // Get the other participant
-  const { data: otherParticipant } = await supabase
+  const { data: otherParticipant } = await service
     .from('conversation_participants')
     .select('profiles!inner(id, display_name, username, avatar_url)')
     .eq('conversation_id', id)
@@ -45,7 +47,7 @@ export default async function DmConversationPage({ params }: { params: Promise<{
     : null
 
   // Load messages
-  const { data: messages } = await supabase
+  const { data: messages } = await service
     .from('messages')
     .select('id, content, created_at, sender_id, author:profiles!messages_sender_id_fkey ( display_name, username, avatar_url )')
     .eq('conversation_id', id)

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { MessageSquare, User, ArrowRight } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -12,17 +13,18 @@ export default async function DmListPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Get all DM conversation IDs for this user
-  const { data: participations } = await supabase
+  const service = createServiceClient()
+
+  // Use service client to bypass RLS for reading participant/conversation data
+  const { data: participations } = await service
     .from('conversation_participants')
     .select('conversation_id, last_read_at')
     .eq('user_id', user.id)
 
   const allConvIds = (participations ?? []).map(p => p.conversation_id)
 
-  // Filter to only DM type conversations
   const { data: dmConvs } = allConvIds.length
-    ? await supabase
+    ? await service
         .from('conversations')
         .select('id')
         .eq('type', 'dm')
@@ -45,13 +47,13 @@ export default async function DmListPage() {
   }
 
   // For each conversation, get the other participant and latest message
-  const { data: allParticipants } = await supabase
+  const { data: allParticipants } = await service
     .from('conversation_participants')
     .select('conversation_id, user_id, last_read_at, profiles!inner(id, display_name, username, avatar_url)')
     .in('conversation_id', convIds)
     .neq('user_id', user.id)
 
-  const { data: lastMessages } = await supabase
+  const { data: lastMessages } = await service
     .from('messages')
     .select('conversation_id, content, created_at, sender_id')
     .in('conversation_id', convIds)
