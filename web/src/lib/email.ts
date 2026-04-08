@@ -117,7 +117,7 @@ function sign(): string {
   return `${divider()}<p style="margin:0;font-size:13px;color:#52525b;">— The 18th Man team</p>`
 }
 
-const PRICING_URL = '${SITE_URL}/pricing'
+const PRICING_URL = `${SITE_URL}/pricing`
 
 // ── Emails ────────────────────────────────────────────────────────────────────
 
