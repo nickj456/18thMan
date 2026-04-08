@@ -199,8 +199,13 @@ export default async function PricingPage() {
                 <CheckoutButton plan="club_annual" clubId={clubId} label="Annual — £219/year (save 27%)" variant="secondary" />
               </div>
             ) : (
-              <div style={{ padding: '9px 12px', borderRadius: 8, border: '1px solid rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.05)', fontSize: 12, color: '#a16207', textAlign: 'center', lineHeight: 1.5 }}>
-                <Link href="/dashboard" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: 600 }}>Create a club</Link> first to subscribe to this plan
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <Link href="/dashboard" style={{ display: 'block', padding: '9px 0', borderRadius: 8, background: '#f59e0b', color: '#000', fontSize: 13, textAlign: 'center', textDecoration: 'none', fontWeight: 700 }}>
+                  Create a club to get started
+                </Link>
+                <p style={{ fontSize: 11, color: '#71717a', textAlign: 'center', margin: 0 }}>
+                  Club plan is billed to your club, not your personal account
+                </p>
               </div>
             )}
           </div>
