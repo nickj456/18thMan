@@ -18,13 +18,13 @@ export default async function EditProfilePage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  const [{ data }, { data: socialLinks }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('social_links').select('platform, url').eq('user_id', user.id),
+  ])
 
   const profile = data as Profile
+  const socials = Object.fromEntries((socialLinks ?? []).map(s => [s.platform, s.url])) as Record<string, string>
 
   // Only allow editing your own profile
   if (profile?.username !== username) redirect(`/profile/${username}`)
@@ -57,7 +57,7 @@ export default async function EditProfilePage({
         </div>
       </div>
 
-      <ProfileForm profile={profile} />
+      <ProfileForm profile={profile} socials={socials} />
     </div>
   )
 }

@@ -38,6 +38,8 @@ export async function uploadAvatar(formData: FormData) {
   return { success: true, avatarUrl }
 }
 
+const SOCIAL_PLATFORMS = ['twitter', 'instagram', 'facebook', 'youtube', 'linkedin'] as const
+
 export async function updateProfile(formData: FormData): Promise<void> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -54,6 +56,22 @@ export async function updateProfile(formData: FormData): Promise<void> {
     .eq('id', user.id)
     .select('username')
     .single()
+
+  // Upsert non-empty social links, delete empty ones
+  for (const platform of SOCIAL_PLATFORMS) {
+    const url = (formData.get(`social_${platform}`) as string)?.trim()
+    if (url) {
+      await supabase
+        .from('social_links')
+        .upsert({ user_id: user.id, platform, url }, { onConflict: 'user_id,platform' })
+    } else {
+      await supabase
+        .from('social_links')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('platform', platform)
+    }
+  }
 
   revalidatePath('/profile')
   revalidatePath(`/profile/${profile?.username}`)
