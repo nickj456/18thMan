@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 
 const FROM = 'The 18th Man <onboarding@resend.dev>'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
 
 function getResend(): Resend | null {
   if (!process.env.RESEND_API_KEY) return null
@@ -42,7 +43,7 @@ function layout(body: string): string {
           <!-- Logo -->
           <tr>
             <td align="center" style="padding-bottom:32px;">
-              <img src="https://web-coral-delta-97.vercel.app/logo.png" alt="18th Man" width="56" height="56" style="display:block;" />
+              <img src="${SITE_URL}/logo.png" alt="18th Man" width="56" height="56" style="display:block;" />
             </td>
           </tr>
 
@@ -58,7 +59,7 @@ function layout(body: string): string {
             <td align="center" style="padding-top:24px;">
               <p style="margin:0;font-size:12px;color:#52525b;">
                 18th Man · Rugby League Coaching Platform<br/>
-                <a href="https://web-coral-delta-97.vercel.app" style="color:#52525b;">web-coral-delta-97.vercel.app</a>
+                <a href="${SITE_URL}" style="color:#52525b;">18thman.app</a>
               </p>
             </td>
           </tr>
@@ -116,7 +117,7 @@ function sign(): string {
   return `${divider()}<p style="margin:0;font-size:13px;color:#52525b;">— The 18th Man team</p>`
 }
 
-const PRICING_URL = 'https://web-coral-delta-97.vercel.app/pricing'
+const PRICING_URL = '${SITE_URL}/pricing'
 
 // ── Emails ────────────────────────────────────────────────────────────────────
 
@@ -133,7 +134,7 @@ export async function sendWelcomeEmail(to: string, displayName: string): Promise
       'Explore the drill library — see what other coaches have shared',
       'Try the AI coaching chat — ask it anything about technique or session planning',
     ])}
-    ${ctaButton('Go to your dashboard', 'https://web-coral-delta-97.vercel.app/dashboard')}
+    ${ctaButton('Go to your dashboard', '${SITE_URL}/dashboard')}
     ${sign()}
   `))
 }
@@ -155,7 +156,7 @@ export async function sendTrialStartEmail(to: string, displayName: string, trial
       'Club private drills — keep your team\'s moves locked to your club',
     ])}
     ${para(`After 48 hours, features will revert unless your club subscribes.`)}
-    ${ctaButton('Explore premium features', 'https://web-coral-delta-97.vercel.app/dashboard')}
+    ${ctaButton('Explore premium features', '${SITE_URL}/dashboard')}
     ${sign()}
   `))
 }
