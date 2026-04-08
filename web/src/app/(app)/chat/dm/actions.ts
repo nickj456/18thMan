@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 
 async function getUser() {
   const supabase = await createClient()
@@ -17,23 +18,27 @@ export async function startDm(otherUserId: string) {
   if (otherUserId === user.id) return { error: "You can't message yourself" }
 
   // Check if a DM between these two already exists
-  const { data: existing } = await supabase
-    .from('conversations')
-    .select('id, conversation_participants!inner(user_id)')
-    .eq('type', 'dm')
-    .eq('conversation_participants.user_id', user.id)
+  // Get all DM conversation IDs the current user is in
+  const { data: myConvs } = await supabase
+    .from('conversation_participants')
+    .select('conversation_id, conversations!inner(id, type)')
+    .eq('user_id', user.id)
+    .eq('conversations.type', 'dm')
 
-  for (const conv of existing ?? []) {
-    // Check if the other user is also a participant
-    const { data: otherParticipant } = await supabase
+  const myConvIds = (myConvs ?? []).map(p => p.conversation_id)
+
+  if (myConvIds.length > 0) {
+    // Check if the other user is in any of those conversations
+    const { data: shared } = await supabase
       .from('conversation_participants')
-      .select('user_id')
-      .eq('conversation_id', conv.id)
+      .select('conversation_id')
       .eq('user_id', otherUserId)
+      .in('conversation_id', myConvIds)
+      .limit(1)
       .single()
 
-    if (otherParticipant) {
-      redirect(`/chat/dm/${conv.id}`)
+    if (shared) {
+      redirect(`/chat/dm/${shared.conversation_id}`)
     }
   }
 
@@ -46,8 +51,10 @@ export async function startDm(otherUserId: string) {
 
   if (convErr || !conv) return { error: convErr?.message ?? 'Failed to create conversation' }
 
-  // Add both participants
-  const { error: partErr } = await supabase
+  // Use service client to insert both participants — RLS only allows inserting
+  // your own user_id, so we need service role to add the other participant
+  const service = createServiceClient()
+  const { error: partErr } = await service
     .from('conversation_participants')
     .insert([
       { conversation_id: conv.id, user_id: user.id },
