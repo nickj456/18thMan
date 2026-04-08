@@ -104,6 +104,33 @@ export async function markDmRead(conversationId: string) {
     .eq('user_id', user.id)
 }
 
+/** Delete an entire DM conversation (either participant can delete) */
+export async function deleteDmConversation(conversationId: string) {
+  const { supabase, user } = await getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // Verify user is a participant before deleting
+  const { data: participant } = await supabase
+    .from('conversation_participants')
+    .select('user_id')
+    .eq('conversation_id', conversationId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (!participant) return { error: 'Not a participant' }
+
+  const service = createServiceClient()
+  const { error } = await service
+    .from('conversations')
+    .delete()
+    .eq('id', conversationId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/chat/dm')
+  redirect('/chat/dm')
+}
+
 /** Delete a DM message (own messages only) */
 export async function deleteDmMessage(messageId: string) {
   const { supabase, user } = await getUser()

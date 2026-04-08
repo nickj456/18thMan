@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { ArrowLeft, User } from 'lucide-react'
 import { DmView } from '@/components/chat/DmView'
+import { DeleteDmButton } from '@/components/chat/DeleteDmButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,7 +77,7 @@ export default async function DmConversationPage({ params }: { params: Promise<{
             <User size={16} className="text-zinc-500" />
           </div>
         )}
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white">{other?.display_name ?? other?.username ?? 'Coach'}</p>
           {other?.username && (
             <Link href={`/profile/${other.username}`} className="text-xs text-zinc-500 hover:text-zinc-400 transition-colors">
@@ -84,6 +85,7 @@ export default async function DmConversationPage({ params }: { params: Promise<{
             </Link>
           )}
         </div>
+        <DeleteDmButton conversationId={id} />
       </div>
 
       <DmView
