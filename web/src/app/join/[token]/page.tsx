@@ -7,6 +7,33 @@ import { Users, Building2, ArrowRight, CheckCircle2 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params
+  const service = createServiceClient()
+  const { data: club } = await service
+    .from('clubs')
+    .select('name')
+    .eq('invite_token', token)
+    .single()
+
+  if (!club) return { title: 'Invalid invite — 18th Man' }
+
+  return {
+    title: `Join ${club.name} on 18th Man`,
+    description: `You've been invited to join ${club.name}. Sign up free and start coaching smarter.`,
+    openGraph: {
+      title: `Join ${club.name} on 18th Man`,
+      description: `You've been invited to join ${club.name}. Sign up free and start coaching smarter.`,
+      siteName: '18th Man',
+    },
+    twitter: {
+      card: 'summary',
+      title: `Join ${club.name} on 18th Man`,
+      description: `You've been invited to join ${club.name}. Sign up free and start coaching smarter.`,
+    },
+  }
+}
+
 async function joinClub(token: string, userId: string) {
   'use server'
   const service = createServiceClient()
