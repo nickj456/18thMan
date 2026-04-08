@@ -12,7 +12,6 @@ export async function POST(req: NextRequest) {
     const { plan, clubId } = await req.json() as { plan: CheckoutPlan; clubId?: string }
 
     const priceId = getPriceId(plan)
-    console.log('[stripe/checkout] priceId:', priceId, 'plan:', plan)
     if (!priceId) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
 
     const isClubPlan = plan.startsWith('club')
@@ -89,8 +88,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: session.url })
     }
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error('[stripe/checkout]', msg)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    console.error('[stripe/checkout]', err)
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
