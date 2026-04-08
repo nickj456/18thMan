@@ -12,21 +12,24 @@ export default async function DmListPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Get all DM conversations the user is in, with the other participant and last message
+  // Get all DM conversation IDs for this user
   const { data: participations } = await supabase
     .from('conversation_participants')
-    .select(`
-      conversation_id,
-      last_read_at,
-      conversations!inner (
-        id,
-        type,
-        updated_at
-      )
-    `)
-    .eq('conversations.type', 'dm')
+    .select('conversation_id, last_read_at')
+    .eq('user_id', user.id)
 
-  const convIds = (participations ?? []).map(p => p.conversation_id)
+  const allConvIds = (participations ?? []).map(p => p.conversation_id)
+
+  // Filter to only DM type conversations
+  const { data: dmConvs } = allConvIds.length
+    ? await supabase
+        .from('conversations')
+        .select('id')
+        .eq('type', 'dm')
+        .in('id', allConvIds)
+    : { data: [] }
+
+  const convIds = (dmConvs ?? []).map(c => c.id)
 
   if (!convIds.length) {
     return (
@@ -65,7 +68,9 @@ export default async function DmListPage() {
   // Build a lookup of my last_read_at per conversation
   const myLastRead: Record<string, string> = {}
   for (const p of participations ?? []) {
-    myLastRead[p.conversation_id] = p.last_read_at
+    if (convIds.includes(p.conversation_id)) {
+      myLastRead[p.conversation_id] = p.last_read_at
+    }
   }
 
   // Build conversation list
