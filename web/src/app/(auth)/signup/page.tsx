@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { signup } from './actions'
-import { loginWithOAuth } from '@/app/(auth)/login/actions'
+import { loginWithOAuth } from '../login/actions'
 
 export default async function SignupPage({
   searchParams,
@@ -132,6 +132,44 @@ export default async function SignupPage({
         }
         .auth-footer a:hover { color: #e8560a; }
 
+        .auth-google-btn {
+          width: 100%;
+          background: #fff;
+          color: #3c4043;
+          font-size: 0.88rem;
+          font-weight: 600;
+          padding: 10px 0;
+          border-radius: 8px;
+          border: 1px solid #dadce0;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          transition: background 0.15s, box-shadow 0.15s;
+          margin-bottom: 1.25rem;
+        }
+        .auth-google-btn:hover {
+          background: #f8f9fa;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .auth-divider {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 0 0 1.25rem;
+          color: #4a4845;
+          font-size: 0.75rem;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: rgba(255,255,255,0.08);
+        }
+
         .auth-field { margin-bottom: 1rem; }
         .auth-hint {
           font-size: 0.72rem;
@@ -147,28 +185,18 @@ export default async function SignupPage({
         <div className="auth-error">{decodeURIComponent(error)}</div>
       )}
 
-      {/* OAuth buttons */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.25rem' }}>
-        <form action={loginWithOAuth.bind(null, 'google')}>
-          <button type="submit" className="auth-google-btn">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
-              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
-              <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
-              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
-            </svg>
-            Continue with Google
-          </button>
-        </form>
-        <form action={loginWithOAuth.bind(null, 'facebook')}>
-          <button type="submit" className="auth-google-btn">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2" xmlns="http://www.w3.org/2000/svg">
-              <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.97h-1.514c-1.491 0-1.956.93-1.956 1.884v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
-            </svg>
-            Continue with Facebook
-          </button>
-        </form>
-      </div>
+      {/* Google sign-in */}
+      <form action={loginWithOAuth.bind(null, 'google')}>
+        <button type="submit" className="auth-google-btn">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
+            <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
+          </svg>
+          Continue with Google
+        </button>
+      </form>
 
       <div className="auth-divider">or create with email</div>
 
