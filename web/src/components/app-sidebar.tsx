@@ -25,6 +25,7 @@ import {
   Settings,
   Shirt,
   BookMarked,
+  Dumbbell,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -55,6 +56,8 @@ const navItems = [
 
 const resourceItems = [
   { href: '/positions', label: 'Positions Guide', icon: Shirt },
+  { href: '/age-groups', label: 'Age Groups Guide', icon: Users },
+  { href: '/skills', label: 'Fundamental Skills', icon: Dumbbell },
   { href: '/how-to', label: 'How-to & FAQ', icon: BookMarked },
 ]
 
