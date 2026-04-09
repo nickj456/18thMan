@@ -24,7 +24,29 @@ async function unfollowAction(userId: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params
-  return { title: `@${username} — 18th Man` }
+  const supabase = await createClient()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('display_name, bio, avatar_url, coaching_level')
+    .eq('username', username)
+    .single()
+
+  const displayName = profile?.display_name ?? username
+  const description = [
+    profile?.bio,
+    profile?.coaching_level && `${profile.coaching_level} coach`,
+    'Rugby league coach on 18th Man',
+  ].filter(Boolean).join(' · ')
+
+  return {
+    title: `${displayName} (@${username})`,
+    description,
+    openGraph: {
+      title: `${displayName} — Rugby League Coach`,
+      description,
+      ...(profile?.avatar_url ? { images: [{ url: profile.avatar_url, width: 400, height: 400, alt: displayName }] } : {}),
+    },
+  }
 }
 
 const difficultyColour: Record<string, string> = {

@@ -1,6 +1,16 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+
+export const metadata: Metadata = {
+  title: 'Drill Library',
+  description: 'Browse hundreds of rugby league drills — passing, defence, attack, fitness, and more. Free for all coaches.',
+  openGraph: {
+    title: 'Rugby League Drill Library — 18th Man',
+    description: 'Browse hundreds of rugby league drills — passing, defence, attack, fitness, and more. Free for all coaches.',
+  },
+}
 import { Button } from '@/components/ui/button'
 import { DrillCard } from '@/components/drills/DrillCard'
 import { CollapsiblePrivateDrills } from '@/components/drills/CollapsiblePrivateDrills'

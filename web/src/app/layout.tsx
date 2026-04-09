@@ -25,12 +25,41 @@ const barlowCondensed = Barlow_Condensed({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
+
 export const metadata: Metadata = {
-  title: "18th Man",
-  description: "Rugby league coaching platform — drills, sessions, and community for coaches.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: '18th Man — Rugby League Coaching Platform',
+    template: '%s | 18th Man',
+  },
+  description: 'Free rugby league coaching tools — drill designer, session planner, AI coaching assistant, and a community of coaches. Plan better training sessions today.',
+  keywords: ['rugby league', 'rugby league drills', 'coaching drills', 'training sessions', 'rugby league coaching', 'session planner', 'drill designer'],
+  authors: [{ name: '18th Man', url: siteUrl }],
+  creator: '18th Man',
+  openGraph: {
+    type: 'website',
+    locale: 'en_GB',
+    url: siteUrl,
+    siteName: '18th Man',
+    title: '18th Man — Rugby League Coaching Platform',
+    description: 'Free rugby league coaching tools — drill designer, session planner, AI coaching assistant, and a community of coaches.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '18th Man — Rugby League Coaching' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '18th Man — Rugby League Coaching Platform',
+    description: 'Free rugby league coaching tools — drill designer, session planner, AI coaching assistant, and a community of coaches.',
+    images: ['/og-image.png'],
+  },
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
   },
 };
 

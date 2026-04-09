@@ -1,6 +1,44 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: drill } = await supabase
+    .from('drills')
+    .select('title, description, preview_image_url, canvas_preview_url, difficulty, age_group, author:profiles!drills_author_id_fkey(display_name)')
+    .eq('id', id)
+    .single()
+
+  if (!drill) return { title: 'Drill not found' }
+
+  const image = drill.preview_image_url ?? drill.canvas_preview_url
+  const authorName = (drill.author as { display_name?: string } | null)?.display_name
+  const descParts = [
+    drill.description,
+    drill.difficulty && `Difficulty: ${drill.difficulty}`,
+    drill.age_group && `Age group: ${drill.age_group}`,
+    authorName && `By ${authorName}`,
+  ].filter(Boolean)
+
+  return {
+    title: drill.title,
+    description: descParts.join(' · ') || `Rugby league drill: ${drill.title}`,
+    openGraph: {
+      title: `${drill.title} — Rugby League Drill`,
+      description: descParts.join(' · ') || `Rugby league drill: ${drill.title}`,
+      ...(image ? { images: [{ url: image, width: 1280, height: 720, alt: drill.title }] } : {}),
+    },
+    twitter: {
+      card: image ? 'summary_large_image' : 'summary',
+      title: `${drill.title} — Rugby League Drill`,
+      description: descParts.join(' · ') || `Rugby league drill: ${drill.title}`,
+      ...(image ? { images: [image] } : {}),
+    },
+  }
+}
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
@@ -69,7 +107,37 @@ export default async function DrillDetailPage({
     ? ratings.reduce((sum, r) => sum + (r.rating ?? 0), 0) / ratings.filter(r => r.rating).length
     : null
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: drill.title,
+    description: drill.description ?? `Rugby league drill: ${drill.title}`,
+    url: `${siteUrl}/drills/${id}`,
+    ...(drill.preview_image_url ? { image: drill.preview_image_url } : {}),
+    ...(drill.difficulty ? { difficulty: drill.difficulty } : {}),
+    author: drill.author ? {
+      '@type': 'Person',
+      name: (drill.author as { display_name?: string; username?: string }).display_name
+        ?? (drill.author as { display_name?: string; username?: string }).username,
+    } : undefined,
+    ...(avgRating && ratings.length ? {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: avgRating.toFixed(1),
+        reviewCount: ratings.length,
+        bestRating: 5,
+        worstRating: 1,
+      },
+    } : {}),
+  }
+
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
     <div className="max-w-4xl space-y-6">
       {/* Back + actions */}
       <div className="flex items-center justify-between">
@@ -259,5 +327,6 @@ export default async function DrillDetailPage({
         )}
       </div>
     </div>
+    </>
   )
 }
