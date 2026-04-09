@@ -3,6 +3,7 @@ import type { EffectiveTier } from '@/lib/supabase/types'
 export type { EffectiveTier }
 
 export const FREE_DRILL_LIMIT = 20
+export const FREE_SESSION_LIMIT = 3
 export const FREE_AI_CHAT_DAILY_LIMIT = 20
 
 /**
@@ -139,6 +140,25 @@ export async function canSendAiMessage(
 
   const msgCount = count ?? 0
   return { allowed: msgCount < FREE_AI_CHAT_DAILY_LIMIT, tier, count: msgCount }
+}
+
+/** True if the user can create another session (free tier: max 3) */
+export async function canCreateSession(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: SupabaseClient<any>,
+  userId: string
+): Promise<{ allowed: boolean; tier: EffectiveTier; count: number }> {
+  const [tier, countResult] = await Promise.all([
+    getEffectiveTier(supabase, userId),
+    supabase
+      .from('session_plans')
+      .select('id', { count: 'exact', head: true })
+      .eq('coach_id', userId),
+  ])
+
+  const count = countResult.count ?? 0
+  if (tier !== 'free') return { allowed: true, tier, count }
+  return { allowed: count < FREE_SESSION_LIMIT, tier, count }
 }
 
 /**

@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Clock, BookOpen, Users } from 'lucide-react'
+import { Plus, Clock, BookOpen, Users, Lock } from 'lucide-react'
+import { canCreateSession, FREE_SESSION_LIMIT } from '@/lib/subscription'
 import type { SessionPlan } from '@/lib/supabase/types'
 
 type SessionWithGroup = SessionPlan & {
@@ -34,6 +35,9 @@ export default async function SessionsPage() {
   const groupSessions = (groupResult.data ?? []).filter(s => !ownIds.has(s.id))
   const mySessions = [...(ownResult.data ?? []), ...groupSessions] as SessionWithGroup[]
 
+  const { allowed: canCreate, tier, count: sessionCount } = await canCreateSession(supabase, user.id)
+  const atLimit = !canCreate && tier === 'free'
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -41,13 +45,44 @@ export default async function SessionsPage() {
           <h1 className="app-heading text-2xl">Session Planner</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {mySessions.length} session{mySessions.length !== 1 ? 's' : ''}
+            {tier === 'free' && (
+              <span className="ml-2 text-zinc-600">
+                · {sessionCount}/{FREE_SESSION_LIMIT} free sessions used
+              </span>
+            )}
           </p>
         </div>
-        <Button size="sm" nativeButton={false} render={<Link href="/sessions/new" />}>
-          <Plus className="size-4 mr-2" />
-          New session
-        </Button>
+        {atLimit ? (
+          <Button size="sm" variant="outline" disabled className="opacity-50 cursor-not-allowed">
+            <Lock className="size-4 mr-2" />
+            New session
+          </Button>
+        ) : (
+          <Button size="sm" nativeButton={false} render={<Link href="/sessions/new" />}>
+            <Plus className="size-4 mr-2" />
+            New session
+          </Button>
+        )}
       </div>
+
+      {atLimit && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1 space-y-1">
+            <p className="text-sm font-medium text-amber-300">
+              You&apos;ve used all {FREE_SESSION_LIMIT} free session plans
+            </p>
+            <p className="text-xs text-zinc-400">
+              Upgrade to a club subscription for unlimited sessions, PDF export, coaching groups, and more.
+            </p>
+          </div>
+          <Link
+            href="mailto:hello@18thman.app?subject=Club subscription"
+            className="shrink-0 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-4 py-2 rounded-lg transition-colors text-center"
+          >
+            Upgrade your club
+          </Link>
+        </div>
+      )}
 
       {mySessions.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">

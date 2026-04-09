@@ -7,6 +7,7 @@ import { gateway } from '@ai-sdk/gateway'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
+import { canCreateSession } from '@/lib/subscription'
 import type { SessionDrillItem, AiGuide } from '@/lib/supabase/types'
 
 const LOCK_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes
@@ -31,6 +32,9 @@ export async function createSession(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
+
+  const { allowed } = await canCreateSession(supabase, user.id)
+  if (!allowed) return { error: 'session_limit_reached' }
 
   const totalDuration = drillsOrder.reduce((sum, d) => sum + (d.duration_minutes || 0), 0)
 

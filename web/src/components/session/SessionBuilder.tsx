@@ -18,6 +18,7 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { GripVertical, X, ChevronDown, ChevronUp, Clock, Plus, Search, Globe, Lock, Users2, Calendar, Puzzle, Copy } from 'lucide-react'
+import { toast } from 'sonner'
 import { createSession, updateSession } from '@/app/(app)/sessions/actions'
 import type { Drill, DrillCategory, SessionPlan, SessionDrillItem } from '@/lib/supabase/types'
 
@@ -188,13 +189,16 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
       if (isEdit) {
         await updateSession(initialSession.id, title.trim(), drillsOrder, isShared)
       } else {
-        await createSession(
+        const result = await createSession(
           title.trim(),
           drillsOrder,
           isShared,
           selectedGroupId || undefined,
           scheduledAt || undefined,
         )
+        if (result?.error === 'session_limit_reached') {
+          toast.error("You've reached the 3-session free limit. Upgrade your club for unlimited sessions.")
+        }
       }
     })
   }
