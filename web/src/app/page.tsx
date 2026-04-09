@@ -438,7 +438,7 @@ export default async function LandingPage() {
             >
               {[
                 { num: 'Free', label: 'to join' },
-                { num: 'AI', label: 'session planning' },
+                { num: 'AI', label: 'coaching assistant' },
                 { num: '∞', label: 'drills to share' },
                 { num: 'Club', label: 'team collaboration' },
               ].map(({ num, label }) => (
@@ -1025,7 +1025,7 @@ export default async function LandingPage() {
                 {[
                   'Up to 20 drills',
                   'Public drill library',
-                  'Session planning',
+                  'Up to 3 session plans',
                   'AI coaching chat (20/day)',
                   'Community access',
                   'Public profile page',
