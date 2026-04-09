@@ -12,10 +12,47 @@ export function extractUrl(text: string): string | null {
   return match ? match[0] : null
 }
 
+/** Extract YouTube video ID from any YouTube URL format */
+function extractYouTubeId(url: string): string | null {
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?.*v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  )
+  return match ? match[1] : null
+}
+
+/** Fast path for YouTube — no HTTP fetch needed, thumbnails are public */
+async function fetchYouTubePreview(url: string, videoId: string): Promise<LinkPreview> {
+  // noembed is a free oEmbed proxy — returns title without needing an API key
+  let title: string | null = null
+  try {
+    const oembed = await fetch(
+      `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`,
+      { signal: AbortSignal.timeout(4000) }
+    )
+    if (oembed.ok) {
+      const data = await oembed.json()
+      title = data.title ?? null
+    }
+  } catch { /* fall through — thumbnail still works without title */ }
+
+  return {
+    url,
+    title,
+    description: null,
+    // maxresdefault falls back to hqdefault if not available — both are public
+    image: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+    domain: 'youtube.com',
+  }
+}
+
 /** Fetch Open Graph metadata for a URL. Returns null on failure. */
 export async function fetchLinkPreview(url: string): Promise<LinkPreview | null> {
   try {
     const domain = new URL(url).hostname.replace(/^www\./, '')
+
+    // Fast path for YouTube — their OG tags are bot-blocked
+    const youtubeId = extractYouTubeId(url)
+    if (youtubeId) return fetchYouTubePreview(url, youtubeId)
 
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; 18thManBot/1.0)' },

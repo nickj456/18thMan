@@ -42,7 +42,7 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
   const bottomRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  // Real-time subscription
+  // Real-time subscription — INSERT for new messages, UPDATE for link_preview arriving
   useEffect(() => {
     const channel = supabase
       .channel(`thread-${conversationId}`)
@@ -50,7 +50,6 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
         async (payload) => {
-          // Fetch full message with author profile
           const { data } = await supabase
             .from('messages')
             .select('id, content, created_at, sender_id, link_preview, author:profiles!messages_sender_id_fkey ( display_name, username, avatar_url )')
@@ -60,8 +59,29 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
             const msg = data as unknown as Message
             setMessages(prev => {
               if (prev.some(m => m.id === msg.id)) return prev
+              // Replace optimistic placeholder
+              const tempIdx = prev.findLastIndex(
+                m => m.id.startsWith('temp-') && m.sender_id === msg.sender_id && m.content === msg.content
+              )
+              if (tempIdx !== -1) {
+                const next = [...prev]
+                next[tempIdx] = msg
+                return next
+              }
               return [...prev, msg]
             })
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
+        (payload) => {
+          // Link preview arrived — patch the message in state
+          if (payload.new.link_preview) {
+            setMessages(prev => prev.map(m =>
+              m.id === payload.new.id ? { ...m, link_preview: payload.new.link_preview } : m
+            ))
           }
         }
       )
@@ -79,9 +99,23 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
     if (!reply.trim()) return
     const content = reply.trim()
     setReply('')
+
+    const tempId = `temp-${Date.now()}`
+    setMessages(prev => [...prev, {
+      id: tempId,
+      content,
+      created_at: new Date().toISOString(),
+      sender_id: currentUserId,
+      link_preview: null,
+      author: null,
+    }])
+
     startTransition(async () => {
       const result = await postReply(conversationId, content)
-      if (result?.error) toast.error(result.error)
+      if (result?.error) {
+        toast.error(result.error)
+        setMessages(prev => prev.filter(m => m.id !== tempId))
+      }
     })
   }
 
