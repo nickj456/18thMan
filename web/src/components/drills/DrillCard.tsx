@@ -6,8 +6,17 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Users, Star, PlayCircle } from 'lucide-react'
 import { DrillCardPlayButton } from '@/components/drills/DrillCardPlayButton'
+import { DrillCardAnimateButton } from '@/components/drills/DrillCardAnimateButton'
 import { extractYouTubeId } from '@/lib/youtube'
 import type { DrillWithRelations } from '@/lib/supabase/types'
+import type { CanvasState } from '@/components/designer/types'
+
+function getAnimatedCanvasJson(raw: Record<string, unknown> | null): CanvasState | null {
+  if (!raw) return null
+  const kfs = raw.keyframes as unknown[] | undefined
+  if (!Array.isArray(kfs) || kfs.length < 2) return null
+  return raw as unknown as CanvasState
+}
 
 const difficultyColour: Record<string, string> = {
   beginner: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
@@ -23,6 +32,7 @@ interface DrillCardProps {
 
 export function DrillCard({ drill, avgRating, showClubBadge }: DrillCardProps) {
   const videoId = drill.youtube_url ? extractYouTubeId(drill.youtube_url) : null
+  const animatedCanvas = getAnimatedCanvasJson(drill.canvas_json)
 
   return (
     <Card className="h-full overflow-hidden transition-colors hover:border-border/80 hover:bg-accent/5 group">
@@ -41,8 +51,10 @@ export function DrillCard({ drill, avgRating, showClubBadge }: DrillCardProps) {
           </div>
         )}
 
-        {/* Play button is client-only; fallback link for non-video cards */}
-        {videoId ? (
+        {/* Animation takes priority over YouTube on the card thumbnail */}
+        {animatedCanvas ? (
+          <DrillCardAnimateButton canvasJson={animatedCanvas} title={drill.title} />
+        ) : videoId ? (
           <DrillCardPlayButton videoId={videoId} title={drill.title} />
         ) : (
           <Link href={`/drills/${drill.id}`} className="absolute inset-0" aria-label={drill.title} />
@@ -65,6 +77,11 @@ export function DrillCard({ drill, avgRating, showClubBadge }: DrillCardProps) {
             {drill.difficulty && (
               <Badge className={`text-xs border ${difficultyColour[drill.difficulty]}`}>
                 {drill.difficulty}
+              </Badge>
+            )}
+            {animatedCanvas && (
+              <Badge className="text-xs border bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
+                ▶ Animated
               </Badge>
             )}
             {videoId && (
