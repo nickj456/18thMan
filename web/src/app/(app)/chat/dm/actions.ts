@@ -5,6 +5,26 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 
+/** Search for users by display name or username */
+export async function searchProfiles(query: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated', results: [] }
+
+  const q = query.trim()
+  if (q.length < 2) return { results: [] }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, display_name, username, avatar_url')
+    .or(`display_name.ilike.%${q}%,username.ilike.%${q}%`)
+    .neq('id', user.id)
+    .limit(8)
+
+  if (error) return { error: error.message, results: [] }
+  return { results: data ?? [] }
+}
+
 async function getUser() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

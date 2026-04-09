@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Barlow_Condensed } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Analytics } from "@vercel/analytics/react";
 import { cookies } from "next/headers";
 import "./globals.css";
 
@@ -52,6 +53,7 @@ export default async function RootLayout({
           <TooltipProvider>
             {children}
             <Toaster />
+            <Analytics />
           </TooltipProvider>
         </ThemeProvider>
       </body>

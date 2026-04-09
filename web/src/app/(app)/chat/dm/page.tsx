@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { MessageSquare, User, ArrowRight } from 'lucide-react'
+import { NewDmDialog } from '@/components/chat/NewDmDialog'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Direct Messages — 18th Man' }
@@ -36,11 +37,14 @@ export default async function DmListPage() {
   if (!convIds.length) {
     return (
       <div className="space-y-6 max-w-2xl">
-        <h1 className="app-heading text-2xl">Direct Messages</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="app-heading text-2xl">Direct Messages</h1>
+          <NewDmDialog />
+        </div>
         <div className="flex flex-col items-center gap-3 py-16 rounded-xl border border-zinc-800 text-center">
           <MessageSquare size={32} className="text-zinc-700" />
           <p className="text-sm text-zinc-500">No messages yet.</p>
-          <p className="text-xs text-zinc-600">Visit a coach&apos;s profile to start a conversation.</p>
+          <p className="text-xs text-zinc-600">Search for a coach above to start a conversation.</p>
         </div>
       </div>
     )
@@ -96,7 +100,10 @@ export default async function DmListPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h1 className="app-heading text-2xl">Direct Messages</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="app-heading text-2xl">Direct Messages</h1>
+        <NewDmDialog />
+      </div>
 
       <div className="rounded-xl border border-zinc-800 overflow-hidden">
         <ul className="divide-y divide-zinc-800 bg-zinc-900">
