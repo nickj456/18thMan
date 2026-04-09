@@ -80,7 +80,20 @@ export function DmView({ conversationId, initialMessages, currentUserId }: DmVie
             .single()
           if (data) {
             const msg = data as unknown as Message
-            setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
+            setMessages(prev => {
+              // Already exists (real message) — skip
+              if (prev.some(m => m.id === msg.id)) return prev
+              // Replace optimistic placeholder from the same sender with matching content
+              const tempIdx = prev.findLastIndex(
+                m => m.id.startsWith('temp-') && m.sender_id === msg.sender_id && m.content === msg.content
+              )
+              if (tempIdx !== -1) {
+                const next = [...prev]
+                next[tempIdx] = msg
+                return next
+              }
+              return [...prev, msg]
+            })
           }
         }
       )
@@ -98,9 +111,25 @@ export function DmView({ conversationId, initialMessages, currentUserId }: DmVie
     if (!reply.trim()) return
     const content = reply.trim()
     setReply('')
+
+    // Optimistic: show the message immediately
+    const tempId = `temp-${Date.now()}`
+    setMessages(prev => [...prev, {
+      id: tempId,
+      content,
+      created_at: new Date().toISOString(),
+      sender_id: currentUserId,
+      author: null,
+    }])
+
     startTransition(async () => {
       const result = await sendDmMessage(conversationId, content)
-      if (result?.error) toast.error(result.error)
+      if (result?.error) {
+        toast.error(result.error)
+        // Roll back the optimistic message
+        setMessages(prev => prev.filter(m => m.id !== tempId))
+      }
+      // On success the real-time handler replaces the temp entry with the real message
     })
   }
 
