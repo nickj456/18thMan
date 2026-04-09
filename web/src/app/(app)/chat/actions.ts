@@ -42,7 +42,11 @@ export async function createThread(title: string, firstMessage: string) {
   redirect(`/chat/community/${thread.id}`)
 }
 
-export async function postReply(conversationId: string, content: string) {
+export async function postReply(
+  conversationId: string,
+  content: string,
+  linkPreview?: { url: string; title: string | null; description: string | null; image: string | null; domain: string } | null,
+) {
   const { supabase, user, profile } = await getAuthenticatedUser()
   if (!user) return { error: 'Not authenticated' }
   if (!profile || profile.role === 'viewer') return { error: 'Coaches only' }
@@ -57,14 +61,19 @@ export async function postReply(conversationId: string, content: string) {
 
   const { data: msg, error } = await supabase
     .from('messages')
-    .insert({ conversation_id: conversationId, sender_id: user.id, content: content.trim() })
+    .insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      content: content.trim(),
+      link_preview: linkPreview ?? null,
+    })
     .select('id')
     .single()
 
   if (error || !msg) return { error: error?.message ?? 'Failed to post' }
 
-  // Fetch link preview in the background — doesn't block the response
-  const url = extractUrl(content)
+  // If no preview was pre-fetched, try in the background as fallback
+  const url = !linkPreview ? extractUrl(content) : null
   if (url) {
     const messageId = msg.id
     after(async () => {

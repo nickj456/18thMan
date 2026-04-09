@@ -5,17 +5,11 @@ import { createClient } from '@/lib/supabase/client'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Send, Loader2, Trash2, Lock } from 'lucide-react'
+import { Send, Loader2, Trash2, Lock, X } from 'lucide-react'
 import { postReply, deleteMessage } from '@/app/(app)/chat/actions'
 import { toast } from 'sonner'
-
-interface LinkPreview {
-  url: string
-  title: string | null
-  description: string | null
-  image: string | null
-  domain: string
-}
+import { extractUrl } from '@/lib/link-preview'
+import type { LinkPreview } from '@/lib/link-preview'
 
 interface Message {
   id: string
@@ -39,7 +33,11 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [reply, setReply] = useState('')
   const [isPending, startTransition] = useTransition()
+  const [inputPreview, setInputPreview] = useState<LinkPreview | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [dismissedUrl, setDismissedUrl] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const supabase = createClient()
 
   // Real-time subscription — INSERT for new messages, UPDATE for link_preview arriving
@@ -94,11 +92,42 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Detect URL in reply box and fetch preview
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    const url = extractUrl(reply)
+    if (!url || url === dismissedUrl) {
+      if (!url) { setInputPreview(null); setPreviewLoading(false) }
+      return
+    }
+    if (inputPreview?.url === url) return // already fetched
+    setPreviewLoading(true)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/link-preview?url=${encodeURIComponent(url)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setInputPreview(data)
+        } else {
+          setInputPreview(null)
+        }
+      } catch {
+        setInputPreview(null)
+      } finally {
+        setPreviewLoading(false)
+      }
+    }, 600)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reply])
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!reply.trim()) return
     const content = reply.trim()
+    const preview = inputPreview ?? null
     setReply('')
+    setInputPreview(null)
+    setDismissedUrl(null)
 
     const tempId = `temp-${Date.now()}`
     setMessages(prev => [...prev, {
@@ -106,12 +135,12 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
       content,
       created_at: new Date().toISOString(),
       sender_id: currentUserId,
-      link_preview: null,
+      link_preview: preview,
       author: null,
     }])
 
     startTransition(async () => {
-      const result = await postReply(conversationId, content)
+      const result = await postReply(conversationId, content, preview)
       if (result?.error) {
         toast.error(result.error)
         setMessages(prev => prev.filter(m => m.id !== tempId))
@@ -120,6 +149,7 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
   }
 
   function handleDelete(messageId: string) {
+    if (messageId.startsWith('temp-')) return // not yet saved
     if (!window.confirm('Delete this message?')) return
     startTransition(async () => {
       const result = await deleteMessage(messageId)
@@ -226,7 +256,44 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
           <Lock size={13} /> This thread has been closed by an admin.
         </p>
       ) : canPost ? (
-        <div className="sticky bottom-0 pt-4 border-t border-zinc-800 bg-background">
+        <div className="sticky bottom-0 pt-4 border-t border-zinc-800 bg-background space-y-2">
+          {/* Link preview card shown while typing */}
+          {(inputPreview || previewLoading) && (
+            <div className="relative max-w-sm">
+              {previewLoading && !inputPreview ? (
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/60 text-xs text-zinc-500">
+                  <Loader2 size={12} className="animate-spin" /> Fetching preview…
+                </div>
+              ) : inputPreview ? (
+                <div className="flex rounded-xl border border-zinc-700 bg-zinc-800/60 overflow-hidden">
+                  {inputPreview.image && (
+                    <img
+                      src={inputPreview.image}
+                      alt=""
+                      className="w-20 h-16 object-cover flex-shrink-0"
+                    />
+                  )}
+                  <div className="px-3 py-2 min-w-0 flex-1">
+                    {inputPreview.title && (
+                      <p className="text-xs font-semibold text-zinc-100 line-clamp-1">{inputPreview.title}</p>
+                    )}
+                    {inputPreview.description && (
+                      <p className="text-[10px] text-zinc-400 line-clamp-1 mt-0.5">{inputPreview.description}</p>
+                    )}
+                    <p className="text-[10px] text-zinc-600 uppercase tracking-wide mt-0.5">{inputPreview.domain}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setDismissedUrl(inputPreview.url); setInputPreview(null) }}
+                    className="p-2 text-zinc-600 hover:text-zinc-300 transition-colors flex-shrink-0 self-start mt-1"
+                    title="Remove preview"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="flex gap-2 items-end">
             <Textarea
               value={reply}

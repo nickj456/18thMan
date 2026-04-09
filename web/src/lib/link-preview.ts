@@ -35,14 +35,10 @@ async function fetchYouTubePreview(url: string, videoId: string): Promise<LinkPr
     }
   } catch { /* fall through — thumbnail still works without title */ }
 
-  return {
-    url,
-    title,
-    description: null,
-    // maxresdefault falls back to hqdefault if not available — both are public
-    image: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-    domain: 'youtube.com',
-  }
+  // hqdefault always exists; maxresdefault is higher quality but missing for some videos
+  const image = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+
+  return { url, title, description: null, image, domain: 'youtube.com' }
 }
 
 /** Fetch Open Graph metadata for a URL. Returns null on failure. */
