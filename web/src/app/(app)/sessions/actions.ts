@@ -164,14 +164,25 @@ export async function generateSessionSummary(id: string) {
 
   const drillMap = new Map((drills ?? []).map(d => [d.id, d]))
 
+  // Pre-aggregate equipment from all drills so the AI receives an explicit list
+  const equipmentByDrill: { drill: string; items: string[] }[] = []
+  const allEquipmentRaw: string[] = []
+
   const drillSummaries = sessionItems.map((item, i) => {
     if (item.drill_id) {
       const drill = drillMap.get(item.drill_id)
       if (!drill) return null
       const guide = drill.ai_guide as AiGuide | null
+      const equipment = guide?.equipment ?? []
+      if (equipment.length > 0) {
+        equipmentByDrill.push({ drill: drill.title, items: equipment })
+        allEquipmentRaw.push(...equipment)
+      }
       return `${i + 1}. ${drill.title} (${item.duration_minutes} min)${
-        guide ? `\n   Overview: ${guide.overview}\n   Equipment: ${guide.equipment?.join(', ') || 'none'}` : ''
-      }${item.notes ? `\n   Coach notes: ${item.notes}` : ''}`
+        guide ? `\n   Overview: ${guide.overview}` : ''
+      }${equipment.length > 0 ? `\n   Equipment: ${equipment.join(', ')}` : ''}${
+        item.notes ? `\n   Coach notes: ${item.notes}` : ''
+      }`
     }
     // Custom block
     const label = item.custom_type ? `[${item.custom_type}] ` : ''
@@ -180,12 +191,21 @@ export async function generateSessionSummary(id: string) {
     }`
   }).filter(Boolean).join('\n\n')
 
+  // Deduplicate equipment server-side (normalise case) and pass explicitly to the model
+  const deduplicatedEquipment = [...new Map(
+    allEquipmentRaw.map(e => [e.toLowerCase().trim(), e.trim()])
+  ).values()]
+
+  const equipmentContext = deduplicatedEquipment.length > 0
+    ? `\n\nEQUIPMENT NEEDED (extracted from drills, deduplicated):\n${deduplicatedEquipment.map(e => `- ${e}`).join('\n')}\n\nEquipment breakdown by drill:\n${equipmentByDrill.map(({ drill, items }) => `- ${drill}: ${items.join(', ')}`).join('\n')}`
+    : '\n\nNo specific equipment recorded for the drills in this session.'
+
   try {
     const { experimental_output } = await generateText({
       model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
       output: Output.object({ schema: SessionSummarySchema }),
-      system: `You are an expert rugby league coach. Generate a practical session summary to help a coach prepare and run this training session.`,
-      prompt: `Session: "${session.title}"\nTotal duration: ${session.total_duration ?? 0} minutes\n\nDrills:\n${drillSummaries}`,
+      system: `You are an expert rugby league coach. Generate a practical session summary to help a coach prepare and run this training session. For the equipment list, use ONLY the equipment items provided in the EQUIPMENT NEEDED section — do not invent or add equipment not listed there. Consolidate duplicates and present each item once.`,
+      prompt: `Session: "${session.title}"\nTotal duration: ${session.total_duration ?? 0} minutes\n\nSession plan:\n${drillSummaries}${equipmentContext}`,
     })
 
     const { error } = await supabase
