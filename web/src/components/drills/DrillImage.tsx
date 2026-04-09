@@ -107,7 +107,7 @@ export function DrillImage({ youtubeThumbnail, canvasPreview, alt, videoId, canv
             <Image src={youtubeThumbnail!} alt="YouTube thumbnail" fill className="object-cover" />
           </button>
           <button
-            onClick={() => setActive('canvas')}
+            onClick={() => { setActive('canvas'); if (hasAnimation) setAnimOpen(true) }}
             className={`relative h-14 w-24 rounded border overflow-hidden transition-all ${
               active === 'canvas' ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-zinc-700 opacity-60 hover:opacity-100'
             }`}
