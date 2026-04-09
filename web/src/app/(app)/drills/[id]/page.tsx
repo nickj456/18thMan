@@ -15,6 +15,7 @@ import { DrillImage } from '@/components/drills/DrillImage'
 import { extractYouTubeId } from '@/lib/youtube'
 import { Star, Users, ArrowLeft, PenTool, Sparkles, Loader2 } from 'lucide-react'
 import type { AiGuide } from '@/lib/supabase/types'
+import type { CanvasState } from '@/components/designer/types'
 
 const difficultyColour: Record<string, string> = {
   beginner: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
@@ -96,6 +97,7 @@ export default async function DrillDetailPage({
           canvasPreview={drill.canvas_preview_url}
           alt={drill.title}
           videoId={drill.youtube_url ? extractYouTubeId(drill.youtube_url) : null}
+          canvasJson={drill.canvas_json as CanvasState | null}
         />
       )}
 

@@ -2,14 +2,17 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { ImageOff, PlayCircle } from 'lucide-react'
+import { ImageOff, Play, PlayCircle } from 'lucide-react'
 import { VideoModal } from '@/components/drills/VideoModal'
+import { DrillAnimationModal } from '@/components/drills/DrillAnimationModal'
+import type { CanvasState } from '@/components/designer/types'
 
 interface DrillImageProps {
   youtubeThumbnail: string | null
   canvasPreview: string | null
   alt: string
   videoId?: string | null
+  canvasJson?: CanvasState | null
 }
 
 function getFallback(src: string): string | null {
@@ -39,11 +42,13 @@ function SingleImage({ src, alt }: { src: string; alt: string }) {
   return <Image src={imgSrc} alt={alt} fill className="object-cover" onError={handleError} />
 }
 
-export function DrillImage({ youtubeThumbnail, canvasPreview, alt, videoId }: DrillImageProps) {
+export function DrillImage({ youtubeThumbnail, canvasPreview, alt, videoId, canvasJson }: DrillImageProps) {
   const hasBoth = !!youtubeThumbnail && !!canvasPreview
   const [active, setActive] = useState<'youtube' | 'canvas'>(youtubeThumbnail ? 'youtube' : 'canvas')
   const [videoOpen, setVideoOpen] = useState(false)
+  const [animOpen, setAnimOpen] = useState(false)
 
+  const hasAnimation = !!(canvasJson?.keyframes && canvasJson.keyframes.length >= 2)
   const src = active === 'youtube' ? youtubeThumbnail : canvasPreview
   if (!src) return null
 
@@ -51,6 +56,8 @@ export function DrillImage({ youtubeThumbnail, canvasPreview, alt, videoId }: Dr
     <div className="space-y-2">
       <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 group">
         <SingleImage src={src} alt={alt} />
+
+        {/* YouTube play button */}
         {videoId && active === 'youtube' && (
           <button
             onClick={() => setVideoOpen(true)}
@@ -62,10 +69,33 @@ export function DrillImage({ youtubeThumbnail, canvasPreview, alt, videoId }: Dr
             </div>
           </button>
         )}
+
+        {/* Animation play button — shown when canvas view is active and drill has keyframes */}
+        {active === 'canvas' && hasAnimation && (
+          <button
+            onClick={() => setAnimOpen(true)}
+            className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Play animation"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="rounded-full bg-indigo-600/80 p-4 backdrop-blur-sm shadow-lg">
+                <Play size={44} className="text-white fill-white" />
+              </div>
+              <span className="text-sm font-semibold text-white bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+                Play Animation
+              </span>
+            </div>
+          </button>
+        )}
       </div>
+
       {videoId && (
         <VideoModal videoId={videoId} title={alt} open={videoOpen} onClose={() => setVideoOpen(false)} />
       )}
+      {hasAnimation && canvasJson && animOpen && (
+        <DrillAnimationModal canvasJson={canvasJson} drillTitle={alt} onClose={() => setAnimOpen(false)} />
+      )}
+
       {hasBoth && (
         <div className="flex gap-2">
           <button
@@ -83,6 +113,12 @@ export function DrillImage({ youtubeThumbnail, canvasPreview, alt, videoId }: Dr
             }`}
           >
             <Image src={canvasPreview!} alt="Drill diagram" fill className="object-cover" />
+            {/* Animated indicator on thumbnail strip */}
+            {hasAnimation && (
+              <div className="absolute bottom-1 right-1 rounded bg-indigo-600/80 p-0.5">
+                <Play size={8} className="text-white fill-white" />
+              </div>
+            )}
           </button>
         </div>
       )}
