@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Bell, Star, Building2, Users2, CalendarDays, PenTool, UserPlus } from 'lucide-react'
+import { Bell, Star, Building2, Users2, CalendarDays, PenTool, UserPlus, MessageCircle } from 'lucide-react'
 import { markAllNotificationsRead } from './actions'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -44,6 +44,14 @@ interface FollowedYouData {
   follower_id: string
   follower_display_name: string
   follower_username: string
+}
+
+interface NewDmData {
+  conversation_id: string
+  sender_id: string
+  sender_display_name: string
+  sender_username: string
+  message_preview: string
 }
 
 export default async function NotificationsPage() {
@@ -207,6 +215,30 @@ export default async function NotificationsPage() {
                       <span className="font-semibold">{data.follower_display_name}</span>
                       {' started following you'}
                     </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                  {unreadDot}
+                </Link>
+              )
+            }
+
+            if (n.type === 'new_dm') {
+              const data = n.data as NewDmData
+              return (
+                <Link key={n.id} href={`/chat/dm/${data.conversation_id}`} className={itemClass}>
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center mt-0.5">
+                    <MessageCircle className="size-4 text-indigo-400" />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-sm leading-snug">
+                      <span className="font-semibold">{data.sender_display_name}</span>
+                      {' sent you a message'}
+                    </p>
+                    {data.message_preview && (
+                      <p className="text-xs text-zinc-500 italic truncate">&ldquo;{data.message_preview}&rdquo;</p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                     </p>

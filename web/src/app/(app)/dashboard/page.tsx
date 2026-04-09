@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { PenTool, CalendarDays, MessageSquare, Sparkles, ArrowRight, Clock, Users, BookOpen, LayoutList, ChevronRight } from 'lucide-react'
+import { PenTool, CalendarDays, MessageSquare, Sparkles, ArrowRight, Clock, Users, BookOpen, LayoutList, ChevronRight, Bell, Star, Building2, Users2, MessageCircle, UserPlus } from 'lucide-react'
 import { OnboardingChecklist } from './OnboardingChecklist'
 
 export const metadata = { title: 'Dashboard — 18th Man' }
@@ -404,6 +404,96 @@ async function CommunityPulse() {
   )
 }
 
+// ── Recent notifications ─────────────────────────────────────────
+async function RecentNotifications({ userId }: { userId: string }) {
+  const supabase = await createClient()
+
+  const { data: notifications } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('read', false)
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  if (!notifications?.length) return null
+
+  function notifIcon(type: string) {
+    switch (type) {
+      case 'new_dm': return <MessageCircle size={13} className="text-indigo-400" />
+      case 'drill_rating': return <Star size={13} className="text-amber-400" />
+      case 'club_invite': return <Building2 size={13} className="text-amber-400" />
+      case 'group_invite': return <Users2 size={13} className="text-indigo-400" />
+      case 'session_scheduled': return <CalendarDays size={13} className="text-amber-400" />
+      case 'followed_you': return <UserPlus size={13} className="text-emerald-400" />
+      case 'new_drill': return <PenTool size={13} className="text-[#e8560a]" />
+      default: return <Bell size={13} className="text-zinc-400" />
+    }
+  }
+
+  function notifText(n: { type: string; data: Record<string, unknown> }): string {
+    const d = n.data as Record<string, string>
+    switch (n.type) {
+      case 'new_dm': return `${d.sender_display_name} sent you a message`
+      case 'drill_rating': return `${d.rater_display_name} rated your drill "${d.drill_title}"`
+      case 'club_invite': return `${d.invited_by_display_name} invited you to join ${d.club_name}`
+      case 'group_invite': return `${d.invited_by_display_name} invited you to join ${d.group_name}`
+      case 'session_scheduled': return `${d.scheduled_by_display_name} scheduled "${d.session_title}"`
+      case 'followed_you': return `${d.follower_display_name} started following you`
+      case 'new_drill': return `${d.author_display_name} posted a new drill`
+      default: return 'New notification'
+    }
+  }
+
+  function notifHref(n: { type: string; data: Record<string, unknown> }): string {
+    const d = n.data as Record<string, string>
+    switch (n.type) {
+      case 'new_dm': return `/chat/dm/${d.conversation_id}`
+      case 'drill_rating': return `/drills/${d.drill_id}#ratings`
+      case 'club_invite': return '/clubs'
+      case 'group_invite': return '/groups'
+      case 'session_scheduled': return `/sessions/${d.session_id}`
+      case 'followed_you': return `/profile/${d.follower_username}`
+      case 'new_drill': return `/drills/${d.drill_id}`
+      default: return '/notifications'
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+        <div className="flex items-center gap-2">
+          <Bell size={13} className="text-[#e8560a]" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Notifications</span>
+          <span className="text-[10px] font-bold bg-[#e8560a] text-white rounded-full px-1.5 py-0.5 leading-none">
+            {notifications.length}
+          </span>
+        </div>
+        <Link href="/notifications" className="text-xs text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
+          View all <ArrowRight size={11} />
+        </Link>
+      </div>
+      <div className="divide-y divide-zinc-800/60">
+        {notifications.map(n => (
+          <Link
+            key={n.id}
+            href={notifHref({ type: n.type, data: n.data as Record<string, unknown> })}
+            className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-800/40 transition-colors group"
+          >
+            <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
+              {notifIcon(n.type)}
+            </div>
+            <p className="text-xs text-zinc-300 line-clamp-1 flex-1 group-hover:text-white transition-colors">
+              {notifText({ type: n.type, data: n.data as Record<string, unknown> })}
+            </p>
+            <div className="w-1.5 h-1.5 rounded-full bg-[#e8560a] shrink-0" />
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Page ─────────────────────────────────────────────────────────
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -456,6 +546,11 @@ export default async function DashboardPage() {
           {profile?.role ?? 'viewer'}
         </span>
       </div>
+
+      {/* Notifications banner ── only shown when there are unread items */}
+      <Suspense fallback={null}>
+        <RecentNotifications userId={user.id} />
+      </Suspense>
 
       {/* Onboarding checklist ── shown until all steps complete */}
       <OnboardingChecklist

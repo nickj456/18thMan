@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { createNotification } from '@/lib/notifications'
 
 /** Search for users by display name or username */
 export async function searchProfiles(query: string) {
@@ -92,21 +93,46 @@ export async function sendDmMessage(conversationId: string, content: string) {
   const { supabase, user } = await getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  // Verify user is a participant
-  const { data: participant } = await supabase
+  // Verify user is a participant and get all participants
+  const { data: participants } = await supabase
     .from('conversation_participants')
     .select('user_id')
     .eq('conversation_id', conversationId)
-    .eq('user_id', user.id)
-    .single()
 
-  if (!participant) return { error: 'Not a participant' }
+  const isParticipant = participants?.some(p => p.user_id === user.id)
+  if (!isParticipant) return { error: 'Not a participant' }
 
   const { error } = await supabase
     .from('messages')
     .insert({ conversation_id: conversationId, sender_id: user.id, content: content.trim() })
 
   if (error) return { error: error.message }
+
+  // Notify other participants
+  const others = (participants ?? []).filter(p => p.user_id !== user.id)
+  if (others.length > 0) {
+    const { data: me } = await supabase
+      .from('profiles')
+      .select('display_name, username')
+      .eq('id', user.id)
+      .single()
+
+    await Promise.all(
+      others.map(p =>
+        createNotification(supabase, {
+          userId: p.user_id,
+          type: 'new_dm',
+          data: {
+            conversation_id: conversationId,
+            sender_id: user.id,
+            sender_display_name: me?.display_name ?? me?.username ?? 'Someone',
+            sender_username: me?.username ?? '',
+            message_preview: content.trim().slice(0, 100),
+          },
+        })
+      )
+    )
+  }
 
   revalidatePath(`/chat/dm/${conversationId}`)
   return { success: true }

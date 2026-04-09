@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-type NotificationType = 'drill_rating' | 'club_invite' | 'group_invite' | 'session_scheduled'
+type NotificationType = 'drill_rating' | 'club_invite' | 'group_invite' | 'session_scheduled' | 'new_dm' | 'new_drill' | 'followed_you'
 
 interface CreateNotificationOptions {
   userId: string
