@@ -212,7 +212,9 @@ export interface SessionPlan {
 }
 
 export interface SessionDrillItem {
-  drill_id: string
+  drill_id?: string      // absent for custom blocks
+  custom_title?: string  // required when drill_id is absent
+  custom_type?: string   // e.g. "Team Talk", "Game Plan", "Warm Up"
   duration_minutes: number
   notes?: string
 }

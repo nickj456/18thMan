@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown, Users2, CalendarDays, Lock } from 'lucide-react'
+import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown, Users2, CalendarDays, Lock, Puzzle } from 'lucide-react'
 import { DeleteSessionButton } from '@/components/session/DeleteSessionButton'
 import { SessionSummaryCard } from '@/components/session/SessionSummaryCard'
 import { DrillVideoThumbnail } from '@/components/session/DrillVideoThumbnail'
@@ -67,7 +67,8 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   if (!isOwner && isGroupSession && !isGroupMember) notFound()
   if (!isOwner && !isGroupSession) notFound()
 
-  const drillIds = (sessionPlan.drills_order as SessionDrillItem[]).map(d => d.drill_id)
+  const allItems = sessionPlan.drills_order as SessionDrillItem[]
+  const drillIds = allItems.filter(d => d.drill_id).map(d => d.drill_id!)
   const drillsMap = new Map<string, Drill>()
 
   if (drillIds.length > 0) {
@@ -122,7 +123,8 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
           <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1.5">
               <BookOpen size={13} />
-              {drillIds.length} drill{drillIds.length !== 1 ? 's' : ''}
+              {allItems.length} item{allItems.length !== 1 ? 's' : ''}
+              {drillIds.length < allItems.length && ` · ${drillIds.length} drill${drillIds.length !== 1 ? 's' : ''}`}
             </span>
             {durationLabel && (
               <span className="flex items-center gap-1.5">
@@ -186,43 +188,71 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
         isOwner={isOwner}
       />
 
-      {/* Drill list */}
-      {drillIds.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">No drills in this session.</p>
+      {/* Session items */}
+      {allItems.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-8 text-center">No items in this session.</p>
       ) : (
         <div className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Drills ({drillIds.length})
+            Training plan ({allItems.length})
           </h2>
           <ol className="space-y-3">
-            {(sessionPlan.drills_order as SessionDrillItem[]).map((item, index) => {
-              const drill = drillsMap.get(item.drill_id)
-              if (!drill) return null
+            {allItems.map((item, index) => {
+              const drill = item.drill_id ? drillsMap.get(item.drill_id) : undefined
+              const isCustom = !item.drill_id
+
               return (
-                <li key={`${item.drill_id}-${index}`} className="flex gap-4 p-4 rounded-xl border border-zinc-800 bg-zinc-900">
+                <li key={`${item.drill_id ?? item.custom_title}-${index}`} className="flex gap-4 p-4 rounded-xl border border-zinc-800 bg-zinc-900">
                   <div className="flex-shrink-0 w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center text-xs font-mono text-zinc-400 mt-0.5">
                     {index + 1}
                   </div>
-                  <DrillVideoThumbnail
-                    title={drill.title}
-                    youtubeUrl={drill.youtube_url ?? null}
-                    thumbnailUrl={drill.canvas_preview_url ?? drill.preview_image_url ?? null}
-                    className="w-20 h-14 rounded-lg flex-shrink-0 self-start"
-                  />
+
+                  {isCustom ? (
+                    <div className={`w-20 h-14 rounded-lg flex-shrink-0 self-start flex items-center justify-center text-sm font-bold ${
+                      item.custom_type === 'Team Talk' ? 'bg-indigo-500/20 text-indigo-300' :
+                      item.custom_type === 'Game Plan' ? 'bg-amber-500/20 text-amber-300' :
+                      item.custom_type === 'Warm Up' ? 'bg-emerald-500/20 text-emerald-300' :
+                      item.custom_type === 'Video Review' ? 'bg-violet-500/20 text-violet-300' :
+                      item.custom_type === 'Conditioning' ? 'bg-red-500/20 text-red-300' :
+                      item.custom_type === 'Positional' ? 'bg-sky-500/20 text-sky-300' :
+                      'bg-zinc-800 text-zinc-400'
+                    }`}>
+                      <Puzzle size={20} className="opacity-60" />
+                    </div>
+                  ) : drill ? (
+                    <DrillVideoThumbnail
+                      title={drill.title}
+                      youtubeUrl={drill.youtube_url ?? null}
+                      thumbnailUrl={drill.canvas_preview_url ?? drill.preview_image_url ?? null}
+                      className="w-20 h-14 rounded-lg flex-shrink-0 self-start"
+                    />
+                  ) : null}
+
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-start justify-between gap-2">
-                      <Link
-                        href={`/drills/${drill.id}`}
-                        className="font-semibold text-sm hover:text-indigo-400 transition-colors"
-                      >
-                        {drill.title}
-                      </Link>
+                      {isCustom ? (
+                        <div className="space-y-0.5">
+                          <p className="font-semibold text-sm">{item.custom_title}</p>
+                          {item.custom_type && (
+                            <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
+                              {item.custom_type}
+                            </span>
+                          )}
+                        </div>
+                      ) : drill ? (
+                        <Link
+                          href={`/drills/${drill.id}`}
+                          className="font-semibold text-sm hover:text-indigo-400 transition-colors"
+                        >
+                          {drill.title}
+                        </Link>
+                      ) : null}
                       <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
                         <Clock size={11} />
                         {item.duration_minutes}min
                       </span>
                     </div>
-                    {drill.description && (
+                    {!isCustom && drill?.description && (
                       <p className="text-xs text-muted-foreground line-clamp-2">{drill.description}</p>
                     )}
                     {item.notes && (

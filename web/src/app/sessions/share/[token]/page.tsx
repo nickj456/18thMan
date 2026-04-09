@@ -34,7 +34,7 @@ export default async function SharedSessionPage({
 
   const sessionPlan = session as typeof session & { ai_summary?: SessionSummary; share_token?: string }
   const drillItems = (sessionPlan.drills_order ?? []) as SessionDrillItem[]
-  const drillIds = drillItems.map(d => d.drill_id)
+  const drillIds = drillItems.filter(d => d.drill_id).map(d => d.drill_id!)
   const drillsMap = new Map<string, Drill>()
 
   if (drillIds.length > 0) {
@@ -182,8 +182,8 @@ export default async function SharedSessionPage({
             </p>
             <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {drillItems.map((item, index) => {
-                const drill = drillsMap.get(item.drill_id)
-                if (!drill) return null
+                const drill = item.drill_id ? drillsMap.get(item.drill_id) : undefined
+                if (!item.drill_id || !drill) return null
                 const aiGuide = drill.ai_guide as AiGuide | null
                 const keyCues = aiGuide?.key_cues?.slice(0, 3) ?? []
 

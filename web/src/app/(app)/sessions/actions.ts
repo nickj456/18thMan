@@ -153,23 +153,31 @@ export async function generateSessionSummary(id: string) {
 
   if (!session) return { error: 'Session not found' }
 
-  const drillIds = (session.drills_order as SessionDrillItem[]).map(d => d.drill_id)
-  if (drillIds.length === 0) return { error: 'No drills in session' }
+  const sessionItems = session.drills_order as SessionDrillItem[]
+  if (sessionItems.length === 0) return { error: 'No items in session' }
 
-  const { data: drills } = await supabase
-    .from('drills')
-    .select('id, title, description, ai_guide')
-    .in('id', drillIds)
+  const drillIds = sessionItems.filter(d => d.drill_id).map(d => d.drill_id!)
+
+  const { data: drills } = drillIds.length > 0
+    ? await supabase.from('drills').select('id, title, description, ai_guide').in('id', drillIds)
+    : { data: [] }
 
   const drillMap = new Map((drills ?? []).map(d => [d.id, d]))
 
-  const drillSummaries = (session.drills_order as SessionDrillItem[]).map((item, i) => {
-    const drill = drillMap.get(item.drill_id)
-    if (!drill) return null
-    const guide = drill.ai_guide as AiGuide | null
-    return `${i + 1}. ${drill.title} (${item.duration_minutes} min)${
-      guide ? `\n   Overview: ${guide.overview}\n   Equipment: ${guide.equipment?.join(', ') || 'none'}` : ''
-    }${item.notes ? `\n   Coach notes: ${item.notes}` : ''}`
+  const drillSummaries = sessionItems.map((item, i) => {
+    if (item.drill_id) {
+      const drill = drillMap.get(item.drill_id)
+      if (!drill) return null
+      const guide = drill.ai_guide as AiGuide | null
+      return `${i + 1}. ${drill.title} (${item.duration_minutes} min)${
+        guide ? `\n   Overview: ${guide.overview}\n   Equipment: ${guide.equipment?.join(', ') || 'none'}` : ''
+      }${item.notes ? `\n   Coach notes: ${item.notes}` : ''}`
+    }
+    // Custom block
+    const label = item.custom_type ? `[${item.custom_type}] ` : ''
+    return `${i + 1}. ${label}${item.custom_title} (${item.duration_minutes} min)${
+      item.notes ? `\n   Notes: ${item.notes}` : ''
+    }`
   }).filter(Boolean).join('\n\n')
 
   try {

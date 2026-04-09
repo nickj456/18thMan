@@ -328,7 +328,7 @@ const s = StyleSheet.create({
 // ── Types ─────────────────────────────────────────────────────
 
 interface DrillWithMeta {
-  drill: {
+  drill?: {
     id: string
     title: string
     description: string | null
@@ -338,6 +338,9 @@ interface DrillWithMeta {
     canvas_preview_url: string | null
     ai_guide: AiGuide | null
   }
+  drill_id?: string
+  custom_title?: string
+  custom_type?: string
   duration_minutes: number
   notes?: string
 }
@@ -491,6 +494,37 @@ export function SessionPlanPDF({ session, drillItems, coach }: Props) {
 
             {drillItems.map((item, index) => {
               const drill = item.drill
+              const isCustom = !drill
+
+              if (isCustom) {
+                return (
+                  <View key={`custom-${index}`} wrap={false} style={[s.drillCard, { borderLeftWidth: 3, borderLeftColor: MUTED, borderLeftStyle: 'solid' }]}>
+                    <View style={s.drillHeader}>
+                      <View style={s.drillLeft}>
+                        <View style={[s.drillNumBadge, { backgroundColor: MUTED }]}>
+                          <Text style={s.drillNum}>{index + 1}</Text>
+                        </View>
+                        <View>
+                          {item.custom_type && (
+                            <Text style={[s.drillTag, { marginBottom: 3, backgroundColor: '#e5e7eb' }]}>{item.custom_type}</Text>
+                          )}
+                          <Text style={s.drillTitle}>{item.custom_title}</Text>
+                        </View>
+                      </View>
+                      <View style={s.durationBadge}>
+                        <Text style={s.durationText}>{item.duration_minutes} min</Text>
+                      </View>
+                    </View>
+                    {item.notes && (
+                      <View style={s.notesBox}>
+                        <Text style={s.notesLabel}>NOTES</Text>
+                        <Text style={s.notesText}>{item.notes}</Text>
+                      </View>
+                    )}
+                  </View>
+                )
+              }
+
               const tags: string[] = []
               if (drill.difficulty) tags.push(capitalize(drill.difficulty))
               if (drill.player_count) tags.push(`${drill.player_count} players`)

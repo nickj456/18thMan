@@ -17,13 +17,39 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { GripVertical, X, ChevronDown, ChevronUp, Clock, Plus, Search, Globe, Lock, Users2, Calendar } from 'lucide-react'
+import { GripVertical, X, ChevronDown, ChevronUp, Clock, Plus, Search, Globe, Lock, Users2, Calendar, Puzzle } from 'lucide-react'
 import { createSession, updateSession } from '@/app/(app)/sessions/actions'
 import type { Drill, DrillCategory, SessionPlan, SessionDrillItem } from '@/lib/supabase/types'
 
-interface SessionItem extends SessionDrillItem {
-  drill: Drill
+interface SessionItem {
+  drill_id?: string
+  custom_title?: string
+  custom_type?: string
+  duration_minutes: number
+  notes?: string
+  drill?: Drill  // present for drill items, absent for custom blocks
   _key: string
+}
+
+const CUSTOM_TYPES = ['Team Talk', 'Game Plan', 'Warm Up', 'Video Review', 'Conditioning', 'Positional', 'Break', 'Other']
+
+function customBlockColor(type?: string): string {
+  const map: Record<string, string> = {
+    'Team Talk': 'bg-indigo-500/20 text-indigo-300',
+    'Game Plan': 'bg-amber-500/20 text-amber-300',
+    'Warm Up': 'bg-emerald-500/20 text-emerald-300',
+    'Video Review': 'bg-violet-500/20 text-violet-300',
+    'Conditioning': 'bg-red-500/20 text-red-300',
+    'Positional': 'bg-sky-500/20 text-sky-300',
+    'Break': 'bg-zinc-700 text-zinc-400',
+    'Other': 'bg-zinc-700 text-zinc-400',
+  }
+  return map[type ?? ''] ?? 'bg-zinc-700 text-zinc-400'
+}
+
+function customBlockInitials(type?: string): string {
+  if (!type) return '•'
+  return type.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
 interface GroupOption {
@@ -53,11 +79,17 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
   const [items, setItems] = useState<SessionItem[]>(() => {
     if (!initialSession) return []
     return (initialSession.drills_order as SessionDrillItem[]).flatMap((item, i) => {
-      const drill = initialSession.resolvedDrills.find(d => d.id === item.drill_id)
-      if (!drill) return []
-      return [{ ...item, drill, _key: `${item.drill_id}-${i}` }]
+      if (item.drill_id) {
+        const drill = initialSession.resolvedDrills.find(d => d.id === item.drill_id)
+        if (!drill) return []
+        return [{ ...item, drill, _key: `${item.drill_id}-${i}` }]
+      }
+      // Custom block — no drill lookup needed
+      return [{ ...item, _key: `custom-${i}-${Date.now()}` }]
     })
   })
+  const [customTitle, setCustomTitle] = useState('')
+  const [customType, setCustomType] = useState('')
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
   const [drillSearch, setDrillSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
@@ -83,6 +115,20 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
     setItems(prev => [...prev, { drill_id: drill.id, duration_minutes: 10, notes: '', drill, _key: key }])
   }
 
+  function addCustomBlock() {
+    if (!customTitle.trim()) return
+    const key = `custom-${Date.now()}`
+    setItems(prev => [...prev, {
+      custom_title: customTitle.trim(),
+      custom_type: customType || undefined,
+      duration_minutes: 10,
+      notes: '',
+      _key: key,
+    }])
+    setCustomTitle('')
+    setCustomType('')
+  }
+
   function removeDrill(key: string) {
     setItems(prev => prev.filter(i => i._key !== key))
   }
@@ -104,7 +150,7 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
   }
 
   const totalMinutes = items.reduce((sum, i) => sum + (i.duration_minutes || 0), 0)
-  const addedDrillIds = new Set(items.map(i => i.drill_id))
+  const addedDrillIds = new Set(items.filter(i => i.drill_id).map(i => i.drill_id!))
   const filteredDrills = allDrills.filter(d => {
     if (addedDrillIds.has(d.id)) return false
     if (drillSearch && !d.title.toLowerCase().includes(drillSearch.toLowerCase())) return false
@@ -119,9 +165,13 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
 
   function handleSave() {
     if (!title.trim()) return
-    const drillsOrder: SessionDrillItem[] = items.map(({ drill_id, duration_minutes, notes }) => ({
-      drill_id, duration_minutes, notes,
-    }))
+    const drillsOrder: SessionDrillItem[] = items.map(({ drill_id, custom_title, custom_type, duration_minutes, notes }) => {
+      const item: SessionDrillItem = { duration_minutes, notes }
+      if (drill_id) item.drill_id = drill_id
+      if (custom_title) item.custom_title = custom_title
+      if (custom_type) item.custom_type = custom_type
+      return item
+    })
     startTransition(async () => {
       if (isEdit) {
         await updateSession(initialSession.id, title.trim(), drillsOrder, isShared)
@@ -208,7 +258,7 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Session drills ({items.length})
+              Training plan ({items.length})
             </h2>
             {totalMinutes > 0 && (
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -221,8 +271,8 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 rounded-lg border border-dashed border-zinc-700 text-center">
               <div className="text-4xl mb-3">📋</div>
-              <p className="text-sm font-medium">No drills added yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Pick drills from the panel on the right</p>
+              <p className="text-sm font-medium">Nothing added yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Add drills or custom blocks from the right panel</p>
             </div>
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -293,7 +343,7 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
           )}
 
           {/* Drill list */}
-          <div className="space-y-1.5 max-h-[520px] overflow-y-auto pr-1">
+          <div className="space-y-1.5 max-h-[320px] overflow-y-auto pr-1">
             {filteredDrills.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">
                 {drillSearch || categoryFilter ? 'No drills match your filters' : 'All drills have been added'}
@@ -327,6 +377,38 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
               })
             )}
           </div>
+          {/* Custom block form */}
+          <div className="pt-3 mt-1 border-t border-zinc-800 space-y-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Puzzle size={11} /> Custom block
+            </h2>
+            <Input
+              placeholder="e.g. Game Plan Walkthrough, Team Talk…"
+              value={customTitle}
+              onChange={e => setCustomTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && customTitle.trim()) addCustomBlock() }}
+              className="text-sm"
+            />
+            <select
+              value={customType}
+              onChange={e => setCustomType(e.target.value)}
+              className="w-full text-sm bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="">Type (optional)</option>
+              {CUSTOM_TYPES.map(t => <option key={t}>{t}</option>)}
+            </select>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-full"
+              disabled={!customTitle.trim()}
+              onClick={addCustomBlock}
+            >
+              <Plus size={13} className="mr-1.5" />
+              Add to session
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -351,6 +433,8 @@ interface SortableDrillRowProps {
   onNotesChange: (v: string) => void
   onToggleNotes: () => void
 }
+
+// ─── Per-item helpers ────────────────────────────────────────────────────────
 
 function SortableDrillRow({
   item, index, notesExpanded,
@@ -382,18 +466,29 @@ function SortableDrillRow({
 
         <span className="text-xs text-zinc-600 font-mono w-4 flex-shrink-0 select-none">{index + 1}</span>
 
-        <div className="relative w-14 h-9 rounded overflow-hidden flex-shrink-0 bg-zinc-800">
-          {(item.drill.canvas_preview_url || item.drill.preview_image_url) && (
-            <Image
-              src={item.drill.canvas_preview_url ?? item.drill.preview_image_url!}
-              alt={item.drill.title}
-              fill
-              className="object-cover"
-            />
+        {item.drill ? (
+          <div className="relative w-14 h-9 rounded overflow-hidden flex-shrink-0 bg-zinc-800">
+            {(item.drill.canvas_preview_url || item.drill.preview_image_url) && (
+              <Image
+                src={item.drill.canvas_preview_url ?? item.drill.preview_image_url!}
+                alt={item.drill.title}
+                fill
+                className="object-cover"
+              />
+            )}
+          </div>
+        ) : (
+          <div className={`w-14 h-9 rounded flex-shrink-0 flex items-center justify-center text-xs font-bold ${customBlockColor(item.custom_type)}`}>
+            {customBlockInitials(item.custom_type)}
+          </div>
+        )}
+
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium line-clamp-1">{item.drill ? item.drill.title : item.custom_title}</p>
+          {!item.drill && item.custom_type && (
+            <p className="text-[10px] text-zinc-500 mt-0.5">{item.custom_type}</p>
           )}
         </div>
-
-        <p className="flex-1 text-sm font-medium line-clamp-1 min-w-0">{item.drill.title}</p>
 
         <div className="flex items-center gap-1 flex-shrink-0">
           <Input

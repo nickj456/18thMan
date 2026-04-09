@@ -41,8 +41,8 @@ export async function GET(
       return new Response('Forbidden', { status: 403 })
     }
 
-    const drillItems = (session.drills_order ?? []) as SessionDrillItem[]
-    const drillIds = drillItems.map(d => d.drill_id)
+    const sessionItems = (session.drills_order ?? []) as SessionDrillItem[]
+    const drillIds = sessionItems.filter(d => d.drill_id).map(d => d.drill_id!)
 
     const drillsMap = new Map<string, {
       id: string
@@ -76,11 +76,16 @@ export async function GET(
 
     const coach = profileResult.data ?? { display_name: null, club: null }
 
-    const enrichedItems = drillItems
-      .map(item => ({ ...item, drill: drillsMap.get(item.drill_id) }))
-      .filter((item): item is typeof item & { drill: NonNullable<typeof item.drill> } =>
-        item.drill !== undefined
-      )
+    // Include both drill items and custom blocks in the PDF
+    const enrichedItems = sessionItems.map(item => {
+      if (item.drill_id) {
+        const drill = drillsMap.get(item.drill_id)
+        if (!drill) return null
+        return { ...item, drill }
+      }
+      // Custom block — no drill lookup
+      return { ...item, drill: undefined }
+    }).filter((item): item is NonNullable<typeof item> => item !== null)
 
     const sessionWithSummary = session as SessionPlan & { ai_summary?: SessionSummary }
 

@@ -34,7 +34,9 @@ export default async function EditSessionPage({ params }: { params: Promise<{ id
   const sessionPlan = session as SessionPlan
 
   // Fetch drills in session and all public drills
-  const drillIds = (sessionPlan.drills_order as SessionDrillItem[]).map(d => d.drill_id)
+  const drillIds = (sessionPlan.drills_order as SessionDrillItem[])
+    .filter(d => d.drill_id)
+    .map(d => d.drill_id!)
 
   const [sessionDrillsResult, allDrillsResult, categoriesResult] = await Promise.all([
     drillIds.length > 0
