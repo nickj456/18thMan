@@ -9,11 +9,20 @@ import { Send, Loader2, Trash2, Lock } from 'lucide-react'
 import { postReply, deleteMessage } from '@/app/(app)/chat/actions'
 import { toast } from 'sonner'
 
+interface LinkPreview {
+  url: string
+  title: string | null
+  description: string | null
+  image: string | null
+  domain: string
+}
+
 interface Message {
   id: string
   content: string
   created_at: string
   sender_id: string | null
+  link_preview: LinkPreview | null
   author: { display_name: string | null; username: string; avatar_url: string | null } | null
 }
 
@@ -44,7 +53,7 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
           // Fetch full message with author profile
           const { data } = await supabase
             .from('messages')
-            .select('id, content, created_at, sender_id, author:profiles!messages_sender_id_fkey ( display_name, username, avatar_url )')
+            .select('id, content, created_at, sender_id, link_preview, author:profiles!messages_sender_id_fkey ( display_name, username, avatar_url )')
             .eq('id', payload.new.id)
             .single()
           if (data) {
@@ -131,7 +140,34 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
                   </div>
                 )}
                 <div className="flex items-start gap-2">
-                  <p className="flex-1 text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    {msg.link_preview && (
+                      <a
+                        href={msg.link_preview.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block rounded-xl border border-zinc-700 bg-zinc-800/60 overflow-hidden hover:border-zinc-500 transition-colors max-w-sm"
+                      >
+                        {msg.link_preview.image && (
+                          <img
+                            src={msg.link_preview.image}
+                            alt={msg.link_preview.title ?? ''}
+                            className="w-full aspect-video object-cover"
+                          />
+                        )}
+                        <div className="px-3 py-2.5 space-y-0.5">
+                          {msg.link_preview.title && (
+                            <p className="text-sm font-semibold text-zinc-100 line-clamp-1">{msg.link_preview.title}</p>
+                          )}
+                          {msg.link_preview.description && (
+                            <p className="text-xs text-zinc-400 line-clamp-2">{msg.link_preview.description}</p>
+                          )}
+                          <p className="text-[10px] text-zinc-600 uppercase tracking-wide pt-0.5">{msg.link_preview.domain}</p>
+                        </div>
+                      </a>
+                    )}
+                  </div>
                   {(isCurrentUser || isAdmin) && (
                     <button
                       onClick={() => handleDelete(msg.id)}

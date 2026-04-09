@@ -31,7 +31,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
 
   const { data: messages } = await supabase
     .from('messages')
-    .select('id, content, created_at, sender_id, author:profiles!messages_sender_id_fkey ( display_name, username, avatar_url )')
+    .select('id, content, created_at, sender_id, link_preview, author:profiles!messages_sender_id_fkey ( display_name, username, avatar_url )')
     .eq('conversation_id', id)
     .order('created_at', { ascending: true })
 

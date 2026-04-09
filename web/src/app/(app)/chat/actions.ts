@@ -1,8 +1,11 @@
 'use server'
 
+import { after } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
+import { extractUrl, fetchLinkPreview } from '@/lib/link-preview'
 
 async function getAuthenticatedUser() {
   const supabase = await createClient()
@@ -52,11 +55,29 @@ export async function postReply(conversationId: string, content: string) {
     .single()
   if (conv?.is_closed && profile.role !== 'admin') return { error: 'This thread is closed' }
 
-  const { error } = await supabase
+  const { data: msg, error } = await supabase
     .from('messages')
     .insert({ conversation_id: conversationId, sender_id: user.id, content: content.trim() })
+    .select('id')
+    .single()
 
-  if (error) return { error: error.message }
+  if (error || !msg) return { error: error?.message ?? 'Failed to post' }
+
+  // Fetch link preview in the background — doesn't block the response
+  const url = extractUrl(content)
+  if (url) {
+    const messageId = msg.id
+    after(async () => {
+      const preview = await fetchLinkPreview(url)
+      if (preview) {
+        const service = createServiceClient()
+        await service
+          .from('messages')
+          .update({ link_preview: preview })
+          .eq('id', messageId)
+      }
+    })
+  }
 
   revalidatePath(`/chat/community/${conversationId}`)
   return { success: true }
