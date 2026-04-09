@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { GripVertical, X, ChevronDown, ChevronUp, Clock, Plus, Search, Globe, Lock, Users2, Calendar, Puzzle } from 'lucide-react'
+import { GripVertical, X, ChevronDown, ChevronUp, Clock, Plus, Search, Globe, Lock, Users2, Calendar, Puzzle, Copy } from 'lucide-react'
 import { createSession, updateSession } from '@/app/(app)/sessions/actions'
 import type { Drill, DrillCategory, SessionPlan, SessionDrillItem } from '@/lib/supabase/types'
 
@@ -113,6 +113,18 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
   function addDrill(drill: Drill) {
     const key = `${drill.id}-${Date.now()}`
     setItems(prev => [...prev, { drill_id: drill.id, duration_minutes: 10, notes: '', drill, _key: key }])
+  }
+
+  function duplicateItem(key: string) {
+    setItems(prev => {
+      const idx = prev.findIndex(i => i._key === key)
+      if (idx === -1) return prev
+      const original = prev[idx]
+      const copy = { ...original, _key: `${original._key}-copy-${Date.now()}` }
+      const next = [...prev]
+      next.splice(idx + 1, 0, copy)
+      return next
+    })
   }
 
   function addCustomBlock() {
@@ -285,6 +297,7 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
                       index={index}
                       notesExpanded={expandedNotes.has(item._key)}
                       onRemove={() => removeDrill(item._key)}
+                      onDuplicate={() => duplicateItem(item._key)}
                       onDurationChange={v => updateDuration(item._key, v)}
                       onNotesChange={v => updateNotes(item._key, v)}
                       onToggleNotes={() => toggleNotes(item._key)}
@@ -429,6 +442,7 @@ interface SortableDrillRowProps {
   index: number
   notesExpanded: boolean
   onRemove: () => void
+  onDuplicate: () => void
   onDurationChange: (v: number) => void
   onNotesChange: (v: string) => void
   onToggleNotes: () => void
@@ -438,7 +452,7 @@ interface SortableDrillRowProps {
 
 function SortableDrillRow({
   item, index, notesExpanded,
-  onRemove, onDurationChange, onNotesChange, onToggleNotes,
+  onRemove, onDuplicate, onDurationChange, onNotesChange, onToggleNotes,
 }: SortableDrillRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item._key,
@@ -508,6 +522,14 @@ function SortableDrillRow({
           title="Toggle notes"
         >
           {notesExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+
+        <button
+          onClick={onDuplicate}
+          className="text-zinc-600 hover:text-indigo-400 transition-colors flex-shrink-0"
+          title="Duplicate"
+        >
+          <Copy size={14} />
         </button>
 
         <button
