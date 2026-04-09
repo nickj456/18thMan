@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { UserPlus, UserMinus, Loader2, ChevronDown, Link2, RefreshCw, Check } from 'lucide-react'
-import { clubAdminInviteUser, clubAdminRemoveMember, regenerateInviteToken } from './actions'
+import { UserPlus, UserMinus, Loader2, ChevronDown, Link2, RefreshCw, Check, Clock, X } from 'lucide-react'
+import { clubAdminInviteUser, clubAdminRemoveMember, regenerateInviteToken, clubAdminCancelInvite } from './actions'
+import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -19,20 +20,31 @@ interface AvailableUser {
   display_name: string | null
 }
 
+interface PendingInvite {
+  invitationId: string
+  userId: string
+  createdAt: string
+  displayName: string | null
+  username: string
+}
+
 interface Props {
   clubId: string
   inviteToken: string
   members: Member[]
   availableUsers: AvailableUser[]
+  pendingInvites: PendingInvite[]
   currentUserId: string
 }
 
-export function ClubAdminPanel({ clubId, inviteToken, members, availableUsers, currentUserId }: Props) {
+export function ClubAdminPanel({ clubId, inviteToken, members, availableUsers, pendingInvites, currentUserId }: Props) {
   const router = useRouter()
   const [inviteId, setInviteId] = useState('')
   const [invitePending, startInvite] = useTransition()
   const [removePending, startRemove] = useTransition()
   const [regenPending, startRegen] = useTransition()
+  const [cancelPending, startCancel] = useTransition()
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [currentToken, setCurrentToken] = useState(inviteToken)
 
@@ -74,6 +86,15 @@ export function ClubAdminPanel({ clubId, inviteToken, members, availableUsers, c
       const result = await clubAdminRemoveMember(clubId, userId)
       if (result?.error) toast.error(result.error)
       else { toast.success(`${name} removed from club`); router.refresh() }
+    })
+  }
+
+  function handleCancelInvite(invitationId: string, name: string) {
+    setCancellingId(invitationId)
+    startCancel(async () => {
+      const result = await clubAdminCancelInvite(clubId, invitationId)
+      if (result?.error) { toast.error(result.error); setCancellingId(null) }
+      else { toast.success(`Invitation to ${name} cancelled`); router.refresh() }
     })
   }
 
@@ -135,6 +156,46 @@ export function ClubAdminPanel({ clubId, inviteToken, members, availableUsers, c
               {invitePending ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
               Invite
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Pending invitations */}
+      {pendingInvites.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs text-zinc-500 flex items-center gap-1.5">
+            <Clock size={11} className="text-amber-400" />
+            Pending invitations ({pendingInvites.length})
+          </p>
+          <div className="rounded-xl border border-zinc-800 overflow-hidden">
+            <ul className="divide-y divide-zinc-800 bg-zinc-900">
+              {pendingInvites.map(inv => (
+                <li key={inv.invitationId} className="flex items-center justify-between px-4 py-3">
+                  <div>
+                    <p className="text-sm text-zinc-200">{inv.displayName ?? inv.username}</p>
+                    <p className="text-xs text-zinc-600">
+                      @{inv.username} · invited {formatDistanceToNow(new Date(inv.createdAt), { addSuffix: true })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1 text-[10px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
+                      <Clock size={9} /> Pending
+                    </span>
+                    <button
+                      onClick={() => handleCancelInvite(inv.invitationId, inv.displayName ?? inv.username)}
+                      disabled={cancelPending && cancellingId === inv.invitationId}
+                      className="flex items-center gap-1 text-xs text-zinc-600 hover:text-red-400 transition-colors disabled:opacity-50"
+                      title="Cancel invitation"
+                    >
+                      {cancelPending && cancellingId === inv.invitationId
+                        ? <Loader2 size={12} className="animate-spin" />
+                        : <X size={12} />}
+                      Cancel
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}

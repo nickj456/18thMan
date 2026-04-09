@@ -41,6 +41,7 @@ export default async function ClubPage({
 
     // Club admin needs the list of users not yet in a club to invite
     let availableUsers: { id: string; username: string; display_name: string | null }[] = []
+    let pendingInvites: { invitationId: string; userId: string; createdAt: string; displayName: string | null; username: string }[] = []
     if (profile.club_role === 'admin') {
       const memberIds = (members ?? []).map(m => m.id)
       let q = supabase
@@ -49,14 +50,23 @@ export default async function ClubPage({
         .is('club_id', null)
         .order('display_name')
 
-      // Exclude users with a pending invitation too
-      const { data: pending } = await supabase
+      // Fetch pending invitations with user details for the admin panel
+      const { data: pendingInvitations } = await supabase
         .from('club_invitations')
-        .select('user_id')
+        .select('id, user_id, created_at, profiles!club_invitations_user_id_fkey(display_name, username)')
         .eq('club_id', profile.club_id)
         .eq('status', 'pending')
+        .order('created_at', { ascending: false })
 
-      const excludeIds = [...memberIds, ...(pending ?? []).map(p => p.user_id)]
+      pendingInvites = (pendingInvitations ?? []).map(inv => ({
+        invitationId: inv.id,
+        userId: inv.user_id,
+        createdAt: inv.created_at as string,
+        displayName: (inv.profiles as any)?.display_name ?? null,
+        username: (inv.profiles as any)?.username ?? '',
+      }))
+
+      const excludeIds = [...memberIds, ...pendingInvites.map(p => p.userId)]
       if (excludeIds.length > 0) {
         q = q.not('id', 'in', `(${excludeIds.join(',')})`)
       }
@@ -124,6 +134,7 @@ export default async function ClubPage({
             inviteToken={club.invite_token}
             members={members ?? []}
             availableUsers={availableUsers}
+            pendingInvites={pendingInvites}
             currentUserId={user.id}
           />
         )}
