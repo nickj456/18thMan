@@ -3,15 +3,13 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { generateText, Output } from 'ai'
-import { createGroq } from '@ai-sdk/groq'
+import { gateway } from '@ai-sdk/gateway'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
 import type { SessionDrillItem, AiGuide } from '@/lib/supabase/types'
 
 const LOCK_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes
-
-const groq = createGroq()
 
 const SessionSummarySchema = z.object({
   overview: z.string().describe('2-3 sentence overview of what this training session covers and its goals'),
@@ -202,7 +200,7 @@ export async function generateSessionSummary(id: string) {
 
   try {
     const { experimental_output } = await generateText({
-      model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
+      model: gateway('anthropic/claude-haiku-4.5'),
       output: Output.object({ schema: SessionSummarySchema }),
       system: `You are an expert rugby league coach. Generate a practical session summary to help a coach prepare and run this training session. For the equipment list, use ONLY the equipment items provided in the EQUIPMENT NEEDED section — do not invent or add equipment not listed there. Consolidate duplicates and present each item once.`,
       prompt: `Session: "${session.title}"\nTotal duration: ${session.total_duration ?? 0} minutes\n\nSession plan:\n${drillSummaries}${equipmentContext}`,
