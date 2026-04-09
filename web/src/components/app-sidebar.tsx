@@ -23,6 +23,8 @@ import {
   HelpCircle,
   Scale,
   Settings,
+  Shirt,
+  BookMarked,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -49,6 +51,11 @@ const navItems = [
   { href: '/chat', label: 'Coach Chat', icon: MessageSquare },
   { href: '/clubs', label: 'My Club', icon: Building2 },
   { href: '/groups', label: 'My Groups', icon: Users2 },
+]
+
+const resourceItems = [
+  { href: '/positions', label: 'Positions Guide', icon: Shirt },
+  { href: '/how-to', label: 'How-to & FAQ', icon: BookMarked },
 ]
 
 const profileItems = [
@@ -85,6 +92,25 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map(({ href, label, icon: Icon }) => (
+                <SidebarMenuItem key={href}>
+                  <SidebarMenuButton
+                    isActive={pathname === href}
+                    render={<Link href={href} />}
+                  >
+                    <Icon className="size-4" />
+                    <span>{label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Resources</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {resourceItems.map(({ href, label, icon: Icon }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
                     isActive={pathname === href}
