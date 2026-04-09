@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { DrillCard } from '@/components/drills/DrillCard'
+import { CollapsiblePrivateDrills } from '@/components/drills/CollapsiblePrivateDrills'
 import { DrillFilters } from '@/components/drills/DrillFilters'
 import { DrillGridSkeleton } from '@/components/drills/DrillGridSkeleton'
 import { PenTool } from 'lucide-react'
@@ -75,21 +76,8 @@ export default async function DrillsPage({
       </div>
 
       {/* Club-private drills section */}
-      {clubDrills.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold">🔒 {userClubName} Drills</span>
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-              {clubDrills.length} private
-            </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {clubDrills.map(drill => (
-              <DrillCard key={drill.id} drill={drill} showClubBadge />
-            ))}
-          </div>
-          <div className="border-t border-border pt-2" />
-        </div>
+      {clubDrills.length > 0 && userClubName && (
+        <CollapsiblePrivateDrills drills={clubDrills} clubName={userClubName} />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
