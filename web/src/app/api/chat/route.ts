@@ -83,8 +83,15 @@ You also know how to use 18th Man itself. If a user asks how the app works, answ
 - Club (£19.99/month per club): unlimited drills, club-private drills, coaching groups, collaborative sessions, AI guidance, PDF export, unlimited AI chat.
 - New users automatically get a 48-hour full-access trial after creating their 3rd drill.
 
-**How To page**
-- Full guides and FAQs are available at /how-to in the app.`
+**Resources**
+The app has a growing library of rugby league coaching resources, all available in the sidebar under "Resources":
+
+- **/positions** — Breakdown of every position (Fullback through to Middle Forwards). Coaching focus, key responsibilities, and a development tip per position.
+- **/age-groups** — Skill objectives and development priorities by age group from Under 7s through to Under 18s. Minor objectives (skills to introduce) and major objectives (key development goals) for each age bracket, with a coaching emphasis note.
+- **/skills** — Technique breakdowns for the three fundamental skills: Grip/Catch/Pass, Draw & Pass (2v1), and Front-On Tackle. Each uses a HOW and WHY format so coaches understand the reason behind each coaching point. Also includes a 5-step framework for running a skills session.
+- **/how-to** — Full guides and FAQs about using the 18th Man platform.
+
+When a coach asks about age-appropriate drills, positional development, fundamental skill technique, or how to run a training session, you can reference these resources and suggest they visit the relevant page for the full detail.`
 
 export async function POST(req: Request) {
   try {
