@@ -203,6 +203,20 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
     })
   }
 
+  function handleDurationChange(frames: number) {
+    // Clamp any existing keyframes that exceed the new duration
+    const clamped = (canvasState.keyframes ?? []).map(k => ({
+      ...k,
+      time: Math.min(k.time, frames),
+    }))
+    // Deduplicate after clamping (two kfs may land on same frame)
+    const seen = new Set<number>()
+    const deduped = clamped.filter(k => { if (seen.has(k.time)) return false; seen.add(k.time); return true })
+    setIsPlaying(false)
+    setCurrentFrame(0)
+    pushState({ ...canvasState, duration: frames, keyframes: deduped })
+  }
+
   function handleTogglePlay() {
     if ((canvasState.keyframes ?? []).length < 2) {
       toast.error('Add at least 2 keyframes to preview animation')
@@ -477,17 +491,17 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         </div>
 
         {/* Timeline toggle bar */}
-        <div className="flex items-center justify-between px-3 h-7 bg-zinc-900 border-t border-zinc-800 shrink-0">
+        <div className="flex items-center justify-between px-3 h-8 bg-zinc-900 border-t border-zinc-800 shrink-0">
           <span className="text-[11px] text-zinc-600">
             {(canvasState.keyframes ?? []).length > 0
               ? `${(canvasState.keyframes ?? []).length} keyframe${(canvasState.keyframes ?? []).length !== 1 ? 's' : ''}`
               : 'No keyframes'}
           </span>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {(canvasState.keyframes ?? []).length >= 2 && (
               <button
                 onClick={() => setShowPreview(true)}
-                className="flex items-center gap-1.5 text-[11px] text-amber-400 hover:text-amber-300 transition-colors"
+                className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 hover:text-amber-300 transition-colors border border-amber-500/20"
               >
                 <Video size={11} />
                 Preview & Export
@@ -495,7 +509,11 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
             )}
             <button
               onClick={() => setShowTimeline(v => !v)}
-              className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-white transition-colors"
+              className={`flex items-center gap-1.5 text-[11px] px-2 py-1 rounded transition-colors border ${
+                showTimeline
+                  ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/25'
+                  : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white hover:bg-zinc-700'
+              }`}
             >
               <Timer size={11} />
               {showTimeline ? 'Hide Timeline' : 'Animate'}
@@ -513,6 +531,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
             onAddKeyframe={handleAddKeyframe}
             onDeleteKeyframe={handleDeleteKeyframe}
             onTogglePlay={handleTogglePlay}
+            onDurationChange={handleDurationChange}
           />
         )}
       </div>

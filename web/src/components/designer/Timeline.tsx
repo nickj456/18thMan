@@ -1,10 +1,19 @@
 'use client'
 
 import { useRef, useCallback } from 'react'
-import { Play, Pause, Plus, Trash2 } from 'lucide-react'
+import { Play, Pause, Plus, Trash2, ChevronDown } from 'lucide-react'
 import type { CanvasState, CanvasElement } from './types'
 
 export const FPS = 30
+
+export const DURATION_OPTIONS = [
+  { label: '3s', frames: 90 },
+  { label: '5s', frames: 150 },
+  { label: '8s', frames: 240 },
+  { label: '10s', frames: 300 },
+  { label: '15s', frames: 450 },
+  { label: '20s', frames: 600 },
+]
 
 function elementLabel(el: CanvasElement): string {
   switch (el.type) {
@@ -29,6 +38,7 @@ interface TimelineProps {
   onAddKeyframe: () => void
   onDeleteKeyframe: (time: number) => void
   onTogglePlay: () => void
+  onDurationChange: (frames: number) => void
 }
 
 export function Timeline({
@@ -39,6 +49,7 @@ export function Timeline({
   onAddKeyframe,
   onDeleteKeyframe,
   onTogglePlay,
+  onDurationChange,
 }: TimelineProps) {
   const duration = state.duration ?? 90
   const keyframes = state.keyframes ?? []
@@ -58,6 +69,8 @@ export function Timeline({
 
   function handleTrackMouseDown(e: React.MouseEvent) {
     e.preventDefault()
+    // Pause before seeking so RAF loop doesn't overwrite the new frame
+    if (isPlaying) onTogglePlay()
     seekFromX(e.clientX)
     function onMove(me: MouseEvent) { seekFromX(me.clientX) }
     function onUp() {
@@ -73,13 +86,16 @@ export function Timeline({
   const markers: number[] = []
   for (let f = 0; f <= duration; f += step) markers.push(f)
 
-  // Show up to 4 elements in the timeline
-  const elements = state.elements.slice(0, 4)
+  const elements = state.elements
+
+  // Dynamic height: header (36) + ruler (24) + element rows (28 each, min 1 shown) + clamp
+  const rowCount = Math.max(1, Math.min(elements.length, 6))
+  const panelHeight = 36 + 24 + rowCount * 28 + (elements.length > 6 ? 24 : 0)
 
   return (
     <div
       className="border-t border-zinc-800 bg-zinc-950 flex flex-col shrink-0"
-      style={{ height: 172 }}
+      style={{ height: panelHeight }}
     >
       {/* Header */}
       <div className="flex items-center gap-2 px-3 h-9 border-b border-zinc-800 shrink-0">
@@ -94,10 +110,21 @@ export function Timeline({
           {currentSeconds}s / {totalSeconds}s
         </span>
         <span className="text-[10px] font-mono text-zinc-700">f{currentFrame}</span>
-        <div className="flex-1" />
-        <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-semibold select-none">
-          Keyframes
-        </span>
+        <div className="w-px h-3.5 bg-zinc-800 mx-1" />
+        {/* Duration selector */}
+        <div className="relative flex items-center">
+          <select
+            value={duration}
+            onChange={e => onDurationChange(Number(e.target.value))}
+            className="appearance-none bg-zinc-900 border border-zinc-700 text-zinc-400 text-[10px] rounded px-1.5 pr-4 py-0.5 leading-none cursor-pointer hover:border-zinc-600 hover:text-white transition-colors focus:outline-none"
+            title="Animation duration"
+          >
+            {DURATION_OPTIONS.map(opt => (
+              <option key={opt.frames} value={opt.frames}>{opt.label}</option>
+            ))}
+          </select>
+          <ChevronDown size={9} className="absolute right-1 text-zinc-600 pointer-events-none" />
+        </div>
         <div className="flex-1" />
         <div className="flex items-center gap-1.5">
           {hasKeyframeAtCurrent && (
@@ -212,25 +239,16 @@ export function Timeline({
           )}
 
           {/* Overflow notice */}
-          {state.elements.length > 4 && (
+          {state.elements.length > 6 && (
             <div className="flex h-6 items-center">
               <div className="w-[72px] shrink-0 border-r border-zinc-800 h-full" />
               <span className="px-3 text-[10px] text-zinc-700">
-                +{state.elements.length - 4} more elements
+                +{state.elements.length - 6} more (all animated)
               </span>
             </div>
           )}
         </div>
       </div>
-
-      {/* Full-height playhead overlay (covers ruler + rows) */}
-      <div
-        className="pointer-events-none absolute bottom-0 z-20"
-        style={{
-          left: `calc(72px + ${frameToPercent(currentFrame)})`,
-          // height covers from ruler row down — approximation, won't be pixel perfect
-        }}
-      />
     </div>
   )
 }
