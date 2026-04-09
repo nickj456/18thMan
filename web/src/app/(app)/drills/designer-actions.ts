@@ -10,6 +10,7 @@ import { generateDrillGuideFromYoutube } from './youtube-actions'
 import { extractYouTubeId, youtubeThumbnail, fetchChannelInfo } from '@/lib/youtube'
 import { canCreateDrill, activateTrial, FREE_DRILL_LIMIT } from '@/lib/subscription'
 import { sendTrialStartEmail, sendDrillLimitEmail } from '@/lib/email'
+import { createServiceClient } from '@/lib/supabase/service'
 
 interface SaveDrillDesignInput {
   title: string
@@ -127,6 +128,42 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
 
   const drillId = data.id
   revalidateTag('drills', 'max')
+
+  // Notify followers when a public drill is posted
+  if (input.visibility === 'public') {
+    const accessToken = session.access_token
+    after(async () => {
+      const bg = createBackgroundClient(accessToken)
+      const service = createServiceClient()
+
+      const { data: author } = await bg
+        .from('profiles')
+        .select('display_name, username')
+        .eq('id', user.id)
+        .single()
+
+      const { data: followers } = await service
+        .from('follows')
+        .select('follower_id')
+        .eq('following_id', user.id)
+
+      if (followers && followers.length > 0) {
+        await service.from('notifications').insert(
+          followers.map(f => ({
+            user_id: f.follower_id,
+            type: 'new_drill',
+            actor_id: user.id,
+            data: {
+              drill_id: drillId,
+              drill_title: input.title,
+              author_display_name: author?.display_name ?? author?.username ?? 'A coach',
+              author_username: author?.username ?? '',
+            },
+          }))
+        )
+      }
+    })
+  }
 
   // Trial trigger: activate 48-hour trial after the user creates their 3rd drill
   if (count + 1 === 3 && tier === 'free') {

@@ -2,6 +2,59 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
+
+export async function followUser(targetUserId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+  if (user.id === targetUserId) return { error: 'Cannot follow yourself' }
+
+  const { error } = await supabase
+    .from('follows')
+    .insert({ follower_id: user.id, following_id: targetUserId })
+
+  if (error) return { error: error.message }
+
+  // Notify the followed user
+  const service = createServiceClient()
+  const { data: follower } = await service
+    .from('profiles')
+    .select('display_name, username')
+    .eq('id', user.id)
+    .single()
+
+  await service.from('notifications').insert({
+    user_id: targetUserId,
+    type: 'followed_you',
+    actor_id: user.id,
+    data: {
+      follower_id: user.id,
+      follower_display_name: follower?.display_name ?? follower?.username ?? 'A coach',
+      follower_username: follower?.username ?? '',
+    },
+  })
+
+  revalidatePath(`/profile/[username]`, 'page')
+  return { success: true }
+}
+
+export async function unfollowUser(targetUserId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('follows')
+    .delete()
+    .eq('follower_id', user.id)
+    .eq('following_id', targetUserId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/profile/[username]`, 'page')
+  return { success: true }
+}
 
 export async function uploadAvatar(formData: FormData) {
   const supabase = await createClient()

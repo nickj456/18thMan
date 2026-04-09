@@ -3,12 +3,23 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { PenTool, CalendarDays, Star, MapPin, Award, ArrowLeft, MessageSquare } from 'lucide-react'
+import { PenTool, CalendarDays, MapPin, Award, ArrowLeft, MessageSquare, UserPlus, UserMinus } from 'lucide-react'
 import { startDm } from '@/app/(app)/chat/dm/actions'
+import { followUser, unfollowUser } from '@/app/(app)/profile/actions'
 
 async function startDmAction(userId: string) {
   'use server'
   await startDm(userId)
+}
+
+async function followAction(userId: string) {
+  'use server'
+  await followUser(userId)
+}
+
+async function unfollowAction(userId: string) {
+  'use server'
+  await unfollowUser(userId)
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
@@ -42,7 +53,7 @@ export default async function PublicProfilePage({
 
   const isOwnProfile = currentUser?.id === profile.id
 
-  const [drillsResult, statsResult, socialLinksResult] = await Promise.all([
+  const [drillsResult, statsResult, socialLinksResult, followersResult, followingResult, isFollowingResult] = await Promise.all([
     supabase
       .from('drills')
       .select('id, title, difficulty, preview_image_url, canvas_preview_url, category:drill_categories(name), created_at')
@@ -59,11 +70,30 @@ export default async function PublicProfilePage({
       .from('social_links')
       .select('platform, url')
       .eq('user_id', profile.id),
+    supabase
+      .from('follows')
+      .select('follower_id', { count: 'exact', head: true })
+      .eq('following_id', profile.id),
+    supabase
+      .from('follows')
+      .select('following_id', { count: 'exact', head: true })
+      .eq('follower_id', profile.id),
+    currentUser && !isOwnProfile
+      ? supabase
+          .from('follows')
+          .select('follower_id')
+          .eq('follower_id', currentUser.id)
+          .eq('following_id', profile.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ])
 
   const drills = drillsResult.data ?? []
   const publicDrillCount = statsResult.count ?? 0
   const socialLinks = socialLinksResult.data ?? []
+  const followerCount = followersResult.count ?? 0
+  const followingCount = followingResult.count ?? 0
+  const isFollowing = !!isFollowingResult.data
 
   const memberSince = new Date(profile.created_at).toLocaleDateString('en-GB', {
     month: 'long',
@@ -121,14 +151,28 @@ export default async function PublicProfilePage({
 
           <div className="flex items-center gap-2 shrink-0">
             {!isOwnProfile && currentUser && (
-              <form action={startDmAction.bind(null, profile.id)}>
-                <button
-                  type="submit"
-                  className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  <MessageSquare size={12} /> Message
-                </button>
-              </form>
+              <>
+                <form action={isFollowing ? unfollowAction.bind(null, profile.id) : followAction.bind(null, profile.id)}>
+                  <button
+                    type="submit"
+                    className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                      isFollowing
+                        ? 'text-zinc-400 border-zinc-700 hover:text-red-400 hover:border-red-500/50'
+                        : 'text-white bg-[#e8560a] border-[#e8560a] hover:bg-[#d14d09] hover:border-[#d14d09]'
+                    }`}
+                  >
+                    {isFollowing ? <><UserMinus size={12} /> Following</> : <><UserPlus size={12} /> Follow</>}
+                  </button>
+                </form>
+                <form action={startDmAction.bind(null, profile.id)}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <MessageSquare size={12} /> Message
+                  </button>
+                </form>
+              </>
             )}
             {isOwnProfile && (
               <Link
@@ -178,7 +222,15 @@ export default async function PublicProfilePage({
         <div className="flex items-center gap-6 border-t border-zinc-800 pt-4">
           <div className="text-center">
             <p className="text-2xl font-bold text-zinc-100">{publicDrillCount}</p>
-            <p className="text-[10px] text-zinc-600 uppercase tracking-wider mt-0.5">Public Drills</p>
+            <p className="text-[10px] text-zinc-600 uppercase tracking-wider mt-0.5">Drills</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-zinc-100">{followerCount}</p>
+            <p className="text-[10px] text-zinc-600 uppercase tracking-wider mt-0.5">Followers</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-zinc-100">{followingCount}</p>
+            <p className="text-[10px] text-zinc-600 uppercase tracking-wider mt-0.5">Following</p>
           </div>
         </div>
       </div>

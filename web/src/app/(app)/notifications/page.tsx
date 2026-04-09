@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Bell, Star, Building2, Users2, CalendarDays } from 'lucide-react'
+import { Bell, Star, Building2, Users2, CalendarDays, PenTool, UserPlus } from 'lucide-react'
 import { markAllNotificationsRead } from './actions'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -31,6 +31,19 @@ interface SessionScheduledData {
   group_id: string
   scheduled_at: string
   scheduled_by_display_name: string
+}
+
+interface NewDrillData {
+  drill_id: string
+  drill_title: string
+  author_display_name: string
+  author_username: string
+}
+
+interface FollowedYouData {
+  follower_id: string
+  follower_display_name: string
+  follower_username: string
 }
 
 export default async function NotificationsPage() {
@@ -73,7 +86,7 @@ export default async function NotificationsPage() {
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <Bell className="size-10 text-zinc-700" />
           <p className="text-sm text-muted-foreground">
-            You&apos;ll be notified here when coaches rate your drills.
+            You&apos;ll be notified here when coaches follow you, rate your drills, or coaches you follow post new content.
           </p>
         </div>
       ) : (
@@ -150,6 +163,49 @@ export default async function NotificationsPage() {
                       <span className="font-semibold text-white">{data.session_title}</span>
                       {' for '}
                       <span className="text-amber-400">{scheduled}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                  {unreadDot}
+                </Link>
+              )
+            }
+
+            if (n.type === 'new_drill') {
+              const data = n.data as NewDrillData
+              return (
+                <Link key={n.id} href={`/drills/${data.drill_id}`} className={itemClass}>
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-[#e8560a]/15 border border-[#e8560a]/20 flex items-center justify-center mt-0.5">
+                    <PenTool className="size-4 text-[#e8560a]" />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-sm leading-snug">
+                      <span className="font-semibold">{data.author_display_name}</span>
+                      {' posted a new drill: '}
+                      <span className="font-semibold text-white">{data.drill_title}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                  {unreadDot}
+                </Link>
+              )
+            }
+
+            if (n.type === 'followed_you') {
+              const data = n.data as FollowedYouData
+              return (
+                <Link key={n.id} href={`/profile/${data.follower_username}`} className={itemClass}>
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center mt-0.5">
+                    <UserPlus className="size-4 text-emerald-400" />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-sm leading-snug">
+                      <span className="font-semibold">{data.follower_display_name}</span>
+                      {' started following you'}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
