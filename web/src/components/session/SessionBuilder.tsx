@@ -370,7 +370,7 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
                     onClick={() => addDrill(drill)}
                     className="w-full flex items-center gap-3 p-2.5 rounded-lg border border-zinc-800 bg-zinc-900 hover:border-indigo-500 hover:bg-indigo-500/5 transition-colors text-left group"
                   >
-                    <div className="relative w-14 h-9 rounded overflow-hidden flex-shrink-0 bg-zinc-800">
+                    <div className="relative w-14 h-9 rounded overflow-hidden flex-shrink-0 bg-muted">
                       {(drill.canvas_preview_url || drill.preview_image_url) && (
                         <Image
                           src={drill.canvas_preview_url ?? drill.preview_image_url!}
@@ -478,10 +478,10 @@ function SortableDrillRow({
           <GripVertical size={15} />
         </button>
 
-        <span className="text-xs text-zinc-600 font-mono w-4 flex-shrink-0 select-none">{index + 1}</span>
+        <span className="text-xs text-muted-foreground font-mono w-4 flex-shrink-0 select-none">{index + 1}</span>
 
         {item.drill ? (
-          <div className="relative w-14 h-9 rounded overflow-hidden flex-shrink-0 bg-zinc-800">
+          <div className="relative w-14 h-9 rounded overflow-hidden flex-shrink-0 bg-muted">
             {(item.drill.canvas_preview_url || item.drill.preview_image_url) && (
               <Image
                 src={item.drill.canvas_preview_url ?? item.drill.preview_image_url!}
@@ -511,9 +511,9 @@ function SortableDrillRow({
             max={120}
             value={item.duration_minutes}
             onChange={e => onDurationChange(parseInt(e.target.value) || 1)}
-            className="w-14 h-7 text-xs text-center px-1"
+            className="w-14 h-7 text-xs text-center px-1 text-foreground"
           />
-          <span className="text-xs text-zinc-500 select-none">min</span>
+          <span className="text-xs text-muted-foreground select-none">min</span>
         </div>
 
         <button
