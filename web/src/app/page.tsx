@@ -390,8 +390,8 @@ export default async function LandingPage() {
                 marginBottom: '0.15em',
               }}
             >
-              <span style={{ display: 'block', color: 'var(--ember)' }}>Elevate</span>
-              <span style={{ display: 'block', color: 'var(--text)' }}>Your Coaching.</span>
+              <span style={{ display: 'block', color: 'var(--ember)' }}>Better sessions.</span>
+              <span style={{ display: 'block', color: 'var(--text)' }}>Better players.</span>
             </h1>
 
             {/* Sub-headline */}
@@ -407,9 +407,9 @@ export default async function LandingPage() {
                 fontWeight: 300,
               }}
             >
-              Design drills, plan sessions, and let AI build your entire coaching
-              block upfront — every focus area covered, every session ready before
-              the season starts. Built for rugby league. Backed by AI.
+              Stop winging it on the whiteboard. 18th Man gives rugby league coaches
+              ready-made drills, AI-planned session blocks, and a community sharing
+              what actually works at training.
             </p>
 
             {/* CTAs */}
@@ -423,6 +423,12 @@ export default async function LandingPage() {
                 </Link>
               )}
             </div>
+            <p
+              className="reveal-4"
+              style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-dim)', letterSpacing: '0.04em' }}
+            >
+              Free to join · No credit card required · Set up in 2 minutes
+            </p>
 
             {/* Trust indicators */}
             <div
@@ -493,6 +499,85 @@ export default async function LandingPage() {
             ))}
           </div>
         </div>
+
+        {/* ── FOUNDER QUOTE ───────────────────────────────────────── */}
+        <section style={{ padding: '5rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+          <div
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '16px',
+              padding: 'clamp(2rem, 4vw, 3.5rem)',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+              gap: '2.5rem',
+              alignItems: 'center',
+            }}
+          >
+            {/* Quote */}
+            <div style={{ position: 'relative' }}>
+              <div className="quote-mark" style={{ position: 'absolute', top: '-1rem', left: '-0.5rem' }}>"</div>
+              <p
+                className="lp"
+                style={{
+                  fontSize: 'clamp(1.05rem, 2vw, 1.25rem)',
+                  lineHeight: 1.7,
+                  color: 'var(--text)',
+                  fontWeight: 300,
+                  fontStyle: 'italic',
+                  position: 'relative',
+                  zIndex: 1,
+                  paddingTop: '1.5rem',
+                }}
+              >
+                I built 18th Man because I was coaching at the grassroots level and
+                couldn&apos;t find tools that spoke the language of rugby league. The
+                drills, the sets, the defensive structures — everything coaches
+                actually talk about on the training field.
+              </p>
+            </div>
+
+            {/* Author */}
+            <div
+              style={{
+                borderLeft: '2px solid rgba(232,86,10,0.3)',
+                paddingLeft: '2rem',
+              }}
+            >
+              <div
+                className="lp-display"
+                style={{
+                  fontWeight: 800,
+                  fontSize: '1.15rem',
+                  letterSpacing: '0.02em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text)',
+                  marginBottom: '0.4rem',
+                }}
+              >
+                Nick Johnson
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                Youth Team Coach<br />
+                Level 2 Rugby League Coach<br />
+                20+ years in the game
+              </div>
+              <div
+                style={{
+                  marginTop: '0.75rem',
+                  fontSize: '0.75rem',
+                  color: 'var(--ember)',
+                  fontFamily: 'var(--font-barlow)',
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Creator of 18th Man
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ── FEATURES ────────────────────────────────────────────── */}
         <section id="features" style={{ padding: '7rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
@@ -646,6 +731,38 @@ export default async function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* ── MID-PAGE CTA ────────────────────────────────────────── */}
+        {!user && (
+          <section style={{ padding: '5rem 2rem', textAlign: 'center' }}>
+            <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+              <span className="section-label">Free to join</span>
+              <h2
+                className="lp-display"
+                style={{
+                  fontWeight: 800,
+                  fontStyle: 'italic',
+                  fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+                  lineHeight: 0.95,
+                  textTransform: 'uppercase',
+                  color: 'var(--text)',
+                  marginTop: '1rem',
+                  marginBottom: '1rem',
+                }}
+              >
+                Try it today.<br />
+                <span style={{ color: 'var(--ember)' }}>It&apos;s free.</span>
+              </h2>
+              <p style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.7, marginBottom: '2rem' }}>
+                Start building your drill library and planning sessions — no credit card needed.
+              </p>
+              <Link href="/signup" className="cta-primary" style={{ fontSize: '1rem', padding: '14px 36px' }}>
+                Create Free Account →
+              </Link>
+              <p style={{ marginTop: '1rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>Takes 2 minutes</p>
+            </div>
+          </section>
+        )}
 
         {/* ── HOW IT WORKS ────────────────────────────────────────── */}
         <section
