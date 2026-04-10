@@ -38,6 +38,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { signOut } from '@/app/(app)/actions'
@@ -76,11 +77,15 @@ interface AppSidebarProps {
 export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }: AppSidebarProps) {
   const pathname = usePathname()
   const { theme, toggle } = useTheme()
+  const { setOpenMobile } = useSidebar()
+
+  // Close the mobile sidebar whenever the route changes
+  const closeMobile = () => setOpenMobile(false)
 
   return (
     <Sidebar>
       <SidebarHeader className="px-4 py-3 border-b border-sidebar-border">
-        <Link href="/dashboard" className="flex items-center gap-2.5 no-underline">
+        <Link href="/dashboard" onClick={closeMobile} className="flex items-center gap-2.5 no-underline">
           <Image src="/logo.png" alt="18th Man" width={36} height={36} className="shrink-0" />
           <div>
             <p className="font-bold text-sm leading-tight tracking-wide">18TH MAN</p>
@@ -98,7 +103,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
                     isActive={pathname === href}
-                    render={<Link href={href} />}
+                    render={<Link href={href} onClick={closeMobile} />}
                   >
                     <Icon className="size-4" />
                     <span>{label}</span>
@@ -117,7 +122,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
                     isActive={pathname === href}
-                    render={<Link href={href} />}
+                    render={<Link href={href} onClick={closeMobile} />}
                   >
                     <Icon className="size-4" />
                     <span>{label}</span>
@@ -136,7 +141,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
                     isActive={pathname === href}
-                    render={<Link href={href} />}
+                    render={<Link href={href} onClick={closeMobile} />}
                   >
                     <Icon className="size-4" />
                     <span>{label}</span>
@@ -148,7 +153,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={pathname === '/admin'}
-                      render={<Link href="/admin" />}
+                      render={<Link href="/admin" onClick={closeMobile} />}
                     >
                       <ShieldCheck className="size-4" />
                       <span>Admin</span>
@@ -157,7 +162,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={pathname.startsWith('/admin/users')}
-                      render={<Link href="/admin/users" />}
+                      render={<Link href="/admin/users" onClick={closeMobile} />}
                     >
                       <Users className="size-4" />
                       <span>Users</span>
@@ -166,7 +171,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={pathname.startsWith('/admin/categories')}
-                      render={<Link href="/admin/categories" />}
+                      render={<Link href="/admin/categories" onClick={closeMobile} />}
                     >
                       <Tag className="size-4" />
                       <span>Categories</span>
@@ -175,7 +180,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={pathname.startsWith('/admin/import-playlist')}
-                      render={<Link href="/admin/import-playlist" />}
+                      render={<Link href="/admin/import-playlist" onClick={closeMobile} />}
                     >
                       <ListVideo className="size-4" />
                       <span>Import Playlist</span>
@@ -206,7 +211,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
           >
             {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
           </button>
-          <Link href="/notifications" className="relative text-zinc-500 hover:text-zinc-300 transition-colors" title="Notifications">
+          <Link href="/notifications" onClick={closeMobile} className="relative text-zinc-500 hover:text-zinc-300 transition-colors" title="Notifications">
             <Bell className="size-4" />
             {unreadNotifications > 0 && (
               <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-[#e8560a] text-white text-[9px] font-bold flex items-center justify-center px-0.5 leading-none">
