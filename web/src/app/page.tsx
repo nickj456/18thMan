@@ -559,6 +559,7 @@ export default async function LandingPage() {
               </div>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                 Youth Team Coach<br />
+                Ex Pro Rugby League Player<br />
                 Level 2 Rugby League Coach<br />
                 20+ years in the game
               </div>
