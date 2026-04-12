@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { Barlow_Condensed, Source_Serif_4 } from 'next/font/google'
 import { DownloadForm } from '@/components/landing/DownloadForm'
+import { ExitIntentPopup } from '@/components/landing/ExitIntentPopup'
 
 const barlow = Barlow_Condensed({
   weight: ['400', '600', '700', '800'],
@@ -1437,6 +1438,8 @@ export default async function LandingPage() {
           </div>
         </footer>
       </div>
+
+      {!user && <ExitIntentPopup />}
     </>
   )
 }
