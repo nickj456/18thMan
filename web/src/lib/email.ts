@@ -13,11 +13,16 @@ export interface EmailResult {
   error?: string
 }
 
-async function send(to: string, subject: string, html: string): Promise<EmailResult> {
+async function send(
+  to: string,
+  subject: string,
+  html: string,
+  attachments?: { filename: string; content: Buffer }[],
+): Promise<EmailResult> {
   const resend = getResend()
   if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' }
   try {
-    const { error } = await resend.emails.send({ from: FROM, to, subject, html })
+    const { error } = await resend.emails.send({ from: FROM, to, subject, html, attachments })
     if (error) return { success: false, error: error.message }
     return { success: true }
   } catch (err) {
@@ -114,7 +119,7 @@ function greeting(name: string): string {
 }
 
 function sign(): string {
-  return `${divider()}<p style="margin:0;font-size:13px;color:#52525b;">— The 18th Man team</p>`
+  return `${divider()}<p style="margin:0;font-size:13px;color:#52525b;">The 18th Man team</p>`
 }
 
 const PRICING_URL = `${SITE_URL}/pricing`
@@ -232,6 +237,99 @@ export async function sendUpgradeNudgeEmail(to: string, displayName: string, fea
     ${ctaButton('See what\'s included', PRICING_URL)}
     ${sign()}
   `))
+}
+
+/** Sent to a lead who requested the free session plan PDF */
+export async function sendLeadMagnetEmail(
+  to: string,
+  ageGroup: string | null,
+  pdfBuffer: Buffer,
+): Promise<EmailResult> {
+  const ageNote = ageGroup ? ` — ${ageGroup}` : ''
+
+  const weeks = [
+    { num: '1', title: 'Ball Handling &amp; Passing', detail: 'Passing grids, offloads, quick hands', mins: '70 min' },
+    { num: '2', title: 'Defensive Shape', detail: 'Flat line drill, tackle technique, conditioned game', mins: '70 min' },
+    { num: '3', title: 'Attack Plays &amp; Structure', detail: 'Set pieces, broken-field running, small-sided game', mins: '75 min' },
+    { num: '4', title: 'Full Run Session', detail: 'Review weeks 1–3, full training game', mins: '75 min' },
+  ]
+
+  // Light-theme email: dark text on white/light backgrounds — reliable across all email clients
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f4f5" style="background:#f4f4f5;padding:40px 16px;">
+  <tr><td align="center">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;">
+
+    <!-- Logo -->
+    <tr><td align="center" style="padding-bottom:24px;">
+      <img src="${SITE_URL}/logo.png" alt="18th Man" width="44" height="44" style="display:block;" />
+    </td></tr>
+
+    <!-- Ember header -->
+    <tr><td bgcolor="#e8560a" style="background:#e8560a;border-radius:12px 12px 0 0;padding:24px 32px 20px;">
+      <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:1.8px;text-transform:uppercase;">Free Coaching Resource</p>
+      <h1 style="margin:0;font-size:22px;font-weight:800;color:#ffffff;line-height:1.2;letter-spacing:-0.3px;">Your 4-Week Training Plan${ageNote}</h1>
+    </td></tr>
+
+    <!-- White card body -->
+    <tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:0 0 12px 12px;padding:28px 32px 32px;border:1px solid #e4e4e7;border-top:none;">
+
+      <p style="margin:0 0 6px;font-size:15px;color:#18181b;line-height:1.6;">Hey Coach,</p>
+      <p style="margin:0 0 24px;font-size:15px;color:#18181b;line-height:1.6;">Your 4-week rugby league training plan is attached.</p>
+
+      <!-- Week table -->
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #e4e4e7;border-radius:8px;overflow:hidden;">
+        ${weeks.map((w, i) => `
+        <tr>
+          <td width="44" bgcolor="#e8560a" align="center" valign="middle" style="background:#e8560a;padding:14px 0;${i < weeks.length - 1 ? 'border-bottom:1px solid rgba(255,255,255,0.15);' : ''}">
+            <span style="font-size:16px;font-weight:800;color:#ffffff;">${w.num}</span>
+          </td>
+          <td bgcolor="${i % 2 === 0 ? '#ffffff' : '#fafafa'}" style="background:${i % 2 === 0 ? '#ffffff' : '#fafafa'};padding:11px 14px;${i < weeks.length - 1 ? 'border-bottom:1px solid #e4e4e7;' : ''}">
+            <p style="margin:0 0 1px;font-size:13px;font-weight:700;color:#18181b;">${w.title}</p>
+            <p style="margin:0;font-size:12px;color:#71717a;">${w.detail} &nbsp;&middot;&nbsp; <strong style="color:#e8560a;">${w.mins}</strong></p>
+          </td>
+        </tr>`).join('')}
+      </table>
+
+      <p style="margin:0 0 20px;font-size:14px;color:#71717a;line-height:1.6;">Each session includes drill descriptions, durations, and coach notes. Print it and take it to training.</p>
+
+      <hr style="border:none;border-top:1px solid #e4e4e7;margin:0 0 20px;" />
+
+      <p style="margin:0 0 20px;font-size:15px;color:#52525b;line-height:1.6;">The 18th Man team</p>
+
+      <!-- CTA -->
+      <table cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+        <tr><td bgcolor="#e8560a" style="background:#e8560a;border-radius:8px;">
+          <a href="${SITE_URL}/signup" style="display:inline-block;padding:12px 24px;color:#ffffff;font-weight:700;font-size:14px;text-decoration:none;">Create a free account →</a>
+        </td></tr>
+      </table>
+      <p style="margin:0;font-size:12px;color:#a1a1aa;">Free for all coaches &nbsp;&middot;&nbsp; No credit card needed</p>
+
+    </td></tr>
+
+    <!-- Footer -->
+    <tr><td align="center" style="padding-top:20px;">
+      <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;">
+        18th Man &nbsp;&middot;&nbsp; Rugby League Coaching Platform<br/>
+        <a href="${SITE_URL}" style="color:#a1a1aa;">18thman.app</a>
+      </p>
+    </td></tr>
+
+  </table>
+  </td></tr>
+</table>
+</body>
+</html>`
+
+  return send(
+    to,
+    `Your free 4-week rugby league training plan${ageNote}`,
+    html,
+    [{ filename: '18th-man-4-week-session-plan.pdf', content: pdfBuffer }],
+  )
 }
 
 /** Sent when a Coach Pro or Club subscription is activated */
