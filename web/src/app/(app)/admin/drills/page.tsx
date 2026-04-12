@@ -109,7 +109,7 @@ export default async function AdminDrillsPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2 shrink-0">
-                  <form action={approveDrill.bind(null, drill.id)}>
+                  <form action={async () => { await approveDrill(drill.id) }}>
                     <button
                       type="submit"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors"
@@ -118,7 +118,7 @@ export default async function AdminDrillsPage() {
                       Approve
                     </button>
                   </form>
-                  <form action={rejectDrill.bind(null, drill.id)}>
+                  <form action={async () => { await rejectDrill(drill.id) }}>
                     <button
                       type="submit"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition-colors"
