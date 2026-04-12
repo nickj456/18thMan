@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { Barlow_Condensed, Source_Serif_4 } from 'next/font/google'
+import { DownloadForm } from '@/components/landing/DownloadForm'
 
 const barlow = Barlow_Condensed({
   weight: ['400', '600', '700', '800'],
@@ -1278,6 +1279,45 @@ export default async function LandingPage() {
             </p>
           </div>
         </section>
+
+        {/* ── LEAD MAGNET ─────────────────────────────────────────── */}
+        {!user && (
+          <section style={{ padding: '5rem 2rem' }}>
+            <div
+              style={{
+                maxWidth: '900px',
+                margin: '0 auto',
+                background: 'var(--surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '20px',
+                padding: 'clamp(2rem, 5vw, 3rem)',
+                display: 'flex',
+                gap: '3rem',
+                alignItems: 'flex-start',
+                flexWrap: 'wrap',
+              }}
+            >
+              {/* Left: copy */}
+              <div style={{ flex: '1 1 300px', minWidth: 0 }}>
+                <span className="section-label" style={{ marginBottom: '1rem', display: 'block' }}>Free Download</span>
+                <h2
+                  className="lp-heading"
+                  style={{ fontSize: 'clamp(1.5rem, 4vw, 2.2rem)', marginBottom: '0.75rem', lineHeight: 1.2 }}
+                >
+                  Get a free 4-week rugby league training plan
+                </h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 0 }}>
+                  Ready-made sessions with drill descriptions and coach notes — yours to print and take to training. No account needed.
+                </p>
+              </div>
+
+              {/* Right: form */}
+              <div style={{ flex: '1 1 320px', minWidth: 0 }}>
+                <DownloadForm />
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ── FINAL CTA ───────────────────────────────────────────── */}
         <section
