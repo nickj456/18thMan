@@ -56,7 +56,7 @@ export default async function DrillsPage({
             id, title, description, difficulty, age_group, player_count,
             preview_image_url, canvas_preview_url, youtube_url, tiktok_url,
             facebook_url, is_public, club_id, created_at, canvas_json,
-            category_id, author_id, ai_guide, updated_at,
+            category_id, author_id, ai_guide, updated_at, approval_status,
             category:drill_categories ( id, name, slug ),
             author:profiles!drills_author_id_fkey ( id, username, display_name, avatar_url )
           `)
@@ -139,6 +139,7 @@ async function buildDrillQuery(supabase: any, filters: DrillFiltersType) {
       created_at,
       category_id,
       author_id,
+      approval_status,
       category:drill_categories ( id, name, slug ),
       author:profiles!drills_author_id_fkey ( id, username, display_name, avatar_url )
     `)

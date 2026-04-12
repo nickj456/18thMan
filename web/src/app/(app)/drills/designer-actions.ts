@@ -120,6 +120,9 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
       author_id: user.id,
       is_public: input.visibility === 'public',
       club_id: input.visibility === 'club' ? input.clubId : null,
+      // Public drills require admin approval before appearing in the community library.
+      // Private and club drills are accessible immediately without approval.
+      approval_status: input.visibility === 'public' ? 'pending' : 'approved',
     })
     .select('id')
     .single()

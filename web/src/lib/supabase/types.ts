@@ -145,6 +145,8 @@ export interface AiGuide {
   equipment: string[]
 }
 
+export type DrillApprovalStatus = 'pending' | 'approved' | 'rejected'
+
 export interface Drill {
   id: string
   title: string
@@ -165,6 +167,7 @@ export interface Drill {
   tiktok_url: string | null
   facebook_url: string | null
   ai_guide: AiGuide | null
+  approval_status: DrillApprovalStatus
   created_at: string
   updated_at: string
 }

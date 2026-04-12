@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2 } from 'lucide-react'
+import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2, Clock } from 'lucide-react'
 
 export const metadata = { title: 'Admin — 18th Man' }
 
@@ -22,6 +22,7 @@ export default async function AdminPage() {
     coachesRes,
     viewersRes,
     clubsRes,
+    pendingDrillsRes,
   ] = await Promise.all([
     supabase.from('profiles').select('id', { count: 'exact', head: true }),
     supabase.from('drills').select('id', { count: 'exact', head: true }),
@@ -31,6 +32,7 @@ export default async function AdminPage() {
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'coach'),
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'viewer'),
     supabase.from('clubs').select('id', { count: 'exact', head: true }),
+    supabase.from('drills').select('id', { count: 'exact', head: true }).eq('approval_status', 'pending').eq('is_public', true),
   ])
 
   const stats = [
@@ -61,6 +63,17 @@ export default async function AdminPage() {
       label: 'Clubs',
       description: `${clubsRes.count ?? 0} clubs configured`,
       colour: 'border-amber-500/20 hover:border-amber-500/40 text-amber-400',
+    },
+    {
+      href: '/admin/drills',
+      icon: Clock,
+      label: 'Drill Approval',
+      description: pendingDrillsRes.count
+        ? `${pendingDrillsRes.count} drill${pendingDrillsRes.count !== 1 ? 's' : ''} pending review`
+        : 'No drills pending review',
+      colour: pendingDrillsRes.count
+        ? 'border-amber-500/40 hover:border-amber-500/60 text-amber-400'
+        : 'border-zinc-700 hover:border-zinc-600 text-zinc-400',
     },
     {
       href: '/admin/import-playlist',

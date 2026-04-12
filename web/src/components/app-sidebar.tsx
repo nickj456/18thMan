@@ -26,6 +26,7 @@ import {
   Shirt,
   BookMarked,
   Dumbbell,
+  Clock,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -175,6 +176,15 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                     >
                       <Tag className="size-4" />
                       <span>Categories</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith('/admin/drills')}
+                      render={<Link href="/admin/drills" onClick={closeMobile} />}
+                    >
+                      <Clock className="size-4" />
+                      <span>Drill Approval</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>

@@ -94,6 +94,16 @@ export function DrillCard({ drill, avgRating, showClubBadge }: DrillCardProps) {
                 🔒 Club
               </Badge>
             )}
+            {drill.approval_status === 'pending' && (
+              <Badge className="text-xs border bg-amber-500/10 text-amber-400 border-amber-500/20">
+                Pending review
+              </Badge>
+            )}
+            {drill.approval_status === 'rejected' && (
+              <Badge className="text-xs border bg-red-500/10 text-red-400 border-red-500/20">
+                Not approved
+              </Badge>
+            )}
           </div>
         </CardContent>
 
