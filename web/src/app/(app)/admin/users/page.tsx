@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ArrowLeft, Users } from 'lucide-react'
+import { ArrowLeft, Users, Mail } from 'lucide-react'
 import { UserRoleSelect } from './UserRoleSelect'
 import { DeleteUserButton } from './DeleteUserButton'
 import type { UserRole } from '@/lib/supabase/types'
@@ -18,9 +18,9 @@ const roleColour: Record<string, string> = {
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; role?: string }>
+  searchParams: Promise<{ q?: string; role?: string; tab?: string }>
 }) {
-  const { q, role: roleFilter } = await searchParams
+  const { q, role: roleFilter, tab = 'users' } = await searchParams
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -29,6 +29,7 @@ export default async function AdminUsersPage({
   const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (me?.role !== 'admin') redirect('/dashboard')
 
+  // ── Users tab data ──────────────────────────────────────────────────────
   let query = supabase
     .from('profiles')
     .select('id, username, display_name, avatar_url, club, club_id, role, created_at')
@@ -43,7 +44,6 @@ export default async function AdminUsersPage({
 
   const { data: profiles } = await query
 
-  // Fetch club names separately to avoid PostgREST schema cache issues with new FK
   const clubIds = [...new Set((profiles ?? []).map(p => p.club_id).filter(Boolean))] as string[]
   const { data: clubsData } = clubIds.length > 0
     ? await supabase.from('clubs').select('id, name').in('id', clubIds)
@@ -57,9 +57,14 @@ export default async function AdminUsersPage({
     viewer: profiles?.filter(p => p.role === 'viewer').length ?? 0,
   }
 
+  // ── Leads tab data ──────────────────────────────────────────────────────
+  const { data: leads } = await supabase
+    .from('leads')
+    .select('id, email, age_group, source, created_at')
+    .order('created_at', { ascending: false })
+
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Back */}
       <Link href="/admin" className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors">
         <ArrowLeft size={12} /> Admin Panel
       </Link>
@@ -69,100 +74,172 @@ export default async function AdminUsersPage({
           <h1 className="app-heading text-2xl flex items-center gap-2">
             <Users size={20} className="text-indigo-400" /> User Management
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">{counts.all} users total</p>
+          <p className="text-sm text-zinc-500 mt-1">{counts.all} users · {leads?.length ?? 0} leads</p>
         </div>
       </div>
 
-      {/* Filters */}
-      <form method="GET" className="flex flex-wrap gap-2 items-center">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Search name or username…"
-          className="text-sm bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-56"
-        />
-        <div className="flex gap-1">
-          {(['', 'admin', 'coach', 'viewer'] as const).map(r => (
-            <Link
-              key={r || 'all'}
-              href={`/admin/users${r ? `?role=${r}` : ''}${q ? `${r ? '&' : '?'}q=${q}` : ''}`}
-              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-                (roleFilter ?? '') === r
-                  ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
-              }`}
-            >
-              {r || 'All'} {r === '' ? `(${counts.all})` : r === 'admin' ? `(${counts.admin})` : r === 'coach' ? `(${counts.coach})` : `(${counts.viewer})`}
-            </Link>
-          ))}
-        </div>
-      </form>
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-zinc-800">
+        {[
+          { key: 'users', label: 'Users', count: counts.all },
+          { key: 'leads', label: 'Leads', count: leads?.length ?? 0 },
+        ].map(t => (
+          <Link
+            key={t.key}
+            href={`/admin/users?tab=${t.key}`}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              tab === t.key
+                ? 'border-indigo-500 text-indigo-300'
+                : 'border-transparent text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            {t.label}
+            <span className="ml-1.5 text-xs text-zinc-600">{t.count}</span>
+          </Link>
+        ))}
+      </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-zinc-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">User</th>
-                <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Club</th>
-                <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Joined</th>
-                <th className="text-right text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Role</th>
-                <th className="px-5 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800 bg-zinc-900">
-              {!profiles?.length ? (
-                <tr>
-                  <td colSpan={4} className="px-5 py-10 text-center text-sm text-zinc-600">
-                    No users found
-                  </td>
-                </tr>
-              ) : (
-                profiles.map(profile => (
-                  <tr key={profile.id} className="hover:bg-zinc-800/40 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="size-8 shrink-0">
-                          <AvatarImage src={profile.avatar_url ?? ''} />
-                          <AvatarFallback className="text-xs bg-zinc-800">
-                            {profile.display_name?.[0]?.toUpperCase() ?? profile.username?.[0]?.toUpperCase() ?? '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-zinc-200">{profile.display_name ?? profile.username}</p>
-                          <p className="text-xs text-zinc-600">@{profile.username}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-zinc-500 text-xs">
-                      {(profile.club_id ? clubMap[profile.club_id] : null) ?? profile.club ?? '—'}
-                    </td>
-                    <td className="px-5 py-3.5 text-zinc-500 text-xs">
-                      {new Date(profile.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <UserRoleSelect
-                        userId={profile.id}
-                        currentRole={profile.role as UserRole}
-                        isSelf={profile.id === user.id}
-                      />
-                    </td>
-                    <td className="px-3 py-3.5">
-                      {profile.id !== user.id && (
-                        <DeleteUserButton
-                          userId={profile.id}
-                          displayName={profile.display_name ?? profile.username ?? 'User'}
-                        />
-                      )}
-                    </td>
+      {tab === 'users' && (
+        <>
+          {/* Filters */}
+          <form method="GET" className="flex flex-wrap gap-2 items-center">
+            <input type="hidden" name="tab" value="users" />
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder="Search name or username…"
+              className="text-sm bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-56"
+            />
+            <div className="flex gap-1">
+              {(['', 'admin', 'coach', 'viewer'] as const).map(r => (
+                <Link
+                  key={r || 'all'}
+                  href={`/admin/users?tab=users${r ? `&role=${r}` : ''}${q ? `&q=${q}` : ''}`}
+                  className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                    (roleFilter ?? '') === r
+                      ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+                  }`}
+                >
+                  {r || 'All'} {r === '' ? `(${counts.all})` : r === 'admin' ? `(${counts.admin})` : r === 'coach' ? `(${counts.coach})` : `(${counts.viewer})`}
+                </Link>
+              ))}
+            </div>
+          </form>
+
+          <div className="rounded-xl border border-zinc-800 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-800 bg-zinc-900/50">
+                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">User</th>
+                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Club</th>
+                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Joined</th>
+                    <th className="text-right text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Role</th>
+                    <th className="px-5 py-3" />
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-zinc-800 bg-zinc-900">
+                  {!profiles?.length ? (
+                    <tr>
+                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-zinc-600">No users found</td>
+                    </tr>
+                  ) : (
+                    profiles.map(profile => (
+                      <tr key={profile.id} className="hover:bg-zinc-800/40 transition-colors">
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="size-8 shrink-0">
+                              <AvatarImage src={profile.avatar_url ?? ''} />
+                              <AvatarFallback className="text-xs bg-zinc-800">
+                                {profile.display_name?.[0]?.toUpperCase() ?? profile.username?.[0]?.toUpperCase() ?? '?'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-zinc-200">{profile.display_name ?? profile.username}</p>
+                              <p className="text-xs text-zinc-600">@{profile.username}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5 text-zinc-500 text-xs">
+                          {(profile.club_id ? clubMap[profile.club_id] : null) ?? profile.club ?? '—'}
+                        </td>
+                        <td className="px-5 py-3.5 text-zinc-500 text-xs">
+                          {new Date(profile.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
+                          <UserRoleSelect
+                            userId={profile.id}
+                            currentRole={profile.role as UserRole}
+                            isSelf={profile.id === user.id}
+                          />
+                        </td>
+                        <td className="px-3 py-3.5">
+                          {profile.id !== user.id && (
+                            <DeleteUserButton
+                              userId={profile.id}
+                              displayName={profile.display_name ?? profile.username ?? 'User'}
+                            />
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {tab === 'leads' && (
+        <div className="rounded-xl border border-zinc-800 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-800 bg-zinc-900/50">
+                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">
+                    <span className="flex items-center gap-1.5"><Mail size={11} /> Email</span>
+                  </th>
+                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Age Group</th>
+                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Source</th>
+                  <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Signed Up</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800 bg-zinc-900">
+                {!leads?.length ? (
+                  <tr>
+                    <td colSpan={4} className="px-5 py-10 text-center text-sm text-zinc-600">No leads yet</td>
+                  </tr>
+                ) : (
+                  leads.map(lead => (
+                    <tr key={lead.id} className="hover:bg-zinc-800/40 transition-colors">
+                      <td className="px-5 py-3.5 font-medium text-zinc-200">{lead.email}</td>
+                      <td className="px-5 py-3.5 text-zinc-400 text-xs">{lead.age_group ?? '—'}</td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[#e8560a]/10 text-[#e8560a] border border-[#e8560a]/20">
+                          {lead.source}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-zinc-500 text-xs">
+                        {new Date(lead.created_at).toLocaleDateString('en-GB', {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                        })}
+                        {' '}
+                        <span className="text-zinc-600">
+                          {new Date(lead.created_at).toLocaleTimeString('en-GB', {
+                            hour: '2-digit', minute: '2-digit',
+                          })}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
