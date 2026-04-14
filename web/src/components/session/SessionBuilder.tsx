@@ -17,9 +17,10 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { GripVertical, X, ChevronDown, ChevronUp, Clock, Plus, Search, Globe, Lock, Users2, Calendar, Puzzle, Copy } from 'lucide-react'
+import { GripVertical, X, ChevronDown, ChevronUp, Clock, Plus, Search, Globe, Lock, Users2, Calendar, Puzzle, Copy, Mic, MicOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { createSession, updateSession } from '@/app/(app)/sessions/actions'
+import { useVoiceInput } from '@/hooks/useVoiceInput'
 import type { Drill, DrillCategory, SessionPlan, SessionDrillItem } from '@/lib/supabase/types'
 
 interface SessionItem {
@@ -70,6 +71,9 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
   const isEdit = !!initialSession
 
   const [title, setTitle] = useState(initialSession?.title ?? '')
+  const { isListening: titleListening, isSupported: voiceSupported, toggle: toggleTitleVoice } = useVoiceInput(
+    (text) => setTitle(prev => prev ? prev + ' ' + text : text)
+  )
   const [isShared, setIsShared] = useState(initialSession?.is_shared ?? false)
   const [selectedGroupId, setSelectedGroupId] = useState(initialSession?.group_id ?? initialGroupId ?? '')
   const [scheduledAt, setScheduledAt] = useState(
@@ -247,13 +251,31 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
       <div className="flex items-end gap-4">
         <div className="flex-1 space-y-1.5">
           <Label htmlFor="session-title">Session title</Label>
-          <Input
-            id="session-title"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="e.g. Pre-season conditioning session"
-            className="text-base"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="session-title"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="e.g. Pre-season conditioning session"
+              className="text-base"
+            />
+            {voiceSupported && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={toggleTitleVoice}
+                className={`h-10 w-10 p-0 flex-shrink-0 transition-colors ${
+                  titleListening
+                    ? 'text-[#e8560a] animate-pulse hover:text-[#e8560a]'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+                aria-label={titleListening ? 'Stop recording' : 'Dictate session title'}
+              >
+                {titleListening ? <MicOff size={14} /> : <Mic size={14} />}
+              </Button>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2.5 pb-0.5 px-3 py-2 rounded-lg border border-zinc-800 bg-zinc-900">
           {isShared

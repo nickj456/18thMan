@@ -6,10 +6,11 @@ import { DefaultChatTransport } from 'ai'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Send, Loader2, Bot, Copy, Check, BookOpen } from 'lucide-react'
+import { Send, Loader2, Bot, Copy, Check, BookOpen, Mic, MicOff } from 'lucide-react'
 import { MessageResponse } from '@/components/ai-elements/message'
 import { UpgradePrompt } from '@/components/ui/UpgradePrompt'
 import Link from 'next/link'
+import { useVoiceInput } from '@/hooks/useVoiceInput'
 
 interface HistoryMessage {
   id: string
@@ -195,6 +196,10 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName }
     setInput('')
   }
 
+  const { isListening, isSupported, interim, toggle: toggleVoice } = useVoiceInput(
+    (text) => setInput(prev => prev ? prev + ' ' + text : text)
+  )
+
   const userInitials = userName
     ? userName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
     : 'ME'
@@ -297,15 +302,38 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName }
           />
         )}
         <div className="flex gap-2 items-end">
-          <Textarea
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask your AI coach… (Enter to send, Shift+Enter for new line)"
-            className="resize-none min-h-[44px] max-h-32 text-sm"
-            rows={1}
-            disabled={isLoading || limitHit}
-          />
+          <div className="flex-1 relative">
+            <Textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={isListening ? 'Listening…' : 'Ask your AI coach… (Enter to send, Shift+Enter for new line)'}
+              className="resize-none min-h-[44px] max-h-32 text-sm"
+              rows={1}
+              disabled={isLoading || limitHit}
+            />
+            {isListening && interim && (
+              <p className="absolute bottom-full left-0 mb-1 text-xs text-zinc-500 italic truncate max-w-full px-1">
+                {interim}
+              </p>
+            )}
+          </div>
+          {isSupported && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={toggleVoice}
+              disabled={isLoading || limitHit}
+              className={`flex-shrink-0 h-10 w-10 p-0 transition-colors ${
+                isListening
+                  ? 'text-[#e8560a] animate-pulse hover:text-[#e8560a]'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+              aria-label={isListening ? 'Stop recording' : 'Start voice input'}
+            >
+              {isListening ? <MicOff size={15} /> : <Mic size={15} />}
+            </Button>
+          )}
           <Button
             size="sm"
             onClick={submit}
