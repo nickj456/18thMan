@@ -49,7 +49,9 @@
       "Bash(curl -s -X PUT https://khslkwspsqyopicxufun.supabase.co/auth/v1/admin/users/4ca91c4a-cf1a-4255-bfc4-f1e8640174a9 -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtoc2xrd3Nwc3F5b3BpY3h1ZnVuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDc5MzkxNywiZXhwIjoyMDkwMzY5OTE3fQ.w87gKXBgg8mRd7iN1Bd28fW2mhcXH5dmaiExMHqg1HM' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtoc2xrd3Nwc3F5b3BpY3h1ZnVuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDc5MzkxNywiZXhwIjoyMDkwMzY5OTE3fQ.w87gKXBgg8mRd7iN1Bd28fW2mhcXH5dmaiExMHqg1HM' -H 'Content-Type: application/json' -d '{\"password\":\"PoppyRose0010!!!!\"}')",
       "Skill(ship)",
       "Skill(ship:*)",
-      "Bash(wc -l \"c:/Users/nickj/18th Man/web/src/components/designer\"/*.tsx)"
+      "Bash(wc -l \"c:/Users/nickj/18th Man/web/src/components/designer\"/*.tsx)",
+      "Skill(design-review)",
+      "Skill(design-review:*)"
     ]
   }
 }
