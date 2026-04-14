@@ -32,6 +32,11 @@ export default async function AiChatPage() {
       .select('id')
       .single()
     if (error) console.error('[AiChatPage] failed to create conversation:', error.message)
+    if (newConv) {
+      await supabase
+        .from('conversation_participants')
+        .insert({ conversation_id: newConv.id, user_id: user.id })
+    }
     conversationId = newConv?.id ?? null
   }
 
