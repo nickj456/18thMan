@@ -32,6 +32,28 @@ interface ThreadViewProps {
   isClosed?: boolean
 }
 
+const URL_REGEX = /https?:\/\/[^\s<>"]+/g
+
+function renderContent(text: string) {
+  const parts: React.ReactNode[] = []
+  let last = 0
+  let match: RegExpExecArray | null
+  URL_REGEX.lastIndex = 0
+  while ((match = URL_REGEX.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index))
+    const url = match[0]
+    parts.push(
+      <a key={match.index} href={url} target="_blank" rel="noopener noreferrer"
+        className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 break-all">
+        {url}
+      </a>
+    )
+    last = match.index + url.length
+  }
+  if (last < text.length) parts.push(text.slice(last))
+  return parts
+}
+
 export function ThreadView({ conversationId, initialMessages, initialReactions = {}, currentUserId, canPost, isAdmin = false, isClosed = false }: ThreadViewProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [reactions, setReactions] = useState<Record<string, ReactionSummary>>(initialReactions)
@@ -261,7 +283,7 @@ export function ThreadView({ conversationId, initialMessages, initialReactions =
                 )}
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0 space-y-2">
-                    <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{renderContent(msg.content)}</p>
                     {/* Reactions */}
                     {(() => {
                       const r = reactions[msg.id] ?? { like: 0, love: 0, mine: null }
