@@ -267,7 +267,7 @@ export function ThreadView({ conversationId, initialMessages, initialReactions =
                       const r = reactions[msg.id] ?? { like: 0, love: 0, mine: null }
                       const hasAny = r.like > 0 || r.love > 0
                       return (
-                        <div className={`flex items-center gap-1 ${hasAny ? '' : 'opacity-0 group-hover/msg:opacity-100'} transition-opacity`}>
+                        <div className="flex items-center gap-1">
                           {(['like', 'love'] as const).map(type => {
                             const emoji = type === 'like' ? '👍' : '❤️'
                             const count = r[type]
@@ -278,6 +278,8 @@ export function ThreadView({ conversationId, initialMessages, initialReactions =
                                 onClick={() => handleReact(msg.id, type)}
                                 disabled={msg.id.startsWith('temp-')}
                                 className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border transition-colors ${
+                                  count === 0 ? 'opacity-0 group-hover/msg:opacity-100' : ''
+                                } ${
                                   active
                                     ? 'border-orange-500/60 bg-orange-500/10 text-orange-400'
                                     : 'border-zinc-700 bg-zinc-800/60 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'
