@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Send, Loader2, Trash2, Lock, X } from 'lucide-react'
-import { postReply, deleteMessage } from '@/app/(app)/chat/actions'
+import { postReply, deleteMessage, toggleReaction } from '@/app/(app)/chat/actions'
 import { toast } from 'sonner'
 import { extractUrl } from '@/lib/link-preview'
 import type { LinkPreview } from '@/lib/link-preview'
@@ -20,17 +20,21 @@ interface Message {
   author: { display_name: string | null; username: string; avatar_url: string | null } | null
 }
 
+type ReactionSummary = { like: number; love: number; mine: 'like' | 'love' | null }
+
 interface ThreadViewProps {
   conversationId: string
   initialMessages: Message[]
+  initialReactions?: Record<string, ReactionSummary>
   currentUserId: string
   canPost: boolean
   isAdmin?: boolean
   isClosed?: boolean
 }
 
-export function ThreadView({ conversationId, initialMessages, currentUserId, canPost, isAdmin = false, isClosed = false }: ThreadViewProps) {
+export function ThreadView({ conversationId, initialMessages, initialReactions = {}, currentUserId, canPost, isAdmin = false, isClosed = false }: ThreadViewProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [reactions, setReactions] = useState<Record<string, ReactionSummary>>(initialReactions)
   const [reply, setReply] = useState('')
   const [isPending, startTransition] = useTransition()
   const [inputPreview, setInputPreview] = useState<LinkPreview | null>(null)
@@ -87,6 +91,35 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
 
     return () => { supabase.removeChannel(channel) }
   }, [conversationId, supabase])
+
+  // Real-time reactions
+  useEffect(() => {
+    const channel = supabase
+      .channel(`reactions-${conversationId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'message_reactions' },
+        async (payload) => {
+          const msgId: string = (payload.new as { message_id?: string })?.message_id
+            ?? (payload.old as { message_id?: string })?.message_id ?? ''
+          if (!msgId) return
+          // Refetch reaction counts for this message
+          const { data } = await supabase
+            .from('message_reactions')
+            .select('user_id, reaction')
+            .eq('message_id', msgId)
+          const summary: ReactionSummary = { like: 0, love: 0, mine: null }
+          for (const r of data ?? []) {
+            summary[r.reaction as 'like' | 'love']++
+            if (r.user_id === currentUserId) summary.mine = r.reaction as 'like' | 'love'
+          }
+          setReactions(prev => ({ ...prev, [msgId]: summary }))
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [conversationId, currentUserId, supabase])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -161,6 +194,29 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
     })
   }
 
+  function handleReact(messageId: string, reaction: 'like' | 'love') {
+    // Optimistic update
+    setReactions(prev => {
+      const cur = prev[messageId] ?? { like: 0, love: 0, mine: null }
+      const next = { ...cur }
+      if (cur.mine === reaction) {
+        // Toggle off
+        next[reaction] = Math.max(0, cur[reaction] - 1)
+        next.mine = null
+      } else {
+        // Switch or add
+        if (cur.mine) next[cur.mine] = Math.max(0, cur[cur.mine] - 1)
+        next[reaction] = cur[reaction] + 1
+        next.mine = reaction
+      }
+      return { ...prev, [messageId]: next }
+    })
+    startTransition(async () => {
+      const result = await toggleReaction(messageId, reaction)
+      if (result?.error) toast.error(result.error)
+    })
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -206,6 +262,36 @@ export function ThreadView({ conversationId, initialMessages, currentUserId, can
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0 space-y-2">
                     <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    {/* Reactions */}
+                    {(() => {
+                      const r = reactions[msg.id] ?? { like: 0, love: 0, mine: null }
+                      const hasAny = r.like > 0 || r.love > 0
+                      return (
+                        <div className={`flex items-center gap-1 ${hasAny ? '' : 'opacity-0 group-hover/msg:opacity-100'} transition-opacity`}>
+                          {(['like', 'love'] as const).map(type => {
+                            const emoji = type === 'like' ? '👍' : '❤️'
+                            const count = r[type]
+                            const active = r.mine === type
+                            return (
+                              <button
+                                key={type}
+                                onClick={() => handleReact(msg.id, type)}
+                                disabled={msg.id.startsWith('temp-')}
+                                className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border transition-colors ${
+                                  active
+                                    ? 'border-orange-500/60 bg-orange-500/10 text-orange-400'
+                                    : 'border-zinc-700 bg-zinc-800/60 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'
+                                }`}
+                                title={type === 'like' ? 'Like' : 'Love'}
+                              >
+                                <span>{emoji}</span>
+                                {count > 0 && <span className="tabular-nums">{count}</span>}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )
+                    })()}
                     {msg.link_preview && (
                       <a
                         href={msg.link_preview.url}

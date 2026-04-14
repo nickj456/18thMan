@@ -35,6 +35,20 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
     .eq('conversation_id', id)
     .order('created_at', { ascending: true })
 
+  const messageIds = (messages ?? []).map(m => m.id)
+  const { data: reactionsData } = messageIds.length > 0
+    ? await supabase.from('message_reactions').select('message_id, user_id, reaction').in('message_id', messageIds)
+    : { data: [] }
+
+  // Build reactions map: messageId → { like: number, love: number, mine: type | null }
+  type ReactionSummary = { like: number; love: number; mine: 'like' | 'love' | null }
+  const reactionsMap: Record<string, ReactionSummary> = {}
+  for (const r of reactionsData ?? []) {
+    if (!reactionsMap[r.message_id]) reactionsMap[r.message_id] = { like: 0, love: 0, mine: null }
+    reactionsMap[r.message_id][r.reaction as 'like' | 'love']++
+    if (r.user_id === user.id) reactionsMap[r.message_id].mine = r.reaction as 'like' | 'love'
+  }
+
   return (
     <div className="space-y-4 max-w-3xl">
       <Link
@@ -78,6 +92,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
         isAdmin={isAdmin}
         canPost={canPost && !thread.is_closed}
         isClosed={thread.is_closed ?? false}
+        initialReactions={reactionsMap}
       />
     </div>
   )

@@ -149,6 +149,45 @@ export async function togglePinThread(id: string, isPinned: boolean) {
   return { success: true }
 }
 
+export async function toggleReaction(messageId: string, reaction: 'like' | 'love') {
+  const { supabase, user } = await getAuthenticatedUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // Check if user already has a reaction on this message
+  const { data: existing } = await supabase
+    .from('message_reactions')
+    .select('reaction')
+    .eq('message_id', messageId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (!existing) {
+    // No reaction yet — insert
+    const { error } = await supabase
+      .from('message_reactions')
+      .insert({ message_id: messageId, user_id: user.id, reaction })
+    if (error) return { error: error.message }
+  } else if (existing.reaction === reaction) {
+    // Same reaction — remove (toggle off)
+    const { error } = await supabase
+      .from('message_reactions')
+      .delete()
+      .eq('message_id', messageId)
+      .eq('user_id', user.id)
+    if (error) return { error: error.message }
+  } else {
+    // Different reaction — switch
+    const { error } = await supabase
+      .from('message_reactions')
+      .update({ reaction })
+      .eq('message_id', messageId)
+      .eq('user_id', user.id)
+    if (error) return { error: error.message }
+  }
+
+  return { success: true }
+}
+
 export async function editThreadTitle(id: string, title: string) {
   const { supabase, user, profile } = await getAuthenticatedUser()
   if (!user || profile?.role !== 'admin') return { error: 'Admins only' }
