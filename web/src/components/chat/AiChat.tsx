@@ -129,9 +129,12 @@ interface AiChatProps {
   initialMessages: HistoryMessage[]
   userAvatar: string | null
   userName: string | null
+  context?: 'sc' | 'general'
+  pendingPrompt?: string
+  onPendingPromptConsumed?: () => void
 }
 
-export function AiChat({ conversationId, initialMessages, userAvatar, userName }: AiChatProps) {
+export function AiChat({ conversationId, initialMessages, userAvatar, userName, context, pendingPrompt, onPendingPromptConsumed }: AiChatProps) {
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   // Map from user message index → drill suggestions for the following assistant reply
@@ -144,7 +147,7 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName }
   const { messages: liveMessages, status, sendMessage } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
-      body: { conversationId },
+      body: { conversationId, ...(context ? { context } : {}) },
     }),
     onError: (err) => {
       if (err.message?.includes('Daily limit') || err.message?.includes('Upgrade')) {
@@ -181,6 +184,15 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName }
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [totalCount])
+
+  // When a quick-generate prompt is selected externally, fill the input
+  useEffect(() => {
+    if (pendingPrompt && !isLoading) {
+      setInput(pendingPrompt)
+      onPendingPromptConsumed?.()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingPrompt])
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
