@@ -163,22 +163,26 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
   useEffect(() => {
     const wasLoading = prevStatusRef.current === 'streaming' || prevStatusRef.current === 'submitted'
     const isNowReady = status === 'ready'
-    if (wasLoading && isNowReady && lastUserTextRef.current) {
-      const query = lastUserTextRef.current
-      // Find the last assistant message id to key the suggestions against
-      const lastAssistant = [...liveMessages].reverse().find(m => m.role === 'assistant')
-      if (!lastAssistant) return
-      const id = lastAssistant.id
-      fetch(`/api/drills/suggest?q=${encodeURIComponent(query)}`)
-        .then(r => r.json())
-        .then((drills: DrillSuggestion[]) => {
-          if (drills.length > 0) {
-            setDrillMap(prev => ({ ...prev, [id]: drills }))
-          }
-        })
-        .catch(() => {/* silently ignore */})
-    }
     prevStatusRef.current = status
+    if (!wasLoading || !isNowReady || !lastUserTextRef.current) return
+
+    const query = lastUserTextRef.current
+    // Find the last assistant message id to key the suggestions against
+    const lastAssistant = [...liveMessages].reverse().find(m => m.role === 'assistant')
+    if (!lastAssistant) return
+    const id = lastAssistant.id
+
+    const controller = new AbortController()
+    fetch(`/api/drills/suggest?q=${encodeURIComponent(query)}`, { signal: controller.signal })
+      .then(r => r.json())
+      .then((drills: DrillSuggestion[]) => {
+        if (drills.length > 0) {
+          setDrillMap(prev => ({ ...prev, [id]: drills }))
+        }
+      })
+      .catch(() => {/* silently ignore — suggestion fetch is best-effort */})
+
+    return () => controller.abort()
   }, [status, liveMessages])
 
   useEffect(() => {

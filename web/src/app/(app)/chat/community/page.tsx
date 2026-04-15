@@ -26,8 +26,8 @@ export default async function CommunityPage() {
     .order('is_pinned', { ascending: false })
     .order('updated_at', { ascending: false })
 
-  const pinned = (threads ?? []).filter((t: any) => t.is_pinned)
-  const rest = (threads ?? []).filter((t: any) => !t.is_pinned)
+  const pinned = (threads ?? []).filter(t => t.is_pinned)
+  const rest = (threads ?? []).filter(t => !t.is_pinned)
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -77,7 +77,19 @@ export default async function CommunityPage() {
   )
 }
 
-function ThreadList({ threads }: { threads: any[] }) {
+type CommunityThread = {
+  id: string
+  title: string | null
+  created_at: string
+  updated_at: string | null
+  is_closed: boolean | null
+  is_pinned: boolean | null
+  message_count: number | null
+  // Supabase returns joined relations as arrays; we access index 0 at render time
+  author: { display_name: string | null; username: string | null }[] | null
+}
+
+function ThreadList({ threads }: { threads: CommunityThread[] }) {
   return (
     <div className="divide-y divide-zinc-800 rounded-xl border border-zinc-800 overflow-hidden">
       {threads.map((thread) => (
@@ -109,14 +121,14 @@ function ThreadList({ threads }: { threads: any[] }) {
               )}
             </div>
             <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
-              <span>by {thread.author?.display_name ?? thread.author?.username ?? 'Coach'}</span>
+              <span>by {thread.author?.[0]?.display_name ?? thread.author?.[0]?.username ?? 'Coach'}</span>
               <span>·</span>
               <span>{thread.message_count ?? 0} {thread.message_count === 1 ? 'reply' : 'replies'}</span>
             </div>
           </div>
           <div className="flex items-center gap-1 text-xs text-zinc-600 flex-shrink-0">
             <Clock size={11} />
-            {new Date(thread.updated_at).toLocaleDateString('en-GB', {
+            {thread.updated_at && new Date(thread.updated_at).toLocaleDateString('en-GB', {
               day: 'numeric', month: 'short',
             })}
           </div>

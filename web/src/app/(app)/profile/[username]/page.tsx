@@ -293,7 +293,7 @@ export default async function PublicProfilePage({
                     {drill.title}
                   </p>
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] text-zinc-600">{(drill.category as any)?.name ?? 'Uncategorised'}</p>
+                    <p className="text-[10px] text-zinc-600">{(drill.category as unknown as { name: string } | null)?.name ?? 'Uncategorised'}</p>
                     {drill.difficulty && (
                       <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium capitalize ${difficultyColour[drill.difficulty] ?? 'text-zinc-500'}`}>
                         {drill.difficulty}

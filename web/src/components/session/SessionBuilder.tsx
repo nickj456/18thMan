@@ -217,10 +217,11 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
       {!isEdit && groups && groups.length > 0 && (
         <div className="flex flex-wrap gap-3 p-4 rounded-xl border border-zinc-800 bg-zinc-900/50">
           <div className="flex-1 min-w-[200px] space-y-1.5">
-            <Label className="flex items-center gap-1.5 text-xs text-zinc-400">
+            <Label htmlFor="session-group" className="flex items-center gap-1.5 text-xs text-zinc-400">
               <Users2 size={12} /> Group <span className="text-zinc-600">(optional)</span>
             </Label>
             <select
+              id="session-group"
               value={selectedGroupId}
               onChange={e => setSelectedGroupId(e.target.value)}
               className="w-full text-sm bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -233,10 +234,11 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
           </div>
           {selectedGroupId && (
             <div className="flex-1 min-w-[200px] space-y-1.5">
-              <Label className="flex items-center gap-1.5 text-xs text-zinc-400">
+              <Label htmlFor="session-schedule" className="flex items-center gap-1.5 text-xs text-zinc-400">
                 <Calendar size={12} /> Schedule <span className="text-zinc-600">(optional)</span>
               </Label>
               <input
+                id="session-schedule"
                 type="datetime-local"
                 value={scheduledAt}
                 onChange={e => setScheduledAt(e.target.value)}
@@ -545,7 +547,7 @@ function SortableDrillRow({
         <button
           onClick={onToggleNotes}
           className="text-zinc-500 hover:text-zinc-300 transition-colors flex-shrink-0"
-          title="Toggle notes"
+          aria-label={notesExpanded ? 'Hide notes' : 'Show notes'}
         >
           {notesExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
@@ -553,7 +555,7 @@ function SortableDrillRow({
         <button
           onClick={onDuplicate}
           className="text-zinc-600 hover:text-indigo-400 transition-colors flex-shrink-0"
-          title="Duplicate"
+          aria-label="Duplicate item"
         >
           <Copy size={14} />
         </button>
@@ -561,6 +563,7 @@ function SortableDrillRow({
         <button
           onClick={onRemove}
           className="text-zinc-600 hover:text-red-400 transition-colors flex-shrink-0"
+          aria-label="Remove item"
         >
           <X size={14} />
         </button>

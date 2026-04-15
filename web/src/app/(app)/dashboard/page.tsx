@@ -167,7 +167,7 @@ async function UpcomingBlockSessions({ userId }: { userId: string }) {
       <div className="divide-y divide-zinc-800">
         {upcoming.map(session => {
           const block = blockMap.get(session.block_id)
-          const groupName = (block?.coaching_groups as any)?.name ?? ''
+          const groupName = (block?.coaching_groups as unknown as { name: string } | null)?.name ?? ''
           const catClass = categoryColour[session.category] ?? 'text-zinc-400 bg-zinc-800 border-zinc-700'
           const shortCat = session.category === 'Completions & Game Management' ? 'Completions' : session.category
           return (
@@ -282,7 +282,7 @@ async function RecentDrills({ userId }: { userId: string }) {
           <div className="p-3">
             <p className="text-xs font-semibold text-zinc-200 line-clamp-1">{drill.title}</p>
             <div className="flex items-center justify-between mt-1">
-              <p className="text-[10px] text-zinc-600">{(drill.category as any)?.name ?? 'Uncategorised'}</p>
+              <p className="text-[10px] text-zinc-600">{(drill.category as unknown as { name: string } | null)?.name ?? 'Uncategorised'}</p>
               {drill.difficulty && (
                 <p className={`text-[10px] font-medium capitalize ${diffColour[drill.difficulty] ?? 'text-zinc-500'}`}>
                   {drill.difficulty}

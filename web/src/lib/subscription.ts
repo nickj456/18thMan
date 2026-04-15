@@ -1,6 +1,18 @@
+import { cache } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { EffectiveTier } from '@/lib/supabase/types'
+import { createClient } from '@/lib/supabase/server'
 export type { EffectiveTier }
+
+/**
+ * Per-request cached version of getEffectiveTier.
+ * Call this in Server Components to avoid redundant DB round-trips when
+ * multiple components in the same render tree need the tier.
+ */
+export const getEffectiveTierCached = cache(async (userId: string): Promise<EffectiveTier> => {
+  const supabase = await createClient()
+  return getEffectiveTier(supabase, userId)
+})
 
 export const FREE_DRILL_LIMIT = 20
 export const FREE_SESSION_LIMIT = 3
