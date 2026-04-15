@@ -52,9 +52,13 @@ export const metadata: Metadata = {
     description: 'Free rugby league coaching tools — drill designer, session planner, AI coaching assistant, and a community of coaches.',
     images: ['/og-image.png'],
   },
+  manifest: '/manifest.webmanifest',
   icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
+    icon: [
+      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/icons/apple-touch-icon.png',
   },
   robots: {
     index: true,
