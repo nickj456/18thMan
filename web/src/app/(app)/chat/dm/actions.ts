@@ -12,7 +12,7 @@ export async function searchProfiles(query: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated', results: [] }
 
-  const q = query.trim()
+  const q = query.trim().replace(/[^a-zA-Z0-9 '\-]/g, '')
   if (q.length < 2) return { results: [] }
 
   const { data, error } = await supabase

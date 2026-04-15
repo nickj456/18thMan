@@ -11,6 +11,10 @@ export async function signup(formData: FormData) {
   const password = formData.get('password') as string
   const username = formData.get('username') as string
 
+  if (!email || !password || !username) redirect('/signup?error=All+fields+are+required')
+  if (username.length > 32) redirect('/signup?error=Username+must+be+32+characters+or+fewer')
+  if (password.length > 128) redirect('/signup?error=Password+is+too+long')
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
@@ -21,7 +25,10 @@ export async function signup(formData: FormData) {
   })
 
   if (error) {
-    redirect(`/signup?error=${encodeURIComponent(error.message)}`)
+    const msg = error.code === 'user_already_exists'
+      ? 'An account with this email already exists.'
+      : 'Signup failed. Please try again.'
+    redirect(`/signup?error=${encodeURIComponent(msg)}`)
   }
 
   await sendWelcomeEmail(email, username)

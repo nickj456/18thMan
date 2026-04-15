@@ -103,6 +103,10 @@ export async function updateProfile(formData: FormData): Promise<void> {
   const club = (formData.get('club') as string)?.trim() || null
   const coaching_level = (formData.get('coaching_level') as string)?.trim() || null
 
+  if (display_name && display_name.length > 100) return
+  if (bio && bio.length > 500) return
+  if (club && club.length > 100) return
+
   const { data: profile } = await supabase
     .from('profiles')
     .update({ display_name, bio, club, coaching_level })
