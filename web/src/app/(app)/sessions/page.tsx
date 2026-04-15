@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Clock, BookOpen, Users, Lock } from 'lucide-react'
+import { Plus, Clock, BookOpen, Users, Lock, Sparkles } from 'lucide-react'
 import { canCreateSession, FREE_SESSION_LIMIT } from '@/lib/subscription'
 import type { SessionPlan } from '@/lib/supabase/types'
 
@@ -84,17 +84,42 @@ export default async function SessionsPage() {
         </div>
       )}
 
+      {!atLimit && sessionCount < FREE_SESSION_LIMIT && mySessions.length > 0 && (
+        <Link
+          href={`/chat/ai?prompt=${encodeURIComponent('Plan a 60 minute session for U14s, 12 players, focusing on handling. Give me a full timed run sheet with drills and coaching points.')}`}
+          className="flex items-center gap-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-4 py-3 hover:border-indigo-500/40 hover:bg-indigo-500/10 transition-colors"
+        >
+          <Sparkles size={16} className="text-indigo-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-indigo-300">Generate a session with AI</p>
+            <p className="text-xs text-zinc-500 mt-0.5">Describe what you need and get a full timed run sheet instantly</p>
+          </div>
+          <span className="text-xs text-indigo-400 shrink-0">Try it →</span>
+        </Link>
+      )}
+
       {mySessions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="text-5xl mb-4">📋</div>
-          <p className="font-medium">No sessions yet</p>
-          <p className="text-sm text-muted-foreground mt-1 mb-6">
-            Build your first training session from the drill library
-          </p>
-          <Button nativeButton={false} render={<Link href="/sessions/new" />}>
-            <Plus size={15} className="mr-2" />
-            Create session
-          </Button>
+        <div className="flex flex-col items-center justify-center py-16 text-center gap-6">
+          <div>
+            <div className="text-5xl mb-4">📋</div>
+            <p className="font-medium">No sessions yet</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Build from the drill library or let AI plan it for you
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button nativeButton={false} render={<Link href="/sessions/new" />} variant="outline">
+              <Plus size={15} className="mr-2" />
+              Build from scratch
+            </Button>
+            <Button
+              nativeButton={false}
+              render={<Link href={`/chat/ai?prompt=${encodeURIComponent('Plan a 60 minute session for U14s, 12 players, focusing on handling. Give me a full timed run sheet with drills and coaching points.')}`} />}
+            >
+              <Sparkles size={15} className="mr-2" />
+              Generate with AI
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">

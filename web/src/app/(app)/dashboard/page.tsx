@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { PenTool, CalendarDays, MessageSquare, Sparkles, ArrowRight, Clock, Users, BookOpen, LayoutList, ChevronRight, Bell, Star, Building2, Users2, MessageCircle, UserPlus } from 'lucide-react'
+import { PenTool, CalendarDays, MessageSquare, Sparkles, ArrowRight, Clock, Users, BookOpen, LayoutList, ChevronRight, Bell, Star, Building2, Users2, MessageCircle, UserPlus, Wand2 } from 'lucide-react'
 import { OnboardingChecklist } from './OnboardingChecklist'
 
 export const metadata = { title: 'Dashboard — 18th Man' }
@@ -558,6 +558,23 @@ export default async function DashboardPage() {
         hasClub={hasClub}
         hasSession={hasSession}
       />
+
+      {/* Generate session CTA ── only shown until first session is created */}
+      {!hasSession && (
+        <Link
+          href={`/chat/ai?prompt=${encodeURIComponent('Plan a 60 minute session for U14s, 12 players, focusing on handling. Give me a full timed run sheet with drills and coaching points.')}`}
+          className="flex items-center gap-4 rounded-xl border border-indigo-500/25 bg-indigo-500/5 px-5 py-4 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-colors group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0 group-hover:bg-indigo-500/30 transition-colors">
+            <Wand2 size={18} className="text-indigo-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white">Generate your first session with AI</p>
+            <p className="text-xs text-zinc-500 mt-0.5">Describe what you need — age group, players, focus — and get a full timed run sheet in seconds</p>
+          </div>
+          <ArrowRight size={16} className="text-indigo-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+        </Link>
+      )}
 
       {/* Quick actions ── static, no DB */}
       <QuickActions />
