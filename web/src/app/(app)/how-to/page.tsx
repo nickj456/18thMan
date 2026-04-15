@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   PenTool, CalendarDays, MessageSquare, Sparkles, Users, Users2,
-  BookOpen, ChevronDown, FileDown, Lock, Lightbulb, RotateCcw,
+  BookOpen, ChevronDown, FileDown, Lock, Lightbulb, RotateCcw, Smartphone,
 } from 'lucide-react'
 
 interface Section {
@@ -16,6 +16,47 @@ interface Section {
 }
 
 const sections: Section[] = [
+  {
+    id: 'install',
+    icon: Smartphone,
+    colour: 'text-sky-400 bg-sky-500/10 border-sky-500/20',
+    title: 'Install the App',
+    items: [
+      {
+        q: 'How do I install 18th Man on Android?',
+        a: (
+          <ol className="space-y-2 list-decimal list-inside text-sm text-zinc-400 leading-relaxed">
+            <li>Open <strong className="text-zinc-300">18thman.app</strong> in <strong className="text-zinc-300">Chrome</strong> on your Android device.</li>
+            <li>Tap the <strong className="text-zinc-300">three-dot menu</strong> (⋮) in the top-right corner of Chrome.</li>
+            <li>Tap <strong className="text-zinc-300">&quot;Add to Home screen&quot;</strong>.</li>
+            <li>Tap <strong className="text-zinc-300">Add</strong> on the prompt that appears.</li>
+            <li>The 18th Man icon will appear on your home screen. Open it for a full-screen experience with no browser bar.</li>
+            <p className="mt-2 text-zinc-500 not-italic">Tip: Chrome may also show an install banner at the bottom of the screen automatically. Tap <strong className="text-zinc-400">Install</strong> on that banner to skip steps 2–3.</p>
+          </ol>
+        ),
+      },
+      {
+        q: 'How do I install 18th Man on iPhone or iPad?',
+        a: (
+          <ol className="space-y-2 list-decimal list-inside text-sm text-zinc-400 leading-relaxed">
+            <li>Open <strong className="text-zinc-300">18thman.app</strong> in <strong className="text-zinc-300">Safari</strong> on your iPhone or iPad. <span className="text-zinc-500">(This must be Safari — Chrome on iOS cannot install apps to the home screen.)</span></li>
+            <li>Tap the <strong className="text-zinc-300">Share button</strong> at the bottom of the screen — it looks like a box with an arrow pointing up.</li>
+            <li>Scroll down in the share sheet and tap <strong className="text-zinc-300">&quot;Add to Home Screen&quot;</strong>.</li>
+            <li>Edit the name if you want, then tap <strong className="text-zinc-300">Add</strong> in the top-right corner.</li>
+            <li>The 18th Man icon appears on your home screen. Opening it launches the app full-screen — no Safari address bar.</li>
+          </ol>
+        ),
+      },
+      {
+        q: 'Does it work offline?',
+        a: 'The app requires an internet connection for most features — sessions, drills, AI chat, and community all need to be online. Installing the app to your home screen doesn\'t change that. What it does give you is fast launch (no browser to open), full-screen view, and it behaves like a native app on your device.',
+      },
+      {
+        q: 'Is there an App Store or Google Play version?',
+        a: 'Not yet. The home screen install (PWA) is the current way to get an app-like experience on your phone. A native app submission is planned for later in 2026.',
+      },
+    ],
+  },
   {
     id: 'drills',
     icon: PenTool,
@@ -187,7 +228,11 @@ function AccordionItem({ q, a }: { q: string; a: string | React.ReactNode }) {
       </button>
       {open && (
         <div className="px-5 pb-4">
-          <p className="text-sm text-zinc-400 leading-relaxed">{a}</p>
+          {typeof a === 'string' ? (
+            <p className="text-sm text-zinc-400 leading-relaxed">{a}</p>
+          ) : (
+            <div className="text-sm text-zinc-400 leading-relaxed">{a}</div>
+          )}
         </div>
       )}
     </div>
