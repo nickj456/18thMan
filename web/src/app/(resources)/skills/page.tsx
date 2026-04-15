@@ -3,10 +3,10 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Fundamental Skills Guide — Rugby League',
-  description: 'How to teach the core rugby league skills — grip, catch and pass, draw and pass (2v1), and tackle technique. Coaching points, technique breakdowns, and the why behind each.',
+  description: 'How to teach the core rugby league skills — grip, catch and pass, draw and pass (2v1), tackle technique, play the ball, grubber kick, punt kick, and fend. Coaching points, technique breakdowns, and the why behind each.',
   openGraph: {
     title: 'Rugby League Fundamental Skills Guide — 18th Man',
-    description: 'How to teach the core rugby league skills — grip, catch and pass, draw and pass (2v1), and tackle technique. Coaching points, technique breakdowns, and the why behind each.',
+    description: 'How to teach the core rugby league skills — grip, catch and pass, draw and pass (2v1), tackle technique, play the ball, grubber kick, punt kick, and fend. Coaching points, technique breakdowns, and the why behind each.',
   },
 }
 
@@ -167,6 +167,246 @@ const skills: SkillSection[] = [
     ],
     coachingNote: 'Never skip tackle technique in training. Even experienced players benefit from repetition — technique breaks down under fatigue and pressure. The best time to reinforce it is in controlled drill environments before the fatigue kicks in.',
   },
+  {
+    id: 'play-the-ball',
+    title: 'Play the Ball',
+    subtitle: 'The reset that drives the game',
+    intro: 'The play the ball is the most repeated skill in rugby league — it happens after every tackle. Done well, it gives the acting half a clean ball quickly and puts the attacking team in control of the set. Done poorly, it slows everything down and hands the defence time to reset. Teach it from the ground up.',
+    phases: [
+      {
+        label: 'Placement',
+        points: [
+          {
+            how: 'When brought to ground, place the ball directly underneath the body — between the feet and the chest. Roll onto the knees, not the side.',
+            why: 'Placing the ball under the body ensures it comes out directly in front of the player when they roll it back. A ball placed to the side forces the acting half to reach or adjust, costing time.',
+          },
+          {
+            how: 'Keep hold of the ball until it is on the ground. Do not drop it early or let it go before the roll begins.',
+            why: 'Dropping the ball early gives the marker a chance to interfere. The ball carrier controls the speed of the play the ball — they should use that control.',
+          },
+        ],
+      },
+      {
+        label: 'Roll & Present',
+        points: [
+          {
+            how: 'From the knees, roll the ball back with both hands along the ground — directly backward between the legs. The movement should be deliberate and consistent.',
+            why: 'A consistent roll every time means the acting half can be in position before the ball arrives. Variation in the roll forces the acting half to adjust and slows the play.',
+          },
+          {
+            how: 'Get to the feet quickly after presenting the ball. The play the ball is not the end of a tackle — the ball carrier needs to be ready to re-enter the play.',
+            why: 'A ball carrier who stays on the ground blocks the acting half\'s running lines and clogs the ruck. Getting up quickly keeps the play fluid.',
+          },
+        ],
+      },
+      {
+        label: 'Acting Half',
+        points: [
+          {
+            how: 'The acting half positions themselves directly behind the play the ball, low and on their toes, before the ball is rolled. Their eyes should be up on the defence, not on the ball.',
+            why: 'Being set up before the ball arrives means the acting half can make their decision and move on receipt, not after. Eyes on the defence rather than the ball means they read the defensive gaps, not just collect the ball.',
+          },
+          {
+            how: 'Receive the ball cleanly and move immediately — there is no time to look down. The options are: pass wide, hit a runner, kick, or sneak from dummy half.',
+            why: 'The advantage of dummy half is speed of play. Every second spent stationary after receiving gives the defence time to reorganise. The best dummy halves make decisions before the ball arrives.',
+          },
+        ],
+      },
+    ],
+    coachingNote: 'Practice the play the ball in isolation before adding the acting half. Once both players are performing consistently, add a marker — first passive, then active. The habit of a clean, fast play the ball is one of the highest-value skills in the game and one of the most undercoached.',
+  },
+  {
+    id: 'side-on-tackle',
+    title: 'Side-On Tackle',
+    subtitle: 'Stopping the offload before it happens',
+    intro: 'The side-on tackle is the most common tackle in the game. Most ball carriers are running across the defender\'s field of view, not straight at them. A defender who can only make front-on tackles will be beaten regularly in open play. The side-on technique is about angle, contact point, and pinning the arms before an offload can happen.',
+    phases: [
+      {
+        label: 'Approach & Angle',
+        points: [
+          {
+            how: 'Cut the ball carrier off — don\'t chase them. Take an angle that puts you in front of them, targeting the inside channel.',
+            why: 'A defender who runs beside the ball carrier or chases from behind cannot make a controlled tackle. An angle that intercepts the ball carrier\'s path means the defender is in control of the contact.',
+          },
+          {
+            how: 'Stay low and square the hips to the contact point as you close in. Keep the eyes up on the ball carrier\'s body, not the ball.',
+            why: 'Low hips generate power. Watching the body (not the ball or the feet) means step and direction changes don\'t fool the defender — the body always goes where the feet go.',
+          },
+        ],
+      },
+      {
+        label: 'Contact Point',
+        points: [
+          {
+            how: 'Aim to make contact into the ball carrier\'s near lat or ribs — not the hip, not the shoulder. Get the tackling shoulder into the ball or the arm carrying the ball.',
+            why: 'Contact into the ribs or lat removes the offload. A defender who hits too high or too low leaves the ball carrier\'s arms free. Getting the shoulder into the carrying arm directly prevents the pass or offload from being released.',
+          },
+          {
+            how: 'Lead with the shoulder nearest to the ball carrier\'s body. Head behind the ball carrier — not in front.',
+            why: 'Head behind the ball carrier is the safe position in a side-on tackle. Head in front puts the defender at risk of a knee to the head if the ball carrier twists or steps.',
+          },
+        ],
+      },
+      {
+        label: 'Drive & Completion',
+        points: [
+          {
+            how: 'On contact, wrap both arms tight and drive the near arm up and under the ball carrier\'s arms. Fast feet through the tackle. Drive the ball carrier toward the ground — not laterally.',
+            why: 'Wrapping tight prevents the offload. Driving toward the ground means the ball carrier loses metres, not just lateral momentum. Lateral drives allow the ball carrier to stay on their feet and play on.',
+          },
+          {
+            how: 'Compete for the ball at the completion. If the wrap is tight, apply pressure on the ball. Don\'t release until the referee calls held.',
+            why: 'A tackle that pins the arms and competes for the ball gives the defence a chance of a turnover. Releasing early hands the ball carrier every opportunity to offload on the ground.',
+          },
+        ],
+      },
+    ],
+    coachingNote: 'Pair a ball carrier and a defender. Have the ball carrier run across the defender at 45 degrees — first at half-pace, then three-quarter pace. Focus on the contact point and arm wrap before building to full pace. The side-on tackle is more technically demanding than the front-on and needs specific practice time, not just general tackle drills.',
+  },
+  {
+    id: 'grubber-kick',
+    title: 'Grubber Kick',
+    subtitle: 'Putting the ball behind a flat defence',
+    intro: 'The grubber kick is rugby league\'s most precise attacking kick. It travels low along the ground — or with one bounce — into the space behind a flat defensive line. Used at the right moment, it puts the defence in a footrace on their own try line. Teach it as a skill first, then as a tactical decision.',
+    phases: [
+      {
+        label: 'Ball Placement & Drop',
+        points: [
+          {
+            how: 'Hold the ball vertically — laces or seam facing forward, point of the ball down. Drop the ball to the foot; do not throw it down.',
+            why: 'A vertical ball gives the kicker a consistent contact point. Throwing the ball down introduces variation in bounce and makes clean contact harder. The ball should leave the hands and be struck before it reaches the ground.',
+          },
+          {
+            how: 'Contact the ball at the bottom third — below the mid-point. The foot should be flat and relaxed, not tensed.',
+            why: 'Striking the bottom third of the ball sends it low and fast along the ground. Contact too high sends it in the air; too low sends it into the ground and produces an unpredictable bounce.',
+          },
+        ],
+      },
+      {
+        label: 'Contact & Follow Through',
+        points: [
+          {
+            how: 'Follow through low — the kicking foot should finish pointing at the target, close to the ground. The non-kicking foot stays planted and slightly bent.',
+            why: 'A low follow-through keeps the ball on its intended line. A high follow-through sends the ball up. The non-kicking leg acts as the balance point — bending it keeps the hips over the ball through contact.',
+          },
+          {
+            how: 'Strike through the ball, not at it. The foot should contact and continue forward in one smooth movement.',
+            why: 'Stabbing at the ball produces a hard-to-control contact. A smooth follow-through gives the kicker control over distance and direction.',
+          },
+        ],
+      },
+      {
+        label: 'Timing & Targeting',
+        points: [
+          {
+            how: 'Kick through a gap in the defensive line, not at a defender. The target is the space, not a person.',
+            why: 'A grubber kicked directly at a defender is easily fielded. A grubber through a gap between two defenders forces both to turn and chase — neither has a clear run to the ball.',
+          },
+          {
+            how: 'Use the grubber when the defence is flat and rushing up. Don\'t use it when the defence is deeper — that is a kicking game situation, not a grubber situation.',
+            why: 'The grubber works because a flat, rushing defence has no time to turn and chase. Against a deeper defence the ball can be fielded cleanly before the attacking team arrives.',
+          },
+        ],
+      },
+    ],
+    coachingNote: 'Practise the grubber at walking pace first — contact point and follow-through before adding distance or pace. The most common error is throwing the ball down rather than dropping it. Fix that habit early. Once the technique is consistent, add a passive defender to teach the targeting decision.',
+  },
+  {
+    id: 'punt-kick',
+    title: 'Punt Kick',
+    subtitle: 'Distance and field position',
+    intro: 'The punt kick is the attacking team\'s most important field position tool. A well-struck punt on the last tackle sends the defence to their own 20 and resets the pressure. A poor one hands the ball back in good field position for the opposition. Every player should be able to punt — not just the halfback.',
+    phases: [
+      {
+        label: 'Drop & Contact',
+        points: [
+          {
+            how: 'Hold the ball at waist height, laces up, slightly angled — the nose of the ball pointing slightly down toward the kicking foot. Drop the ball to the foot; do not throw it.',
+            why: 'A consistent drop is the foundation of a consistent punt. Throwing the ball introduces movement that changes where the foot makes contact. The ball should be released and struck in a single smooth action.',
+          },
+          {
+            how: 'Contact is made on the laces — the top of the foot. The ankle is locked and the toes pointed down through contact.',
+            why: 'Contact on the laces gives the cleanest transfer of power and the most accurate flight. A loose ankle means the contact point changes on every kick. Toes down ensures the foot is in a consistent position at the moment of contact.',
+          },
+        ],
+      },
+      {
+        label: 'Body Position',
+        points: [
+          {
+            how: 'Lean into the kick — the body weight transfers forward onto the non-kicking leg through and after contact. The kicking leg follows through high, toward the target.',
+            why: 'Leaning forward keeps the ball on a low, penetrating trajectory that travels further. Leaning back produces a high, short kick — useful sometimes, but not the default.',
+          },
+          {
+            how: 'The non-kicking leg is slightly bent and planted. Use the arms for balance — extend the non-kicking arm toward the target.',
+            why: 'A planted, bent non-kicking leg acts as a pivot point and keeps the hips through the ball. A straight non-kicking leg locks the hips and reduces power and follow-through.',
+          },
+        ],
+      },
+      {
+        label: 'Direction & Variation',
+        points: [
+          {
+            how: 'To kick across the body (cross-field), keep the ball aligned with the kicking foot and open the hips slightly toward the target. Do not try to hook the foot around the ball.',
+            why: 'Opening the hips creates the angle; there is no need to adjust the contact point. Trying to curve the foot around the ball produces inconsistent contact and reduces distance.',
+          },
+          {
+            how: 'To vary height and distance, adjust the angle of the ball at the drop — more vertical for a taller kick, more horizontal for a flat, driving kick.',
+            why: 'Most kicking variation comes from the ball angle, not from changing technique entirely. Consistent contact on a differently angled ball gives the kicker a repertoire without requiring multiple fundamentally different techniques.',
+          },
+        ],
+      },
+    ],
+    coachingNote: 'The single biggest improvement in most players\' kicking is fixing the drop. Have them practise the drop without kicking — just release the ball consistently to the same point every time. Add the contact once the drop is automatic. All other elements of the punt follow from a clean, consistent drop.',
+  },
+  {
+    id: 'fend',
+    title: 'Fend',
+    subtitle: 'Creating separation at the point of contact',
+    intro: 'The fend is one of the few legal ways a ball carrier can create separation from a defender in the tackle. Done correctly, it buys the ball carrier a metre or two of space and keeps them on their feet. Done incorrectly, it is a penalty or it stops the player in their tracks. Teach it as a timing skill, not a strength skill.',
+    phases: [
+      {
+        label: 'Timing',
+        points: [
+          {
+            how: 'The fend happens when the defender is committed to the tackle — not early, and not after they have their arms around the ball carrier. The trigger is the defender\'s final step into contact.',
+            why: 'A fend too early is easily ducked under or stepped around. A fend too late is after the tackle has been made. The window is the moment the defender leans in — that is when their balance is most vulnerable.',
+          },
+          {
+            how: 'Keep two hands on the ball until the fend is executed. Fend with the hand furthest from the ball carrier — the outside arm.',
+            why: 'Two hands until the last moment keeps all options open. The outside arm fend creates space without exposing the ball to the defender\'s reaching hand.',
+          },
+        ],
+      },
+      {
+        label: 'Technique',
+        points: [
+          {
+            how: 'Extend the arm straight into the defender\'s shoulder or chest — not toward the head or neck. Palm out, fingers up. Drive through the shoulder, not a push with the wrist.',
+            why: 'Contact into the shoulder and chest is legal and effective. Contact to the head or neck is a penalty. Driving through the shoulder uses the whole arm and torso — a wrist push has no power and often jams the ball carrier\'s arm.',
+          },
+          {
+            how: 'The body continues forward through the fend — the fending arm extends but the hips and legs keep driving toward the line.',
+            why: 'Stopping to fend gives the defender time to recover. The fend only works if the ball carrier\'s momentum carries them past the point of contact. The arm creates the separation; the legs finish the play.',
+          },
+        ],
+      },
+      {
+        label: 'Recovery',
+        points: [
+          {
+            how: 'After the fend, bring the fending hand back to the ball immediately — two hands on the ball within two steps.',
+            why: 'A one-handed ball carry after the fend is a turnover risk. Defenders trailing the play will target the exposed side. Getting back to two hands secures the ball and prepares for the next contact.',
+          },
+          {
+            how: 'Stay low after the fend. The natural tendency is to straighten up — resist it. Keep the hips low and continue driving forward.',
+            why: 'Straightening up after the fend gives the second defender a better tackle height. Staying low means any secondary contact is at the defender\'s worst angle.',
+          },
+        ],
+      },
+    ],
+    coachingNote: 'Introduce the fend in a one-on-one walk-through before adding pace. The key habit to build is the timing — fend too early in the drill and reset. Players who use the fend as a reflex rather than a timed decision will get the technique right eventually; players who never practise the timing will always fend at the wrong moment.',
+  },
 ]
 
 export default function SkillsPage() {
@@ -208,7 +448,7 @@ export default function SkillsPage() {
 
       {/* Skill sections */}
       {skills.map((skill, skillIdx) => {
-        const colours = ['indigo', 'amber', 'rose'] as const
+        const colours = ['indigo', 'amber', 'rose', 'indigo', 'amber', 'rose', 'indigo', 'amber'] as const
         const colour = colours[skillIdx % colours.length]
         const colMap = {
           indigo: { badge: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300', phase: 'text-indigo-400', dot: 'bg-indigo-500', tip: 'bg-indigo-500/5 border-indigo-500/15 text-indigo-300/80' },

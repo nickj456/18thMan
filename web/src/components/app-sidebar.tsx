@@ -27,6 +27,7 @@ import {
   BookMarked,
   Dumbbell,
   Clock,
+  Headphones,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -54,6 +55,7 @@ const navItems = [
   { href: '/chat', label: 'Coach Chat', icon: MessageSquare },
   { href: '/clubs', label: 'My Club', icon: Building2 },
   { href: '/groups', label: 'My Groups', icon: Users2 },
+  { href: '/podcasts', label: 'Podcasts', icon: Headphones },
 ]
 
 const resourceItems = [
