@@ -28,7 +28,6 @@ import {
   Dumbbell,
   Clock,
   Headphones,
-  ActivitySquare,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -57,7 +56,6 @@ const navItems = [
   { href: '/clubs', label: 'My Club', icon: Building2 },
   { href: '/groups', label: 'My Groups', icon: Users2 },
   { href: '/podcasts', label: 'Podcasts', icon: Headphones },
-  { href: '/strength-conditioning', label: 'S&C', icon: ActivitySquare },
 ]
 
 const resourceItems = [
