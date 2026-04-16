@@ -5,7 +5,7 @@ import { Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
-import { getClipSignedUrl } from '@/app/(app)/drills/[id]/analyze/actions'
+import { getClipSignedUrl } from '@/app/(app)/analyze/actions'
 
 const MAX_SIZE_BYTES = 52_428_800 // 50 MB
 const MAX_DURATION_SECONDS = 30
