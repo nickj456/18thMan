@@ -1,6 +1,6 @@
 'use client'
 
-import { Pencil, MoveRight, Circle, Eraser, Undo2 } from 'lucide-react'
+import { Pencil, MoveRight, Circle, Square, Minus, Type, Crosshair, X, Eraser, Undo2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ANNOTATION_COLORS, type AnnotationTool } from './types'
 
@@ -15,9 +15,14 @@ interface Props {
 }
 
 const TOOLS: { id: AnnotationTool; icon: React.ReactNode; label: string }[] = [
-  { id: 'pencil', icon: <Pencil className="h-4 w-4" />, label: 'Pencil' },
-  { id: 'arrow',  icon: <MoveRight className="h-4 w-4" />, label: 'Arrow' },
-  { id: 'circle', icon: <Circle className="h-4 w-4" />, label: 'Circle' },
+  { id: 'pencil',    icon: <Pencil className="h-4 w-4" />,    label: 'Pencil' },
+  { id: 'arrow',     icon: <MoveRight className="h-4 w-4" />, label: 'Arrow' },
+  { id: 'line',      icon: <Minus className="h-4 w-4" />,     label: 'Line' },
+  { id: 'circle',    icon: <Circle className="h-4 w-4" />,    label: 'Circle' },
+  { id: 'rectangle', icon: <Square className="h-4 w-4" />,    label: 'Box' },
+  { id: 'text',      icon: <Type className="h-4 w-4" />,      label: 'Text' },
+  { id: 'spotlight', icon: <Crosshair className="h-4 w-4" />, label: 'Spot' },
+  { id: 'cross',     icon: <X className="h-4 w-4" />,         label: 'Cross' },
 ]
 
 export function AnnotationToolbar({

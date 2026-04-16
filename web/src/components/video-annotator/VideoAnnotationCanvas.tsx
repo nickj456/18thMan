@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { Stage, Layer, Line, Arrow, Circle } from 'react-konva'
+import { useState, useCallback, useRef } from 'react'
+import { Stage, Layer, Line, Arrow, Circle, Rect, Text, Group } from 'react-konva'
 import type Konva from 'konva'
 import { nanoid } from 'nanoid'
 import type {
@@ -10,6 +10,11 @@ import type {
   PencilAnnotation,
   ArrowAnnotation,
   CircleAnnotation,
+  RectangleAnnotation,
+  LineAnnotation,
+  TextAnnotation,
+  SpotlightAnnotation,
+  CrossAnnotation,
 } from './types'
 
 interface Props {
@@ -19,19 +24,15 @@ interface Props {
   activeColor: string
   annotations: Annotation[]
   onChange: (annotations: Annotation[]) => void
+  // Text input overlay: called when user clicks with text tool
+  onTextPlace: (x: number, y: number, color: string) => void
 }
 
-interface DrawingArrow {
+interface DragState {
   x1: number
   y1: number
   x2: number
   y2: number
-}
-
-interface DrawingCircle {
-  cx: number
-  cy: number
-  radius: number
 }
 
 function dist(x1: number, y1: number, x2: number, y2: number) {
@@ -49,13 +50,11 @@ export function VideoAnnotationCanvas({
   activeColor,
   annotations,
   onChange,
+  onTextPlace,
 }: Props) {
-  // Pencil state
   const [pencilPoints, setPencilPoints] = useState<number[]>([])
-  // Arrow state
-  const [drawingArrow, setDrawingArrow] = useState<DrawingArrow | null>(null)
-  // Circle state
-  const [drawingCircle, setDrawingCircle] = useState<DrawingCircle | null>(null)
+  const [drag, setDrag] = useState<DragState | null>(null)
+  const isDrawing = useRef(false)
 
   const handleMouseDown = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -63,78 +62,100 @@ export function VideoAnnotationCanvas({
       const pos = getPos(e)
       if (!pos) return
 
+      if (activeTool === 'text') {
+        onTextPlace(pos.x, pos.y, activeColor)
+        return
+      }
+
       if (activeTool === 'pencil') {
+        isDrawing.current = true
         setPencilPoints([pos.x, pos.y])
-      } else if (activeTool === 'arrow') {
-        setDrawingArrow({ x1: pos.x, y1: pos.y, x2: pos.x, y2: pos.y })
-      } else if (activeTool === 'circle') {
-        setDrawingCircle({ cx: pos.x, cy: pos.y, radius: 0 })
+        return
+      }
+
+      isDrawing.current = true
+      setDrag({ x1: pos.x, y1: pos.y, x2: pos.x, y2: pos.y })
+    },
+    [activeTool, activeColor, onTextPlace]
+  )
+
+  const handleMouseMove = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (!isDrawing.current) return
+      const pos = getPos(e)
+      if (!pos) return
+
+      if (activeTool === 'pencil') {
+        setPencilPoints((prev) => [...prev, pos.x, pos.y])
+      } else {
+        setDrag((d) => d ? { ...d, x2: pos.x, y2: pos.y } : null)
       }
     },
     [activeTool]
   )
 
-  const handleMouseMove = useCallback(
-    (e: Konva.KonvaEventObject<MouseEvent>) => {
-      const pos = getPos(e)
-      if (!pos) return
-
-      if (activeTool === 'pencil' && pencilPoints.length > 0) {
-        setPencilPoints((prev) => [...prev, pos.x, pos.y])
-      } else if (activeTool === 'arrow' && drawingArrow) {
-        setDrawingArrow((d) => d ? { ...d, x2: pos.x, y2: pos.y } : null)
-      } else if (activeTool === 'circle' && drawingCircle) {
-        setDrawingCircle((d) =>
-          d ? { ...d, radius: dist(d.cx, d.cy, pos.x, pos.y) } : null
-        )
-      }
-    },
-    [activeTool, pencilPoints, drawingArrow, drawingCircle]
-  )
-
   const handleMouseUp = useCallback(() => {
-    if (activeTool === 'pencil' && pencilPoints.length >= 4) {
-      const annotation: PencilAnnotation = {
-        id: nanoid(),
-        type: 'pencil',
-        points: pencilPoints,
-        color: activeColor,
-        strokeWidth: 3,
-      }
-      onChange([...annotations, annotation])
-    } else if (activeTool === 'arrow' && drawingArrow) {
-      if (dist(drawingArrow.x1, drawingArrow.y1, drawingArrow.x2, drawingArrow.y2) > 10) {
-        const annotation: ArrowAnnotation = {
-          id: nanoid(),
-          type: 'arrow',
-          x1: drawingArrow.x1,
-          y1: drawingArrow.y1,
-          x2: drawingArrow.x2,
-          y2: drawingArrow.y2,
-          color: activeColor,
+    if (!isDrawing.current) return
+    isDrawing.current = false
+
+    if (activeTool === 'pencil') {
+      if (pencilPoints.length >= 4) {
+        const annotation: PencilAnnotation = {
+          id: nanoid(), type: 'pencil',
+          points: pencilPoints, color: activeColor, strokeWidth: 3,
         }
         onChange([...annotations, annotation])
       }
-    } else if (activeTool === 'circle' && drawingCircle) {
-      if (drawingCircle.radius > 8) {
-        const annotation: CircleAnnotation = {
-          id: nanoid(),
-          type: 'circle',
-          cx: drawingCircle.cx,
-          cy: drawingCircle.cy,
-          radius: drawingCircle.radius,
-          color: activeColor,
-        }
-        onChange([...annotations, annotation])
-      }
+      setPencilPoints([])
+      return
     }
 
-    setPencilPoints([])
-    setDrawingArrow(null)
-    setDrawingCircle(null)
-  }, [activeTool, pencilPoints, drawingArrow, drawingCircle, activeColor, annotations, onChange])
+    if (!drag) return
+    const { x1, y1, x2, y2 } = drag
+
+    if (activeTool === 'arrow' && dist(x1, y1, x2, y2) > 10) {
+      const annotation: ArrowAnnotation = { id: nanoid(), type: 'arrow', x1, y1, x2, y2, color: activeColor }
+      onChange([...annotations, annotation])
+    } else if (activeTool === 'line' && dist(x1, y1, x2, y2) > 10) {
+      const annotation: LineAnnotation = { id: nanoid(), type: 'line', x1, y1, x2, y2, color: activeColor }
+      onChange([...annotations, annotation])
+    } else if (activeTool === 'circle') {
+      const radius = dist(x1, y1, x2, y2)
+      if (radius > 8) {
+        const annotation: CircleAnnotation = { id: nanoid(), type: 'circle', cx: x1, cy: y1, radius, color: activeColor }
+        onChange([...annotations, annotation])
+      }
+    } else if (activeTool === 'spotlight') {
+      const radius = dist(x1, y1, x2, y2)
+      if (radius > 8) {
+        const annotation: SpotlightAnnotation = { id: nanoid(), type: 'spotlight', cx: x1, cy: y1, radius, color: activeColor }
+        onChange([...annotations, annotation])
+      }
+    } else if (activeTool === 'rectangle') {
+      const w = x2 - x1
+      const h = y2 - y1
+      if (Math.abs(w) > 8 && Math.abs(h) > 8) {
+        const annotation: RectangleAnnotation = {
+          id: nanoid(), type: 'rectangle',
+          x: Math.min(x1, x2), y: Math.min(y1, y2),
+          width: Math.abs(w), height: Math.abs(h),
+          color: activeColor,
+        }
+        onChange([...annotations, annotation])
+      }
+    } else if (activeTool === 'cross') {
+      const size = Math.max(dist(x1, y1, x2, y2), 10)
+      const annotation: CrossAnnotation = { id: nanoid(), type: 'cross', cx: x1, cy: y1, size, color: activeColor }
+      onChange([...annotations, annotation])
+    }
+
+    setDrag(null)
+  }, [activeTool, pencilPoints, drag, activeColor, annotations, onChange])
 
   if (width === 0 || height === 0) return null
+
+  // Live preview shape during drag
+  const preview = drag ? renderPreview(activeTool, drag, activeColor) : null
 
   return (
     <Stage
@@ -144,8 +165,7 @@ export function VideoAnnotationCanvas({
         position: 'absolute',
         top: 0,
         left: 0,
-        // Pass pointer events through when no tool is active
-        pointerEvents: activeTool ? 'all' : 'none',
+        pointerEvents: activeTool && activeTool !== 'text' ? 'all' : activeTool === 'text' ? 'all' : 'none',
         cursor: activeTool ? 'crosshair' : 'default',
       }}
       onMouseDown={handleMouseDown}
@@ -153,92 +173,114 @@ export function VideoAnnotationCanvas({
       onMouseUp={handleMouseUp}
     >
       <Layer>
-        {/* Committed annotations */}
-        {annotations.map((a) => {
-          if (a.type === 'pencil') {
-            return (
-              <Line
-                key={a.id}
-                points={a.points}
-                stroke={a.color}
-                strokeWidth={a.strokeWidth}
-                tension={0.4}
-                lineCap="round"
-                lineJoin="round"
-                listening={false}
-              />
-            )
-          }
-          if (a.type === 'arrow') {
-            return (
-              <Arrow
-                key={a.id}
-                points={[a.x1, a.y1, a.x2, a.y2]}
-                stroke={a.color}
-                fill={a.color}
-                strokeWidth={3}
-                pointerLength={12}
-                pointerWidth={10}
-                listening={false}
-              />
-            )
-          }
-          if (a.type === 'circle') {
-            return (
-              <Circle
-                key={a.id}
-                x={a.cx}
-                y={a.cy}
-                radius={a.radius}
-                stroke={a.color}
-                strokeWidth={3}
-                fill="transparent"
-                listening={false}
-              />
-            )
-          }
-          return null
-        })}
+        {annotations.map((a) => renderAnnotation(a))}
 
         {/* Live pencil preview */}
         {pencilPoints.length >= 4 && (
-          <Line
-            points={pencilPoints}
-            stroke={activeColor}
-            strokeWidth={3}
-            tension={0.4}
-            lineCap="round"
-            lineJoin="round"
-            listening={false}
-          />
+          <Line points={pencilPoints} stroke={activeColor} strokeWidth={3}
+            tension={0.4} lineCap="round" lineJoin="round" listening={false} />
         )}
 
-        {/* Live arrow preview */}
-        {drawingArrow && (
-          <Arrow
-            points={[drawingArrow.x1, drawingArrow.y1, drawingArrow.x2, drawingArrow.y2]}
-            stroke={activeColor}
-            fill={activeColor}
-            strokeWidth={3}
-            pointerLength={12}
-            pointerWidth={10}
-            listening={false}
-          />
-        )}
-
-        {/* Live circle preview */}
-        {drawingCircle && drawingCircle.radius > 0 && (
-          <Circle
-            x={drawingCircle.cx}
-            y={drawingCircle.cy}
-            radius={drawingCircle.radius}
-            stroke={activeColor}
-            strokeWidth={3}
-            fill="transparent"
-            listening={false}
-          />
-        )}
+        {preview}
       </Layer>
     </Stage>
   )
+}
+
+function renderAnnotation(a: Annotation) {
+  switch (a.type) {
+    case 'pencil':
+      return <Line key={a.id} points={a.points} stroke={a.color} strokeWidth={a.strokeWidth}
+        tension={0.4} lineCap="round" lineJoin="round" listening={false} />
+
+    case 'arrow':
+      return <Arrow key={a.id} points={[a.x1, a.y1, a.x2, a.y2]} stroke={a.color} fill={a.color}
+        strokeWidth={3} pointerLength={12} pointerWidth={10} listening={false} />
+
+    case 'line':
+      return <Line key={a.id} points={[a.x1, a.y1, a.x2, a.y2]} stroke={a.color}
+        strokeWidth={3} lineCap="round" listening={false} />
+
+    case 'circle':
+      return <Circle key={a.id} x={a.cx} y={a.cy} radius={a.radius} stroke={a.color}
+        strokeWidth={3} fill="transparent" listening={false} />
+
+    case 'rectangle':
+      return <Rect key={a.id} x={a.x} y={a.y} width={a.width} height={a.height}
+        stroke={a.color} strokeWidth={3} fill="transparent" listening={false} />
+
+    case 'text':
+      return (
+        <Text key={a.id} x={a.x} y={a.y} text={a.text} fill={a.color}
+          fontSize={a.fontSize} fontStyle="bold" fontFamily="sans-serif"
+          shadowColor="black" shadowBlur={4} shadowOpacity={0.8} listening={false} />
+      )
+
+    case 'spotlight':
+      return (
+        <Circle key={a.id} x={a.cx} y={a.cy} radius={a.radius}
+          fill={a.color} opacity={0.25} stroke={a.color} strokeWidth={2} listening={false} />
+      )
+
+    case 'cross': {
+      const { cx, cy, size, color, id } = a
+      const half = size / 2
+      return (
+        <Group key={id} listening={false}>
+          <Line points={[cx - half, cy - half, cx + half, cy + half]} stroke={color} strokeWidth={4} lineCap="round" />
+          <Line points={[cx + half, cy - half, cx - half, cy + half]} stroke={color} strokeWidth={4} lineCap="round" />
+        </Group>
+      )
+    }
+
+    default:
+      return null
+  }
+}
+
+function renderPreview(tool: AnnotationTool | null, drag: DragState, color: string) {
+  if (!tool) return null
+  const { x1, y1, x2, y2 } = drag
+
+  switch (tool) {
+    case 'arrow':
+      return <Arrow points={[x1, y1, x2, y2]} stroke={color} fill={color}
+        strokeWidth={3} pointerLength={12} pointerWidth={10} listening={false} />
+
+    case 'line':
+      return <Line points={[x1, y1, x2, y2]} stroke={color}
+        strokeWidth={3} lineCap="round" listening={false} />
+
+    case 'circle': {
+      const r = dist(x1, y1, x2, y2)
+      return <Circle x={x1} y={y1} radius={r} stroke={color} strokeWidth={3} fill="transparent" listening={false} />
+    }
+
+    case 'spotlight': {
+      const r = dist(x1, y1, x2, y2)
+      return <Circle x={x1} y={y1} radius={r} fill={color} opacity={0.25} stroke={color} strokeWidth={2} listening={false} />
+    }
+
+    case 'rectangle': {
+      const w = x2 - x1
+      const h = y2 - y1
+      return <Rect x={Math.min(x1, x2)} y={Math.min(y1, y2)}
+        width={Math.abs(w)} height={Math.abs(h)}
+        stroke={color} strokeWidth={3} fill="transparent" listening={false} />
+    }
+
+    case 'cross': {
+      const size = Math.max(dist(x1, y1, x2, y2), 10)
+      const half = size / 2
+      return (
+        <Group listening={false}>
+          <Line points={[x1 - half, y1 - half, x1 + half, y1 + half]} stroke={color} strokeWidth={4} lineCap="round" />
+          <Line points={[x1 + half, y1 - half, x1 - half, y1 + half]} stroke={color} strokeWidth={4} lineCap="round" />
+        </Group>
+      )
+    }
+
+    default:
+      return null
+  }
 }

@@ -1,9 +1,10 @@
 'use client'
 
 import { useRef, useState, useEffect, useCallback } from 'react'
+import { nanoid } from 'nanoid'
 import { VideoAnnotationCanvas } from './VideoAnnotationCanvas'
 import { VideoControls } from './VideoControls'
-import type { Annotation, AnnotationTool } from './types'
+import type { Annotation, AnnotationTool, TextAnnotation } from './types'
 
 interface RenderedRect {
   width: number
@@ -52,6 +53,12 @@ interface Props {
   onAnnotationsChange: (annotations: Annotation[]) => void
 }
 
+interface PendingText {
+  x: number
+  y: number
+  color: string
+}
+
 export function VideoPlayer({
   src,
   activeTool,
@@ -61,12 +68,36 @@ export function VideoPlayer({
 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [renderedRect, setRenderedRect] = useState<RenderedRect>({
     width: 0,
     height: 0,
     offsetX: 0,
     offsetY: 0,
   })
+  const [pendingText, setPendingText] = useState<PendingText | null>(null)
+
+  // Auto-focus textarea when it appears
+  useEffect(() => {
+    if (pendingText) textareaRef.current?.focus()
+  }, [pendingText])
+
+  function handleTextPlace(x: number, y: number, color: string) {
+    setPendingText({ x, y, color })
+  }
+
+  function commitText(text: string) {
+    if (text.trim()) {
+      const annotation: TextAnnotation = {
+        id: nanoid(), type: 'text',
+        x: pendingText!.x, y: pendingText!.y,
+        text: text.trim(), color: pendingText!.color,
+        fontSize: 20,
+      }
+      onAnnotationsChange([...annotations, annotation])
+    }
+    setPendingText(null)
+  }
 
   const measure = useCallback(() => {
     const video = videoRef.current
@@ -122,7 +153,43 @@ export function VideoPlayer({
               activeColor={activeColor}
               annotations={annotations}
               onChange={onAnnotationsChange}
+              onTextPlace={handleTextPlace}
             />
+
+            {/* DOM text input overlay — appears when user clicks with Text tool */}
+            {pendingText && (
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                style={{
+                  position: 'absolute',
+                  left: pendingText.x,
+                  top: pendingText.y,
+                  color: pendingText.color,
+                  fontSize: 20,
+                  fontWeight: 'bold',
+                  fontFamily: 'sans-serif',
+                  background: 'transparent',
+                  border: 'none',
+                  outline: '1px dashed rgba(255,255,255,0.5)',
+                  resize: 'none',
+                  padding: '2px 4px',
+                  minWidth: 80,
+                  lineHeight: 1.2,
+                  textShadow: '0 0 4px rgba(0,0,0,0.8)',
+                }}
+                onBlur={(e) => commitText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    commitText((e.target as HTMLTextAreaElement).value)
+                  }
+                  if (e.key === 'Escape') {
+                    setPendingText(null)
+                  }
+                }}
+              />
+            )}
           </div>
         )}
       </div>
