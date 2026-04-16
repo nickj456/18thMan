@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown, Users2, CalendarDays, Lock, Puzzle } from 'lucide-react'
+import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown, Users2, CalendarDays, Lock, Puzzle, PlayCircle } from 'lucide-react'
 import { DeleteSessionButton } from '@/components/session/DeleteSessionButton'
 import { SessionSummaryCard } from '@/components/session/SessionSummaryCard'
 import { DrillVideoThumbnail } from '@/components/session/DrillVideoThumbnail'
@@ -144,6 +144,10 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
         {/* Actions — for session owner */}
         {isOwner && (
           <div className="flex items-center gap-2 flex-shrink-0">
+            <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`/sessions/${id}/deliver`} />}>
+              <PlayCircle size={13} className="mr-1.5" />
+              Deliver
+            </Button>
             {!isGroupSession && canExportPdf && (
               <Button size="sm" variant="outline" nativeButton={false} render={<a href={`/api/sessions/${id}/pdf`} />}>
                 <FileDown size={13} className="mr-1.5" />
