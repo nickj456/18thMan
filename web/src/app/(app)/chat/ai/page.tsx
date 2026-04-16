@@ -2,7 +2,12 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AiChat } from '@/components/chat/AiChat'
 
-export default async function AiChatPage() {
+export default async function AiChatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ prompt?: string }>
+}) {
+  const { prompt } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -73,6 +78,7 @@ export default async function AiChatPage() {
             initialMessages={initialMessages}
             userAvatar={profile?.avatar_url ?? null}
             userName={profile?.display_name ?? null}
+            pendingPrompt={prompt ? decodeURIComponent(prompt) : undefined}
           />
         </div>
       ) : (

@@ -3,10 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 import { ScChat } from '@/components/sc/ScChat'
 
 export const metadata = {
-  title: 'Strength & Conditioning — 18th Man',
+  title: 'S&C Coach — 18th Man',
 }
 
-export default async function StrengthConditioningPage() {
+export default async function ScChatPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -36,7 +36,7 @@ export default async function StrengthConditioningPage() {
       .insert({ type: 'ai', created_by: user.id, title: 'S&C Coach' })
       .select('id')
       .single()
-    if (error) console.error('[StrengthConditioningPage] failed to create conversation:', error.message)
+    if (error) console.error('[ScChatPage] failed to create conversation:', error.message)
     if (newConv) {
       await supabase
         .from('conversation_participants')
@@ -68,9 +68,9 @@ export default async function StrengthConditioningPage() {
   return (
     <div className="h-[calc(100vh-5rem)] flex flex-col max-w-3xl mx-auto">
       <div className="flex-shrink-0 pb-4">
-        <h1 className="app-heading text-2xl">Strength & Conditioning</h1>
+        <h1 className="app-heading text-2xl">S&amp;C Coach</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          AI-powered S&C programming tailored to rugby league — sessions, blocks, and in-season maintenance
+          AI strength &amp; conditioning specialist — gym sessions, training blocks, and in-season maintenance for rugby league
         </p>
       </div>
       {conversationId ? (
@@ -84,7 +84,7 @@ export default async function StrengthConditioningPage() {
         </div>
       ) : (
         <div className="flex items-center justify-center flex-1 text-sm text-muted-foreground">
-          Could not start S&C chat. Please refresh the page.
+          Could not start S&amp;C chat. Please refresh the page.
         </div>
       )}
     </div>

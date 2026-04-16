@@ -12,7 +12,7 @@ import { ShareSessionButton } from '@/components/session/ShareSessionButton'
 import { LockBanner } from './LockBanner'
 import type { SessionPlan, SessionDrillItem, Drill } from '@/lib/supabase/types'
 import type { SessionSummary } from '../actions'
-import { getEffectiveTier } from '@/lib/subscription'
+import { getEffectiveTierCached } from '@/lib/subscription'
 
 export default async function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -20,7 +20,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const tier = await getEffectiveTier(supabase, user.id)
+  const tier = await getEffectiveTierCached(user.id)
   const canExportPdf = tier !== 'free'
 
   const { data: session } = await supabase

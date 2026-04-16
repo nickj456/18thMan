@@ -54,10 +54,8 @@ export default async function AdminDrillsPage() {
       ) : (
         <div className="space-y-3">
           {drills.map(drill => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const author = drill.author as any
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const category = drill.category as any
+            const author = drill.author as unknown as { id: string; username: string | null; display_name: string | null; avatar_url: string | null } | null
+            const category = drill.category as unknown as { name: string } | null
 
             return (
               <div

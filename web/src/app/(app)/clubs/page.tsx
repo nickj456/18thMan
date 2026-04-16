@@ -62,8 +62,8 @@ export default async function ClubPage({
         invitationId: inv.id,
         userId: inv.user_id,
         createdAt: inv.created_at as string,
-        displayName: (inv.profiles as any)?.display_name ?? null,
-        username: (inv.profiles as any)?.username ?? '',
+        displayName: (inv.profiles as unknown as { display_name: string | null; username: string | null } | null)?.display_name ?? null,
+        username: (inv.profiles as unknown as { display_name: string | null; username: string | null } | null)?.username ?? '',
       }))
 
       const excludeIds = [...memberIds, ...pendingInvites.map(p => p.userId)]

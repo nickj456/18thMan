@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { extractUrl, fetchLinkPreview } from '@/lib/link-preview'
+import { canCreateSession } from '@/lib/subscription'
 
 async function getAuthenticatedUser() {
   const supabase = await createClient()
@@ -186,6 +187,37 @@ export async function toggleReaction(messageId: string, reaction: 'like' | 'love
   }
 
   return { success: true }
+}
+
+export async function saveSessionFromChat(content: string): Promise<{ id: string } | { error: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { allowed } = await canCreateSession(supabase, user.id)
+  if (!allowed) return { error: 'Session limit reached. Upgrade your club for unlimited sessions.' }
+
+  // Extract title from first markdown heading, falling back to first non-empty line
+  const headingMatch = content.match(/#{1,3}\s+(.+?)(?:\n|$)/)
+  const firstLine = content.split('\n').find(l => l.trim().length > 0) ?? ''
+  const rawTitle = (headingMatch?.[1] ?? firstLine).replace(/[#*`]/g, '').trim()
+  const title = rawTitle.slice(0, 100) ||
+    `AI Session – ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+
+  const { data, error } = await supabase
+    .from('session_plans')
+    .insert({
+      title,
+      coach_id: user.id,
+      drills_order: [],
+      ai_summary: { content, generated_from_chat: true },
+    })
+    .select('id')
+    .single()
+
+  if (error || !data) return { error: error?.message ?? 'Failed to save session' }
+  revalidatePath('/sessions')
+  return { id: data.id }
 }
 
 export async function editThreadTitle(id: string, title: string) {

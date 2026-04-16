@@ -1,16 +1,18 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Send, Loader2, Bot, Copy, Check, BookOpen, Mic, MicOff } from 'lucide-react'
+import { Send, Loader2, Bot, Copy, Check, BookOpen, Mic, MicOff, CalendarPlus } from 'lucide-react'
 import { MessageResponse } from '@/components/ai-elements/message'
 import { UpgradePrompt } from '@/components/ui/UpgradePrompt'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
+import { saveSessionFromChat } from '@/app/(app)/chat/actions'
 
 interface HistoryMessage {
   id: string
@@ -82,12 +84,14 @@ function DrillSuggestions({ drills }: { drills: DrillSuggestion[] }) {
   )
 }
 
-function MessageBubble({ role, userAvatar, userInitials, content, drills, children }: {
+function MessageBubble({ role, userAvatar, userInitials, content, drills, onSave, isSaving, children }: {
   role: 'user' | 'assistant'
   userAvatar: string | null
   userInitials: string
   content?: string
   drills?: DrillSuggestion[]
+  onSave?: () => void
+  isSaving?: boolean
   children: React.ReactNode
 }) {
   return (
@@ -115,12 +119,30 @@ function MessageBubble({ role, userAvatar, userInitials, content, drills, childr
         {children}
         {role === 'assistant' && drills && <DrillSuggestions drills={drills} />}
         {role === 'assistant' && content && (
-          <div className="flex justify-end mt-2 pt-2 border-t border-zinc-700/50">
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-700/50 gap-2">
+            {onSave ? (
+              <button
+                onClick={onSave}
+                disabled={isSaving}
+                className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-1.5 py-0.5 rounded hover:bg-emerald-500/10"
+              >
+                {isSaving ? <Loader2 size={12} className="animate-spin" /> : <CalendarPlus size={12} />}
+                <span>{isSaving ? 'Saving…' : 'Save as session'}</span>
+              </button>
+            ) : <span />}
             <CopyButton text={content} />
           </div>
         )}
       </div>
     </div>
+  )
+}
+
+function isSessionPlanLike(content: string): boolean {
+  return (
+    content.length > 400 &&
+    /warm[\s-]up/i.test(content) &&
+    (/\d+:\d+/.test(content) || /cool[\s-]down/i.test(content))
   )
 }
 
@@ -141,6 +163,11 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
   const [drillMap, setDrillMap] = useState<Record<string, DrillSuggestion[]>>({})
   const prevStatusRef = useRef<string>('')
   const lastUserTextRef = useRef<string>('')
+  const [savingMsgId, setSavingMsgId] = useState<string | null>(null)
+  const [savedMsgIds, setSavedMsgIds] = useState<Set<string>>(new Set())
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [, startTransition] = useTransition()
+  const router = useRouter()
 
   const [limitHit, setLimitHit] = useState(false)
 
@@ -163,22 +190,26 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
   useEffect(() => {
     const wasLoading = prevStatusRef.current === 'streaming' || prevStatusRef.current === 'submitted'
     const isNowReady = status === 'ready'
-    if (wasLoading && isNowReady && lastUserTextRef.current) {
-      const query = lastUserTextRef.current
-      // Find the last assistant message id to key the suggestions against
-      const lastAssistant = [...liveMessages].reverse().find(m => m.role === 'assistant')
-      if (!lastAssistant) return
-      const id = lastAssistant.id
-      fetch(`/api/drills/suggest?q=${encodeURIComponent(query)}`)
-        .then(r => r.json())
-        .then((drills: DrillSuggestion[]) => {
-          if (drills.length > 0) {
-            setDrillMap(prev => ({ ...prev, [id]: drills }))
-          }
-        })
-        .catch(() => {/* silently ignore */})
-    }
     prevStatusRef.current = status
+    if (!wasLoading || !isNowReady || !lastUserTextRef.current) return
+
+    const query = lastUserTextRef.current
+    // Find the last assistant message id to key the suggestions against
+    const lastAssistant = [...liveMessages].reverse().find(m => m.role === 'assistant')
+    if (!lastAssistant) return
+    const id = lastAssistant.id
+
+    const controller = new AbortController()
+    fetch(`/api/drills/suggest?q=${encodeURIComponent(query)}`, { signal: controller.signal })
+      .then(r => r.json())
+      .then((drills: DrillSuggestion[]) => {
+        if (drills.length > 0) {
+          setDrillMap(prev => ({ ...prev, [id]: drills }))
+        }
+      })
+      .catch(() => {/* silently ignore — suggestion fetch is best-effort */})
+
+    return () => controller.abort()
   }, [status, liveMessages])
 
   useEffect(() => {
@@ -193,6 +224,22 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingPrompt])
+
+  function handleSaveSession(msgId: string, content: string) {
+    if (savedMsgIds.has(msgId)) return
+    setSavingMsgId(msgId)
+    setSaveError(null)
+    startTransition(async () => {
+      const result = await saveSessionFromChat(content)
+      setSavingMsgId(null)
+      if ('error' in result) {
+        setSaveError(result.error)
+      } else {
+        setSavedMsgIds(prev => new Set(prev).add(msgId))
+        router.push(`/sessions/${result.id}`)
+      }
+    })
+  }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -274,6 +321,7 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
         {/* Live messages from useChat — render from parts */}
         {liveMessages.map(message => {
           const text = message.parts.map(p => p.type === 'text' ? p.text : '').join('')
+          const canSave = message.role === 'assistant' && !savedMsgIds.has(message.id) && isSessionPlanLike(text)
           return (
             <MessageBubble
               key={message.id}
@@ -282,6 +330,8 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
               userInitials={userInitials}
               content={message.role === 'assistant' ? text : undefined}
               drills={message.role === 'assistant' ? drillMap[message.id] : undefined}
+              onSave={canSave ? () => handleSaveSession(message.id, text) : undefined}
+              isSaving={savingMsgId === message.id}
             >
               {message.role === 'user'
                 ? <span>{message.parts.map((p, i) => p.type === 'text' ? <span key={i}>{p.text}</span> : null)}</span>
@@ -307,6 +357,9 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
 
       {/* Input */}
       <div className="border-t border-zinc-800 p-4 space-y-3">
+        {saveError && (
+          <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{saveError}</p>
+        )}
         {limitHit && (
           <UpgradePrompt
             feature="AI coaching chat"

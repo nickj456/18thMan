@@ -66,7 +66,7 @@ export default async function DrillsPage({
   ])
 
   const categories = categoriesResult.data ?? []
-  const drills = (drillsResult.data ?? []) as DrillWithRelations[]
+  const drills = (drillsResult.data ?? []) as unknown as DrillWithRelations[]
   const clubDrills = (clubDrillsResult.data ?? []) as unknown as DrillWithRelations[]
 
   return (
@@ -122,8 +122,7 @@ export default async function DrillsPage({
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function buildDrillQuery(supabase: any, filters: DrillFiltersType) {
+async function buildDrillQuery(supabase: Awaited<ReturnType<typeof createClient>>, filters: DrillFiltersType) {
   let query = supabase
     .from('drills')
     .select(`
@@ -147,7 +146,8 @@ async function buildDrillQuery(supabase: any, filters: DrillFiltersType) {
     .order('created_at', { ascending: false })
 
   if (filters.q) {
-    query = query.or(`title.ilike.%${filters.q}%,description.ilike.%${filters.q}%`)
+    const safeQ = filters.q.replace(/[^a-zA-Z0-9 '\-]/g, '')
+    if (safeQ) query = query.or(`title.ilike.%${safeQ}%,description.ilike.%${safeQ}%`)
   }
   if (filters.category) {
     // Filter by category slug via subquery

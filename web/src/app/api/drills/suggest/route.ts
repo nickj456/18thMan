@@ -2,7 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const q = searchParams.get('q')?.trim()
+  const raw = searchParams.get('q')?.trim()
+  if (!raw) return Response.json([])
+  // Enforce max length and strip non-alphanumeric characters
+  const q = raw.slice(0, 200).replace(/[^a-zA-Z0-9 ]/g, '')
   if (!q) return Response.json([])
 
   const supabase = await createClient()

@@ -26,6 +26,7 @@ export async function createClub(formData: FormData) {
   const supabase = await createClient()
   const name = (formData.get('name') as string)?.trim()
   if (!name) return { error: 'Club name is required' }
+  if (name.length > 100) return { error: 'Club name must be 100 characters or fewer' }
 
   const slug = toSlug(name)
   const maxRaw = formData.get('max_members') as string
@@ -153,6 +154,7 @@ export async function updateClubSettings(clubId: string, formData: FormData) {
 
   const name = (formData.get('name') as string)?.trim()
   if (!name) return { error: 'Club name is required' }
+  if (name.length > 100) return { error: 'Club name must be 100 characters or fewer' }
 
   const maxRaw = formData.get('max_members') as string
   const max_members = maxRaw && maxRaw.trim() !== '' ? parseInt(maxRaw, 10) : null
