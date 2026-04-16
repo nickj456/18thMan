@@ -51,7 +51,7 @@ import { RatingSummary } from '@/components/drills/RatingSummary'
 import { RatingCard } from '@/components/drills/RatingCard'
 import { DrillImage } from '@/components/drills/DrillImage'
 import { extractYouTubeId } from '@/lib/youtube'
-import { Star, Users, ArrowLeft, PenTool, Sparkles, Loader2, Video } from 'lucide-react'
+import { Star, Users, ArrowLeft, PenTool, Sparkles, Loader2 } from 'lucide-react'
 import type { AiGuide } from '@/lib/supabase/types'
 import type { CanvasState } from '@/components/designer/types'
 
@@ -148,12 +148,6 @@ export default async function DrillDetailPage({
         <div className="flex gap-2">
           {canInteract && (
             <SaveDrillButton drillId={id} initialSaved={isSaved} />
-          )}
-          {canInteract && (
-            <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/drills/${id}/analyze`} />}>
-              <Video className="size-4 mr-1" />
-              Analyse
-            </Button>
           )}
           {(userRole === 'admin' || drill.author_id === user?.id) && (
             <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/drills/${id}/edit`} />}>

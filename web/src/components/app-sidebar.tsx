@@ -28,6 +28,7 @@ import {
   Dumbbell,
   Clock,
   Headphones,
+  Video,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -196,6 +197,15 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                     >
                       <ListVideo className="size-4" />
                       <span>Import Playlist</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname === '/analyze'}
+                      render={<Link href="/analyze" onClick={closeMobile} />}
+                    >
+                      <Video className="size-4" />
+                      <span>Video Analysis</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </>
