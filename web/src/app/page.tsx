@@ -88,7 +88,7 @@ export default async function LandingPage() {
         .hero-pitch {
           position: absolute;
           inset: 0;
-          opacity: 0.028;
+          opacity: 0.055;
           pointer-events: none;
         }
 
@@ -151,9 +151,9 @@ export default async function LandingPage() {
 
         .stat-pill {
           font-family: var(--font-barlow), system-ui, sans-serif;
-          font-weight: 800;
+          font-weight: 700;
           font-style: italic;
-          color: var(--text-muted);
+          color: #9a9590;
           font-size: 0.85rem;
           letter-spacing: 0.12em;
           text-transform: uppercase;
@@ -220,6 +220,19 @@ export default async function LandingPage() {
           color: var(--ember);
           opacity: 0.12;
           user-select: none;
+        }
+
+        .hero-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 3rem;
+          align-items: center;
+        }
+        .hero-canvas-col { display: none; }
+
+        @media (min-width: 900px) {
+          .hero-grid { grid-template-columns: 1fr 1fr; }
+          .hero-canvas-col { display: block; }
         }
       `}</style>
 
@@ -373,101 +386,232 @@ export default async function LandingPage() {
           />
 
           <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', position: 'relative' }}>
-            {/* Section label */}
-            <div className="reveal-0" style={{ marginBottom: '1.5rem' }}>
-              <span className="section-label">Rugby League Coaching Platform</span>
-              <span className="ember-line" style={{ display: 'block', width: '48px', marginTop: '8px' }} />
-            </div>
+            <div className="hero-grid">
 
-            {/* Main headline */}
-            <h1
-              className="lp-display reveal-1"
-              style={{
-                fontWeight: 800,
-                fontStyle: 'italic',
-                fontSize: 'clamp(2.6rem, 11vw, 10rem)',
-                lineHeight: 0.92,
-                letterSpacing: '-0.02em',
-                textTransform: 'uppercase',
-                marginBottom: '0.15em',
-              }}
-            >
-              <span style={{ display: 'block', color: 'var(--ember)' }}>Better sessions.</span>
-              <span style={{ display: 'block', color: 'var(--text)' }}>Better players.</span>
-            </h1>
+              {/* ── Left: text ── */}
+              <div>
+                <div className="reveal-0" style={{ marginBottom: '1.5rem' }}>
+                  <span className="section-label">Rugby League Coaching Platform</span>
+                  <span className="ember-line" style={{ display: 'block', width: '48px', marginTop: '8px' }} />
+                </div>
 
-            {/* Sub-headline */}
-            <p
-              className="reveal-2"
-              style={{
-                fontSize: 'clamp(1.05rem, 2vw, 1.3rem)',
-                lineHeight: 1.65,
-                color: 'var(--text-muted)',
-                maxWidth: '540px',
-                marginTop: '2rem',
-                marginBottom: '2.5rem',
-                fontWeight: 300,
-              }}
-            >
-              Stop winging it on the whiteboard. 18th Man gives rugby league coaches
-              ready-made drills, AI-planned session blocks, and a community sharing
-              what actually works at training.
-            </p>
+                <h1
+                  className="lp-display reveal-1"
+                  style={{
+                    fontWeight: 800,
+                    fontStyle: 'italic',
+                    fontSize: 'clamp(2.6rem, 8vw, 6.5rem)',
+                    lineHeight: 0.92,
+                    letterSpacing: '-0.02em',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.15em',
+                  }}
+                >
+                  <span style={{ display: 'block', color: 'var(--ember)' }}>Better sessions.</span>
+                  <span style={{ display: 'block', color: 'var(--text)' }}>Better players.</span>
+                </h1>
 
-            {/* CTAs */}
-            <div className="reveal-3" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-              <Link href={user ? '/dashboard' : '/signup'} className="cta-primary">
-                {user ? 'Go to Dashboard' : 'Start Coaching Better'} →
-              </Link>
-              {!user && (
-                <Link href="/login" className="cta-ghost">
-                  Sign In
-                </Link>
-              )}
-            </div>
-            <p
-              className="reveal-4"
-              style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-dim)', letterSpacing: '0.04em' }}
-            >
-              Free to join · No credit card required · Set up in 2 minutes
-            </p>
+                <p
+                  className="reveal-2"
+                  style={{
+                    fontSize: 'clamp(1rem, 2vw, 1.2rem)',
+                    lineHeight: 1.65,
+                    color: 'var(--text-muted)',
+                    maxWidth: '460px',
+                    marginTop: '2rem',
+                    marginBottom: '2.5rem',
+                    fontWeight: 300,
+                  }}
+                >
+                  Stop winging it on the whiteboard. 18th Man gives rugby league coaches
+                  ready-made drills, AI-planned session blocks, and a community sharing
+                  what actually works at training.
+                </p>
 
-            {/* Trust indicators */}
-            <div
-              className="reveal-4"
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '2rem',
-                marginTop: '4rem',
-                paddingTop: '2rem',
-                borderTop: '1px solid var(--border-subtle)',
-              }}
-            >
-              {[
-                { num: 'Free', label: 'to join' },
-                { num: 'AI', label: 'coaching assistant' },
-                { num: '∞', label: 'drills to share' },
-                { num: 'Club', label: 'team collaboration' },
-              ].map(({ num, label }) => (
-                <div key={label}>
-                  <div
-                    className="lp-display"
-                    style={{
-                      fontSize: '1.8rem',
-                      fontWeight: 800,
-                      fontStyle: 'italic',
-                      color: 'var(--ember)',
-                      lineHeight: 1,
-                    }}
-                  >
-                    {num}
+                <div className="reveal-3" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+                  <Link href={user ? '/dashboard' : '/signup'} className="cta-primary">
+                    {user ? 'Go to Dashboard' : 'Start Coaching Better'} →
+                  </Link>
+                  {!user && (
+                    <Link href="/login" className="cta-ghost">
+                      Sign In
+                    </Link>
+                  )}
+                </div>
+                <p
+                  className="reveal-4"
+                  style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-dim)', letterSpacing: '0.04em' }}
+                >
+                  Free to join · No credit card required · Set up in 2 minutes
+                </p>
+
+                <div
+                  className="reveal-4"
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '2rem',
+                    marginTop: '4rem',
+                    paddingTop: '2rem',
+                    borderTop: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  {[
+                    { num: 'Free', label: 'to join' },
+                    { num: 'AI', label: 'coaching assistant' },
+                    { num: '∞', label: 'drills to share' },
+                    { num: 'Club', label: 'team collaboration' },
+                  ].map(({ num, label }) => (
+                    <div key={label}>
+                      <div
+                        className="lp-display"
+                        style={{ fontSize: '1.8rem', fontWeight: 800, fontStyle: 'italic', color: 'var(--ember)', lineHeight: 1 }}
+                      >
+                        {num}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.05em' }}>
+                        {label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Right: drill canvas mock ── */}
+              <div className="hero-canvas-col reveal-fade">
+                <div style={{ position: 'relative' }}>
+                  {/* Floating label */}
+                  <div style={{
+                    position: 'absolute', top: '-14px', right: '20px', zIndex: 2,
+                    background: 'var(--ember)', color: '#fff',
+                    fontFamily: 'var(--font-barlow)', fontWeight: 700,
+                    fontSize: '0.68rem', letterSpacing: '0.12em', textTransform: 'uppercase',
+                    padding: '5px 14px', borderRadius: '20px',
+                    boxShadow: '0 4px 20px rgba(232,86,10,0.45)',
+                  }}>
+                    Drill Designer
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.05em' }}>
-                    {label}
+
+                  {/* Card */}
+                  <div style={{
+                    background: 'var(--surface2)',
+                    border: '1px solid rgba(255,255,255,0.09)',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    boxShadow: '0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(232,86,10,0.08)',
+                  }}>
+                    {/* Mac-style toolbar */}
+                    <div style={{
+                      height: '42px',
+                      background: 'rgba(0,0,0,0.45)',
+                      borderBottom: '1px solid var(--border-subtle)',
+                      display: 'flex', alignItems: 'center', padding: '0 1rem', gap: '6px',
+                    }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }} />
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }} />
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e' }} />
+                      <span style={{ marginLeft: '8px', fontSize: '0.68rem', color: 'var(--text-dim)', fontFamily: 'var(--font-barlow)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        Line Speed — Attack vs Defence
+                      </span>
+                    </div>
+
+                    {/* Canvas */}
+                    <div style={{ position: 'relative', background: '#0a2b14', overflow: 'hidden', aspectRatio: '4/3' }}>
+                      <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+                        <defs>
+                          <marker id="ao" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L8,3 z" fill="#e8560a" />
+                          </marker>
+                          <marker id="ad" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L7,3 z" fill="rgba(232,86,10,0.55)" />
+                          </marker>
+                        </defs>
+
+                        {/* Pitch lines */}
+                        <line x1="15" y1="0" x2="15" y2="300" stroke="white" strokeOpacity="0.12" strokeWidth="1" />
+                        <line x1="385" y1="0" x2="385" y2="300" stroke="white" strokeOpacity="0.12" strokeWidth="1" />
+                        <line x1="15" y1="52" x2="385" y2="52" stroke="white" strokeOpacity="0.28" strokeWidth="1.5" />
+                        <line x1="15" y1="128" x2="385" y2="128" stroke="white" strokeOpacity="0.07" strokeWidth="1" />
+                        <line x1="15" y1="200" x2="385" y2="200" stroke="white" strokeOpacity="0.05" strokeWidth="1" />
+
+                        {/* Attack zone highlight */}
+                        <rect x="80" y="52" width="240" height="100" rx="2" fill="rgba(232,86,10,0.05)" stroke="rgba(232,86,10,0.15)" strokeWidth="1" strokeDasharray="4,3" />
+
+                        {/* Defenders */}
+                        <circle cx="105" cy="88" r="14" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.32)" strokeWidth="1.5" />
+                        <text x="105" y="93" textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="8" fontWeight="bold" fontFamily="system-ui">DEF</text>
+                        <circle cx="200" cy="80" r="14" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.32)" strokeWidth="1.5" />
+                        <text x="200" y="85" textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="8" fontWeight="bold" fontFamily="system-ui">DEF</text>
+                        <circle cx="295" cy="88" r="14" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.32)" strokeWidth="1.5" />
+                        <text x="295" y="93" textAnchor="middle" fill="rgba(255,255,255,0.65)" fontSize="8" fontWeight="bold" fontFamily="system-ui">DEF</text>
+
+                        {/* Ball carrier (7) */}
+                        <circle cx="200" cy="222" r="17" fill="rgba(232,86,10,0.22)" stroke="#e8560a" strokeWidth="2" />
+                        <text x="200" y="227" textAnchor="middle" fill="#e8560a" fontSize="10" fontWeight="bold" fontFamily="system-ui">7</text>
+                        {/* Support (6, 8) */}
+                        <circle cx="132" cy="224" r="14" fill="rgba(232,86,10,0.12)" stroke="rgba(232,86,10,0.5)" strokeWidth="1.5" />
+                        <text x="132" y="229" textAnchor="middle" fill="rgba(232,86,10,0.85)" fontSize="10" fontWeight="bold" fontFamily="system-ui">6</text>
+                        <circle cx="268" cy="224" r="14" fill="rgba(232,86,10,0.12)" stroke="rgba(232,86,10,0.5)" strokeWidth="1.5" />
+                        <text x="268" y="229" textAnchor="middle" fill="rgba(232,86,10,0.85)" fontSize="10" fontWeight="bold" fontFamily="system-ui">8</text>
+                        {/* Wide (5, 2) */}
+                        <circle cx="55" cy="226" r="12" fill="rgba(232,86,10,0.07)" stroke="rgba(232,86,10,0.38)" strokeWidth="1.5" />
+                        <text x="55" y="231" textAnchor="middle" fill="rgba(232,86,10,0.7)" fontSize="10" fontFamily="system-ui">5</text>
+                        <circle cx="345" cy="226" r="12" fill="rgba(232,86,10,0.07)" stroke="rgba(232,86,10,0.38)" strokeWidth="1.5" />
+                        <text x="345" y="231" textAnchor="middle" fill="rgba(232,86,10,0.7)" fontSize="10" fontFamily="system-ui">2</text>
+
+                        {/* Movement arrows */}
+                        <line x1="200" y1="204" x2="200" y2="112" stroke="#e8560a" strokeWidth="2.5" markerEnd="url(#ao)" />
+                        <line x1="132" y1="209" x2="158" y2="120" stroke="rgba(232,86,10,0.55)" strokeWidth="1.5" strokeDasharray="5,3" markerEnd="url(#ad)" />
+                        <line x1="268" y1="209" x2="242" y2="120" stroke="rgba(232,86,10,0.55)" strokeWidth="1.5" strokeDasharray="5,3" markerEnd="url(#ad)" />
+                        <path d="M55,213 Q42,162 78,112" stroke="rgba(232,86,10,0.3)" strokeWidth="1.5" fill="none" strokeDasharray="5,3" />
+                        <path d="M345,213 Q358,162 322,112" stroke="rgba(232,86,10,0.3)" strokeWidth="1.5" fill="none" strokeDasharray="5,3" />
+
+                        {/* Cones */}
+                        <polygon points="68,166 62,178 74,178" fill="#eab308" opacity="0.9" />
+                        <polygon points="332,166 326,178 338,178" fill="#eab308" opacity="0.9" />
+
+                        {/* Label band */}
+                        <rect x="0" y="270" width="400" height="30" fill="rgba(0,0,0,0.35)" />
+                        <text x="200" y="289" textAnchor="middle" fill="rgba(232,86,10,0.75)" fontSize="8" fontFamily="system-ui" fontWeight="600" letterSpacing="1.5">LINE SPEED DRILL — ATK vs DEF</text>
+                      </svg>
+
+                      {/* AI coaching points overlay */}
+                      <div style={{
+                        position: 'absolute', bottom: '40px', right: '10px',
+                        background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                        borderRadius: '8px', padding: '8px 12px', maxWidth: '155px',
+                      }}>
+                        <div style={{ fontSize: '0.62rem', color: 'var(--ember)', fontFamily: 'var(--font-barlow)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '5px' }}>
+                          AI Coaching Points
+                        </div>
+                        {['Push off back foot', 'Shoulders square', 'Communicate early'].map((pt, i) => (
+                          <div key={i} style={{ fontSize: '0.62rem', color: 'var(--text-muted)', display: 'flex', gap: '4px', marginBottom: '3px' }}>
+                            <span style={{ color: 'var(--ember)', flexShrink: 0 }}>→</span> {pt}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Bottom bar */}
+                    <div style={{
+                      height: '36px',
+                      background: 'rgba(0,0,0,0.35)',
+                      borderTop: '1px solid var(--border-subtle)',
+                      display: 'flex', alignItems: 'center', padding: '0 1rem', gap: '1rem',
+                    }}>
+                      <span style={{ fontSize: '0.62rem', color: 'var(--text-dim)', fontFamily: 'var(--font-barlow)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        Session 3 — Attack Block
+                      </span>
+                      <span style={{ flex: 1 }} />
+                      <span style={{ fontSize: '0.62rem', color: 'var(--ember)', fontFamily: 'var(--font-barlow)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                        AI Guide ✓
+                      </span>
+                    </div>
                   </div>
                 </div>
-              ))}
+              </div>
+
             </div>
           </div>
         </section>
@@ -475,9 +619,9 @@ export default async function LandingPage() {
         {/* ── MARQUEE STRIP ───────────────────────────────────────── */}
         <div
           style={{
-            borderTop: '1px solid var(--border-subtle)',
-            borderBottom: '1px solid var(--border-subtle)',
-            background: 'var(--surface)',
+            borderTop: '1px solid rgba(232,86,10,0.2)',
+            borderBottom: '1px solid rgba(232,86,10,0.2)',
+            background: 'rgba(10,8,6,1)',
             padding: '1rem 0',
             overflow: 'hidden',
           }}
@@ -1101,12 +1245,16 @@ export default async function LandingPage() {
           id="pricing"
           style={{
             padding: '7rem 2rem',
-            background: 'var(--surface)',
-            borderTop: '1px solid var(--border-subtle)',
-            borderBottom: '1px solid var(--border-subtle)',
+            background: 'linear-gradient(180deg, var(--bg) 0%, #100a06 30%, #100a06 70%, var(--bg) 100%)',
+            borderTop: '2px solid rgba(232,86,10,0.25)',
+            borderBottom: '2px solid rgba(232,86,10,0.25)',
+            position: 'relative',
           }}
         >
-          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          {/* Ember radial */}
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 50%, rgba(232,86,10,0.07) 0%, transparent 65%)', pointerEvents: 'none' }} />
+
+          <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
             <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
               <span className="section-label">Simple Pricing</span>
               <h2
