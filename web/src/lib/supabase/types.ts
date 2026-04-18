@@ -340,6 +340,7 @@ export interface GamePlan {
   backs: string | null
   forwards: string | null
   half_backs: string | null
+  moves: string | null
   detail_level: GamePlanDetailLevel
   ai_plan: GamePlanAiPlan | null
   status: GamePlanStatus
