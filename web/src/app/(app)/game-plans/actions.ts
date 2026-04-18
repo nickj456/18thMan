@@ -2,9 +2,49 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
-import type { GamePlanDetailLevel } from '@/lib/supabase/types'
+import { generateText } from 'ai'
+import { createGroq } from '@ai-sdk/groq'
+import type { GamePlanDetailLevel, GamePlanAiPlan } from '@/lib/supabase/types'
+
+const GAME_PLAN_SYSTEM_PROMPT = `You are a rugby league head coach writing a game plan for your players.
+
+Your job is to synthesise the coach's tactical notes into a clear, direct, motivating game plan document — written FOR the players to read before the match.
+
+Tone rules:
+- Write directly to the players ("Your job is...", "We need to...", "Stay organised...")
+- Be direct, clear, and motivating — like a coach in a changing room, not an academic
+- NO jargon-heavy tactical analysis. Keep it punchy and readable
+- Short sentences. Active voice. Bullet points should be concise
+- Each section written specifically for that positional group
+
+Return ONLY valid JSON matching this exact structure (no markdown, no extra text):
+{
+  "teamFocus": {
+    "intro": "2-3 sentence opening message for the whole squad. Reference the opposition and competition context.",
+    "keyMessages": ["4-6 bullet points for the whole squad"]
+  },
+  "forwards": {
+    "positions": "Props | Hooker | Second Rows | Loose Forward",
+    "role": "One-line statement of the forwards' job today",
+    "points": ["5-6 bullet points written directly to forwards"]
+  },
+  "backs": {
+    "positions": "Fullback | Wingers | Centres",
+    "role": "One-line statement of the backs' job today",
+    "points": ["5-6 bullet points written directly to backs"]
+  },
+  "halfBacks": {
+    "positions": "Stand Off | Scrum Half",
+    "role": "One-line statement of the halves' job today",
+    "points": ["5-6 bullet points written directly to the halves"]
+  },
+  "finalReminders": {
+    "closing": "2-3 sentence motivational close. Reference the challenge ahead and the team's standards.",
+    "points": ["3-5 final motivational bullet points for the whole squad"],
+    "quote": "A relevant motivational quote about teamwork, effort, or performance"
+  }
+}`
 
 async function getAuthenticatedAdmin() {
   const supabase = await createClient()
@@ -115,47 +155,45 @@ export async function generateGamePlan(id: string): Promise<{ error?: string }> 
 
   if (!gamePlan) return { error: 'Game plan not found' }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const formattedKickOff = gamePlan.kick_off_time
+    ? new Date(gamePlan.kick_off_time).toLocaleString('en-GB', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      })
+    : null
 
-  const cookieStore = await cookies()
-  const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
+  const userMessage = [
+    'Create a game plan for the following match:',
+    '',
+    `Opposition: ${gamePlan.opposition}`,
+    gamePlan.pitch ? `Venue: ${gamePlan.pitch}` : '',
+    formattedKickOff ? `Kick-off: ${formattedKickOff}` : '',
+    `Detail level: ${gamePlan.detail_level} (brief = short and punchy, standard = balanced, detailed = thorough and comprehensive)`,
+    '',
+    "COACH'S TACTICAL NOTES:",
+    '',
+    `Defence: ${gamePlan.defence ?? 'No specific notes provided'}`,
+    `Attack: ${gamePlan.attack ?? 'No specific notes provided'}`,
+    `Structure: ${gamePlan.structure ?? 'No specific notes provided'}`,
+    `Aims: ${gamePlan.aims ?? 'No specific notes provided'}`,
+    `Backs guidance: ${gamePlan.backs ?? 'No specific notes provided'}`,
+    `Forwards guidance: ${gamePlan.forwards ?? 'No specific notes provided'}`,
+    `Half backs guidance: ${gamePlan.half_backs ?? 'No specific notes provided'}`,
+  ].filter(line => line !== null).join('\n')
 
-  let response: Response
+  let aiPlan: GamePlanAiPlan
   try {
-    response = await fetch(`${baseUrl}/api/game-plan/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieHeader,
-      },
-      body: JSON.stringify({
-        id: gamePlan.id,
-        opposition: gamePlan.opposition,
-        pitch: gamePlan.pitch,
-        kick_off_time: gamePlan.kick_off_time,
-        home_logo_url: gamePlan.home_logo_url,
-        away_logo_url: gamePlan.away_logo_url,
-        defence: gamePlan.defence,
-        attack: gamePlan.attack,
-        structure: gamePlan.structure,
-        aims: gamePlan.aims,
-        backs: gamePlan.backs,
-        forwards: gamePlan.forwards,
-        half_backs: gamePlan.half_backs,
-        detail_level: gamePlan.detail_level,
-      }),
+    const groq = createGroq()
+    const { text } = await generateText({
+      model: groq('llama-3.3-70b-versatile'),
+      system: GAME_PLAN_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userMessage }],
     })
-  } catch (fetchError) {
-    return { error: fetchError instanceof Error ? fetchError.message : 'Failed to call generate API' }
+    const cleaned = text.trim().replace(/^```json\s*/, '').replace(/\s*```$/, '')
+    aiPlan = JSON.parse(cleaned) as GamePlanAiPlan
+  } catch (genError) {
+    return { error: genError instanceof Error ? genError.message : 'AI generation failed' }
   }
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => response.statusText)
-    return { error: body || 'Generation failed' }
-  }
-
-  const body = await response.json().catch(() => null)
-  const aiPlan = body?.plan ?? body
 
   const { error: dbError } = await supabase
     .from('game_plans')
