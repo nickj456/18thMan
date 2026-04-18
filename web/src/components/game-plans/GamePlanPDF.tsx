@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 import type { GamePlan, GamePlanAiPlan } from '@/lib/supabase/types'
 
 const E = '#e8560a'
@@ -26,18 +26,12 @@ const s = StyleSheet.create({
     left: 40,
     right: 40,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: BORDER,
     borderTopStyle: 'solid',
-  },
-  footerBrand: {
-    fontSize: 7,
-    fontFamily: 'Helvetica-Bold',
-    color: E,
-    letterSpacing: 1.5,
   },
   footerPage: {
     fontSize: 7,
@@ -49,33 +43,54 @@ const s = StyleSheet.create({
     height: 4,
     backgroundColor: E,
     borderRadius: 2,
-    marginBottom: 18,
+    marginBottom: 20,
   },
-  brandRow: {
+  logoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 24,
+    marginBottom: 16,
   },
-  brandBlock: {
-    flexDirection: 'column',
+  logoBox: {
+    alignItems: 'center',
+    gap: 4,
   },
-  brandName: {
+  logoImg: {
+    width: 56,
+    height: 56,
+    objectFit: 'contain',
+  },
+  logoInitials: {
+    width: 56,
+    height: 56,
+    backgroundColor: '#27272a',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoInitialsText: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 13,
-    color: E,
-    letterSpacing: 2,
+    fontSize: 16,
+    color: '#a1a1aa',
   },
-  brandSub: {
-    fontSize: 7,
+  logoName: {
+    fontSize: 8,
     color: MUTED,
-    letterSpacing: 1,
-    marginTop: 2,
+    textAlign: 'center',
+    maxWidth: 80,
+  },
+  vsText: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 14,
+    color: MUTED,
   },
   docLabel: {
     fontSize: 8,
     color: MUTED,
-    textAlign: 'right',
+    textAlign: 'center',
+    letterSpacing: 1,
+    marginBottom: 4,
   },
 
   // ── Title block ──────────────────────────────────────────────
@@ -182,6 +197,30 @@ const s = StyleSheet.create({
 
 interface Props {
   gamePlan: GamePlan & { ai_plan: GamePlanAiPlan }
+  teamName?: string
+}
+
+function initials(name: string) {
+  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+}
+
+function LogoCell({ url, name }: { url: string | null; name: string }) {
+  if (url) {
+    return (
+      <View style={s.logoBox}>
+        <Image src={url} style={s.logoImg} />
+        <Text style={s.logoName}>{name}</Text>
+      </View>
+    )
+  }
+  return (
+    <View style={s.logoBox}>
+      <View style={s.logoInitials}>
+        <Text style={s.logoInitialsText}>{initials(name)}</Text>
+      </View>
+      <Text style={s.logoName}>{name}</Text>
+    </View>
+  )
 }
 
 function formatKickOff(iso: string | null): string | null {
@@ -197,7 +236,7 @@ function formatKickOff(iso: string | null): string | null {
   })
 }
 
-export function GamePlanPDF({ gamePlan }: Props) {
+export function GamePlanPDF({ gamePlan, teamName = 'Your Team' }: Props) {
   const plan = gamePlan.ai_plan
 
   if (!plan) {
@@ -216,12 +255,10 @@ export function GamePlanPDF({ gamePlan }: Props) {
     <Document
       title={`${gamePlan.opposition} — Game Plan`}
       subject="Rugby League Game Plan"
-      creator="18th Man"
     >
       <Page size="A4" style={s.page}>
         {/* Fixed footer on every page */}
         <View fixed style={s.footer}>
-          <Text style={s.footerBrand}>18TH MAN — RUGBY LEAGUE</Text>
           <Text
             style={s.footerPage}
             render={({ pageNumber, totalPages }) =>
@@ -233,12 +270,13 @@ export function GamePlanPDF({ gamePlan }: Props) {
         {/* ── Page header ──────────────────────────────────── */}
         <View style={s.accentBar} />
 
-        <View style={s.brandRow}>
-          <View style={s.brandBlock}>
-            <Text style={s.brandName}>18TH MAN</Text>
-            <Text style={s.brandSub}>RUGBY LEAGUE COACHING PLATFORM</Text>
-          </View>
-          <Text style={s.docLabel}>GAME PLAN</Text>
+        <Text style={s.docLabel}>GAME PLAN</Text>
+
+        {/* Logos */}
+        <View style={s.logoRow}>
+          <LogoCell url={gamePlan.home_logo_url} name={teamName} />
+          <Text style={s.vsText}>vs</Text>
+          <LogoCell url={gamePlan.away_logo_url} name={gamePlan.opposition} />
         </View>
 
         <View style={s.divider} />

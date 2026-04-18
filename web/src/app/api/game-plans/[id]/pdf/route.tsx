@@ -17,13 +17,15 @@ export async function GET(
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, club, display_name')
       .eq('id', user.id)
       .single()
 
     if (!profile || profile.role !== 'admin') {
       return new Response('Forbidden', { status: 403 })
     }
+
+    const teamName = profile.club || profile.display_name || 'Your Team'
 
     const { data: gamePlan } = await supabase
       .from('game_plans')
@@ -42,7 +44,7 @@ export async function GET(
     const aiPlan = plan.ai_plan as GamePlanAiPlan
 
     const buffer = await renderToBuffer(
-      <GamePlanPDF gamePlan={{ ...plan, ai_plan: aiPlan }} />
+      <GamePlanPDF gamePlan={{ ...plan, ai_plan: aiPlan }} teamName={teamName} />
     )
 
     const slug = plan.opposition
