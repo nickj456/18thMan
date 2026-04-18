@@ -26,12 +26,17 @@ const s = StyleSheet.create({
     left: 40,
     right: 40,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: BORDER,
     borderTopStyle: 'solid',
+  },
+  footerBrand: {
+    fontSize: 7,
+    color: MUTED,
+    letterSpacing: 0.8,
   },
   footerPage: {
     fontSize: 7,
@@ -128,12 +133,14 @@ const s = StyleSheet.create({
   },
 
   // ── Section ──────────────────────────────────────────────────
+  section: {
+    marginTop: 16,
+  },
   sectionHeader: {
     borderTopWidth: 1,
     borderTopColor: E,
     borderTopStyle: 'solid',
     paddingTop: 8,
-    marginTop: 16,
     marginBottom: 6,
   },
   sectionTitle: {
@@ -223,6 +230,31 @@ function LogoCell({ url, name }: { url: string | null; name: string }) {
   )
 }
 
+interface SectionProps {
+  title: string
+  subtitle?: string | null
+  intro?: string | null
+  points: string[]
+}
+
+function PlanSection({ title, subtitle, intro, points }: SectionProps) {
+  return (
+    <View style={s.section} wrap={false}>
+      <View style={s.sectionHeader}>
+        <Text style={s.sectionTitle}>{title}</Text>
+        {subtitle ? <Text style={s.sectionSubtitle}>{subtitle}</Text> : null}
+      </View>
+      {intro ? <Text style={s.bodyText}>{intro}</Text> : null}
+      {points.map((point, i) => (
+        <View key={i} style={s.bulletRow}>
+          <Text style={s.bulletMark}>•</Text>
+          <Text style={s.bulletText}>{point}</Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
 function formatKickOff(iso: string | null): string | null {
   if (!iso) return null
   const d = new Date(iso)
@@ -241,7 +273,7 @@ export function GamePlanPDF({ gamePlan, teamName = 'Your Team' }: Props) {
 
   if (!plan) {
     return (
-      <Document title="Game Plan" creator="18th Man">
+      <Document title="Game Plan">
         <Page size="A4" style={s.page}>
           <Text style={s.bodyText}>No plan generated.</Text>
         </Page>
@@ -257,8 +289,14 @@ export function GamePlanPDF({ gamePlan, teamName = 'Your Team' }: Props) {
       subject="Rugby League Game Plan"
     >
       <Page size="A4" style={s.page}>
-        {/* Fixed footer on every page */}
+        {/* Footer — page number always, subtle brand on last page only */}
         <View fixed style={s.footer}>
+          <Text
+            style={s.footerBrand}
+            render={({ pageNumber, totalPages }) =>
+              pageNumber === totalPages ? '18th Man' : ''
+            }
+          />
           <Text
             style={s.footerPage}
             render={({ pageNumber, totalPages }) =>
@@ -268,131 +306,77 @@ export function GamePlanPDF({ gamePlan, teamName = 'Your Team' }: Props) {
         </View>
 
         {/* ── Page header ──────────────────────────────────── */}
-        <View style={s.accentBar} />
-
-        <Text style={s.docLabel}>GAME PLAN</Text>
-
-        {/* Logos */}
-        <View style={s.logoRow}>
-          <LogoCell url={gamePlan.home_logo_url} name={teamName} />
-          <Text style={s.vsText}>vs</Text>
-          <LogoCell url={gamePlan.away_logo_url} name={gamePlan.opposition} />
-        </View>
-
-        <View style={s.divider} />
-
-        {/* ── Title block ──────────────────────────────────── */}
-        <Text style={s.opposition}>vs {gamePlan.opposition}</Text>
-
-        <View style={s.metaRow}>
-          {gamePlan.pitch && (
-            <View style={s.metaItem}>
-              <Text style={s.metaLabel}>PITCH</Text>
-              <Text style={s.metaValue}>{gamePlan.pitch}</Text>
-            </View>
-          )}
-          {kickOff && (
-            <View style={s.metaItem}>
-              <Text style={s.metaLabel}>KICK-OFF</Text>
-              <Text style={s.metaValue}>{kickOff}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* ── Team Focus ───────────────────────────────────── */}
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>TEAM FOCUS</Text>
-        </View>
-
-        {plan.teamFocus.intro ? (
-          <Text style={s.bodyText}>{plan.teamFocus.intro}</Text>
-        ) : null}
-
-        {plan.teamFocus.keyMessages.map((msg, i) => (
-          <View key={i} style={s.bulletRow}>
-            <Text style={s.bulletMark}>•</Text>
-            <Text style={s.bulletText}>{msg}</Text>
+        <View wrap={false}>
+          <View style={s.accentBar} />
+          <Text style={s.docLabel}>GAME PLAN</Text>
+          <View style={s.logoRow}>
+            <LogoCell url={gamePlan.home_logo_url} name={teamName} />
+            <Text style={s.vsText}>vs</Text>
+            <LogoCell url={gamePlan.away_logo_url} name={gamePlan.opposition} />
           </View>
-        ))}
-
-        {/* ── Forwards ─────────────────────────────────────── */}
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>FORWARDS</Text>
-          {plan.forwards.positions ? (
-            <Text style={s.sectionSubtitle}>{plan.forwards.positions}</Text>
-          ) : null}
+          <View style={s.divider} />
+          <Text style={s.opposition}>vs {gamePlan.opposition}</Text>
+          <View style={s.metaRow}>
+            {gamePlan.pitch && (
+              <View style={s.metaItem}>
+                <Text style={s.metaLabel}>PITCH</Text>
+                <Text style={s.metaValue}>{gamePlan.pitch}</Text>
+              </View>
+            )}
+            {kickOff && (
+              <View style={s.metaItem}>
+                <Text style={s.metaLabel}>KICK-OFF</Text>
+                <Text style={s.metaValue}>{kickOff}</Text>
+              </View>
+            )}
+          </View>
         </View>
 
-        {plan.forwards.role ? (
-          <Text style={s.bodyText}>{plan.forwards.role}</Text>
-        ) : null}
+        {/* ── Sections ─────────────────────────────────────── */}
+        <PlanSection
+          title="TEAM FOCUS"
+          intro={plan.teamFocus.intro}
+          points={plan.teamFocus.keyMessages}
+        />
 
-        {plan.forwards.points.map((point, i) => (
-          <View key={i} style={s.bulletRow}>
-            <Text style={s.bulletMark}>•</Text>
-            <Text style={s.bulletText}>{point}</Text>
-          </View>
-        ))}
+        <PlanSection
+          title="FORWARDS"
+          subtitle={[plan.forwards.positions, plan.forwards.role].filter(Boolean).join(' — ')}
+          points={plan.forwards.points}
+        />
 
-        {/* ── Backs ────────────────────────────────────────── */}
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>BACKS</Text>
-          {plan.backs.positions ? (
-            <Text style={s.sectionSubtitle}>{plan.backs.positions}</Text>
-          ) : null}
-        </View>
+        <PlanSection
+          title="BACKS"
+          subtitle={[plan.backs.positions, plan.backs.role].filter(Boolean).join(' — ')}
+          points={plan.backs.points}
+        />
 
-        {plan.backs.role ? (
-          <Text style={s.bodyText}>{plan.backs.role}</Text>
-        ) : null}
-
-        {plan.backs.points.map((point, i) => (
-          <View key={i} style={s.bulletRow}>
-            <Text style={s.bulletMark}>•</Text>
-            <Text style={s.bulletText}>{point}</Text>
-          </View>
-        ))}
-
-        {/* ── Half Backs ───────────────────────────────────── */}
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>HALF BACKS</Text>
-          {plan.halfBacks.positions ? (
-            <Text style={s.sectionSubtitle}>{plan.halfBacks.positions}</Text>
-          ) : null}
-        </View>
-
-        {plan.halfBacks.role ? (
-          <Text style={s.bodyText}>{plan.halfBacks.role}</Text>
-        ) : null}
-
-        {plan.halfBacks.points.map((point, i) => (
-          <View key={i} style={s.bulletRow}>
-            <Text style={s.bulletMark}>•</Text>
-            <Text style={s.bulletText}>{point}</Text>
-          </View>
-        ))}
+        <PlanSection
+          title="HALF BACKS"
+          subtitle={[plan.halfBacks.positions, plan.halfBacks.role].filter(Boolean).join(' — ')}
+          points={plan.halfBacks.points}
+        />
 
         {/* ── Final Reminders ──────────────────────────────── */}
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>FINAL REMINDERS</Text>
+        <View style={s.section} wrap={false}>
+          <View style={s.sectionHeader}>
+            <Text style={s.sectionTitle}>FINAL REMINDERS</Text>
+          </View>
+          {plan.finalReminders.closing ? (
+            <Text style={s.bodyText}>{plan.finalReminders.closing}</Text>
+          ) : null}
+          {plan.finalReminders.points.map((point, i) => (
+            <View key={i} style={s.bulletRow}>
+              <Text style={s.bulletMark}>•</Text>
+              <Text style={s.bulletText}>{point}</Text>
+            </View>
+          ))}
+          {plan.finalReminders.quote ? (
+            <View style={s.quoteBox}>
+              <Text style={s.quoteText}>"{plan.finalReminders.quote}"</Text>
+            </View>
+          ) : null}
         </View>
-
-        {plan.finalReminders.closing ? (
-          <Text style={s.bodyText}>{plan.finalReminders.closing}</Text>
-        ) : null}
-
-        {plan.finalReminders.points.map((point, i) => (
-          <View key={i} style={s.bulletRow}>
-            <Text style={s.bulletMark}>•</Text>
-            <Text style={s.bulletText}>{point}</Text>
-          </View>
-        ))}
-
-        {plan.finalReminders.quote ? (
-          <View style={s.quoteBox}>
-            <Text style={s.quoteText}>"{plan.finalReminders.quote}"</Text>
-          </View>
-        ) : null}
       </Page>
     </Document>
   )
