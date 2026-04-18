@@ -27,7 +27,7 @@ export async function updateSession(request: NextRequest) {
 
   // Protect app routes
   const isAppRoute = request.nextUrl.pathname.startsWith('/(app)') ||
-    ['/dashboard', '/drills', '/sessions', '/chat', '/profile', '/admin'].some(p =>
+    ['/dashboard', '/drills', '/sessions', '/chat', '/profile', '/admin', '/game-plans', '/groups', '/clubs', '/settings', '/notifications'].some(p =>
       request.nextUrl.pathname.startsWith(p)
     )
 

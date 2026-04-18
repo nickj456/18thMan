@@ -29,6 +29,7 @@ import {
   Clock,
   Headphones,
   Video,
+  ClipboardList,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -161,6 +162,15 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                     >
                       <ShieldCheck className="size-4" />
                       <span>Admin</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith('/game-plans')}
+                      render={<Link href="/game-plans" onClick={closeMobile} />}
+                    >
+                      <ClipboardList className="size-4" />
+                      <span>Game Plans</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
