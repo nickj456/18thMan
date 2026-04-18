@@ -300,3 +300,49 @@ export interface DrillFilters {
   age_group?: string
   min_rating?: string
 }
+
+export type GamePlanStatus = 'draft' | 'generated'
+export type GamePlanDetailLevel = 'brief' | 'standard' | 'detailed'
+
+export interface GamePlanAiSection {
+  positions?: string
+  role?: string
+  points: string[]
+}
+
+export interface GamePlanAiPlan {
+  teamFocus: {
+    intro: string
+    keyMessages: string[]
+  }
+  forwards: GamePlanAiSection
+  backs: GamePlanAiSection
+  halfBacks: GamePlanAiSection
+  finalReminders: {
+    closing: string
+    points: string[]
+    quote: string
+  }
+}
+
+export interface GamePlan {
+  id: string
+  created_by: string
+  opposition: string
+  pitch: string | null
+  kick_off_time: string | null
+  home_logo_url: string | null
+  away_logo_url: string | null
+  defence: string | null
+  attack: string | null
+  structure: string | null
+  aims: string | null
+  backs: string | null
+  forwards: string | null
+  half_backs: string | null
+  detail_level: GamePlanDetailLevel
+  ai_plan: GamePlanAiPlan | null
+  status: GamePlanStatus
+  created_at: string
+  updated_at: string
+}
