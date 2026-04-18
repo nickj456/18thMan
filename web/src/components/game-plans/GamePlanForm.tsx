@@ -30,6 +30,7 @@ const TACTICAL_FIELDS = [
   { name: 'forwards',   label: 'Forwards',    placeholder: 'Pack play, dummy half, carries, markers…' },
   { name: 'backs',      label: 'Backs',       placeholder: 'Width, timing, defensive line organisation…' },
   { name: 'half_backs', label: 'Half Backs',  placeholder: 'Kicking game, service, decision making, depth…' },
+  { name: 'moves',      label: 'Moves & Set Plays', placeholder: "Named plays the AI will use — wrap move names in single quotes and ALL CAPS, e.g. On 4th tackle use 'THUNDER'. Left edge 'STORM' on set." },
 ] as const
 
 export function GamePlanForm({ gamePlan }: GamePlanFormProps) {

@@ -86,6 +86,7 @@ export async function createGamePlan(formData: FormData): Promise<{ error?: stri
       backs: formData.get('backs') as string,
       forwards: formData.get('forwards') as string,
       half_backs: formData.get('half_backs') as string,
+      moves: (formData.get('moves') as string | null) || null,
       detail_level: detailLevel,
       created_by: user.id,
     })
@@ -132,6 +133,7 @@ export async function updateGamePlan(id: string, formData: FormData): Promise<{ 
       backs: formData.get('backs') as string,
       forwards: formData.get('forwards') as string,
       half_backs: formData.get('half_backs') as string,
+      moves: (formData.get('moves') as string | null) || null,
       detail_level: detailLevel,
       updated_at: new Date().toISOString(),
     })
@@ -179,6 +181,22 @@ export async function generateGamePlan(id: string): Promise<{ error?: string }> 
     `Backs guidance: ${gamePlan.backs ?? 'No specific notes provided'}`,
     `Forwards guidance: ${gamePlan.forwards ?? 'No specific notes provided'}`,
     `Half backs guidance: ${gamePlan.half_backs ?? 'No specific notes provided'}`,
+    gamePlan.moves ? `Moves & set plays: ${gamePlan.moves}` : '',
+    '',
+    ...(() => {
+      const allText = [
+        gamePlan.defence, gamePlan.attack, gamePlan.structure, gamePlan.aims,
+        gamePlan.backs, gamePlan.forwards, gamePlan.half_backs, gamePlan.moves,
+      ].filter(Boolean).join(' ')
+      const namedPlays = [...new Set(
+        [...allText.matchAll(/'([A-Z][A-Z]+)'/g)].map(m => m[1])
+      )]
+      if (namedPlays.length === 0) return []
+      return [
+        `NAMED PLAYS — you MUST reference these by their exact name in the relevant sections: ${namedPlays.join(', ')}`,
+        'Do not explain what they are — just use the name as coaches and players already know them.',
+      ]
+    })(),
   ].filter(line => line !== null).join('\n')
 
   let aiPlan: GamePlanAiPlan
