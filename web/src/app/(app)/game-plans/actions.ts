@@ -184,7 +184,6 @@ export async function generateGamePlan(id: string): Promise<{ error?: string }> 
     gamePlan.moves ? `Moves & set plays: ${gamePlan.moves}` : '',
     '',
     ...(() => {
-      // Extract all 'ALLCAPS' named plays from every field
       const allText = [
         gamePlan.defence, gamePlan.attack, gamePlan.structure, gamePlan.aims,
         gamePlan.backs, gamePlan.forwards, gamePlan.half_backs, gamePlan.moves,
