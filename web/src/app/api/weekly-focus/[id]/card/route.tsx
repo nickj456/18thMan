@@ -1,8 +1,9 @@
 import { ImageResponse } from 'next/og'
+import { createClient } from '@/lib/supabase/server'
+import fs from 'fs'
+import path from 'path'
 
-export const runtime = 'edge'
-
-const FONT_URL = 'https://18thman.app/fonts/inter-900.woff2'
+export const runtime = 'nodejs'
 
 const CATEGORY_ACCENT: Record<string, string> = {
   Attacking: '#f59e0b',
@@ -20,11 +21,9 @@ const TOPIC_CATEGORY: Record<string, string> = {
   'Agility & Conditioning': 'Fitness & Game Sense', 'Decision Making': 'Fitness & Game Sense', 'Game Management': 'Fitness & Game Sense',
 }
 
-async function loadFont(): Promise<ArrayBuffer | null> {
+function loadFont(): Buffer | null {
   try {
-    const res = await fetch(FONT_URL)
-    if (!res.ok) return null
-    return res.arrayBuffer()
+    return fs.readFileSync(path.join(process.cwd(), 'public/fonts/inter-900.woff2'))
   } catch {
     return null
   }
@@ -43,22 +42,13 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    const supabase = await createClient()
 
-    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/weekly_focuses?select=topic,description,next_topic&id=eq.${id}&limit=1`
-    const res = await fetch(url, {
-      headers: {
-        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
-        Accept: 'application/json',
-      },
-    })
-
-    if (!res.ok) {
-      return new Response('DB error', { status: 502 })
-    }
-
-    const rows = await res.json() as { topic: string; description: string; next_topic: string | null }[]
-    const focus = rows[0]
+    const { data: focus } = await supabase
+      .from('weekly_focuses')
+      .select('topic, description, next_topic')
+      .eq('id', id)
+      .single()
 
     if (!focus) {
       return new Response('Not found', { status: 404 })
@@ -72,10 +62,9 @@ export async function GET(
     })
 
     const fontSize = topicFontSize(focus.topic)
-    const fontData = await loadFont()
-
-    const fonts = fontData
-      ? [{ name: 'Inter', data: fontData, weight: 900 as const, style: 'normal' as const }]
+    const fontBuffer = loadFont()
+    const fonts = fontBuffer
+      ? [{ name: 'Inter', data: fontBuffer, weight: 900 as const, style: 'normal' as const }]
       : []
 
     return new ImageResponse(
@@ -86,16 +75,13 @@ export async function GET(
             height: 1080,
             background: '#0a0a0a',
             display: 'flex',
-            fontFamily: fontData ? '"Inter", sans-serif' : 'sans-serif',
+            fontFamily: fontBuffer ? '"Inter", sans-serif' : 'sans-serif',
           }}
         >
-          {/* Left accent bar */}
           <div style={{ width: 8, background: accent, flexShrink: 0, display: 'flex' }} />
 
-          {/* Content */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '72px 88px' }}>
 
-            {/* Top label */}
             <p style={{
               color: '#3f3f46',
               fontSize: 13,
@@ -107,10 +93,8 @@ export async function GET(
               Weekly Focus
             </p>
 
-            {/* Hero */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
 
-              {/* Category pill */}
               <div style={{
                 display: 'inline-flex',
                 alignSelf: 'flex-start',
@@ -128,21 +112,18 @@ export async function GET(
                 {category}
               </div>
 
-              {/* Topic */}
               <p style={{
                 color: '#ffffff',
                 fontSize,
                 fontWeight: 900,
                 margin: 0,
-                lineHeight: 1.0,
-                letterSpacing: -2,
+                lineHeight: 1,
               }}>
                 {focus.topic}
               </p>
 
             </div>
 
-            {/* Bottom row */}
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ width: '100%', height: 1, background: '#1c1c1e', marginBottom: 32, display: 'flex' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
