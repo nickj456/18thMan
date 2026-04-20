@@ -2,6 +2,8 @@ import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
 
+const FONT_URL = 'https://18thman.app/fonts/inter-900.woff2'
+
 const CATEGORY_ACCENT: Record<string, string> = {
   Attacking: '#f59e0b',
   Defensive: '#ef4444',
@@ -20,9 +22,7 @@ const TOPIC_CATEGORY: Record<string, string> = {
 
 async function loadFont(): Promise<ArrayBuffer | null> {
   try {
-    const res = await fetch(
-      'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.16/files/inter-latin-900-normal.woff2',
-    )
+    const res = await fetch(FONT_URL)
     if (!res.ok) return null
     return res.arrayBuffer()
   } catch {
