@@ -21,14 +21,12 @@ const TOPIC_CATEGORY: Record<string, string> = {
 
 async function loadFont(): Promise<ArrayBuffer | null> {
   try {
-    // Fetch the CSS to get the actual woff2 URL from Google Fonts
-    const css = await fetch(
-      'https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap',
-      { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' } },
-    ).then(r => r.text())
-    const url = css.match(/src: url\((.+?)\) format\('woff2'\)/)?.[1]
-    if (!url) return null
-    return fetch(url).then(r => r.arrayBuffer())
+    const res = await fetch(
+      'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.16/files/inter-latin-900-normal.woff2',
+      { cache: 'force-cache' },
+    )
+    if (!res.ok) return null
+    return res.arrayBuffer()
   } catch {
     return null
   }
@@ -45,137 +43,149 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params
-  const supabase = await createClient()
+  try {
+    const { id } = await params
+    console.log('[card] step 1: id =', id)
 
-  const { data: focus } = await supabase
-    .from('weekly_focuses')
-    .select('topic, description, next_topic')
-    .eq('id', id)
-    .single()
+    const supabase = await createClient()
+    console.log('[card] step 2: supabase client created')
 
-  if (!focus) {
-    return new Response('Not found', { status: 404 })
-  }
+    const { data: focus, error: dbError } = await supabase
+      .from('weekly_focuses')
+      .select('topic, description, next_topic')
+      .eq('id', id)
+      .single()
 
-  const category = TOPIC_CATEGORY[focus.topic] ?? 'Ball Handling'
-  const accent = CATEGORY_ACCENT[category] ?? '#6366f1'
+    console.log('[card] step 3: db result', { focus: focus?.topic, dbError })
 
-  const weekLabel = new Date().toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'long', year: 'numeric',
-  })
+    if (!focus) {
+      return new Response('Not found', { status: 404 })
+    }
 
-  const fontSize = topicFontSize(focus.topic)
-  const fontData = await loadFont()
+    const category = TOPIC_CATEGORY[focus.topic] ?? 'Ball Handling'
+    const accent = CATEGORY_ACCENT[category] ?? '#6366f1'
 
-  const imageOptions: ConstructorParameters<typeof ImageResponse>[1] = {
-    width: 1080,
-    height: 1080,
-    ...(fontData ? { fonts: [{ name: 'Inter', data: fontData, weight: 900, style: 'normal' as const }] } : {}),
-  }
+    const weekLabel = new Date().toLocaleDateString('en-GB', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    })
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: 1080,
-          height: 1080,
-          background: '#0a0a0a',
-          display: 'flex',
-          fontFamily: fontData ? '"Inter", sans-serif' : 'sans-serif',
-        }}
-      >
-        {/* Left accent bar */}
-        <div style={{ width: 8, background: accent, flexShrink: 0, display: 'flex' }} />
+    const fontSize = topicFontSize(focus.topic)
+    console.log('[card] step 4: loading font')
+    const fontData = await loadFont()
+    console.log('[card] step 5: font loaded =', !!fontData)
 
-        {/* Content */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '72px 88px' }}>
+    const fonts = fontData
+      ? [{ name: 'Inter', data: fontData, weight: 900 as const, style: 'normal' as const }]
+      : []
 
-          {/* Top label */}
-          <p style={{
-            color: '#3f3f46',
-            fontSize: 13,
-            fontWeight: 900,
-            letterSpacing: 6,
-            textTransform: 'uppercase',
-            margin: 0,
-          }}>
-            Weekly Focus
-          </p>
+    console.log('[card] step 6: building ImageResponse')
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: 1080,
+            height: 1080,
+            background: '#0a0a0a',
+            display: 'flex',
+            fontFamily: fontData ? '"Inter", sans-serif' : 'sans-serif',
+          }}
+        >
+          {/* Left accent bar */}
+          <div style={{ width: 8, background: accent, flexShrink: 0, display: 'flex' }} />
 
-          {/* Hero: category + topic, vertically centred */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0 }}>
+          {/* Content */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '72px 88px' }}>
 
-            {/* Category pill */}
-            <div style={{
-              display: 'inline-flex',
-              alignSelf: 'flex-start',
-              background: `${accent}22`,
-              border: `1.5px solid ${accent}55`,
-              color: accent,
+            {/* Top label */}
+            <p style={{
+              color: '#3f3f46',
               fontSize: 13,
               fontWeight: 900,
-              letterSpacing: 3,
+              letterSpacing: 6,
               textTransform: 'uppercase',
-              padding: '10px 24px',
-              borderRadius: 999,
-              marginBottom: 40,
-            }}>
-              {category}
-            </div>
-
-            {/* Topic — the hero */}
-            <p style={{
-              color: '#ffffff',
-              fontSize,
-              fontWeight: 900,
               margin: 0,
-              lineHeight: 1.0,
-              letterSpacing: -2,
             }}>
-              {focus.topic}
+              Weekly Focus
             </p>
 
-          </div>
+            {/* Hero: category + topic, vertically centred */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0 }}>
 
-          {/* Bottom row */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <div style={{ width: '100%', height: 1, background: '#1c1c1e', marginBottom: 32, display: 'flex' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-
-              {/* Brand */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <p style={{
-                  color: '#ffffff',
-                  fontSize: 22,
-                  fontWeight: 900,
-                  letterSpacing: 5,
-                  textTransform: 'uppercase',
-                  margin: 0,
-                }}>
-                  18TH MAN
-                </p>
-                <p style={{ color: '#3f3f46', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', margin: 0 }}>
-                  Rugby League Coaching
-                </p>
+              {/* Category pill */}
+              <div style={{
+                display: 'inline-flex',
+                alignSelf: 'flex-start',
+                background: `${accent}22`,
+                border: `1.5px solid ${accent}55`,
+                color: accent,
+                fontSize: 13,
+                fontWeight: 900,
+                letterSpacing: 3,
+                textTransform: 'uppercase',
+                padding: '10px 24px',
+                borderRadius: 999,
+                marginBottom: 40,
+              }}>
+                {category}
               </div>
 
-              {/* Week + next week */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                <p style={{ color: '#52525b', fontSize: 17, margin: 0 }}>{weekLabel}</p>
-                {focus.next_topic && (
-                  <p style={{ color: '#3f3f46', fontSize: 15, margin: 0 }}>
-                    Next: {focus.next_topic}
-                  </p>
-                )}
-              </div>
+              {/* Topic — the hero */}
+              <p style={{
+                color: '#ffffff',
+                fontSize,
+                fontWeight: 900,
+                margin: 0,
+                lineHeight: 1.0,
+                letterSpacing: -2,
+              }}>
+                {focus.topic}
+              </p>
 
             </div>
-          </div>
 
+            {/* Bottom row */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <div style={{ width: '100%', height: 1, background: '#1c1c1e', marginBottom: 32, display: 'flex' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+
+                {/* Brand */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <p style={{
+                    color: '#ffffff',
+                    fontSize: 22,
+                    fontWeight: 900,
+                    letterSpacing: 5,
+                    textTransform: 'uppercase',
+                    margin: 0,
+                  }}>
+                    18TH MAN
+                  </p>
+                  <p style={{ color: '#3f3f46', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', margin: 0 }}>
+                    Rugby League Coaching
+                  </p>
+                </div>
+
+                {/* Week + next week */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                  <p style={{ color: '#52525b', fontSize: 17, margin: 0 }}>{weekLabel}</p>
+                  {focus.next_topic && (
+                    <p style={{ color: '#3f3f46', fontSize: 15, margin: 0 }}>
+                      Next: {focus.next_topic}
+                    </p>
+                  )}
+                </div>
+
+              </div>
+            </div>
+
+          </div>
         </div>
-      </div>
-    ),
-    imageOptions,
-  )
+      ),
+      { width: 1080, height: 1080, fonts },
+    )
+  } catch (err) {
+    const msg = err instanceof Error ? `${err.message}\n${err.stack}` : String(err)
+    console.error('[card] render error:', msg)
+    return new Response(`Card generation failed:\n${msg}`, { status: 500 })
+  }
 }
