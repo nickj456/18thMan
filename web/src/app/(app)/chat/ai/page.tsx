@@ -12,11 +12,39 @@ export default async function AiChatPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  // Load coach's groups for squad context button
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, avatar_url')
+    .select('display_name, avatar_url, club_id')
     .eq('id', user.id)
     .single()
+
+  let squadGroups: { id: string; name: string; playerCount: number }[] = []
+  if (profile?.club_id) {
+    const { data: memberGroups } = await supabase
+      .from('group_invitations')
+      .select('group_id, coaching_groups!group_invitations_group_id_fkey(id, name)')
+      .eq('user_id', user.id)
+      .eq('status', 'accepted')
+
+    if (memberGroups?.length) {
+      const groupIds = memberGroups.map(g => g.group_id)
+      const { data: playerCounts } = await supabase
+        .from('players')
+        .select('group_id')
+        .in('group_id', groupIds)
+
+      squadGroups = memberGroups.map(mg => {
+        const g = Array.isArray(mg.coaching_groups) ? mg.coaching_groups[0] : mg.coaching_groups
+        const grp = g as { id: string; name: string } | null
+        return {
+          id: mg.group_id,
+          name: grp?.name ?? mg.group_id,
+          playerCount: playerCounts?.filter(p => p.group_id === mg.group_id).length ?? 0,
+        }
+      }).filter(g => g.playerCount > 0)
+    }
+  }
 
   // Find or create the AI conversation for this user
   let conversationId: string | null = null
@@ -79,6 +107,7 @@ export default async function AiChatPage({
             userAvatar={profile?.avatar_url ?? null}
             userName={profile?.display_name ?? null}
             pendingPrompt={prompt ? decodeURIComponent(prompt) : undefined}
+            squadGroups={squadGroups}
           />
         </div>
       ) : (
