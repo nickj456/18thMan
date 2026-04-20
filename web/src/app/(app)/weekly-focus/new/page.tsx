@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft } from 'lucide-react'
 import { createWeeklyFocus } from '../actions'
-import { FOCUS_TOPICS } from '@/lib/supabase/types'
 import type { Drill } from '@/lib/supabase/types'
 
 export const metadata = { title: 'Set Weekly Focus — 18th Man' }
@@ -14,14 +13,6 @@ function getMonday(d: Date): string {
   const diff = copy.getDate() - day + (day === 0 ? -6 : 1)
   copy.setDate(diff)
   return copy.toISOString().split('T')[0]
-}
-
-const CATEGORY_COLOUR: Record<string, string> = {
-  Attacking: 'border-amber-500/30 text-amber-400',
-  Defensive: 'border-red-500/30 text-red-400',
-  'Ball Handling': 'border-sky-500/30 text-sky-400',
-  'Set Piece & Kicking': 'border-violet-500/30 text-violet-400',
-  'Fitness & Game Sense': 'border-emerald-500/30 text-emerald-400',
 }
 
 export default async function NewWeeklyFocusPage() {
@@ -56,9 +47,6 @@ export default async function NewWeeklyFocusPage() {
   const existing = focusRes.data
   const drills = (drillsRes.data ?? []) as Pick<Drill, 'id' | 'title' | 'difficulty' | 'preview_image_url' | 'canvas_preview_url'>[]
 
-  // Group topics by category
-  const categories = [...new Set(FOCUS_TOPICS.map(t => t.category))]
-
   const weekLabel = new Date(thisMonday).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
   })
@@ -75,37 +63,20 @@ export default async function NewWeeklyFocusPage() {
       </div>
 
       <form action={async (fd: FormData) => { 'use server'; await createWeeklyFocus(fd) }} className="space-y-8">
-        {/* Topic picker */}
-        <section className="space-y-3">
-          <label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest block">
+        {/* Topic */}
+        <section className="space-y-2">
+          <label htmlFor="topic" className="text-xs font-semibold text-zinc-500 uppercase tracking-widest block">
             Focus Topic
           </label>
-          {categories.map(cat => (
-            <div key={cat} className="space-y-2">
-              <p className={`text-[11px] font-semibold uppercase tracking-widest ${CATEGORY_COLOUR[cat]?.split(' ')[1] ?? 'text-zinc-500'}`}>
-                {cat}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {FOCUS_TOPICS.filter(t => t.category === cat).map(t => (
-                  <label key={t.label} className="cursor-pointer">
-                    <input
-                      type="radio"
-                      name="topic"
-                      value={t.label}
-                      defaultChecked={existing?.topic === t.label}
-                      required
-                      className="sr-only peer"
-                    />
-                    <span className={`inline-block px-3 py-1.5 rounded-full text-xs border transition-all
-                      peer-checked:bg-indigo-600 peer-checked:border-indigo-500 peer-checked:text-white
-                      bg-zinc-900 border-zinc-700 text-zinc-400 hover:border-zinc-500 ${CATEGORY_COLOUR[cat] ?? ''}`}>
-                      {t.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          ))}
+          <input
+            id="topic"
+            name="topic"
+            type="text"
+            required
+            defaultValue={existing?.topic ?? ''}
+            placeholder="e.g. Pass Accuracy, Tackle Technique, Offloading..."
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50"
+          />
         </section>
 
         {/* Description */}
@@ -116,12 +87,13 @@ export default async function NewWeeklyFocusPage() {
           <textarea
             id="description"
             name="description"
-            rows={4}
+            rows={10}
             required
             defaultValue={existing?.description ?? ''}
-            placeholder="Describe what players will be working on this week and why it matters..."
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50 resize-none"
+            placeholder={"Describe the focus for this week.\n\nUse blank lines to separate sections — they'll display as paragraphs for players."}
+            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50 resize-y"
           />
+          <p className="text-xs text-zinc-600">Press Enter twice between sections — they'll show as separate paragraphs.</p>
         </section>
 
         {/* Drill selection */}

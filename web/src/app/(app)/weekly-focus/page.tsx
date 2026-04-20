@@ -48,10 +48,9 @@ export default async function WeeklyFocusPage() {
     .single()
 
   if (!profile?.club_id) redirect('/clubs')
-  if (profile.role !== 'admin') redirect('/dashboard')
 
-  const isAdmin = true
-  const canComment = true
+  const isAdmin = profile.role === 'admin'
+  const canComment = profile.role === 'coach' || profile.role === 'admin'
   const thisMonday = getMonday(new Date())
 
   const [focusRes, clubRes] = await Promise.all([
@@ -151,7 +150,11 @@ export default async function WeeklyFocusPage() {
                 </span>
               )}
               <h2 className="text-2xl font-bold text-white">{focus.topic}</h2>
-              <p className="text-sm text-zinc-400 leading-relaxed">{focus.description}</p>
+              <div className="space-y-3">
+                {focus.description.split(/\n\n+/).map((para, i) => (
+                  <p key={i} className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap">{para.trim()}</p>
+                ))}
+              </div>
             </div>
 
             {/* Next week preview */}

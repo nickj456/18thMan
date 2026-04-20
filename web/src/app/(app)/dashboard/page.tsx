@@ -507,9 +507,9 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  // Weekly focus — admin only
+  // Weekly focus for the club
   let weeklyFocus: { id: string; topic: string; description: string; next_topic: string | null; drill_ids: string[] } | null = null
-  if (profile?.club_id && profile?.role === 'admin') {
+  if (profile?.club_id) {
     const d = new Date()
     const day = d.getDay()
     const diff = d.getDate() - day + (day === 0 ? -6 : 1)
@@ -594,8 +594,8 @@ export default async function DashboardPage() {
         </Link>
       )}
 
-      {/* Weekly Focus widget — admin only */}
-      {profile?.role === 'admin' && profile?.club_id && <FocusWidget focus={weeklyFocus} />}
+      {/* Weekly Focus widget */}
+      {profile?.club_id && <FocusWidget focus={weeklyFocus} />}
 
       {/* Quick actions ── static, no DB */}
       <QuickActions />
