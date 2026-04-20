@@ -74,7 +74,7 @@ export default async function NewWeeklyFocusPage() {
         <p className="text-sm text-zinc-500 mt-1">Week of {weekLabel}</p>
       </div>
 
-      <form action={async (fd: FormData) => { await createWeeklyFocus(fd) }} className="space-y-8">
+      <form action={async (fd: FormData) => { 'use server'; await createWeeklyFocus(fd) }} className="space-y-8">
         {/* Topic picker */}
         <section className="space-y-3">
           <label className="text-xs font-semibold text-zinc-500 uppercase tracking-widest block">
