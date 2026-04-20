@@ -4,11 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown, Users2, CalendarDays, Lock, Puzzle, PlayCircle } from 'lucide-react'
+import { Clock, BookOpen, Users, Pencil, ArrowLeft, FileDown, Users2, CalendarDays, Lock, Puzzle, PlayCircle, UserCheck } from 'lucide-react'
 import { DeleteSessionButton } from '@/components/session/DeleteSessionButton'
 import { SessionSummaryCard } from '@/components/session/SessionSummaryCard'
 import { DrillVideoThumbnail } from '@/components/session/DrillVideoThumbnail'
 import { ShareSessionButton } from '@/components/session/ShareSessionButton'
+import { AttendanceRoster } from '@/components/session/AttendanceRoster'
 import { LockBanner } from './LockBanner'
 import type { SessionPlan, SessionDrillItem, Drill } from '@/lib/supabase/types'
 import type { SessionSummary } from '../actions'
@@ -39,9 +40,10 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   let groupName: string | null = null
   let lockerName: string | null = null
   let isGroupMember = false
+  let attendancePlayers: { id: string; name: string; attended: boolean | null }[] = []
 
   if (isGroupSession) {
-    const [groupResult, memberResult] = await Promise.all([
+    const [groupResult, memberResult, playersResult] = await Promise.all([
       supabase.from('coaching_groups').select('name').eq('id', sessionPlan.group_id!).single(),
       supabase.from('group_invitations')
         .select('id')
@@ -49,9 +51,26 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
         .eq('user_id', user.id)
         .eq('status', 'accepted')
         .single(),
+      supabase.from('players')
+        .select('id, name')
+        .eq('group_id', sessionPlan.group_id!)
+        .order('name'),
     ])
     groupName = groupResult.data?.name ?? null
     isGroupMember = !!memberResult.data
+
+    if (playersResult.data?.length) {
+      const { data: ratings } = await supabase
+        .from('player_session_ratings')
+        .select('player_id, attended')
+        .eq('session_plan_id', id)
+      const ratingMap = Object.fromEntries((ratings ?? []).map(r => [r.player_id, r.attended]))
+      attendancePlayers = playersResult.data.map(p => ({
+        id: p.id,
+        name: p.name,
+        attended: ratingMap[p.id] ?? null,
+      }))
+    }
 
     if (sessionPlan.locked_by) {
       const { data: locker } = await supabase
@@ -191,6 +210,20 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
         summary={sessionPlan.ai_summary ?? null}
         isOwner={isOwner}
       />
+
+      {/* Attendance */}
+      {isGroupSession && isOwner && attendancePlayers.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+            <UserCheck size={12} /> Attendance
+          </h2>
+          <AttendanceRoster
+            groupId={sessionPlan.group_id!}
+            sessionPlanId={id}
+            players={attendancePlayers}
+          />
+        </section>
+      )}
 
       {/* Session items */}
       {allItems.length === 0 ? (

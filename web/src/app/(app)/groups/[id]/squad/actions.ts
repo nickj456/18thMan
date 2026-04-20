@@ -255,6 +255,30 @@ export async function upsertSessionRating(
   return { ok: true }
 }
 
+// ── Quick attendance toggle ────────────────────────────────────────────────────
+
+export async function toggleAttendance(
+  groupId: string,
+  playerId: string,
+  sessionPlanId: string,
+  attended: boolean,
+) {
+  const guard = await requireGroupCoach(groupId)
+  if ('error' in guard) return { error: guard.error }
+  const { supabase, user } = guard
+
+  const { error } = await supabase
+    .from('player_session_ratings')
+    .upsert(
+      { player_id: playerId, session_plan_id: sessionPlanId, created_by: user.id, attended },
+      { onConflict: 'player_id,session_plan_id' },
+    )
+
+  if (error) return { error: error.message }
+  revalidatePath(`/sessions/${sessionPlanId}`)
+  return { ok: true }
+}
+
 // ── Squad context for AI ───────────────────────────────────────────────────────
 
 export async function getSquadContextForGroup(groupId: string): Promise<string | null> {
