@@ -1,9 +1,6 @@
 import { ImageResponse } from 'next/og'
-import { createClient } from '@/lib/supabase/server'
-import fs from 'fs'
-import path from 'path'
 
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 
 const CATEGORY_ACCENT: Record<string, string> = {
   Attacking: '#f59e0b',
@@ -21,9 +18,11 @@ const TOPIC_CATEGORY: Record<string, string> = {
   'Agility & Conditioning': 'Fitness & Game Sense', 'Decision Making': 'Fitness & Game Sense', 'Game Management': 'Fitness & Game Sense',
 }
 
-function loadFont(): Buffer | null {
+async function loadFont(): Promise<ArrayBuffer | null> {
   try {
-    return fs.readFileSync(path.join(process.cwd(), 'public/fonts/inter-900.woff2'))
+    const res = await fetch(new URL('./inter-900.woff2', import.meta.url))
+    if (!res.ok) return null
+    return res.arrayBuffer()
   } catch {
     return null
   }
@@ -42,13 +41,16 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-
-    const { data: focus } = await supabase
-      .from('weekly_focuses')
-      .select('topic, description, next_topic')
-      .eq('id', id)
-      .single()
+    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/weekly_focuses?select=topic,description,next_topic&id=eq.${id}&limit=1`
+    const dbRes = await fetch(url, {
+      headers: {
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+        Accept: 'application/json',
+      },
+    })
+    const rows = dbRes.ok ? await dbRes.json() as { topic: string; description: string; next_topic: string | null }[] : []
+    const focus = rows[0]
 
     if (!focus) {
       return new Response('Not found', { status: 404 })
@@ -62,9 +64,9 @@ export async function GET(
     })
 
     const fontSize = topicFontSize(focus.topic)
-    const fontBuffer = loadFont()
-    const fonts = fontBuffer
-      ? [{ name: 'Inter', data: fontBuffer, weight: 900 as const, style: 'normal' as const }]
+    const fontData = await loadFont()
+    const fonts = fontData
+      ? [{ name: 'Inter', data: fontData, weight: 900 as const, style: 'normal' as const }]
       : []
 
     return new ImageResponse(
@@ -75,7 +77,7 @@ export async function GET(
             height: 1080,
             background: '#0a0a0a',
             display: 'flex',
-            fontFamily: fontBuffer ? '"Inter", sans-serif' : 'sans-serif',
+            fontFamily: fontData ? '"Inter", sans-serif' : 'sans-serif',
           }}
         >
           <div style={{ width: 8, background: accent, flexShrink: 0, display: 'flex' }} />
