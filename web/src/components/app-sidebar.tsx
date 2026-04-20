@@ -58,7 +58,6 @@ const navItems = [
   { href: '/chat', label: 'Coach Chat', icon: MessageSquare },
   { href: '/clubs', label: 'My Club', icon: Building2 },
   { href: '/groups', label: 'My Groups', icon: Users2 },
-  { href: '/weekly-focus', label: 'Weekly Focus', icon: Target },
   { href: '/podcasts', label: 'Podcasts', icon: Headphones },
 ]
 
@@ -209,6 +208,15 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                     >
                       <ListVideo className="size-4" />
                       <span>Import Playlist</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith('/weekly-focus')}
+                      render={<Link href="/weekly-focus" onClick={closeMobile} />}
+                    >
+                      <Target className="size-4" />
+                      <span>Weekly Focus</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>

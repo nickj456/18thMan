@@ -48,9 +48,10 @@ export default async function WeeklyFocusPage() {
     .single()
 
   if (!profile?.club_id) redirect('/clubs')
+  if (profile.role !== 'admin') redirect('/dashboard')
 
-  const isAdmin = profile.role === 'admin'
-  const canComment = profile.role === 'coach' || profile.role === 'admin'
+  const isAdmin = true
+  const canComment = true
   const thisMonday = getMonday(new Date())
 
   const [focusRes, clubRes] = await Promise.all([
