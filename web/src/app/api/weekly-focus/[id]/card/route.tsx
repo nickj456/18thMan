@@ -1,7 +1,6 @@
 import { ImageResponse } from 'next/og'
-import { createClient } from '@/lib/supabase/server'
 
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 
 const CATEGORY_ACCENT: Record<string, string> = {
   Attacking: '#f59e0b',
@@ -23,7 +22,6 @@ async function loadFont(): Promise<ArrayBuffer | null> {
   try {
     const res = await fetch(
       'https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.16/files/inter-latin-900-normal.woff2',
-      { cache: 'force-cache' },
     )
     if (!res.ok) return null
     return res.arrayBuffer()
@@ -45,18 +43,22 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    console.log('[card] step 1: id =', id)
 
-    const supabase = await createClient()
-    console.log('[card] step 2: supabase client created')
+    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/weekly_focuses?select=topic,description,next_topic&id=eq.${id}&limit=1`
+    const res = await fetch(url, {
+      headers: {
+        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`,
+        Accept: 'application/json',
+      },
+    })
 
-    const { data: focus, error: dbError } = await supabase
-      .from('weekly_focuses')
-      .select('topic, description, next_topic')
-      .eq('id', id)
-      .single()
+    if (!res.ok) {
+      return new Response('DB error', { status: 502 })
+    }
 
-    console.log('[card] step 3: db result', { focus: focus?.topic, dbError })
+    const rows = await res.json() as { topic: string; description: string; next_topic: string | null }[]
+    const focus = rows[0]
 
     if (!focus) {
       return new Response('Not found', { status: 404 })
@@ -70,15 +72,12 @@ export async function GET(
     })
 
     const fontSize = topicFontSize(focus.topic)
-    console.log('[card] step 4: loading font')
     const fontData = await loadFont()
-    console.log('[card] step 5: font loaded =', !!fontData)
 
     const fonts = fontData
       ? [{ name: 'Inter', data: fontData, weight: 900 as const, style: 'normal' as const }]
       : []
 
-    console.log('[card] step 6: building ImageResponse')
     return new ImageResponse(
       (
         <div
@@ -108,8 +107,8 @@ export async function GET(
               Weekly Focus
             </p>
 
-            {/* Hero: category + topic, vertically centred */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0 }}>
+            {/* Hero */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
 
               {/* Category pill */}
               <div style={{
@@ -129,7 +128,7 @@ export async function GET(
                 {category}
               </div>
 
-              {/* Topic — the hero */}
+              {/* Topic */}
               <p style={{
                 color: '#ffffff',
                 fontSize,
@@ -144,11 +143,10 @@ export async function GET(
             </div>
 
             {/* Bottom row */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ width: '100%', height: 1, background: '#1c1c1e', marginBottom: 32, display: 'flex' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
 
-                {/* Brand */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <p style={{
                     color: '#ffffff',
@@ -165,7 +163,6 @@ export async function GET(
                   </p>
                 </div>
 
-                {/* Week + next week */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                   <p style={{ color: '#52525b', fontSize: 17, margin: 0 }}>{weekLabel}</p>
                   {focus.next_topic && (
