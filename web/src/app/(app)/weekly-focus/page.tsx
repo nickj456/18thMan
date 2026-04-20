@@ -206,14 +206,16 @@ export default async function WeeklyFocusPage() {
             </section>
           )}
 
-          {/* Share panel */}
-          <SharePanel
-            focusId={focus.id}
-            topic={focus.topic}
-            description={focus.description}
-            nextTopic={focus.next_topic}
-            clubName={clubName}
-          />
+          {/* Share panel — admin only */}
+          {isAdmin && (
+            <SharePanel
+              focusId={focus.id}
+              topic={focus.topic}
+              description={focus.description}
+              nextTopic={focus.next_topic}
+              clubName={clubName}
+            />
+          )}
 
           {/* Comments */}
           <FocusComments
