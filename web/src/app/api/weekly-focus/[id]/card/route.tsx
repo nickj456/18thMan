@@ -76,6 +76,7 @@ export async function GET(
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{
               display: 'flex',
+              alignSelf: 'flex-start',
               background: accent.bg,
               border: `2px solid ${accent.border}`,
               color: accent.text,
@@ -86,7 +87,6 @@ export async function GET(
               padding: '10px 24px',
               borderRadius: 999,
               marginBottom: 40,
-              width: 'fit-content',
             }}>
               {categoryKey}
             </div>
