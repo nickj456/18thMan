@@ -45,8 +45,8 @@ export async function GET(
     clubName = clubRes?.[0]?.name ?? '18th Man'
   }
 
-  // First paragraph, capped at 160 chars
-  const firstPara = description.split(/\n\n+/)[0]?.trim() ?? ''
+  // First paragraph: strip inline newlines, cap at 160 chars
+  const firstPara = description.split(/\n\n+/)[0]?.replace(/\n/g, ' ').trim() ?? ''
   const shortDesc = firstPara.length > 160 ? firstPara.slice(0, 160).trimEnd() + '…' : firstPara
 
   const fonts = [
@@ -109,13 +109,14 @@ export async function GET(
       </div>
 
       {/* Topic */}
-      <div style={{ display: 'flex', flex: 1 }}>
+      <div style={{ display: 'flex', flex: 1, width: '952px' }}>
         <span
           style={{
             color: 'white',
             fontSize: topic.length > 20 ? '64px' : '80px',
             fontWeight: 900,
             lineHeight: 1.05,
+            width: '952px',
           }}
         >
           {topic}
@@ -124,8 +125,8 @@ export async function GET(
 
       {/* Description */}
       {shortDesc ? (
-        <div style={{ display: 'flex', marginTop: '32px' }}>
-          <span style={{ color: '#a1a1aa', fontSize: '22px', fontWeight: 400, lineHeight: 1.55 }}>
+        <div style={{ display: 'flex', marginTop: '32px', width: '952px' }}>
+          <span style={{ color: '#a1a1aa', fontSize: '22px', fontWeight: 400, lineHeight: 1.55, width: '952px' }}>
             {shortDesc}
           </span>
         </div>
