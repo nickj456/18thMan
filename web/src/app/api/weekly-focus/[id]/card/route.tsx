@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og'
+import { INTER_900_B64 } from './font-data'
 
 export const runtime = 'edge'
 
@@ -18,14 +19,11 @@ const TOPIC_CATEGORY: Record<string, string> = {
   'Agility & Conditioning': 'Fitness & Game Sense', 'Decision Making': 'Fitness & Game Sense', 'Game Management': 'Fitness & Game Sense',
 }
 
-async function loadFont(): Promise<ArrayBuffer | null> {
-  try {
-    const res = await fetch(new URL('./inter-900.woff2', import.meta.url))
-    if (!res.ok) return null
-    return res.arrayBuffer()
-  } catch {
-    return null
-  }
+function getFont(): ArrayBuffer {
+  const binary = atob(INTER_900_B64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes.buffer
 }
 
 function topicFontSize(topic: string): number {
@@ -41,15 +39,18 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/weekly_focuses?select=topic,description,next_topic&id=eq.${id}&limit=1`
-    const dbRes = await fetch(url, {
+
+    const dbUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/weekly_focuses?select=topic,description,next_topic&id=eq.${id}&limit=1`
+    const dbRes = await fetch(dbUrl, {
       headers: {
         apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
         Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
         Accept: 'application/json',
       },
     })
-    const rows = dbRes.ok ? await dbRes.json() as { topic: string; description: string; next_topic: string | null }[] : []
+    const rows = dbRes.ok
+      ? (await dbRes.json()) as { topic: string; description: string; next_topic: string | null }[]
+      : []
     const focus = rows[0]
 
     if (!focus) {
@@ -58,114 +59,66 @@ export async function GET(
 
     const category = TOPIC_CATEGORY[focus.topic] ?? 'Ball Handling'
     const accent = CATEGORY_ACCENT[category] ?? '#6366f1'
-
-    const weekLabel = new Date().toLocaleDateString('en-GB', {
-      day: 'numeric', month: 'long', year: 'numeric',
-    })
-
+    const weekLabel = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     const fontSize = topicFontSize(focus.topic)
-    const fontData = await loadFont()
-    const fonts = fontData
-      ? [{ name: 'Inter', data: fontData, weight: 900 as const, style: 'normal' as const }]
-      : []
+    const fontData = getFont()
 
     return new ImageResponse(
       (
-        <div
-          style={{
-            width: 1080,
-            height: 1080,
-            background: '#0a0a0a',
-            display: 'flex',
-            fontFamily: fontData ? '"Inter", sans-serif' : 'sans-serif',
-          }}
-        >
+        <div style={{ width: 1080, height: 1080, background: '#0a0a0a', display: 'flex', fontFamily: '"Inter", sans-serif' }}>
           <div style={{ width: 8, background: accent, flexShrink: 0, display: 'flex' }} />
-
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '72px 88px' }}>
 
-            <p style={{
-              color: '#3f3f46',
-              fontSize: 13,
-              fontWeight: 900,
-              letterSpacing: 6,
-              textTransform: 'uppercase',
-              margin: 0,
-            }}>
+            <p style={{ color: '#3f3f46', fontSize: 13, fontWeight: 900, letterSpacing: 6, textTransform: 'uppercase', margin: 0 }}>
               Weekly Focus
             </p>
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-
               <div style={{
-                display: 'inline-flex',
-                alignSelf: 'flex-start',
-                background: `${accent}22`,
-                border: `1.5px solid ${accent}55`,
-                color: accent,
-                fontSize: 13,
-                fontWeight: 900,
-                letterSpacing: 3,
-                textTransform: 'uppercase',
-                padding: '10px 24px',
-                borderRadius: 999,
-                marginBottom: 40,
+                display: 'inline-flex', alignSelf: 'flex-start',
+                background: `${accent}22`, border: `1.5px solid ${accent}55`,
+                color: accent, fontSize: 13, fontWeight: 900, letterSpacing: 3,
+                textTransform: 'uppercase', padding: '10px 24px', borderRadius: 999, marginBottom: 40,
               }}>
                 {category}
               </div>
-
-              <p style={{
-                color: '#ffffff',
-                fontSize,
-                fontWeight: 900,
-                margin: 0,
-                lineHeight: 1,
-              }}>
+              <p style={{ color: '#ffffff', fontSize, fontWeight: 900, margin: 0, lineHeight: 1 }}>
                 {focus.topic}
               </p>
-
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ width: '100%', height: 1, background: '#1c1c1e', marginBottom: 32, display: 'flex' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <p style={{
-                    color: '#ffffff',
-                    fontSize: 22,
-                    fontWeight: 900,
-                    letterSpacing: 5,
-                    textTransform: 'uppercase',
-                    margin: 0,
-                  }}>
+                  <p style={{ color: '#ffffff', fontSize: 22, fontWeight: 900, letterSpacing: 5, textTransform: 'uppercase', margin: 0 }}>
                     18TH MAN
                   </p>
                   <p style={{ color: '#3f3f46', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', margin: 0 }}>
                     Rugby League Coaching
                   </p>
                 </div>
-
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                   <p style={{ color: '#52525b', fontSize: 17, margin: 0 }}>{weekLabel}</p>
                   {focus.next_topic && (
-                    <p style={{ color: '#3f3f46', fontSize: 15, margin: 0 }}>
-                      Next: {focus.next_topic}
-                    </p>
+                    <p style={{ color: '#3f3f46', fontSize: 15, margin: 0 }}>Next: {focus.next_topic}</p>
                   )}
                 </div>
-
               </div>
             </div>
 
           </div>
         </div>
       ),
-      { width: 1080, height: 1080, fonts },
+      {
+        width: 1080,
+        height: 1080,
+        fonts: [{ name: 'Inter', data: fontData, weight: 900, style: 'normal' }],
+      },
     )
   } catch (err) {
     const msg = err instanceof Error ? `${err.message}\n${err.stack}` : String(err)
-    console.error('[card] render error:', msg)
-    return new Response(`Card generation failed:\n${msg}`, { status: 500 })
+    console.error('[card]', msg)
+    return new Response(`Error: ${msg}`, { status: 500 })
   }
 }
