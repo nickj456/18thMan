@@ -222,7 +222,104 @@ export interface SessionDrillItem {
   notes?: string
 }
 
-// Joined types
+// ── Squad / Players ────────────────────────────────────────────────────────
+
+export type PlayerStatus = 'available' | 'injured' | 'unavailable'
+export type MatchLocation = 'home' | 'away'
+export type MatchResult = 'win' | 'loss' | 'draw'
+
+export const RL_POSITIONS = [
+  'Fullback',
+  'Wing',
+  'Centre',
+  'Stand-off',
+  'Half-back',
+  'Hooker',
+  'Prop',
+  'Second Row',
+  'Loose Forward',
+  'Interchange',
+] as const
+
+export type RLPosition = typeof RL_POSITIONS[number]
+
+export interface Player {
+  id: string
+  group_id: string
+  created_by: string
+  name: string
+  positions: string[]
+  dob: string | null
+  avatar_url: string | null
+  status: PlayerStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface PlayerNote {
+  id: string
+  player_id: string
+  created_by: string
+  note: string
+  created_at: string
+}
+
+export interface Match {
+  id: string
+  group_id: string
+  created_by: string
+  opponent: string
+  match_date: string
+  location: MatchLocation
+  our_score: number | null
+  opponent_score: number | null
+  result: MatchResult | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PlayerMatchRating {
+  id: string
+  player_id: string
+  match_id: string
+  created_by: string
+  rating: number
+  notes: string | null
+  created_at: string
+}
+
+export interface PlayerSessionRating {
+  id: string
+  player_id: string
+  session_plan_id: string
+  created_by: string
+  attended: boolean
+  rating: number | null
+  notes: string | null
+  created_at: string
+}
+
+// Joined
+export interface PlayerNoteWithAuthor extends PlayerNote {
+  author: Pick<Profile, 'id' | 'display_name' | 'username' | 'avatar_url'>
+}
+
+export interface PlayerMatchRatingWithMatch extends PlayerMatchRating {
+  match: Pick<Match, 'id' | 'opponent' | 'match_date' | 'location' | 'result'>
+}
+
+export interface PlayerSessionRatingWithSession extends PlayerSessionRating {
+  session_plan: Pick<SessionPlan, 'id' | 'title' | 'scheduled_at'>
+}
+
+export interface PlayerWithRatings extends Player {
+  avg_match_rating: number | null
+  avg_session_rating: number | null
+  recent_notes: PlayerNoteWithAuthor[]
+}
+
+// ── Joined types ───────────────────────────────────────────────────────────
+
 export interface DrillWithRelations extends Drill {
   category: DrillCategory | null
   author: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>

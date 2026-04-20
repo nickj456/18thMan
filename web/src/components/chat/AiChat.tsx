@@ -6,13 +6,14 @@ import { DefaultChatTransport } from 'ai'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Send, Loader2, Bot, Copy, Check, BookOpen, Mic, MicOff, CalendarPlus } from 'lucide-react'
+import { Send, Loader2, Bot, Copy, Check, BookOpen, Mic, MicOff, CalendarPlus, Users } from 'lucide-react'
 import { MessageResponse } from '@/components/ai-elements/message'
 import { UpgradePrompt } from '@/components/ui/UpgradePrompt'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
 import { saveSessionFromChat } from '@/app/(app)/chat/actions'
+import { getSquadContextForGroup } from '@/app/(app)/groups/[id]/squad/actions'
 
 interface HistoryMessage {
   id: string
@@ -146,6 +147,12 @@ function isSessionPlanLike(content: string): boolean {
   )
 }
 
+interface SquadGroup {
+  id: string
+  name: string
+  playerCount: number
+}
+
 interface AiChatProps {
   conversationId: string
   initialMessages: HistoryMessage[]
@@ -154,9 +161,10 @@ interface AiChatProps {
   context?: 'sc' | 'general'
   pendingPrompt?: string
   onPendingPromptConsumed?: () => void
+  squadGroups?: SquadGroup[]
 }
 
-export function AiChat({ conversationId, initialMessages, userAvatar, userName, context, pendingPrompt, onPendingPromptConsumed }: AiChatProps) {
+export function AiChat({ conversationId, initialMessages, userAvatar, userName, context, pendingPrompt, onPendingPromptConsumed, squadGroups }: AiChatProps) {
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   // Map from user message index → drill suggestions for the following assistant reply
@@ -170,6 +178,8 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
   const router = useRouter()
 
   const [limitHit, setLimitHit] = useState(false)
+  const [squadLoading, setSquadLoading] = useState(false)
+  const [squadInjected, setSquadInjected] = useState(false)
 
   const { messages: liveMessages, status, sendMessage } = useChat({
     transport: new DefaultChatTransport({
@@ -239,6 +249,16 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
         router.push(`/sessions/${result.id}`)
       }
     })
+  }
+
+  async function handleInjectSquad(groupId: string) {
+    setSquadLoading(true)
+    const context = await getSquadContextForGroup(groupId)
+    setSquadLoading(false)
+    if (!context) return
+    lastUserTextRef.current = context
+    sendMessage({ text: context })
+    setSquadInjected(true)
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -365,6 +385,22 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
             feature="AI coaching chat"
             description="You've reached the 20 messages/day limit on the free plan. Upgrade your club for unlimited AI chat."
           />
+        )}
+        {squadGroups && squadGroups.length > 0 && !squadInjected && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] text-zinc-500 flex items-center gap-1"><Users size={11} /> Add squad context:</span>
+            {squadGroups.map(g => (
+              <button
+                key={g.id}
+                onClick={() => handleInjectSquad(g.id)}
+                disabled={squadLoading || isLoading}
+                className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
+              >
+                {squadLoading ? <Loader2 size={10} className="animate-spin" /> : <Users size={10} />}
+                {g.name} ({g.playerCount})
+              </button>
+            ))}
+          </div>
         )}
         <div className="flex gap-2 items-end">
           <div className="flex-1 relative">
