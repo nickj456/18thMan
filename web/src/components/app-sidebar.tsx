@@ -30,6 +30,7 @@ import {
   Headphones,
   Video,
   ClipboardList,
+  Target,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -57,6 +58,7 @@ const navItems = [
   { href: '/chat', label: 'Coach Chat', icon: MessageSquare },
   { href: '/clubs', label: 'My Club', icon: Building2 },
   { href: '/groups', label: 'My Groups', icon: Users2 },
+  { href: '/weekly-focus', label: 'Weekly Focus', icon: Target },
   { href: '/podcasts', label: 'Podcasts', icon: Headphones },
 ]
 

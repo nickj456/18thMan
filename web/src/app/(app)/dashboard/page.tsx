@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { PenTool, CalendarDays, MessageSquare, Sparkles, ArrowRight, Clock, Users, BookOpen, LayoutList, ChevronRight, Bell, Star, Building2, Users2, MessageCircle, UserPlus, Wand2 } from 'lucide-react'
 import { OnboardingChecklist } from './OnboardingChecklist'
+import { FocusWidget } from '@/components/weekly-focus/FocusWidget'
 
 export const metadata = { title: 'Dashboard — 18th Man' }
 
@@ -506,6 +507,23 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
+  // Weekly focus for the club
+  let weeklyFocus: { id: string; topic: string; description: string; next_topic: string | null; drill_ids: string[] } | null = null
+  if (profile?.club_id) {
+    const d = new Date()
+    const day = d.getDay()
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+    d.setDate(diff)
+    const monday = d.toISOString().split('T')[0]
+    const { data: wf } = await supabase
+      .from('weekly_focuses')
+      .select('id, topic, description, next_topic, drill_ids')
+      .eq('club_id', profile.club_id)
+      .eq('week_start', monday)
+      .maybeSingle()
+    weeklyFocus = wf
+  }
+
   // Onboarding data — fetched in parallel, lightweight
   const [drillCountRes, sessionCountRes] = await Promise.all([
     supabase.from('drills').select('id', { count: 'exact', head: true }).eq('author_id', user.id),
@@ -575,6 +593,9 @@ export default async function DashboardPage() {
           <ArrowRight size={16} className="text-indigo-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
         </Link>
       )}
+
+      {/* Weekly Focus widget */}
+      {profile?.club_id && <FocusWidget focus={weeklyFocus} />}
 
       {/* Quick actions ── static, no DB */}
       <QuickActions />

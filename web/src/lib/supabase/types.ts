@@ -444,3 +444,49 @@ export interface GamePlan {
   created_at: string
   updated_at: string
 }
+
+// ── Weekly Focus ──────────────────────────────────────────────────────────────
+
+export interface WeeklyFocus {
+  id: string
+  club_id: string
+  week_start: string
+  topic: string
+  description: string
+  drill_ids: string[]
+  next_topic: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface WeeklyFocusComment {
+  id: string
+  focus_id: string
+  user_id: string
+  content: string
+  created_at: string
+}
+
+export const FOCUS_TOPICS = [
+  { category: 'Attacking', label: 'Offloading' },
+  { category: 'Attacking', label: 'Support Play' },
+  { category: 'Attacking', label: 'Line Breaks & Edge Play' },
+  { category: 'Attacking', label: 'Dummy Half Play' },
+  { category: 'Defensive', label: 'Tackle Technique' },
+  { category: 'Defensive', label: 'Line Speed & Drift Defence' },
+  { category: 'Defensive', label: 'Marker Defence' },
+  { category: 'Defensive', label: 'Goal Line Defence' },
+  { category: 'Ball Handling', label: 'Pass Accuracy' },
+  { category: 'Ball Handling', label: 'Handling Under Pressure' },
+  { category: 'Ball Handling', label: 'Catching High Balls' },
+  { category: 'Set Piece & Kicking', label: 'Kick-Off Receipts' },
+  { category: 'Set Piece & Kicking', label: 'Grubber Kicks' },
+  { category: 'Set Piece & Kicking', label: 'Bomb Kicks' },
+  { category: 'Set Piece & Kicking', label: 'Scrum Technique' },
+  { category: 'Fitness & Game Sense', label: 'Agility & Conditioning' },
+  { category: 'Fitness & Game Sense', label: 'Decision Making' },
+  { category: 'Fitness & Game Sense', label: 'Game Management' },
+] as const
+
+export type FocusTopic = typeof FOCUS_TOPICS[number]['label']
