@@ -146,8 +146,14 @@ create policy "players_delete"
   on public.players for delete
   to authenticated
   using (
-    created_by = auth.uid()
-    or exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+    exists (
+      select 1
+      from public.coaching_groups g
+      join public.profiles p on p.club_id = g.club_id
+      where g.id = players.group_id
+        and p.id = auth.uid()
+        and p.role in ('coach', 'admin')
+    )
   );
 
 -- player_notes: same club members read; coaches insert; note author or admin delete

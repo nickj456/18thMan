@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { AddNoteForm } from './AddNoteForm'
 import { DeleteNoteButton } from './DeleteNoteButton'
+import { DeletePlayerButton } from './DeletePlayerButton'
 import { MatchRatingForm, SessionRatingForm } from './RatingForm'
 import { PlayerStatusToggle } from '../PlayerStatusToggle'
 import type { Player, Match } from '@/lib/supabase/types'
@@ -143,7 +144,10 @@ export default async function PlayerDetailPage({
           </div>
         </div>
         {canManage && (
-          <PlayerStatusToggle groupId={groupId} playerId={playerId} current={player.status} />
+          <div className="flex flex-col items-end gap-2">
+            <PlayerStatusToggle groupId={groupId} playerId={playerId} current={player.status} />
+            <DeletePlayerButton groupId={groupId} playerId={playerId} />
+          </div>
         )}
       </div>
 
