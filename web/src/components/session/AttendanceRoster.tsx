@@ -1,6 +1,6 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { toggleAttendance } from '@/app/(app)/groups/[id]/squad/actions'
 
@@ -42,20 +42,21 @@ function PlayerToggle({
   sessionPlanId: string
   player: Player
 }) {
-  const [isPending, startTransition] = useTransition()
-  const attended = player.attended ?? true
+  const [, startTransition] = useTransition()
+  const [attended, setAttended] = useState(player.attended ?? true)
 
   function handleToggle() {
+    const next = !attended
+    setAttended(next)
     startTransition(async () => {
-      await toggleAttendance(groupId, player.id, sessionPlanId, !attended)
+      await toggleAttendance(groupId, player.id, sessionPlanId, next)
     })
   }
 
   return (
     <button
       onClick={handleToggle}
-      disabled={isPending}
-      className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all disabled:opacity-60 ${
+      className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
         attended
           ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20'
           : 'bg-zinc-800/60 border-zinc-700/50 text-zinc-500 hover:bg-zinc-800'
