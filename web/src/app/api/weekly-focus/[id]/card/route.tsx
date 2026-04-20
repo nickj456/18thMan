@@ -19,6 +19,28 @@ const TOPIC_CATEGORY: Record<string, string> = {
   'Agility & Conditioning': 'Fitness & Game Sense', 'Decision Making': 'Fitness & Game Sense', 'Game Management': 'Fitness & Game Sense',
 }
 
+async function loadFont(): Promise<ArrayBuffer | null> {
+  try {
+    // Fetch the CSS to get the actual woff2 URL from Google Fonts
+    const css = await fetch(
+      'https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap',
+      { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' } },
+    ).then(r => r.text())
+    const url = css.match(/src: url\((.+?)\) format\('woff2'\)/)?.[1]
+    if (!url) return null
+    return fetch(url).then(r => r.arrayBuffer())
+  } catch {
+    return null
+  }
+}
+
+function topicFontSize(topic: string): number {
+  if (topic.length <= 10) return 128
+  if (topic.length <= 15) return 108
+  if (topic.length <= 20) return 88
+  return 68
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -43,12 +65,14 @@ export async function GET(
     day: 'numeric', month: 'long', year: 'numeric',
   })
 
-  const description = focus.description.length > 160
-    ? focus.description.slice(0, 157) + '\u2026'
-    : focus.description
+  const fontSize = topicFontSize(focus.topic)
+  const fontData = await loadFont()
 
-  // Reduce font size for long topic names
-  const topicFontSize = focus.topic.length > 20 ? 68 : focus.topic.length > 14 ? 80 : 96
+  const imageOptions: ConstructorParameters<typeof ImageResponse>[1] = {
+    width: 1080,
+    height: 1080,
+    ...(fontData ? { fonts: [{ name: 'Inter', data: fontData, weight: 900, style: 'normal' as const }] } : {}),
+  }
 
   return new ImageResponse(
     (
@@ -56,107 +80,102 @@ export async function GET(
         style={{
           width: 1080,
           height: 1080,
-          background: '#09090b',
+          background: '#0a0a0a',
           display: 'flex',
-          flexDirection: 'column',
-          fontFamily: 'sans-serif',
+          fontFamily: fontData ? '"Inter", sans-serif' : 'sans-serif',
         }}
       >
-        {/* Top accent bar */}
-        <div style={{ width: '100%', height: 8, background: accent, display: 'flex' }} />
+        {/* Left accent bar */}
+        <div style={{ width: 8, background: accent, flexShrink: 0, display: 'flex' }} />
 
-        {/* Main content */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          flex: 1,
-          padding: '64px 80px',
-        }}>
+        {/* Content */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '72px 88px' }}>
 
-          {/* Header: brand + week */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <p style={{ color: '#ffffff', fontSize: 24, fontWeight: 900, letterSpacing: 4, textTransform: 'uppercase', margin: 0 }}>
-                18TH MAN
-              </p>
-              <p style={{ color: '#52525b', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', margin: 0 }}>
-                Rugby League Coaching
-              </p>
-            </div>
-            <p style={{ color: '#52525b', fontSize: 18, margin: 0 }}>
-              {weekLabel}
-            </p>
-          </div>
+          {/* Top label */}
+          <p style={{
+            color: '#3f3f46',
+            fontSize: 13,
+            fontWeight: 900,
+            letterSpacing: 6,
+            textTransform: 'uppercase',
+            margin: 0,
+          }}>
+            Weekly Focus
+          </p>
 
-          {/* Divider */}
-          <div style={{ width: '100%', height: 1, background: '#27272a', marginTop: 48, marginBottom: 56, display: 'flex' }} />
+          {/* Hero: category + topic, vertically centred */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 0 }}>
 
-          {/* Category + "Weekly Focus" label */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 28 }}>
+            {/* Category pill */}
             <div style={{
-              background: accent,
-              color: '#09090b',
-              fontSize: 12,
-              fontWeight: 800,
-              letterSpacing: 2,
+              display: 'inline-flex',
+              alignSelf: 'flex-start',
+              background: `${accent}22`,
+              border: `1.5px solid ${accent}55`,
+              color: accent,
+              fontSize: 13,
+              fontWeight: 900,
+              letterSpacing: 3,
               textTransform: 'uppercase',
-              padding: '8px 20px',
+              padding: '10px 24px',
               borderRadius: 999,
-              display: 'flex',
+              marginBottom: 40,
             }}>
               {category}
             </div>
-            <p style={{ color: '#3f3f46', fontSize: 15, letterSpacing: 3, textTransform: 'uppercase', fontWeight: 600, margin: 0 }}>
-              Weekly Focus
+
+            {/* Topic — the hero */}
+            <p style={{
+              color: '#ffffff',
+              fontSize,
+              fontWeight: 900,
+              margin: 0,
+              lineHeight: 1.0,
+              letterSpacing: -2,
+            }}>
+              {focus.topic}
             </p>
+
           </div>
 
-          {/* Topic — hero */}
-          <p style={{
-            color: '#ffffff',
-            fontSize: topicFontSize,
-            fontWeight: 900,
-            margin: 0,
-            lineHeight: 1.05,
-            letterSpacing: -1,
-          }}>
-            {focus.topic}
-          </p>
+          {/* Bottom row */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ width: '100%', height: 1, background: '#1c1c1e', marginBottom: 32, display: 'flex' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
 
-          {/* Description */}
-          <p style={{
-            color: '#71717a',
-            fontSize: 24,
-            margin: 0,
-            marginTop: 40,
-            lineHeight: 1.6,
-            maxWidth: 900,
-          }}>
-            {description}
-          </p>
+              {/* Brand */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <p style={{
+                  color: '#ffffff',
+                  fontSize: 22,
+                  fontWeight: 900,
+                  letterSpacing: 5,
+                  textTransform: 'uppercase',
+                  margin: 0,
+                }}>
+                  18TH MAN
+                </p>
+                <p style={{ color: '#3f3f46', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', margin: 0 }}>
+                  Rugby League Coaching
+                </p>
+              </div>
 
-          {/* Spacer */}
-          <div style={{ flex: 1, display: 'flex' }} />
+              {/* Week + next week */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                <p style={{ color: '#52525b', fontSize: 17, margin: 0 }}>{weekLabel}</p>
+                {focus.next_topic && (
+                  <p style={{ color: '#3f3f46', fontSize: 15, margin: 0 }}>
+                    Next: {focus.next_topic}
+                  </p>
+                )}
+              </div>
 
-          {/* Next week teaser */}
-          {focus.next_topic ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <p style={{ color: '#3f3f46', fontSize: 13, margin: 0, textTransform: 'uppercase', letterSpacing: 3, fontWeight: 600 }}>
-                Next Week
-              </p>
-              <p style={{ color: '#52525b', fontSize: 24, margin: 0, fontWeight: 600 }}>
-                {focus.next_topic}
-              </p>
             </div>
-          ) : (
-            <div style={{ display: 'flex' }} />
-          )}
-        </div>
+          </div>
 
-        {/* Bottom accent bar */}
-        <div style={{ width: '100%', height: 4, background: accent, display: 'flex', opacity: 0.3 }} />
+        </div>
       </div>
     ),
-    { width: 1080, height: 1080 },
+    imageOptions,
   )
 }
