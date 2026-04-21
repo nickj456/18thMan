@@ -332,6 +332,56 @@ export async function sendLeadMagnetEmail(
   )
 }
 
+/** Sent to Nick when a coach submits a video analysis request */
+export async function sendVideoAnalysisRequestEmail(
+  to: string,
+  params: {
+    coachName: string
+    coachEmail: string
+    serviceType: 'match-review' | 'opposition-scouting'
+    turnaround: 'standard' | 'express'
+    subject: string
+    matchDate: string
+    opposition: string
+    competition: string
+    videoLink: string
+    notes: string
+    subscriptionTier: string
+    price: number
+    memberDiscount: boolean
+  },
+): Promise<EmailResult> {
+  const serviceName = params.serviceType === 'match-review' ? 'Match Review — Individual Player' : 'Opposition Scouting'
+  const turnaroundLabel = params.turnaround === 'express' ? 'Express (24hr)' : 'Standard (72hr)'
+  const discountNote = params.memberDiscount
+    ? `<tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;"><span style="color:#e8560a;margin-right:10px;">★</span><span style="color:#d4d4d4;font-size:14px;">Member — apply coupon <strong style="color:#ffffff;">18THMAN_MEMBER</strong> (£10 off)</span></td></tr>`
+    : ''
+
+  return send(
+    to,
+    `New Video Analysis Request — ${serviceName} (${turnaroundLabel})`,
+    layout(`
+      ${heading('New Video Analysis Request')}
+      ${para(`<strong style="color:#ffffff;">${params.coachName}</strong> has submitted a request.`)}
+      ${divider()}
+      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;margin:20px 0;">
+        <tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;"><span style="color:#a1a1aa;font-size:13px;display:inline-block;width:130px;">Service</span><span style="color:#ffffff;font-size:14px;font-weight:700;">${serviceName}</span></td></tr>
+        <tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;"><span style="color:#a1a1aa;font-size:13px;display:inline-block;width:130px;">Turnaround</span><span style="color:#ffffff;font-size:14px;">${turnaroundLabel}</span></td></tr>
+        <tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;"><span style="color:#a1a1aa;font-size:13px;display:inline-block;width:130px;">Price to charge</span><span style="color:#e8560a;font-size:14px;font-weight:700;">£${params.price}</span></td></tr>
+        ${discountNote}
+        <tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;"><span style="color:#a1a1aa;font-size:13px;display:inline-block;width:130px;">Subject</span><span style="color:#d4d4d4;font-size:14px;">${params.subject}</span></td></tr>
+        <tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;"><span style="color:#a1a1aa;font-size:13px;display:inline-block;width:130px;">Match date</span><span style="color:#d4d4d4;font-size:14px;">${params.matchDate}</span></td></tr>
+        <tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;"><span style="color:#a1a1aa;font-size:13px;display:inline-block;width:130px;">Opposition</span><span style="color:#d4d4d4;font-size:14px;">${params.opposition}</span></td></tr>
+        <tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;"><span style="color:#a1a1aa;font-size:13px;display:inline-block;width:130px;">Competition</span><span style="color:#d4d4d4;font-size:14px;">${params.competition}</span></td></tr>
+        <tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;"><span style="color:#a1a1aa;font-size:13px;display:inline-block;width:130px;">Video link</span><a href="${params.videoLink}" style="color:#e8560a;font-size:14px;word-break:break-all;">${params.videoLink}</a></td></tr>
+        ${params.notes ? `<tr><td style="padding:10px 16px;"><span style="color:#a1a1aa;font-size:13px;display:inline-block;width:130px;">Notes</span><span style="color:#d4d4d4;font-size:14px;">${params.notes}</span></td></tr>` : ''}
+      </table>
+      ${divider()}
+      ${para(`Reply to <a href="mailto:${params.coachEmail}" style="color:#e8560a;">${params.coachEmail}</a> with the Stripe payment link to get started.`)}
+    `)
+  )
+}
+
 /** Sent when a Coach Pro or Club subscription is activated */
 export async function sendSubscriptionConfirmationEmail(
   to: string,

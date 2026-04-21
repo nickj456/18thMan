@@ -280,6 +280,7 @@ export default async function LandingPage() {
               <a href="#how-it-works" className="nav-link" style={{ textDecoration: 'none' }}>How It Works</a>
               <a href="#community" className="nav-link" style={{ textDecoration: 'none' }}>Community</a>
               <a href="#pricing" className="nav-link" style={{ textDecoration: 'none' }}>Pricing</a>
+              <a href="#services" className="nav-link" style={{ textDecoration: 'none' }}>Services</a>
             </div>
 
             {/* Auth CTA */}
@@ -1426,6 +1427,200 @@ export default async function LandingPage() {
             <p style={{ textAlign: 'center', marginTop: '2.5rem', fontSize: '0.8rem', color: 'var(--text-dim)' }}>
               Prices in GBP. Club plan covers all coaches in one club — no per-seat fees. Cancel anytime.
             </p>
+          </div>
+        </section>
+
+        {/* ── SERVICES ────────────────────────────────────────────── */}
+        <section
+          id="services"
+          style={{
+            padding: '7rem 2rem',
+            position: 'relative',
+          }}
+        >
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 100%, rgba(232,86,10,0.06) 0%, transparent 60%)', pointerEvents: 'none' }} />
+          <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
+
+            <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
+              <span className="section-label">Expert Analysis</span>
+              <h2
+                className="lp-display"
+                style={{
+                  fontWeight: 800,
+                  fontStyle: 'italic',
+                  fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+                  lineHeight: 0.95,
+                  textTransform: 'uppercase',
+                  color: 'var(--text)',
+                  marginTop: '1rem',
+                }}
+              >
+                We see what<br />
+                <span style={{ color: 'var(--ember)' }}>others won&apos;t.</span>
+              </h2>
+              <p style={{ marginTop: '1.25rem', fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, maxWidth: '520px', margin: '1.25rem auto 0' }}>
+                Expert video analysis from a professional rugby league coach. Submit your footage, get a detailed written report back within your chosen timeframe.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', alignItems: 'start' }}>
+
+              {/* Match Review */}
+              <div className="feature-card" style={{ position: 'relative', borderColor: 'rgba(232,86,10,0.25)' }}>
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Match Review</p>
+                  <h3 className="lp-heading" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', lineHeight: 1.2 }}>Individual Player Analysis</h3>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                    Send us footage of your player in training or a competitive match. We&apos;ll analyse their performance and deliver a focused written report packed with coaching insights.
+                  </p>
+                </div>
+
+                <div style={{ height: '1px', background: 'var(--border-subtle)', marginBottom: '1.25rem' }} />
+
+                {/* Pricing tiers */}
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 120px', background: 'var(--surface2)', borderRadius: '10px', padding: '1rem', border: '1px solid var(--border-subtle)' }}>
+                    <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '0.25rem' }}>Standard</p>
+                    <p className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '2rem', color: 'var(--text)', lineHeight: 1 }}>£50</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>Delivered in 72hrs</p>
+                  </div>
+                  <div style={{ flex: '1 1 120px', background: 'rgba(232,86,10,0.08)', borderRadius: '10px', padding: '1rem', border: '1px solid rgba(232,86,10,0.25)', position: 'relative' }}>
+                    <span style={{ position: 'absolute', top: '-10px', right: '10px', background: 'var(--ember)', color: '#fff', fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '20px' }}>Express</span>
+                    <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.25rem' }}>Express</p>
+                    <p className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '2rem', color: 'var(--text)', lineHeight: 1 }}>£80</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>Delivered in 24hrs</p>
+                  </div>
+                </div>
+
+                {[
+                  'Written PDF report delivered by email',
+                  'Key strengths and areas to improve',
+                  'Specific coaching points and cues',
+                  'Zoom call available on request',
+                ].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--ember)', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                  </div>
+                ))}
+
+                <div style={{ marginTop: '1.5rem', padding: '0.75rem 1rem', background: 'rgba(232,86,10,0.06)', border: '1px solid rgba(232,86,10,0.2)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--ember)' }}>
+                  ★ Coach Pro &amp; Club members save £10 on every request
+                </div>
+
+                <div style={{ marginTop: '1.25rem' }}>
+                  <Link href={user ? '/analysis' : '/signup'} className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                    {user ? 'Request Analysis →' : 'Get Started →'}
+                  </Link>
+                </div>
+              </div>
+
+              {/* Opposition Scouting */}
+              <div
+                className="feature-card"
+                style={{
+                  position: 'relative',
+                  borderColor: 'rgba(232,86,10,0.35)',
+                  background: 'linear-gradient(135deg, var(--surface2) 0%, rgba(232,86,10,0.05) 100%)',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '-12px',
+                    right: '1.5rem',
+                    background: 'rgba(232,86,10,0.15)',
+                    color: 'var(--ember)',
+                    border: '1px solid rgba(232,86,10,0.3)',
+                    fontFamily: 'var(--font-barlow)',
+                    fontWeight: 700,
+                    fontSize: '0.7rem',
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    padding: '4px 14px',
+                    borderRadius: '20px',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Most Detailed
+                </div>
+
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Opposition Scouting</p>
+                  <h3 className="lp-heading" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', lineHeight: 1.2 }}>Pre-Match Opponent Analysis</h3>
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                    Share footage of your upcoming opposition and we&apos;ll break down their attacking patterns, defensive structures, set plays, and key threats — giving you the edge before kick-off.
+                  </p>
+                </div>
+
+                <div style={{ height: '1px', background: 'var(--border-subtle)', marginBottom: '1.25rem' }} />
+
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 120px', background: 'var(--surface2)', borderRadius: '10px', padding: '1rem', border: '1px solid var(--border-subtle)' }}>
+                    <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '0.25rem' }}>Standard</p>
+                    <p className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '2rem', color: 'var(--text)', lineHeight: 1 }}>£75</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>Delivered in 72hrs</p>
+                  </div>
+                  <div style={{ flex: '1 1 120px', background: 'rgba(232,86,10,0.08)', borderRadius: '10px', padding: '1rem', border: '1px solid rgba(232,86,10,0.25)', position: 'relative' }}>
+                    <span style={{ position: 'absolute', top: '-10px', right: '10px', background: 'var(--ember)', color: '#fff', fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '20px' }}>Express</span>
+                    <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.25rem' }}>Express</p>
+                    <p className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '2rem', color: 'var(--text)', lineHeight: 1 }}>£110</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>Delivered in 24hrs</p>
+                  </div>
+                </div>
+
+                {[
+                  'Attacking shape and patterns of play',
+                  'Defensive structure and tendencies',
+                  'Set play identification and key threats',
+                  'Written PDF report delivered by email',
+                  'Zoom call available on request',
+                ].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--ember)', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                  </div>
+                ))}
+
+                <div style={{ marginTop: '1.5rem', padding: '0.75rem 1rem', background: 'rgba(232,86,10,0.06)', border: '1px solid rgba(232,86,10,0.2)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--ember)' }}>
+                  ★ Coach Pro &amp; Club members save £10 on every request
+                </div>
+
+                <div style={{ marginTop: '1.25rem' }}>
+                  <Link href={user ? '/analysis' : '/signup'} className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                    {user ? 'Request Scouting →' : 'Get Started →'}
+                  </Link>
+                </div>
+              </div>
+
+            </div>
+
+            {/* How to submit */}
+            <div style={{ marginTop: '3rem', background: 'var(--surface)', border: '1px solid var(--border-subtle)', borderRadius: '16px', padding: '2rem' }}>
+              <h4 className="lp-heading" style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', marginBottom: '1.25rem' }}>How to share your footage</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
+                <div>
+                  <p style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>YouTube (recommended)</p>
+                  <ol style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                    <li>Upload your video to YouTube</li>
+                    <li>Set visibility to <strong style={{ color: 'var(--text)' }}>Unlisted</strong></li>
+                    <li>Copy the link and paste it in the form</li>
+                  </ol>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>Unlisted means only people with the link can view it — it won&apos;t appear in search results.</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Google Drive</p>
+                  <ol style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.8 }}>
+                    <li>Upload the video to Google Drive</li>
+                    <li>Right-click → <strong style={{ color: 'var(--text)' }}>Share</strong></li>
+                    <li>Change access to <strong style={{ color: 'var(--text)' }}>Anyone with the link</strong></li>
+                    <li>Copy and paste the link in the form</li>
+                  </ol>
+                </div>
+              </div>
+              <p style={{ marginTop: '1.25rem', fontSize: '0.82rem', color: 'var(--text-dim)', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
+                Questions? Email us at <a href="mailto:analysis@18thman.app" style={{ color: 'var(--ember)', textDecoration: 'none' }}>analysis@18thman.app</a>
+              </p>
+            </div>
+
           </div>
         </section>
 
