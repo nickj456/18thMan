@@ -123,10 +123,11 @@ export async function POST(req: NextRequest) {
         const turnaround = m.turnaround as 'standard' | 'express'
         const amountPaid = session.amount_total ? session.amount_total / 100 : 0
 
+        const coachEmail = m.coach_email || session.customer_details?.email || ''
         const notifyEmail = process.env.ANALYSIS_NOTIFY_EMAIL ?? 'nick.johnsonn@gmail.com'
         await sendVideoAnalysisRequestEmail(notifyEmail, {
-          coachName: m.coach_name ?? 'Unknown',
-          coachEmail: m.coach_email ?? '',
+          coachName: m.coach_name || session.customer_details?.name || 'Unknown',
+          coachEmail,
           serviceType,
           turnaround,
           subject: m.subject ?? '',

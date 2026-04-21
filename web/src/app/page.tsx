@@ -1508,7 +1508,7 @@ export default async function LandingPage() {
                 </div>
 
                 <div style={{ marginTop: '1.25rem' }}>
-                  <Link href={user ? '/analysis' : '/signup'} className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                  <Link href="/analysis" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
                     {user ? 'Request Analysis →' : 'Get Started →'}
                   </Link>
                 </div>

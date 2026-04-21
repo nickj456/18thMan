@@ -15,13 +15,21 @@ export async function submitAnalysisRequest(
 ): Promise<{ checkoutUrl?: string; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated' }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('display_name, subscription_tier')
-    .eq('id', user.id)
-    .single()
+  let isMember = false
+  let coachName = ''
+  let coachEmail = ''
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, subscription_tier')
+      .eq('id', user.id)
+      .single()
+    isMember = !!(profile?.subscription_tier && profile.subscription_tier !== 'free')
+    coachName = (profile?.display_name ?? user.email ?? '').slice(0, 490)
+    coachEmail = (user.email ?? '').slice(0, 490)
+  }
 
   const serviceType = formData.get('serviceType') as string
   const turnaround = formData.get('turnaround') as string
@@ -39,7 +47,6 @@ export async function submitAnalysisRequest(
   const priceId = PRICE_IDS[`${serviceType}-${turnaround}`]
   if (!priceId) return { error: 'Invalid service selection.' }
 
-  const isMember = profile?.subscription_tier && profile.subscription_tier !== 'free'
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
   const stripe = getStripe()
 
@@ -47,7 +54,7 @@ export async function submitAnalysisRequest(
     mode: 'payment',
     line_items: [{ price: priceId, quantity: 1 }],
     ...(isMember ? { discounts: [{ coupon: '18THMAN_MEMBER' }] } : {}),
-    customer_email: user.email,
+    ...(coachEmail ? { customer_email: coachEmail } : {}),
     metadata: {
       type: 'analysis',
       service_type: serviceType,
@@ -58,9 +65,9 @@ export async function submitAnalysisRequest(
       competition,
       video_link: videoLink.slice(0, 490),
       notes: notes.slice(0, 490),
-      user_id: user.id,
-      coach_name: (profile?.display_name ?? user.email ?? '').slice(0, 490),
-      coach_email: (user.email ?? '').slice(0, 490),
+      user_id: user?.id ?? '',
+      coach_name: coachName,
+      coach_email: coachEmail,
     },
     success_url: `${siteUrl}/analysis?paid=1`,
     cancel_url: `${siteUrl}/analysis`,

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { submitAnalysisRequest } from './actions'
 
 const PRICES = {
@@ -15,10 +16,11 @@ type Turnaround = 'standard' | 'express'
 
 interface AnalysisFormProps {
   isMember: boolean
+  isLoggedIn: boolean
   paid?: boolean
 }
 
-export function AnalysisForm({ isMember, paid }: AnalysisFormProps) {
+export function AnalysisForm({ isMember, isLoggedIn, paid }: AnalysisFormProps) {
   const [serviceType, setServiceType] = useState<ServiceType>('match-review')
   const [turnaround, setTurnaround] = useState<Turnaround>('standard')
   const [pending, setPending] = useState(false)
@@ -62,6 +64,16 @@ export function AnalysisForm({ isMember, paid }: AnalysisFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-xl border bg-card p-6 space-y-6">
+
+      {/* Guest member discount nudge */}
+      {!isLoggedIn && (
+        <div className="flex items-center gap-2 text-sm bg-muted/40 border border-border rounded-lg px-4 py-2.5">
+          <span className="text-muted-foreground">★ Save £10 with a member account —</span>
+          <Link href="/login" className="text-[#e8560a] font-semibold hover:underline">log in</Link>
+          <span className="text-muted-foreground">or</span>
+          <Link href="/signup" className="text-[#e8560a] font-semibold hover:underline">sign up free</Link>
+        </div>
+      )}
 
       {/* Service type */}
       <div>

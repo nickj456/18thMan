@@ -12,13 +12,15 @@ export default async function AnalysisPage({ searchParams }: PageProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('subscription_tier')
-    .eq('id', user!.id)
-    .single()
-
-  const isMember = profile?.subscription_tier && profile.subscription_tier !== 'free'
+  let isMember = false
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('id', user.id)
+      .single()
+    isMember = !!(profile?.subscription_tier && profile.subscription_tier !== 'free')
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -36,9 +38,8 @@ export default async function AnalysisPage({ searchParams }: PageProps) {
         )}
       </div>
 
-      <AnalysisForm isMember={!!isMember} paid={paid === '1'} />
+      <AnalysisForm isMember={isMember} isLoggedIn={!!user} paid={paid === '1'} />
 
-      {/* How to share footage */}
       {!paid && (
         <div className="mt-8 rounded-xl border bg-card p-6">
           <h2 className="text-sm font-bold tracking-widest uppercase text-[#e8560a] mb-4">How to share your footage</h2>
