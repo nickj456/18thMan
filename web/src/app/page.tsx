@@ -234,6 +234,19 @@ export default async function LandingPage() {
           .hero-grid { grid-template-columns: 1fr 1fr; }
           .hero-canvas-col { display: block; }
         }
+
+        .services-section { padding: 7rem 2rem; }
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 2rem; align-items: stretch; }
+        .service-card-title { font-size: 1.5rem; }
+        .service-price { font-size: 2rem; }
+
+        @media (max-width: 639px) {
+          .services-section { padding: 4rem 1.25rem; }
+          .services-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+          .feature-card { padding: 1.5rem; }
+          .service-card-title { font-size: 1.25rem; }
+          .service-price { font-size: 1.75rem; }
+        }
       `}</style>
 
       <div
@@ -1433,8 +1446,8 @@ export default async function LandingPage() {
         {/* ── SERVICES ────────────────────────────────────────────── */}
         <section
           id="services"
+          className="services-section"
           style={{
-            padding: '7rem 2rem',
             position: 'relative',
           }}
         >
@@ -1463,13 +1476,13 @@ export default async function LandingPage() {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', alignItems: 'stretch' }}>
+            <div className="services-grid">
 
               {/* Match Review */}
               <div className="feature-card" style={{ position: 'relative', borderColor: 'rgba(232,86,10,0.25)', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ marginBottom: '1.25rem' }}>
                   <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Match Review</p>
-                  <h3 className="lp-heading" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', lineHeight: 1.2 }}>Individual Player Analysis</h3>
+                  <h3 className="lp-heading service-card-title" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', lineHeight: 1.2 }}>Individual Player Analysis</h3>
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                     Send me footage of your player in a match or a training session. I&apos;ll watch it properly, tell you exactly what they&apos;re doing well and where they&apos;re costing your team, and give you something you can act on in your next session.
                   </p>
@@ -1481,13 +1494,13 @@ export default async function LandingPage() {
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
                   <div style={{ flex: '1 1 120px', background: 'var(--surface2)', borderRadius: '10px', padding: '1rem', border: '1px solid var(--border-subtle)' }}>
                     <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '0.25rem' }}>Standard</p>
-                    <p className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '2rem', color: 'var(--text)', lineHeight: 1 }}>£50</p>
+                    <p className="lp-display service-price" style={{ fontWeight: 800, fontStyle: 'italic', color: 'var(--text)', lineHeight: 1 }}>£50</p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>Delivered in 72hrs</p>
                   </div>
                   <div style={{ flex: '1 1 120px', background: 'rgba(232,86,10,0.08)', borderRadius: '10px', padding: '1rem', border: '1px solid rgba(232,86,10,0.25)', position: 'relative' }}>
                     <span style={{ position: 'absolute', top: '-10px', right: '10px', background: 'var(--ember)', color: '#fff', fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '20px' }}>Express</span>
                     <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.25rem' }}>Express</p>
-                    <p className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '2rem', color: 'var(--text)', lineHeight: 1 }}>£80</p>
+                    <p className="lp-display service-price" style={{ fontWeight: 800, fontStyle: 'italic', color: 'var(--text)', lineHeight: 1 }}>£80</p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>Delivered in 24hrs</p>
                   </div>
                 </div>
@@ -1549,7 +1562,7 @@ export default async function LandingPage() {
 
                 <div style={{ marginBottom: '1.25rem' }}>
                   <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Opposition Scouting</p>
-                  <h3 className="lp-heading" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', lineHeight: 1.2 }}>Pre-Match Opponent Analysis</h3>
+                  <h3 className="lp-heading service-card-title" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', lineHeight: 1.2 }}>Pre-Match Opponent Analysis</h3>
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                     I&apos;ve played against the best and the worst at every level. Give me footage of your next opponents and I&apos;ll break down their defensive shape, their set-play calls, where they go under pressure, and where the edge is. You&apos;ll walk into that dressing room knowing more about them than most of their own coaches do.
                   </p>
@@ -1560,13 +1573,13 @@ export default async function LandingPage() {
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
                   <div style={{ flex: '1 1 120px', background: 'var(--surface2)', borderRadius: '10px', padding: '1rem', border: '1px solid var(--border-subtle)' }}>
                     <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-dim)', marginBottom: '0.25rem' }}>Standard</p>
-                    <p className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '2rem', color: 'var(--text)', lineHeight: 1 }}>£75</p>
+                    <p className="lp-display service-price" style={{ fontWeight: 800, fontStyle: 'italic', color: 'var(--text)', lineHeight: 1 }}>£75</p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>Delivered in 72hrs</p>
                   </div>
                   <div style={{ flex: '1 1 120px', background: 'rgba(232,86,10,0.08)', borderRadius: '10px', padding: '1rem', border: '1px solid rgba(232,86,10,0.25)', position: 'relative' }}>
                     <span style={{ position: 'absolute', top: '-10px', right: '10px', background: 'var(--ember)', color: '#fff', fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 8px', borderRadius: '20px' }}>Express</span>
                     <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.25rem' }}>Express</p>
-                    <p className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '2rem', color: 'var(--text)', lineHeight: 1 }}>£110</p>
+                    <p className="lp-display service-price" style={{ fontWeight: 800, fontStyle: 'italic', color: 'var(--text)', lineHeight: 1 }}>£110</p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>Delivered in 24hrs</p>
                   </div>
                 </div>
