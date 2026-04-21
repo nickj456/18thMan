@@ -37,7 +37,7 @@ export async function submitAnalysisRequest(
   }
 
   const priceId = PRICE_IDS[`${serviceType}-${turnaround}`]
-  if (!priceId) return { error: 'Invalid service selection.' }
+  if (!priceId) return { error: `Debug: key="${serviceType}-${turnaround}" ids=${JSON.stringify(Object.fromEntries(Object.entries(PRICE_IDS).map(([k,v])=>[k,v?'SET':'EMPTY'])))}` }
 
   const isMember = profile?.subscription_tier && profile.subscription_tier !== 'free'
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
