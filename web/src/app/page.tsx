@@ -1463,10 +1463,10 @@ export default async function LandingPage() {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', alignItems: 'stretch' }}>
 
               {/* Match Review */}
-              <div className="feature-card" style={{ position: 'relative', borderColor: 'rgba(232,86,10,0.25)' }}>
+              <div className="feature-card" style={{ position: 'relative', borderColor: 'rgba(232,86,10,0.25)', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ marginBottom: '1.25rem' }}>
                   <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Match Review</p>
                   <h3 className="lp-heading" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', lineHeight: 1.2 }}>Individual Player Analysis</h3>
@@ -1503,14 +1503,15 @@ export default async function LandingPage() {
                   </div>
                 ))}
 
-                <div style={{ marginTop: '1.5rem', padding: '0.75rem 1rem', background: 'rgba(232,86,10,0.06)', border: '1px solid rgba(232,86,10,0.2)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--ember)' }}>
-                  ★ Coach Pro &amp; Club members save £10 on every request
-                </div>
-
-                <div style={{ marginTop: '1.25rem' }}>
-                  <Link href="/analysis" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
-                    {user ? 'Request Analysis →' : 'Get Started →'}
-                  </Link>
+                <div style={{ marginTop: 'auto', paddingTop: '1.5rem' }}>
+                  <div style={{ padding: '0.75rem 1rem', background: 'rgba(232,86,10,0.06)', border: '1px solid rgba(232,86,10,0.2)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--ember)' }}>
+                    ★ Coach Pro &amp; Club members save £10 on every request
+                  </div>
+                  <div style={{ marginTop: '1.25rem' }}>
+                    <Link href="/analysis" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                      {user ? 'Request Analysis →' : 'Get Started →'}
+                    </Link>
+                  </div>
                 </div>
               </div>
 
@@ -1521,6 +1522,8 @@ export default async function LandingPage() {
                   position: 'relative',
                   borderColor: 'rgba(232,86,10,0.35)',
                   background: 'linear-gradient(135deg, var(--surface2) 0%, rgba(232,86,10,0.05) 100%)',
+                  display: 'flex',
+                  flexDirection: 'column',
                 }}
               >
                 <div
@@ -1580,14 +1583,16 @@ export default async function LandingPage() {
                   </div>
                 ))}
 
-                <div style={{ marginTop: '1.5rem', padding: '0.75rem 1rem', background: 'rgba(232,86,10,0.06)', border: '1px solid rgba(232,86,10,0.2)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--ember)' }}>
-                  ★ Coach Pro &amp; Club members save £10 on every request
-                </div>
+                <div style={{ marginTop: 'auto', paddingTop: '1.5rem' }}>
+                  <div style={{ padding: '0.75rem 1rem', background: 'rgba(232,86,10,0.06)', border: '1px solid rgba(232,86,10,0.2)', borderRadius: '8px', fontSize: '0.8rem', color: 'var(--ember)' }}>
+                    ★ Coach Pro &amp; Club members save £10 on every request
+                  </div>
 
-                <div style={{ marginTop: '1.25rem' }}>
-                  <Link href={user ? '/analysis' : '/signup'} className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
-                    {user ? 'Request Scouting →' : 'Get Started →'}
-                  </Link>
+                  <div style={{ marginTop: '1.25rem' }}>
+                    <Link href="/analysis" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                      {user ? 'Request Scouting →' : 'Get Started →'}
+                    </Link>
+                  </div>
                 </div>
               </div>
 
