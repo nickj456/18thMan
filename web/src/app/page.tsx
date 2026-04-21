@@ -239,13 +239,21 @@ export default async function LandingPage() {
         .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 2rem; align-items: stretch; }
         .service-card-title { font-size: 1.5rem; }
         .service-price { font-size: 2rem; }
+        .service-desc-text { display: block; }
+        .services-intro-text { display: block; }
+        .services-intro-header { margin-bottom: 4rem; }
+        .service-cta { font-size: 0.9rem; padding: 12px 20px; }
 
         @media (max-width: 639px) {
-          .services-section { padding: 4rem 1.25rem; }
-          .services-grid { grid-template-columns: 1fr; gap: 1.5rem; }
-          .feature-card { padding: 1.5rem; }
-          .service-card-title { font-size: 1.25rem; }
-          .service-price { font-size: 1.75rem; }
+          .services-section { padding: 3.5rem 1rem; }
+          .services-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+          .feature-card { padding: 1.5rem 1.25rem; }
+          .service-card-title { font-size: 1.35rem; }
+          .service-price { font-size: 2.75rem; }
+          .service-desc-text { display: none; }
+          .services-intro-text { display: none; }
+          .services-intro-header { margin-bottom: 2rem; }
+          .service-cta { font-size: 1.05rem !important; padding: 16px 20px !important; }
         }
       `}</style>
 
@@ -1454,7 +1462,7 @@ export default async function LandingPage() {
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 100%, rgba(232,86,10,0.06) 0%, transparent 60%)', pointerEvents: 'none' }} />
           <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
 
-            <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
+            <div className="services-intro-header" style={{ textAlign: 'center' }}>
               <span className="section-label">Coaching Eye</span>
               <h2
                 className="lp-display"
@@ -1471,7 +1479,7 @@ export default async function LandingPage() {
                 I see what<br />
                 <span style={{ color: 'var(--ember)' }}>coaches miss.</span>
               </h2>
-              <p style={{ marginTop: '1.25rem', fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, maxWidth: '560px', margin: '1.25rem auto 0' }}>
+              <p className="services-intro-text" style={{ marginTop: '1.25rem', fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, maxWidth: '560px', margin: '1.25rem auto 0' }}>
                 Twenty years in professional rugby league as a player and coach. I watch footage the way I used to study tape before a big game — and I&apos;ll tell you exactly what&apos;s there.
               </p>
             </div>
@@ -1483,7 +1491,7 @@ export default async function LandingPage() {
                 <div style={{ marginBottom: '1.25rem' }}>
                   <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Match Review</p>
                   <h3 className="lp-heading service-card-title" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', lineHeight: 1.2 }}>Individual Player Analysis</h3>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                  <p className="service-desc-text" style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                     Send me footage of your player in a match or a training session. I&apos;ll watch it properly, tell you exactly what they&apos;re doing well and where they&apos;re costing your team, and give you something you can act on in your next session.
                   </p>
                 </div>
@@ -1521,7 +1529,7 @@ export default async function LandingPage() {
                     ★ Coach Pro &amp; Club members save £10 on every request
                   </div>
                   <div style={{ marginTop: '1.25rem' }}>
-                    <Link href="/analysis" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                    <Link href="/analysis" className="cta-primary service-cta" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
                       {user ? 'Request Analysis →' : 'Get Started →'}
                     </Link>
                   </div>
@@ -1563,7 +1571,7 @@ export default async function LandingPage() {
                 <div style={{ marginBottom: '1.25rem' }}>
                   <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Opposition Scouting</p>
                   <h3 className="lp-heading service-card-title" style={{ fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', lineHeight: 1.2 }}>Pre-Match Opponent Analysis</h3>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                  <p className="service-desc-text" style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                     I&apos;ve played against the best and the worst at every level. Give me footage of your next opponents and I&apos;ll break down their defensive shape, their set-play calls, where they go under pressure, and where the edge is. You&apos;ll walk into that dressing room knowing more about them than most of their own coaches do.
                   </p>
                 </div>
@@ -1602,7 +1610,7 @@ export default async function LandingPage() {
                   </div>
 
                   <div style={{ marginTop: '1.25rem' }}>
-                    <Link href="/analysis" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                    <Link href="/analysis" className="cta-primary service-cta" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
                       {user ? 'Request Scouting →' : 'Get Started →'}
                     </Link>
                   </div>
