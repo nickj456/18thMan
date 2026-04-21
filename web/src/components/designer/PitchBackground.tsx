@@ -3,6 +3,12 @@
 import { Group, Rect, Line, Text } from 'react-konva'
 import { CANVAS_WIDTH, CANVAS_HEIGHT, type PitchBackground } from './types'
 
+// H-post dimensions (shared between InGoalArea and callers)
+const POST_SPAN = 35    // half-width: uprights land ±35 px from try line
+const POST_TOP = -80    // uprights extend 80 px above crossbar
+const POST_BOT = 30     // uprights extend 30 px below crossbar
+const BAR_OFFSET = -10  // crossbar sits 10 px above canvas centre
+
 const GREEN = '#2d5a27'
 const LIGHT_GREEN = '#357a2e'
 const WHITE = '#ffffff'
@@ -117,9 +123,10 @@ function InGoalArea() {
       <Line points={[w * 0.2, 20, w * 0.2, h - 20]} stroke={WHITE} strokeWidth={LINE_WIDTH} />
       {/* Dead ball line */}
       <Line points={[w - 20, 20, w - 20, h - 20]} stroke={WHITE} strokeWidth={LINE_WIDTH} />
-      {/* Posts */}
-      <Line points={[w * 0.2, h / 2 - 30, w * 0.2, h / 2 + 30]} stroke="#f59e0b" strokeWidth={4} />
-      <Line points={[w * 0.2 - 40, h / 2 - 30, w * 0.2 + 40, h / 2 - 30]} stroke="#f59e0b" strokeWidth={4} />
+      {/* H goal posts — two uprights + crossbar */}
+      <Line points={[w * 0.2 - POST_SPAN, h / 2 + BAR_OFFSET + POST_TOP, w * 0.2 - POST_SPAN, h / 2 + BAR_OFFSET + POST_BOT]} stroke="#f59e0b" strokeWidth={4} />
+      <Line points={[w * 0.2 + POST_SPAN, h / 2 + BAR_OFFSET + POST_TOP, w * 0.2 + POST_SPAN, h / 2 + BAR_OFFSET + POST_BOT]} stroke="#f59e0b" strokeWidth={4} />
+      <Line points={[w * 0.2 - POST_SPAN, h / 2 + BAR_OFFSET, w * 0.2 + POST_SPAN, h / 2 + BAR_OFFSET]} stroke="#f59e0b" strokeWidth={4} />
       <Text text="In-Goal Area" x={w * 0.5} y={h / 2 - 8} fill={WHITE} fontSize={14} opacity={0.4} />
     </Group>
   )
@@ -127,11 +134,18 @@ function InGoalArea() {
 
 interface PitchBackgroundProps {
   type: PitchBackground
+  flipped?: boolean
 }
 
-export function PitchBackgroundLayer({ type }: PitchBackgroundProps) {
-  if (type === 'full') return <FullPitch />
-  if (type === 'half') return <HalfPitch />
-  if (type === 'ingoal') return <InGoalArea />
-  return <BlankGrid />
+export function PitchBackgroundLayer({ type, flipped }: PitchBackgroundProps) {
+  const content = type === 'full' ? <FullPitch />
+    : type === 'half'   ? <HalfPitch />
+    : type === 'ingoal' ? <InGoalArea />
+    : <BlankGrid />
+
+  if (flipped) {
+    // Mirror horizontally around the canvas centre
+    return <Group x={CANVAS_WIDTH} scaleX={-1}>{content}</Group>
+  }
+  return <>{content}</>
 }

@@ -192,16 +192,23 @@ export function DrillCanvas({
   function startTextEdit(id: string) {
     const el = state.elements.find((e) => e.id === id)
     if (!el) return
-    setEditingText({ id, x: el.x, y: el.y, label: el.label ?? 'Label', color: el.color ?? '#ffffff' })
+    // For circle elements (attacker/defender) offset overlay to centre of the icon
+    const isCircle = el.type === 'attacker' || el.type === 'defender'
+    const defaultLabel = isCircle ? (el.label ?? '') : (el.label ?? 'Label')
+    setEditingText({ id, x: el.x - (isCircle ? 18 : 0), y: el.y - (isCircle ? 12 : 0), label: defaultLabel, color: el.color ?? '#ffffff' })
     onSelectId(id)
   }
 
   function finishTextEdit(value: string | null) {
     if (editingText && value !== null) {
+      const el = state.elements.find(e => e.id === editingText.id)
+      const isCircle = el?.type === 'attacker' || el?.type === 'defender'
+      const trimmed = value.trim()
+      const finalLabel = isCircle ? (trimmed || el?.label || '') : (trimmed || 'Label')
       onStateChange({
         ...state,
-        elements: state.elements.map((el) =>
-          el.id === editingText.id ? { ...el, label: value.trim() || 'Label' } : el
+        elements: state.elements.map((e) =>
+          e.id === editingText.id ? { ...e, label: finalLabel } : e
         ),
       })
     }
@@ -219,12 +226,16 @@ export function DrillCanvas({
         onToolChange={onToolChange}
         background={state.background}
         onBackgroundChange={(bg) => onStateChange({ ...state, background: bg })}
+        pitchFlipped={state.pitchFlipped ?? false}
+        onFlipPitch={() => onStateChange({ ...state, pitchFlipped: !state.pitchFlipped })}
         hasSelection={!!selectedId}
         onDelete={handleDelete}
         onUndo={onUndo}
         onClear={onClear}
         canUndo={canUndo}
         hasElements={state.elements.length > 0}
+        selectedElement={state.elements.find(e => e.id === selectedId) ?? null}
+        onElementChange={handleElementChange}
       />
 
       <div className="flex-1 overflow-auto bg-zinc-950 flex items-center justify-center p-4">
@@ -284,7 +295,7 @@ export function DrillCanvas({
             onMouseUp={handleMouseUp}
           >
             <Layer>
-              <PitchBackgroundLayer type={state.background} />
+              <PitchBackgroundLayer type={state.background} flipped={state.pitchFlipped} />
             </Layer>
             <Layer>
               <CanvasElements

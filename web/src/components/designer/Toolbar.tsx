@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { ToolType, PitchBackground } from './types'
+import type { ToolType, PitchBackground, CanvasElement } from './types'
 import {
   MousePointer2,
   Circle,
@@ -15,6 +15,7 @@ import {
   Trash2,
   Undo2,
   Eraser,
+  FlipHorizontal2,
 } from 'lucide-react'
 
 const TOOLS: { id: ToolType; label: string; icon: React.ReactNode; color?: string }[] = [
@@ -37,28 +38,42 @@ const BACKGROUNDS: { id: PitchBackground; label: string }[] = [
   { id: 'ingoal', label: 'In-Goal' },
 ]
 
+const SIZES: { id: 'sm' | 'md' | 'lg'; label: string }[] = [
+  { id: 'sm', label: 'S' },
+  { id: 'md', label: 'M' },
+  { id: 'lg', label: 'L' },
+]
+
 interface ToolbarProps {
   activeTool: ToolType
   onToolChange: (tool: ToolType) => void
   background: PitchBackground
   onBackgroundChange: (bg: PitchBackground) => void
+  pitchFlipped: boolean
+  onFlipPitch: () => void
   hasSelection: boolean
   onDelete: () => void
   onUndo: () => void
   onClear: () => void
   canUndo: boolean
   hasElements: boolean
+  selectedElement?: CanvasElement | null
+  onElementChange?: (updated: CanvasElement) => void
 }
 
 export function Toolbar({
   activeTool, onToolChange,
   background, onBackgroundChange,
+  pitchFlipped, onFlipPitch,
   hasSelection, onDelete,
   onUndo, onClear,
   canUndo, hasElements,
+  selectedElement, onElementChange,
 }: ToolbarProps) {
+  const isPlayer = selectedElement?.type === 'attacker' || selectedElement?.type === 'defender'
+
   return (
-    <div className="flex flex-col gap-3 w-[58px] bg-zinc-900 border-r border-zinc-800 py-3 px-1.5 shrink-0">
+    <div className="flex flex-col gap-3 w-[58px] bg-zinc-900 border-r border-zinc-800 py-3 px-1.5 shrink-0 overflow-y-auto">
       {/* Draw tools */}
       <div className="flex flex-col gap-0.5">
         {TOOLS.map((tool) => (
@@ -80,7 +95,7 @@ export function Toolbar({
         ))}
       </div>
 
-      {/* Pitch backgrounds */}
+      {/* Pitch backgrounds + flip */}
       <div className="border-t border-zinc-800 pt-2 flex flex-col gap-0.5">
         <span className="text-[8px] text-zinc-600 text-center mb-0.5 uppercase tracking-wide">Pitch</span>
         {BACKGROUNDS.map((bg) => (
@@ -98,7 +113,42 @@ export function Toolbar({
             {bg.label}
           </button>
         ))}
+        <button
+          title="Flip pitch direction"
+          onClick={onFlipPitch}
+          className={cn(
+            'flex flex-col items-center gap-0.5 rounded-md py-1 px-1 text-[9px] leading-tight text-center transition-colors mt-0.5',
+            pitchFlipped
+              ? 'bg-zinc-700 text-white'
+              : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+          )}
+        >
+          <FlipHorizontal2 size={12} />
+          <span>Flip</span>
+        </button>
       </div>
+
+      {/* Player size controls — shown only when attacker or defender is selected */}
+      {isPlayer && selectedElement && onElementChange && (
+        <div className="border-t border-zinc-800 pt-2 flex flex-col gap-0.5">
+          <span className="text-[8px] text-zinc-600 text-center mb-0.5 uppercase tracking-wide">Size</span>
+          {SIZES.map((sz) => (
+            <button
+              key={sz.id}
+              title={`${sz.id === 'sm' ? 'Small' : sz.id === 'md' ? 'Medium' : 'Large'} icon`}
+              onClick={() => onElementChange({ ...selectedElement, size: sz.id })}
+              className={cn(
+                'rounded-md py-1 px-1 text-[9px] text-center font-medium transition-colors',
+                (selectedElement.size ?? 'md') === sz.id
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+              )}
+            >
+              {sz.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Actions */}
       <div className="mt-auto border-t border-zinc-800 pt-2 flex flex-col gap-0.5">

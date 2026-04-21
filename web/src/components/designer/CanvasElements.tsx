@@ -10,6 +10,10 @@ const HANDLE_FILL = '#fff'
 const HANDLE_STROKE = '#6366f1'
 const HANDLE_STROKE_WIDTH = 2
 
+// ── Player icon sizing ───────────────────────────────────────────────────────
+const PLAYER_RADIUS: Record<'sm' | 'md' | 'lg', number> = { sm: 13, md: 18, lg: 24 }
+const PLAYER_FONT:   Record<'sm' | 'md' | 'lg', number> = { sm: 10, md: 13, lg: 16 }
+
 // ── Rugby league ball (Steeden-style) ────────────────────────────────────────
 function RugbyBall({ el, selected, onSelect, onChange }: ElementProps) {
   // Proportions based on a real league ball — wider oval, less pointed than union
@@ -167,27 +171,33 @@ function RugbyBall({ el, selected, onSelect, onChange }: ElementProps) {
 }
 
 // ── Attacker ─────────────────────────────────────────────────────────────────
-function AttackerEl({ el, selected, onSelect, onChange }: ElementProps) {
+function AttackerEl({ el, selected, onSelect, onChange, onDblClick }: ElementProps) {
+  const r  = PLAYER_RADIUS[el.size ?? 'md']
+  const fs = PLAYER_FONT[el.size ?? 'md']
   return (
     <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+      onDblClick={onDblClick} onDblTap={onDblClick}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
-      <Circle radius={18} fill={el.color ?? '#ef4444'}
+      <Circle radius={r} fill={el.color ?? '#ef4444'}
         stroke={selected ? '#fff' : 'rgba(255,255,255,0.4)'} strokeWidth={selected ? 2.5 : 1.5} />
-      <Text text={el.label ?? 'A'} x={-18} y={-8} width={36} align="center"
-        fill="#fff" fontSize={13} fontStyle="bold" listening={false} />
+      <Text text={el.label ?? 'A'} x={-r} y={-Math.round(fs / 2)} width={r * 2} align="center"
+        fill="#fff" fontSize={fs} fontStyle="bold" listening={false} />
     </Group>
   )
 }
 
 // ── Defender ─────────────────────────────────────────────────────────────────
-function DefenderEl({ el, selected, onSelect, onChange }: ElementProps) {
+function DefenderEl({ el, selected, onSelect, onChange, onDblClick }: ElementProps) {
+  const r  = PLAYER_RADIUS[el.size ?? 'md']
+  const fs = PLAYER_FONT[el.size ?? 'md']
   return (
     <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+      onDblClick={onDblClick} onDblTap={onDblClick}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
-      <Circle radius={18} fill={el.color ?? '#3b82f6'}
+      <Circle radius={r} fill={el.color ?? '#3b82f6'}
         stroke={selected ? '#fff' : 'rgba(255,255,255,0.4)'} strokeWidth={selected ? 2.5 : 1.5} />
-      <Text text={el.label ?? 'D'} x={-18} y={-8} width={36} align="center"
-        fill="#fff" fontSize={13} fontStyle="bold" listening={false} />
+      <Text text={el.label ?? 'D'} x={-r} y={-Math.round(fs / 2)} width={r * 2} align="center"
+        fill="#fff" fontSize={fs} fontStyle="bold" listening={false} />
     </Group>
   )
 }
@@ -391,7 +401,9 @@ export function CanvasElements({ elements, selectedId, editingTextId: _editingTe
           selected: el.id === selectedId,
           onSelect: () => onSelect(el.id),
           onChange,
-          onDblClick: el.type === 'text' ? () => onEditText(el.id) : undefined,
+          onDblClick: (el.type === 'text' || el.type === 'attacker' || el.type === 'defender')
+          ? () => onEditText(el.id)
+          : undefined,
         }
         switch (el.type) {
           case 'attacker': return <AttackerEl key={el.id} {...props} />

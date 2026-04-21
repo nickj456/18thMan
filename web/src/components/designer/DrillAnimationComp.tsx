@@ -7,13 +7,19 @@
 import { useCurrentFrame, useVideoConfig, AbsoluteFill } from 'remotion'
 import type { CanvasState } from './types'
 
-export const COMP_WIDTH = 900
+export const COMP_WIDTH  = 900
 export const COMP_HEIGHT = 600
 
-const GREEN = '#2d5a27'
+// H-post dimensions — must match PitchBackground.tsx constants
+const POST_SPAN   = 35
+const POST_TOP    = -80
+const POST_BOT    = 30
+const BAR_OFFSET  = -10
+
+const GREEN       = '#2d5a27'
 const LIGHT_GREEN = '#357a2e'
-const WHITE = '#ffffff'
-const NUM_KEYS = ['x', 'y', 'x1', 'y1', 'x2', 'y2', 'width', 'height'] as const
+const WHITE       = '#ffffff'
+const NUM_KEYS    = ['x', 'y', 'x1', 'y1', 'x2', 'y2', 'width', 'height'] as const
 
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t }
 
@@ -26,10 +32,10 @@ export function getInterpolatedElements(state: CanvasState, frame: number): CE[]
     const elKfs = keyframes.filter(k => k.elementStates?.[el.id])
     if (elKfs.length === 0) return el
     const before = [...elKfs].reverse().find(k => k.time <= frame)
-    const after = elKfs.find(k => k.time > frame)
+    const after  = elKfs.find(k => k.time > frame)
     if (!before && !after) return el
     if (!before) return { ...el, ...after!.elementStates[el.id] }
-    if (!after) return { ...el, ...before.elementStates[el.id] }
+    if (!after)  return { ...el, ...before.elementStates[el.id] }
     const t = (frame - before.time) / (after.time - before.time)
     const bState = before.elementStates[el.id]
     const aState = after.elementStates[el.id]
@@ -45,34 +51,44 @@ export function getInterpolatedElements(state: CanvasState, frame: number): CE[]
   })
 }
 
-function ArrowMarker({ id, color }: { id: string; color: string }) {
+// Collect arrow defs at the top of the SVG so markerEnd references always resolve
+function ArrowDefs({ elements }: { elements: CE[] }) {
+  const arrows = elements.filter(el => el.type === 'arrow' && el.x1 !== undefined)
+  if (arrows.length === 0) return null
   return (
     <defs>
-      <marker id={id} markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-        <path d="M0,0 L0,6 L8,3 z" fill={color} />
-      </marker>
+      {arrows.map(el => (
+        <marker key={el.id} id={`arrow-${el.id}`} markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill={el.color ?? '#22c55e'} />
+        </marker>
+      ))}
     </defs>
   )
 }
 
 function RenderEl({ el }: { el: CE }) {
   const color = el.color ?? '#ffffff'
-  const mid = `arrow-${el.id}`
   switch (el.type) {
-    case 'attacker':
+    case 'attacker': {
+      const r  = el.size === 'sm' ? 12 : el.size === 'lg' ? 22 : 16
+      const fs = Math.round(r * 0.75)
       return (
         <g transform={`translate(${el.x},${el.y})`}>
-          <circle r={16} fill={color} stroke="white" strokeWidth={1.5} />
-          <text textAnchor="middle" dominantBaseline="central" fill="white" fontSize={12} fontWeight="bold">{el.label ?? ''}</text>
+          <circle r={r} fill={color} stroke="white" strokeWidth={1.5} />
+          <text textAnchor="middle" dominantBaseline="central" fill="white" fontSize={fs} fontWeight="bold">{el.label ?? ''}</text>
         </g>
       )
-    case 'defender':
+    }
+    case 'defender': {
+      const r  = el.size === 'sm' ? 12 : el.size === 'lg' ? 22 : 16
+      const fs = Math.round(r * 0.75)
       return (
         <g transform={`translate(${el.x},${el.y})`}>
-          <rect x={-14} y={-14} width={28} height={28} fill={color} stroke="white" strokeWidth={1.5} rx={3} />
-          <text textAnchor="middle" dominantBaseline="central" fill="white" fontSize={12} fontWeight="bold">{el.label ?? ''}</text>
+          <rect x={-r} y={-r} width={r * 2} height={r * 2} fill={color} stroke="white" strokeWidth={1.5} rx={3} />
+          <text textAnchor="middle" dominantBaseline="central" fill="white" fontSize={fs} fontWeight="bold">{el.label ?? ''}</text>
         </g>
       )
+    }
     case 'cone':
       return <g transform={`translate(${el.x},${el.y})`}><polygon points="0,-14 12,10 -12,10" fill={color} stroke="rgba(0,0,0,0.4)" strokeWidth={1} /></g>
     case 'ball':
@@ -83,18 +99,19 @@ function RenderEl({ el }: { el: CE }) {
         </g>
       )
     case 'arrow':
-      if (el.x1 === undefined) return null
+      if (el.x1 === undefined || el.x2 === undefined) return null
       return (
-        <>
-          <ArrowMarker id={mid} color={color} />
-          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={color} strokeWidth={2.5} markerEnd={`url(#${mid})`} />
-        </>
+        <line
+          x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2}
+          stroke={color} strokeWidth={2.5}
+          markerEnd={`url(#arrow-${el.id})`}
+        />
       )
     case 'line':
-      if (el.x1 === undefined) return null
+      if (el.x1 === undefined || el.x2 === undefined) return null
       return <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={color} strokeWidth={2} />
     case 'dotted':
-      if (el.x1 === undefined) return null
+      if (el.x1 === undefined || el.x2 === undefined) return null
       return <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={color} strokeWidth={2} strokeDasharray="4 6" />
     case 'zone':
       return <rect x={el.x} y={el.y} width={el.width ?? 120} height={el.height ?? 80} fill={color} stroke="rgba(239,68,68,0.6)" strokeWidth={1.5} />
@@ -105,49 +122,63 @@ function RenderEl({ el }: { el: CE }) {
   }
 }
 
-export function PitchSVG({ bg }: { bg: CanvasState['background'] }) {
+export function PitchSVG({ bg, flipped }: { bg: CanvasState['background']; flipped?: boolean }) {
   const sw10 = COMP_WIDTH / 10
-  const sw6 = COMP_WIDTH / 6
+  const sw6  = COMP_WIDTH / 6
+  const W = COMP_WIDTH
+  const H = COMP_HEIGHT
+
+  let inner: React.ReactNode
+
   if (bg === 'blank') {
-    const lines = []
-    for (let x = 0; x <= COMP_WIDTH; x += 50) lines.push(<line key={`v${x}`} x1={x} y1={0} x2={x} y2={COMP_HEIGHT} stroke="rgba(255,255,255,0.08)" strokeWidth={1} />)
-    for (let y = 0; y <= COMP_HEIGHT; y += 50) lines.push(<line key={`h${y}`} x1={0} y1={y} x2={COMP_WIDTH} y2={y} stroke="rgba(255,255,255,0.08)" strokeWidth={1} />)
-    return <><rect x={0} y={0} width={COMP_WIDTH} height={COMP_HEIGHT} fill="#1a1a2e" />{lines}</>
-  }
-  if (bg === 'half') {
-    return (
+    const lines: React.ReactNode[] = []
+    for (let x = 0; x <= W; x += 50) lines.push(<line key={`v${x}`} x1={x} y1={0} x2={x} y2={H} stroke="rgba(255,255,255,0.08)" strokeWidth={1} />)
+    for (let y = 0; y <= H; y += 50) lines.push(<line key={`h${y}`} x1={0} y1={y} x2={W} y2={y} stroke="rgba(255,255,255,0.08)" strokeWidth={1} />)
+    inner = <><rect x={0} y={0} width={W} height={H} fill="#1a1a2e" />{lines}</>
+  } else if (bg === 'half') {
+    inner = (
       <>
-        {Array.from({ length: 6 }, (_, i) => <rect key={i} x={i * sw6} y={0} width={sw6} height={COMP_HEIGHT} fill={i % 2 === 0 ? GREEN : LIGHT_GREEN} />)}
-        <rect x={20} y={20} width={COMP_WIDTH - 40} height={COMP_HEIGHT - 40} stroke={WHITE} strokeWidth={2} fill="none" />
-        <rect x={20} y={20} width={COMP_WIDTH * 0.14} height={COMP_HEIGHT - 40} stroke={WHITE} strokeWidth={2} fill="none" />
-        <line x1={COMP_WIDTH * 0.5} y1={20} x2={COMP_WIDTH * 0.5} y2={COMP_HEIGHT - 20} stroke={WHITE} strokeWidth={2} strokeDasharray="8 4" />
-        <line x1={COMP_WIDTH * 0.28} y1={20} x2={COMP_WIDTH * 0.28} y2={COMP_HEIGHT - 20} stroke={WHITE} strokeWidth={1} strokeDasharray="8 4" />
+        {Array.from({ length: 6 }, (_, i) => <rect key={i} x={i * sw6} y={0} width={sw6} height={H} fill={i % 2 === 0 ? GREEN : LIGHT_GREEN} />)}
+        <rect x={20} y={20} width={W - 40} height={H - 40} stroke={WHITE} strokeWidth={2} fill="none" />
+        <rect x={20} y={20} width={W * 0.14} height={H - 40} stroke={WHITE} strokeWidth={2} fill="none" />
+        <line x1={W * 0.5} y1={20} x2={W * 0.5} y2={H - 20} stroke={WHITE} strokeWidth={2} strokeDasharray="8 4" />
+        <line x1={W * 0.28} y1={20} x2={W * 0.28} y2={H - 20} stroke={WHITE} strokeWidth={1} strokeDasharray="8 4" />
+      </>
+    )
+  } else if (bg === 'ingoal') {
+    const px = W * 0.2
+    const py = H / 2
+    inner = (
+      <>
+        {Array.from({ length: 6 }, (_, i) => <rect key={i} x={i * sw6} y={0} width={sw6} height={H} fill={i % 2 === 0 ? GREEN : LIGHT_GREEN} />)}
+        <rect x={20} y={20} width={W - 40} height={H - 40} stroke={WHITE} strokeWidth={2} fill="none" />
+        {/* Try line */}
+        <line x1={px} y1={20} x2={px} y2={H - 20} stroke={WHITE} strokeWidth={2} />
+        {/* H goal posts — left upright, right upright, crossbar */}
+        <line x1={px - POST_SPAN} y1={py + BAR_OFFSET + POST_TOP} x2={px - POST_SPAN} y2={py + BAR_OFFSET + POST_BOT} stroke="#f59e0b" strokeWidth={4} />
+        <line x1={px + POST_SPAN} y1={py + BAR_OFFSET + POST_TOP} x2={px + POST_SPAN} y2={py + BAR_OFFSET + POST_BOT} stroke="#f59e0b" strokeWidth={4} />
+        <line x1={px - POST_SPAN} y1={py + BAR_OFFSET} x2={px + POST_SPAN} y2={py + BAR_OFFSET} stroke="#f59e0b" strokeWidth={4} />
+      </>
+    )
+  } else {
+    // full pitch
+    inner = (
+      <>
+        {Array.from({ length: 10 }, (_, i) => <rect key={i} x={i * sw10} y={0} width={sw10} height={H} fill={i % 2 === 0 ? GREEN : LIGHT_GREEN} />)}
+        <rect x={20} y={20} width={W - 40} height={H - 40} stroke={WHITE} strokeWidth={2} fill="none" />
+        <rect x={20} y={20} width={W * 0.08} height={H - 40} stroke={WHITE} strokeWidth={2} fill="none" />
+        <rect x={W - 20 - W * 0.08} y={20} width={W * 0.08} height={H - 40} stroke={WHITE} strokeWidth={2} fill="none" />
+        <line x1={W / 2} y1={20} x2={W / 2} y2={H - 20} stroke={WHITE} strokeWidth={2} />
+        <line x1={W / 2 - W * 0.09} y1={20} x2={W / 2 - W * 0.09} y2={H - 20} stroke={WHITE} strokeWidth={1} strokeDasharray="8 4" />
+        <line x1={W / 2 + W * 0.09} y1={20} x2={W / 2 + W * 0.09} y2={H - 20} stroke={WHITE} strokeWidth={1} strokeDasharray="8 4" />
       </>
     )
   }
-  if (bg === 'ingoal') {
-    return (
-      <>
-        {Array.from({ length: 6 }, (_, i) => <rect key={i} x={i * sw6} y={0} width={sw6} height={COMP_HEIGHT} fill={i % 2 === 0 ? GREEN : LIGHT_GREEN} />)}
-        <rect x={20} y={20} width={COMP_WIDTH - 40} height={COMP_HEIGHT - 40} stroke={WHITE} strokeWidth={2} fill="none" />
-        <line x1={COMP_WIDTH * 0.2} y1={20} x2={COMP_WIDTH * 0.2} y2={COMP_HEIGHT - 20} stroke={WHITE} strokeWidth={2} />
-        <line x1={COMP_WIDTH * 0.2} y1={COMP_HEIGHT / 2 - 30} x2={COMP_WIDTH * 0.2} y2={COMP_HEIGHT / 2 + 30} stroke="#f59e0b" strokeWidth={4} />
-        <line x1={COMP_WIDTH * 0.2 - 40} y1={COMP_HEIGHT / 2 - 30} x2={COMP_WIDTH * 0.2 + 40} y2={COMP_HEIGHT / 2 - 30} stroke="#f59e0b" strokeWidth={4} />
-      </>
-    )
+
+  if (flipped) {
+    return <g transform={`translate(${W},0) scale(-1,1)`}>{inner}</g>
   }
-  // full
-  return (
-    <>
-      {Array.from({ length: 10 }, (_, i) => <rect key={i} x={i * sw10} y={0} width={sw10} height={COMP_HEIGHT} fill={i % 2 === 0 ? GREEN : LIGHT_GREEN} />)}
-      <rect x={20} y={20} width={COMP_WIDTH - 40} height={COMP_HEIGHT - 40} stroke={WHITE} strokeWidth={2} fill="none" />
-      <rect x={20} y={20} width={COMP_WIDTH * 0.08} height={COMP_HEIGHT - 40} stroke={WHITE} strokeWidth={2} fill="none" />
-      <rect x={COMP_WIDTH - 20 - COMP_WIDTH * 0.08} y={20} width={COMP_WIDTH * 0.08} height={COMP_HEIGHT - 40} stroke={WHITE} strokeWidth={2} fill="none" />
-      <line x1={COMP_WIDTH / 2} y1={20} x2={COMP_WIDTH / 2} y2={COMP_HEIGHT - 20} stroke={WHITE} strokeWidth={2} />
-      <line x1={COMP_WIDTH / 2 - COMP_WIDTH * 0.09} y1={20} x2={COMP_WIDTH / 2 - COMP_WIDTH * 0.09} y2={COMP_HEIGHT - 20} stroke={WHITE} strokeWidth={1} strokeDasharray="8 4" />
-      <line x1={COMP_WIDTH / 2 + COMP_WIDTH * 0.09} y1={20} x2={COMP_WIDTH / 2 + COMP_WIDTH * 0.09} y2={COMP_HEIGHT - 20} stroke={WHITE} strokeWidth={1} strokeDasharray="8 4" />
-    </>
-  )
+  return <>{inner}</>
 }
 
 export interface DrillAnimationProps {
@@ -163,7 +194,9 @@ export function DrillAnimationComp({ canvasJson, drillTitle }: DrillAnimationPro
     <AbsoluteFill style={{ background: '#07080d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ position: 'relative' }}>
         <svg width={COMP_WIDTH} height={COMP_HEIGHT} viewBox={`0 0 ${COMP_WIDTH} ${COMP_HEIGHT}`} style={{ display: 'block', borderRadius: 8 }}>
-          <PitchSVG bg={canvasJson.background} />
+          {/* Arrow marker defs must appear before the lines that reference them */}
+          <ArrowDefs elements={elements} />
+          <PitchSVG bg={canvasJson.background} flipped={canvasJson.pitchFlipped} />
           {elements.map(el => <RenderEl key={el.id} el={el} />)}
         </svg>
         {drillTitle && (

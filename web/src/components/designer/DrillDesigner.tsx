@@ -15,7 +15,7 @@ import type { DrillCategory, DrillVisibility } from '@/lib/supabase/types'
 import { saveDrillDesign, updateDrillDesign } from '@/app/(app)/drills/designer-actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, Monitor, Timer, Video } from 'lucide-react'
+import { Loader2, Save, Monitor, Timer, Video, ImageDown } from 'lucide-react'
 import { UpgradePrompt, useUpgradePrompt } from '@/components/ui/UpgradePrompt'
 
 const AGE_GROUPS = [
@@ -242,6 +242,17 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
     pushState({ ...canvasState, elements: [] })
     setSelectedId(null)
   }, [canvasState, pushState])
+
+  function handleDownloadPng() {
+    const dataUrl = stageRef.current?.toDataURL({ pixelRatio: 2, mimeType: 'image/png' })
+    if (!dataUrl) return
+    const a = document.createElement('a')
+    a.href = dataUrl
+    a.download = `${title.trim() || 'drill'}.png`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }
 
   function handleSave() {
     if (!title.trim()) { toast.error('Please enter a drill title'); return }
@@ -498,6 +509,15 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
               : 'No keyframes'}
           </span>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleDownloadPng}
+              disabled={canvasState.elements.length === 0}
+              className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors border border-zinc-700 disabled:opacity-30"
+              title="Download canvas as PNG"
+            >
+              <ImageDown size={11} />
+              PNG
+            </button>
             {(canvasState.keyframes ?? []).length >= 2 && (
               <button
                 onClick={() => setShowPreview(true)}

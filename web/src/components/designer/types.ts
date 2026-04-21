@@ -19,6 +19,7 @@ export interface CanvasElement {
   y: number
   label?: string
   color?: string
+  size?: 'sm' | 'md' | 'lg'
   // Lines / Arrows — absolute canvas coords for start and end
   x1?: number
   y1?: number
@@ -37,6 +38,7 @@ export interface Keyframe {
 
 export interface CanvasState {
   background: PitchBackground
+  pitchFlipped?: boolean
   elements: CanvasElement[]
   keyframes?: Keyframe[]
   duration?: number  // total frames, default 90 (3s at 30fps)
