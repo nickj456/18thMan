@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getStripe } from '@/lib/stripe'
-import { sendSubscriptionConfirmationEmail } from '@/lib/email'
+import { sendSubscriptionConfirmationEmail, sendVideoAnalysisRequestEmail } from '@/lib/email'
 import type Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
@@ -111,6 +111,34 @@ export async function POST(req: NextRequest) {
             .update({ subscription_tier: 'free', stripe_subscription_id: null })
             .eq('id', userId)
         }
+        break
+      }
+
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session
+        if (session.metadata?.type !== 'analysis') break
+
+        const m = session.metadata
+        const serviceType = m.service_type as 'match-review' | 'opposition-scouting'
+        const turnaround = m.turnaround as 'standard' | 'express'
+        const amountPaid = session.amount_total ? session.amount_total / 100 : 0
+
+        const notifyEmail = process.env.ANALYSIS_NOTIFY_EMAIL ?? 'nick.johnsonn@gmail.com'
+        await sendVideoAnalysisRequestEmail(notifyEmail, {
+          coachName: m.coach_name ?? 'Unknown',
+          coachEmail: m.coach_email ?? '',
+          serviceType,
+          turnaround,
+          subject: m.subject ?? '',
+          matchDate: m.match_date ?? '',
+          opposition: m.opposition ?? '',
+          competition: m.competition ?? '',
+          videoLink: m.video_link ?? '',
+          notes: m.notes ?? '',
+          subscriptionTier: 'paid',
+          price: amountPaid,
+          memberDiscount: amountPaid < (serviceType === 'match-review' ? (turnaround === 'express' ? 80 : 50) : (turnaround === 'express' ? 110 : 75)),
+        })
         break
       }
 

@@ -1442,7 +1442,7 @@ export default async function LandingPage() {
           <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
 
             <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
-              <span className="section-label">Expert Analysis</span>
+              <span className="section-label">Coaching Eye</span>
               <h2
                 className="lp-display"
                 style={{
@@ -1455,11 +1455,11 @@ export default async function LandingPage() {
                   marginTop: '1rem',
                 }}
               >
-                We see what<br />
-                <span style={{ color: 'var(--ember)' }}>others won&apos;t.</span>
+                I see what<br />
+                <span style={{ color: 'var(--ember)' }}>coaches miss.</span>
               </h2>
-              <p style={{ marginTop: '1.25rem', fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, maxWidth: '520px', margin: '1.25rem auto 0' }}>
-                Expert video analysis from a professional rugby league coach. Submit your footage, get a detailed written report back within your chosen timeframe.
+              <p style={{ marginTop: '1.25rem', fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, maxWidth: '560px', margin: '1.25rem auto 0' }}>
+                Twenty years in professional rugby league as a player and coach. I watch footage the way I used to study tape before a big game — and I&apos;ll tell you exactly what&apos;s there.
               </p>
             </div>
 
@@ -1471,7 +1471,7 @@ export default async function LandingPage() {
                   <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Match Review</p>
                   <h3 className="lp-heading" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', lineHeight: 1.2 }}>Individual Player Analysis</h3>
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                    Send us footage of your player in training or a competitive match. We&apos;ll analyse their performance and deliver a focused written report packed with coaching insights.
+                    Send me footage of your player in a match or a training session. I&apos;ll watch it properly, tell you exactly what they&apos;re doing well and where they&apos;re costing your team, and give you something you can act on in your next session.
                   </p>
                 </div>
 
@@ -1548,7 +1548,7 @@ export default async function LandingPage() {
                   <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Opposition Scouting</p>
                   <h3 className="lp-heading" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem', lineHeight: 1.2 }}>Pre-Match Opponent Analysis</h3>
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                    Share footage of your upcoming opposition and we&apos;ll break down their attacking patterns, defensive structures, set plays, and key threats — giving you the edge before kick-off.
+                    I&apos;ve played against the best and the worst at every level. Give me footage of your next opponents and I&apos;ll break down their defensive shape, their set-play calls, where they go under pressure, and where the edge is. You&apos;ll walk into that dressing room knowing more about them than most of their own coaches do.
                   </p>
                 </div>
 
@@ -1617,7 +1617,7 @@ export default async function LandingPage() {
                 </div>
               </div>
               <p style={{ marginTop: '1.25rem', fontSize: '0.82rem', color: 'var(--text-dim)', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
-                Questions? Email us at <a href="mailto:analysis@18thman.app" style={{ color: 'var(--ember)', textDecoration: 'none' }}>analysis@18thman.app</a>
+                Questions? Drop me a line at <a href="mailto:analysis@18thman.app" style={{ color: 'var(--ember)', textDecoration: 'none' }}>analysis@18thman.app</a>
               </p>
             </div>
 
