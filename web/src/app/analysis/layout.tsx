@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function AnalysisLayout({ children }: { children: React.ReactNode }) {
@@ -9,8 +10,9 @@ export default async function AnalysisLayout({ children }: { children: React.Rea
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="max-w-2xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href={user ? '/dashboard' : '/'} className="text-sm font-bold tracking-tight">
-            18th Man
+          <Link href={user ? '/dashboard' : '/'} className="flex items-center gap-2.5 no-underline">
+            <Image src="/logo.png" alt="18th Man" width={30} height={30} className="shrink-0" />
+            <span className="text-sm font-extrabold tracking-wide uppercase">18th Man</span>
           </Link>
           {user ? (
             <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
