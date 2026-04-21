@@ -4,10 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import { getStripe } from '@/lib/stripe'
 
 const PRICE_IDS: Record<string, string> = {
-  'match-review-standard': process.env.STRIPE_ANALYSIS_INDIVIDUAL_STANDARD_PRICE_ID ?? '',
-  'match-review-express': process.env.STRIPE_ANALYSIS_INDIVIDUAL_EXPRESS_PRICE_ID ?? '',
-  'opposition-scouting-standard': process.env.STRIPE_ANALYSIS_SCOUTING_STANDARD_PRICE_ID ?? '',
-  'opposition-scouting-express': process.env.STRIPE_ANALYSIS_SCOUTING_EXPRESS_PRICE_ID ?? '',
+  'match-review-standard': process.env.STRIPE_ANALYSIS_INDIVIDUAL_STANDARD_PRICE_ID || 'price_1TORk1Jw8I8hTNrBj1T2UpSV',
+  'match-review-express': process.env.STRIPE_ANALYSIS_INDIVIDUAL_EXPRESS_PRICE_ID || 'price_1TORk2Jw8I8hTNrB3QpWZedn',
+  'opposition-scouting-standard': process.env.STRIPE_ANALYSIS_SCOUTING_STANDARD_PRICE_ID || 'price_1TORk3Jw8I8hTNrBW2miZaE0',
+  'opposition-scouting-express': process.env.STRIPE_ANALYSIS_SCOUTING_EXPRESS_PRICE_ID || 'price_1TORk4Jw8I8hTNrBDIsdRZVl',
 }
 
 export async function submitAnalysisRequest(
@@ -37,7 +37,7 @@ export async function submitAnalysisRequest(
   }
 
   const priceId = PRICE_IDS[`${serviceType}-${turnaround}`]
-  if (!priceId) return { error: `Debug: key="${serviceType}-${turnaround}" ids=${JSON.stringify(Object.fromEntries(Object.entries(PRICE_IDS).map(([k,v])=>[k,v?'SET':'EMPTY'])))}` }
+  if (!priceId) return { error: 'Invalid service selection.' }
 
   const isMember = profile?.subscription_tier && profile.subscription_tier !== 'free'
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
