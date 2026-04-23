@@ -36,25 +36,19 @@ create policy wellbeing_insert
   on public.wellbeing_resources
   for insert
   to authenticated
-  with check (
-    (select "role" from public.profiles where id = auth.uid()) = 'admin'
-  );
+  with check (public.is_admin());
 
 create policy wellbeing_update
   on public.wellbeing_resources
   for update
   to authenticated
-  using (
-    (select "role" from public.profiles where id = auth.uid()) = 'admin'
-  );
+  using (public.is_admin());
 
 create policy wellbeing_delete
   on public.wellbeing_resources
   for delete
   to authenticated
-  using (
-    (select "role" from public.profiles where id = auth.uid()) = 'admin'
-  );
+  using (public.is_admin());
 
 -- 5. updated_at trigger
 create trigger set_updated_at
