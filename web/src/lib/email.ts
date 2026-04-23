@@ -382,6 +382,62 @@ export async function sendVideoAnalysisRequestEmail(
   )
 }
 
+/** Sent to a customer when their Coaching Eye analysis report is ready */
+export async function sendMatchReportEmail(
+  to: string,
+  params: {
+    serviceType: 'match-review' | 'opposition-scouting'
+    matchDate: string
+    opposition: string
+    competition: string
+    playerNames: string[]
+  },
+  pdfBuffer: Buffer,
+): Promise<EmailResult> {
+  const serviceLabel =
+    params.serviceType === 'match-review' ? 'Match Review' : 'Opposition Scouting'
+
+  const dateFormatted = params.matchDate
+    ? new Date(`${params.matchDate}T12:00:00`).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : params.matchDate
+
+  const playerLine =
+    params.playerNames.length > 0
+      ? `${params.playerNames.length === 1 ? 'Player' : 'Players'}: ${params.playerNames.join(', ')}`
+      : null
+
+  const filename = `coaching-eye-${params.serviceType}-${params.opposition
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')}.pdf`
+
+  const html = layout(`
+    ${heading('Your Coaching Eye Report is ready.')}
+    ${para(`${serviceLabel} — ${params.opposition}`)}
+    ${divider()}
+    ${greeting('')}
+    ${para(`Your analysis report for <strong style="color:#ffffff;">${params.opposition}</strong> is attached to this email as a PDF.`)}
+    ${featureList([
+      `Match: ${params.opposition} — ${params.competition}`,
+      `Date: ${dateFormatted}`,
+      ...(playerLine ? [playerLine] : []),
+    ])}
+    ${para('Open the attached PDF for your full analysis, including match statistics and coach commentary for each player.')}
+    ${para('If you have any questions about your report, simply reply to this email and we\'ll get back to you.')}
+    ${sign()}
+  `)
+
+  return send(
+    to,
+    `Your Coaching Eye Report — ${params.opposition}`,
+    html,
+    [{ filename, content: pdfBuffer }],
+  )
+}
+
 /** Sent when a Coach Pro or Club subscription is activated */
 export async function sendSubscriptionConfirmationEmail(
   to: string,

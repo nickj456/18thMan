@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2, Clock, HeartPulse } from 'lucide-react'
+import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2, Clock, HeartPulse, FileText } from 'lucide-react'
 
 export const metadata = { title: 'Admin — 18th Man' }
 
@@ -90,6 +90,13 @@ export default async function AdminPage() {
       label: 'Wellbeing Resources',
       description: `${wellbeingRes.count ?? 0} resource${(wellbeingRes.count ?? 0) !== 1 ? 's' : ''} published`,
       colour: 'border-violet-500/20 hover:border-violet-500/40 text-violet-400',
+    },
+    {
+      href: '/admin/match-report',
+      icon: FileText,
+      label: 'Match Report Builder',
+      description: 'Generate & send Coaching Eye PDFs',
+      colour: 'border-[rgba(232,86,10,0.2)] hover:border-[rgba(232,86,10,0.4)] text-[#e8560a]',
     },
   ]
 
