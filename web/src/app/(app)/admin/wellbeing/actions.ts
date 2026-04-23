@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { WellbeingResourceType } from '@/lib/supabase/types'
 
@@ -42,11 +43,40 @@ export async function createWellbeingResource(formData: FormData) {
 
   revalidatePath('/admin/wellbeing')
   revalidatePath('/wellbeing')
+  redirect('/admin/wellbeing')
 }
 
 export async function deleteWellbeingResource(id: string) {
   const { supabase } = await requireAdmin()
   const { error } = await supabase.from('wellbeing_resources').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/admin/wellbeing')
+  revalidatePath('/wellbeing')
+}
+
+export async function updateWellbeingResource(id: string, formData: FormData) {
+  const { supabase } = await requireAdmin()
+
+  const title = (formData.get('title') as string)?.trim()
+  const subtitle = (formData.get('subtitle') as string)?.trim() || null
+  const contentRaw = (formData.get('content') as string)?.trim()
+
+  if (!title) throw new Error('Title is required')
+
+  let content: Record<string, unknown> = {}
+  if (contentRaw) {
+    try {
+      content = JSON.parse(contentRaw)
+    } catch {
+      throw new Error('Content must be valid JSON')
+    }
+  }
+
+  const { error } = await supabase
+    .from('wellbeing_resources')
+    .update({ title, subtitle, content })
+    .eq('id', id)
   if (error) throw new Error(error.message)
 
   revalidatePath('/admin/wellbeing')

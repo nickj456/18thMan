@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Heart, Plus } from 'lucide-react'
+import { ArrowLeft, Heart, Plus, Pencil } from 'lucide-react'
 import { WellbeingControls } from './WellbeingControls'
 import { createWellbeingResource } from './actions'
 import type { WellbeingResourceType } from '@/lib/supabase/types'
@@ -67,11 +67,20 @@ export default async function AdminWellbeingPage() {
                     <p className="text-xs text-zinc-500 mt-0.5 truncate">{res.subtitle}</p>
                   )}
                 </div>
-                <WellbeingControls
-                  id={res.id}
-                  isFirst={idx === 0}
-                  isLast={idx === (resources.length - 1)}
-                />
+                <div className="flex items-center gap-1 shrink-0">
+                  <Link
+                    href={`/admin/wellbeing/${res.id}`}
+                    className="p-1.5 rounded text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+                    title="Edit"
+                  >
+                    <Pencil size={14} />
+                  </Link>
+                  <WellbeingControls
+                    id={res.id}
+                    isFirst={idx === 0}
+                    isLast={idx === (resources.length - 1)}
+                  />
+                </div>
               </div>
             ))}
           </div>
