@@ -37,7 +37,7 @@ create policy wellbeing_insert
   for insert
   to authenticated
   with check (
-    (select role from public.profiles where id = auth.uid()) = 'admin'
+    (select "role" from public.profiles where id = auth.uid()) = 'admin'
   );
 
 create policy wellbeing_update
@@ -45,7 +45,7 @@ create policy wellbeing_update
   for update
   to authenticated
   using (
-    (select role from public.profiles where id = auth.uid()) = 'admin'
+    (select "role" from public.profiles where id = auth.uid()) = 'admin'
   );
 
 create policy wellbeing_delete
@@ -53,7 +53,7 @@ create policy wellbeing_delete
   for delete
   to authenticated
   using (
-    (select role from public.profiles where id = auth.uid()) = 'admin'
+    (select "role" from public.profiles where id = auth.uid()) = 'admin'
   );
 
 -- 5. updated_at trigger
