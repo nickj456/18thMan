@@ -76,6 +76,23 @@ export function DrillCanvas({
   // Store all editing data directly — don't look up from state.elements (timing issues)
   const [editingText, setEditingText] = useState<EditingText | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+
+  // Fit canvas to available container space on desktop
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const obs = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect
+      const availW = width - 32
+      const availH = height - 32
+      const s = Math.min(availW / CANVAS_WIDTH, availH / CANVAS_HEIGHT)
+      setScale(Math.max(0.3, s))
+    })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
 
   // Focus textarea whenever a new text edit session starts
   useEffect(() => {
@@ -107,7 +124,9 @@ export function DrillCanvas({
   })
 
   function getPos(e: Konva.KonvaEventObject<MouseEvent>) {
-    return e.target.getStage()?.getPointerPosition() ?? null
+    const pos = e.target.getStage()?.getPointerPosition() ?? null
+    if (!pos) return null
+    return { x: pos.x / scale, y: pos.y / scale }
   }
 
   // ── Click-to-place (non-draw tools) ──────────────────────────────────────
@@ -238,8 +257,8 @@ export function DrillCanvas({
         onElementChange={handleElementChange}
       />
 
-      <div className="flex-1 overflow-auto bg-zinc-950 flex items-center justify-center p-4">
-        <div style={{ position: 'relative', cursor: activeTool === 'select' ? 'default' : isDraw ? 'crosshair' : 'copy' }}>
+      <div ref={containerRef} className="flex-1 overflow-auto bg-zinc-950 flex items-center justify-center p-4">
+        <div style={{ position: 'relative', width: CANVAS_WIDTH * scale, height: CANVAS_HEIGHT * scale, cursor: activeTool === 'select' ? 'default' : isDraw ? 'crosshair' : 'copy' }}>
           {/* Text editing overlay — absolutely positioned over the canvas */}
           {editingText && (
             <textarea
@@ -248,8 +267,8 @@ export function DrillCanvas({
               rows={1}
               style={{
                 position: 'absolute',
-                left: editingText.x,
-                top: editingText.y - 2,
+                left: editingText.x * scale,
+                top: (editingText.y - 2) * scale,
                 minWidth: 80,
                 fontSize: 15,
                 fontWeight: 'bold',
@@ -287,8 +306,10 @@ export function DrillCanvas({
           )}
           <Stage
             ref={stageRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
+            width={CANVAS_WIDTH * scale}
+            height={CANVAS_HEIGHT * scale}
+            scaleX={scale}
+            scaleY={scale}
             onClick={handleStageClick}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
