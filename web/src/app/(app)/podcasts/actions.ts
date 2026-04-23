@@ -82,6 +82,8 @@ export async function createPodcast(formData: FormData) {
 
 async function generatePodcastAI(podcastId: string, title: string, description: string | null) {
   try {
+    console.log('[podcast-ai] starting', { podcastId, title: title?.slice(0, 50) })
+
     const content = [
       `Title: ${title}`,
       description ? `Description: ${description}` : '',
@@ -98,31 +100,43 @@ PODCAST:
 ${content}`,
     })
 
+    console.log('[podcast-ai] groq response:', text.slice(0, 300))
+
     let parsed: { tags?: string[] } | null = null
     try {
-      // Strip any accidental markdown fences
       const cleaned = text.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim()
       parsed = JSON.parse(cleaned)
-    } catch {
+    } catch (e) {
+      console.error('[podcast-ai] JSON parse failed, raw text:', text, 'error:', e)
       return
     }
 
-    const service = createServiceClient()
-
-    if (parsed?.tags && Array.isArray(parsed.tags) && parsed.tags.length > 0) {
-      const tags = parsed.tags
-        .filter((t): t is string => typeof t === 'string')
-        .map(t => t.toLowerCase().trim())
-        .filter(t => t.length > 0 && t.length <= 60)
-        .slice(0, 15)
-
-      await service.from('podcast_tags').upsert(
-        tags.map(tag => ({ podcast_id: podcastId, tag, source: 'ai' })),
-        { onConflict: 'podcast_id,tag' }
-      )
+    if (!parsed?.tags || !Array.isArray(parsed.tags) || parsed.tags.length === 0) {
+      console.error('[podcast-ai] no tags in parsed response:', parsed)
+      return
     }
-  } catch {
-    // AI failure is non-fatal — podcast already saved without summary/AI tags
+
+    const tags = parsed.tags
+      .filter((t): t is string => typeof t === 'string')
+      .map(t => t.toLowerCase().trim())
+      .filter(t => t.length > 0 && t.length <= 60)
+      .slice(0, 15)
+
+    console.log('[podcast-ai] inserting tags:', tags)
+
+    const service = createServiceClient()
+    const { error } = await service.from('podcast_tags').upsert(
+      tags.map(tag => ({ podcast_id: podcastId, tag, source: 'ai' })),
+      { onConflict: 'podcast_id,tag' }
+    )
+
+    if (error) {
+      console.error('[podcast-ai] upsert failed:', error)
+    } else {
+      console.log('[podcast-ai] inserted', tags.length, 'tags successfully')
+    }
+  } catch (e) {
+    console.error('[podcast-ai] top-level error:', e)
   }
 }
 
