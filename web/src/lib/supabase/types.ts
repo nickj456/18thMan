@@ -490,3 +490,19 @@ export const FOCUS_TOPICS = [
 ] as const
 
 export type FocusTopic = typeof FOCUS_TOPICS[number]['label']
+
+// ── Wellbeing ─────────────────────────────────────────────────────────────────
+
+export type WellbeingResourceType = 'nutrition_plan' | 'nutrition_guide' | 'mental_health'
+
+export interface WellbeingResource {
+  id: string
+  type: WellbeingResourceType
+  title: string
+  subtitle: string | null
+  content: Record<string, unknown>
+  sort_order: number
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
