@@ -31,6 +31,7 @@ import {
   Video,
   ClipboardList,
   Target,
+  HeartPulse,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -60,6 +61,7 @@ const navItems = [
   { href: '/groups', label: 'My Groups', icon: Users2 },
   { href: '/weekly-focus', label: 'Weekly Focus', icon: Target },
   { href: '/podcasts', label: 'Podcasts', icon: Headphones },
+  { href: '/wellbeing', label: 'Wellbeing', icon: HeartPulse },
   { href: '/analysis', label: 'Coaching Eye', icon: Video },
 ]
 

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2, Clock } from 'lucide-react'
+import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2, Clock, HeartPulse } from 'lucide-react'
 
 export const metadata = { title: 'Admin — 18th Man' }
 
@@ -23,6 +23,7 @@ export default async function AdminPage() {
     viewersRes,
     clubsRes,
     pendingDrillsRes,
+    wellbeingRes,
   ] = await Promise.all([
     supabase.from('profiles').select('id', { count: 'exact', head: true }),
     supabase.from('drills').select('id', { count: 'exact', head: true }),
@@ -33,6 +34,7 @@ export default async function AdminPage() {
     supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'viewer'),
     supabase.from('clubs').select('id', { count: 'exact', head: true }),
     supabase.from('drills').select('id', { count: 'exact', head: true }).eq('approval_status', 'pending').eq('is_public', true),
+    supabase.from('wellbeing_resources').select('id', { count: 'exact', head: true }),
   ])
 
   const stats = [
@@ -81,6 +83,13 @@ export default async function AdminPage() {
       label: 'Import Playlist',
       description: 'Bulk import drills from YouTube',
       colour: 'border-rose-500/20 hover:border-rose-500/40 text-rose-400',
+    },
+    {
+      href: '/admin/wellbeing',
+      icon: HeartPulse,
+      label: 'Wellbeing Resources',
+      description: `${wellbeingRes.count ?? 0} resource${(wellbeingRes.count ?? 0) !== 1 ? 's' : ''} published`,
+      colour: 'border-violet-500/20 hover:border-violet-500/40 text-violet-400',
     },
   ]
 
