@@ -15,6 +15,26 @@ interface AiGeneratedContent {
   guidance: { title: string; detail: string }[]
 }
 
+interface NutritionPlanAiContent {
+  ai_generated: true
+  plan_type: 'seven_day'
+  source_url: string
+  age_group: string
+  sex: string
+  daily_calories: string
+  summary: string
+  week: {
+    day: string
+    breakfast: string
+    mid_morning?: string
+    lunch: string
+    afternoon_snack?: string
+    dinner: string
+    before_bed?: string
+  }[]
+  habits: { title: string; detail: string }[]
+}
+
 interface NutritionPlanContent {
   athlete?: {
     age?: number
@@ -91,6 +111,7 @@ export default async function WellbeingDetailPage({
 
   const content = resource.content as Record<string, unknown>
   const isAiGenerated = content?.ai_generated === true
+  const isSevenDayPlan = isAiGenerated && content?.plan_type === 'seven_day'
 
   return (
     <div className="max-w-3xl space-y-8">
@@ -107,10 +128,110 @@ export default async function WellbeingDetailPage({
         {resource.type.replace(/_/g, ' ')}
       </p>
 
-      {isAiGenerated && <AiGeneratedDetail resource={resource} />}
+      {isSevenDayPlan && <SevenDayPlanDetail resource={resource} />}
+      {isAiGenerated && !isSevenDayPlan && <AiGeneratedDetail resource={resource} />}
       {!isAiGenerated && resource.type === 'nutrition_plan' && <NutritionPlanDetail resource={resource} />}
       {!isAiGenerated && resource.type === 'nutrition_guide' && <NutritionGuideDetail resource={resource} />}
       {!isAiGenerated && resource.type === 'mental_health' && <MentalHealthDetail resource={resource} />}
+    </div>
+  )
+}
+
+// ── Seven-Day Nutrition Plan ───────────────────────────────────────────────
+
+const MEAL_LABELS: Record<string, string> = {
+  breakfast: 'Breakfast',
+  mid_morning: 'Mid-Morning',
+  lunch: 'Lunch',
+  afternoon_snack: 'Afternoon Snack',
+  dinner: 'Dinner',
+  before_bed: 'Before Bed',
+}
+
+const MEAL_KEYS = ['breakfast', 'mid_morning', 'lunch', 'afternoon_snack', 'dinner', 'before_bed'] as const
+
+function SevenDayPlanDetail({ resource }: { resource: WellbeingResource }) {
+  const content = resource.content as unknown as NutritionPlanAiContent
+
+  return (
+    <div className="space-y-8">
+      {/* Hero */}
+      <div className="space-y-2">
+        <h1 className="app-heading text-3xl">{resource.title}</h1>
+        {resource.subtitle && (
+          <p className="text-muted-foreground">{resource.subtitle}</p>
+        )}
+      </div>
+
+      {/* Profile strip */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">Plan Profile</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Stat label="Age Group" value={content.age_group ?? '—'} />
+          <Stat label="Sex" value={content.sex ?? '—'} />
+          <Stat label="Daily Calories" value={content.daily_calories ?? '—'} large />
+        </div>
+        {content.summary && (
+          <p className="mt-4 pt-4 border-t border-border text-sm text-muted-foreground leading-relaxed">
+            {content.summary}
+          </p>
+        )}
+      </div>
+
+      {/* 7-day schedule */}
+      {Array.isArray(content.week) && content.week.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="font-semibold text-lg">7-Day Meal Plan</h2>
+          <div className="space-y-3">
+            {content.week.map((dayPlan, i) => (
+              <div key={i} className="rounded-xl border border-border overflow-hidden">
+                <div className="px-5 py-3 bg-muted/40 border-b border-border">
+                  <h3 className="font-semibold text-sm">{dayPlan.day}</h3>
+                </div>
+                <div className="divide-y divide-border">
+                  {MEAL_KEYS.map((key) => {
+                    const meal = dayPlan[key]
+                    if (!meal) return null
+                    return (
+                      <div key={key} className="flex items-start gap-4 px-5 py-3 bg-card">
+                        <span className="text-xs font-medium text-muted-foreground w-28 shrink-0 mt-0.5">
+                          {MEAL_LABELS[key]}
+                        </span>
+                        <p className="text-sm text-foreground flex-1">{meal}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Habits */}
+      {Array.isArray(content.habits) && content.habits.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="font-semibold text-lg">Key Habits</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {content.habits.map((habit, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card p-4 space-y-1">
+                <p className="font-medium text-sm">{habit.title}</p>
+                <p className="text-sm text-muted-foreground">{habit.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Source link */}
+      {content.source_url && (
+        <div className="pt-2 border-t border-border">
+          <p className="text-xs text-muted-foreground mb-2">Original source</p>
+          <Button render={<a href={content.source_url} target="_blank" rel="noopener noreferrer" />} variant="outline" size="sm">
+            Visit Source ↗
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
