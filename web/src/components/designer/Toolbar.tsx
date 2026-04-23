@@ -15,7 +15,7 @@ import {
   Trash2,
   Undo2,
   Eraser,
-  FlipHorizontal2,
+  RotateCw,
 } from 'lucide-react'
 
 const TOOLS: { id: ToolType; label: string; icon: React.ReactNode; color?: string }[] = [
@@ -114,7 +114,7 @@ export function Toolbar({
           </button>
         ))}
         <button
-          title="Flip pitch direction"
+          title="Rotate pitch to vertical"
           onClick={onFlipPitch}
           className={cn(
             'flex flex-col items-center gap-0.5 rounded-md py-1 px-1 text-[9px] leading-tight text-center transition-colors mt-0.5',
@@ -123,8 +123,8 @@ export function Toolbar({
               : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
           )}
         >
-          <FlipHorizontal2 size={12} />
-          <span>Flip</span>
+          <RotateCw size={12} />
+          <span>Vertical</span>
         </button>
       </div>
 

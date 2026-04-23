@@ -176,7 +176,15 @@ export function PitchSVG({ bg, flipped }: { bg: CanvasState['background']; flipp
   }
 
   if (flipped) {
-    return <g transform={`translate(${W},0) scale(-1,1)`}>{inner}</g>
+    // Rotate 90° CW around canvas centre, then scale to fit portrait pitch in landscape canvas
+    const scale = H / W  // ≈ 0.667
+    const cx = W / 2
+    const cy = H / 2
+    return (
+      <g transform={`translate(${cx},${cy}) rotate(90) scale(${scale}) translate(${-cx},${-cy})`}>
+        {inner}
+      </g>
+    )
   }
   return <>{inner}</>
 }

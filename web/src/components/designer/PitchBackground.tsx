@@ -144,8 +144,22 @@ export function PitchBackgroundLayer({ type, flipped }: PitchBackgroundProps) {
     : <BlankGrid />
 
   if (flipped) {
-    // Mirror horizontally around the canvas centre
-    return <Group x={CANVAS_WIDTH} scaleX={-1}>{content}</Group>
+    // Rotate 90° clockwise and scale down to fit inside the fixed canvas
+    // Result: portrait-oriented pitch centred in the landscape canvas
+    const scale = CANVAS_HEIGHT / CANVAS_WIDTH  // ≈ 0.667
+    return (
+      <Group
+        x={CANVAS_WIDTH / 2}
+        y={CANVAS_HEIGHT / 2}
+        offsetX={CANVAS_WIDTH / 2}
+        offsetY={CANVAS_HEIGHT / 2}
+        rotation={90}
+        scaleX={scale}
+        scaleY={scale}
+      >
+        {content}
+      </Group>
+    )
   }
   return <>{content}</>
 }
