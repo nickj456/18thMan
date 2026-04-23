@@ -1,6 +1,5 @@
 'use server'
 
-import { after } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { generateText } from 'ai'
@@ -47,7 +46,6 @@ export async function createPodcast(formData: FormData) {
   }
 
   const durationText: string | null = null
-  const tagsRaw = ''
 
   const { data: podcast, error } = await supabase
     .from('podcasts')
@@ -73,11 +71,8 @@ export async function createPodcast(formData: FormData) {
     })
   }
 
-  // Always run AI tagging in the background from title + description
-  const podcastId = podcast.id
-  after(async () => {
-    await generatePodcastAI(podcastId, title!, description)
-  })
+  // Run AI tagging synchronously so tags are ready when the user lands on the page
+  await generatePodcastAI(podcast.id, title!, description)
 
   revalidatePath('/podcasts')
   redirect(`/podcasts/${podcast.id}`)
