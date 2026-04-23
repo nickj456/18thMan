@@ -7,6 +7,14 @@ import type { WellbeingResource } from '@/lib/supabase/types'
 
 // ── Content types ──────────────────────────────────────────────────────────
 
+interface AiGeneratedContent {
+  ai_generated: true
+  source_url: string
+  summary: string
+  key_points: string[]
+  guidance: { title: string; detail: string }[]
+}
+
 interface NutritionPlanContent {
   athlete?: {
     age?: number
@@ -81,6 +89,9 @@ export default async function WellbeingDetailPage({
 
   if (!resource) notFound()
 
+  const content = resource.content as Record<string, unknown>
+  const isAiGenerated = content?.ai_generated === true
+
   return (
     <div className="max-w-3xl space-y-8">
       {/* Back */}
@@ -96,9 +107,76 @@ export default async function WellbeingDetailPage({
         {resource.type.replace(/_/g, ' ')}
       </p>
 
-      {resource.type === 'nutrition_plan' && <NutritionPlanDetail resource={resource} />}
-      {resource.type === 'nutrition_guide' && <NutritionGuideDetail resource={resource} />}
-      {resource.type === 'mental_health' && <MentalHealthDetail resource={resource} />}
+      {isAiGenerated && <AiGeneratedDetail resource={resource} />}
+      {!isAiGenerated && resource.type === 'nutrition_plan' && <NutritionPlanDetail resource={resource} />}
+      {!isAiGenerated && resource.type === 'nutrition_guide' && <NutritionGuideDetail resource={resource} />}
+      {!isAiGenerated && resource.type === 'mental_health' && <MentalHealthDetail resource={resource} />}
+    </div>
+  )
+}
+
+// ── AI Generated ──────────────────────────────────────────────────────────
+
+function AiGeneratedDetail({ resource }: { resource: WellbeingResource }) {
+  const content = resource.content as unknown as AiGeneratedContent
+
+  return (
+    <div className="space-y-8">
+      {/* Hero */}
+      <div className="space-y-2">
+        <h1 className="app-heading text-3xl">{resource.title}</h1>
+        {resource.subtitle && (
+          <p className="text-muted-foreground">{resource.subtitle}</p>
+        )}
+      </div>
+
+      {/* Summary */}
+      {content.summary && (
+        <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Summary</h2>
+          <p className="text-sm leading-relaxed text-muted-foreground">{content.summary}</p>
+        </div>
+      )}
+
+      {/* Key points */}
+      {Array.isArray(content.key_points) && content.key_points.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="font-semibold text-lg">Key Points</h2>
+          <ul className="space-y-2">
+            {content.key_points.map((point, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                <span className="text-muted-foreground">{point}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Guidance */}
+      {Array.isArray(content.guidance) && content.guidance.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="font-semibold text-lg">Guidance for Coaches &amp; Athletes</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {content.guidance.map((item, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card p-4 space-y-1">
+                <p className="font-medium text-sm">{item.title}</p>
+                <p className="text-sm text-muted-foreground">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Source link */}
+      {content.source_url && (
+        <div className="pt-2 border-t border-border">
+          <p className="text-xs text-muted-foreground mb-2">Original source</p>
+          <Button render={<a href={content.source_url} target="_blank" rel="noopener noreferrer" />} variant="outline" size="sm">
+            Visit Source ↗
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
