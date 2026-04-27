@@ -256,7 +256,8 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
 
   function handleSave() {
     if (!title.trim()) { toast.error('Please enter a drill title'); return }
-    if (!isMobile && canvasState.elements.length === 0) { toast.error('Add at least one element to the canvas'); return }
+    const hasVideo = !!(youtubeUrl.trim() || tiktokUrl.trim() || facebookUrl.trim())
+    if (!isMobile && canvasState.elements.length === 0 && !hasVideo) { toast.error('Add at least one element to the canvas, or include a video link'); return }
 
     startTransition(async () => {
       const dataUrl = stageRef.current?.toDataURL({ pixelRatio: 1 }) ?? null
