@@ -123,15 +123,18 @@ export function DrillCanvas({
     return () => window.removeEventListener('keydown', handleKey)
   })
 
-  function getPos(e: Konva.KonvaEventObject<MouseEvent>) {
+  // Works for mouse, touch, and Apple Pencil — getPointerPosition() normalises all three
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function getPos(e: Konva.KonvaEventObject<any>) {
     const pos = e.target.getStage()?.getPointerPosition() ?? null
     if (!pos) return null
     return { x: pos.x / scale, y: pos.y / scale }
   }
 
-  // ── Click-to-place (non-draw tools) ──────────────────────────────────────
-  const handleStageClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (DRAW_TOOLS.includes(activeTool)) return   // handled by mousedown/up
+  // ── Click/Tap-to-place (non-draw tools) ──────────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleStageClick = useCallback((e: Konva.KonvaEventObject<any>) => {
+    if (DRAW_TOOLS.includes(activeTool)) return   // handled by down/up
     if (activeTool === 'select') {
       if (e.target === e.target.getStage()) onSelectId(null)
       return
@@ -195,6 +198,31 @@ export function DrillCanvas({
     setDrawingEl(null)
   }, [drawingEl, state, onStateChange, onSelectId])
 
+  // ── Touch/Apple Pencil draw handlers ─────────────────────────────────────
+  const handleTouchStart = useCallback((e: Konva.KonvaEventObject<TouchEvent>) => {
+    if (!DRAW_TOOLS.includes(activeTool)) return
+    // Prevent scroll/zoom while drawing
+    e.evt.preventDefault()
+    const pos = getPos(e)
+    if (!pos) return
+    setDrawingEl({
+      id: 'preview',
+      type: activeTool,
+      x1: pos.x, y1: pos.y,
+      x2: pos.x, y2: pos.y,
+      color: defaultLineColor(activeTool),
+    })
+    onSelectId(null)
+  }, [activeTool, onSelectId])
+
+  const handleTouchMove = useCallback((e: Konva.KonvaEventObject<TouchEvent>) => {
+    if (!drawingEl) return
+    e.evt.preventDefault()
+    const pos = getPos(e)
+    if (!pos) return
+    setDrawingEl((d) => d ? { ...d, x2: pos.x, y2: pos.y } : null)
+  }, [drawingEl])
+
   function handleElementChange(updated: CanvasElement) {
     onStateChange({
       ...state,
@@ -237,6 +265,7 @@ export function DrillCanvas({
   const attackers = state.elements.filter((e) => e.type === 'attacker').length
   const defenders = state.elements.filter((e) => e.type === 'defender').length
   const isDraw = DRAW_TOOLS.includes(activeTool)
+  const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 
   return (
     <div className="flex flex-1 overflow-hidden">
@@ -311,9 +340,13 @@ export function DrillCanvas({
             scaleX={scale}
             scaleY={scale}
             onClick={handleStageClick}
+            onTap={handleStageClick}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleMouseUp}
           >
             <Layer>
               <PitchBackgroundLayer type={state.background} flipped={state.pitchFlipped} />
@@ -359,10 +392,10 @@ export function DrillCanvas({
       <div className="absolute bottom-2 left-16 flex gap-3 text-[11px] text-zinc-500 pointer-events-none select-none">
         <span>{attackers} att · {defenders} def · {state.elements.length} total</span>
         {activeTool !== 'select' && isDraw && (
-          <span className="text-zinc-400">Click and drag to draw · Esc to cancel</span>
+          <span className="text-zinc-400">{isTouch ? 'Drag to draw · Apple Pencil supported' : 'Click and drag to draw · Esc to cancel'}</span>
         )}
         {activeTool !== 'select' && !isDraw && !editingText && (
-          <span className="text-zinc-400">Click canvas to place · Esc to cancel</span>
+          <span className="text-zinc-400">{isTouch ? 'Tap canvas to place' : 'Click canvas to place · Esc to cancel'}</span>
         )}
         {selectedId && !editingText && (
           <span className="text-zinc-400">Del to delete · double-click text to edit</span>

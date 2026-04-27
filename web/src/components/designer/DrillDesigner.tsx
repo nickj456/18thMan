@@ -556,12 +556,14 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         )}
       </div>
 
-      <aside className="w-72 border-l border-zinc-800 bg-zinc-900 flex flex-col overflow-y-auto shrink-0">
-        <div className="p-4 border-b border-zinc-800">
+      <aside className="w-72 border-l border-zinc-800 bg-zinc-900 flex flex-col shrink-0">
+        <div className="p-4 border-b border-zinc-800 shrink-0">
           <h2 className="font-semibold text-sm text-white">Drill Details</h2>
           <p className="text-xs text-zinc-500 mt-0.5">Fill in before saving</p>
         </div>
-        {formFields}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {formFields}
+        </div>
         {saveButton}
       </aside>
 
