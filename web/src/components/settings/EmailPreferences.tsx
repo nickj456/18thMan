@@ -29,12 +29,17 @@ export function EmailPreferences({ initialPrefs }: EmailPreferencesProps) {
   const [open, setOpen] = useState(false)
 
   function toggle(key: string, value: boolean) {
+    const prev = prefs
     const next = { ...prefs, [key]: value }
     setPrefs(next)
     setSaved(false)
     startSave(async () => {
-      await saveEmailPreferences(next)
-      setSaved(true)
+      const result = await saveEmailPreferences(next)
+      if (result.error) {
+        setPrefs(prev)  // revert on error
+      } else {
+        setSaved(true)
+      }
     })
   }
 
