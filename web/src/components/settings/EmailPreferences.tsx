@@ -13,7 +13,8 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog'
-import { saveEmailPreferences, unsubscribeFromAll, EMAIL_CATEGORIES } from '@/app/(app)/settings/email-actions'
+import { saveEmailPreferences, unsubscribeFromAll } from '@/app/(app)/settings/email-actions'
+import { EMAIL_CATEGORIES } from '@/app/(app)/settings/email-constants'
 
 interface EmailPreferencesProps {
   initialPrefs: Record<string, boolean>
