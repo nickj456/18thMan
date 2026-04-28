@@ -24,12 +24,20 @@ export async function GET(request: Request) {
   const { userId, category } = parsed
   const service = createServiceClient()
 
-  await service
+  const { error: upsertError } = await service
     .from('email_preferences')
     .upsert(
       { user_id: userId, category, enabled: false, updated_at: new Date().toISOString() },
       { onConflict: 'user_id,category' },
     )
+
+  if (upsertError) {
+    console.error('[unsubscribe] upsert error:', upsertError)
+    return new NextResponse(
+      unsubscribeHtml('Something went wrong', 'Could not process your request. Please visit your settings to manage email preferences.'),
+      { status: 500, headers: { 'Content-Type': 'text/html' } },
+    )
+  }
 
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
   const label = category.replace(/_/g, ' ')
