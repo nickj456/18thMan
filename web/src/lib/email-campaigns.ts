@@ -9,7 +9,7 @@ const BATCH_TRIGGER_TYPES: TriggerType[] = ['new_public_drill', 'podcast', 'well
 
 export async function getBatchThreshold(triggerType: TriggerType): Promise<number> {
   const service = createServiceClient()
-  const { data } = await service.from('email_settings').select('*').single()
+  const { data } = await service.from('email_settings').select('*').maybeSingle()
   switch (triggerType) {
     case 'new_public_drill': return data?.batch_threshold_drill ?? 5
     case 'podcast': return data?.batch_threshold_podcast ?? 3
@@ -126,13 +126,15 @@ function generateAutoDraftContent(
   switch (triggerType) {
     case 'new_public_drill': {
       const count = items.length
-      const firstName = escapeHtml(items[0]?.item_title ?? items[0]?.title ?? 'New Drill')
-      const subject = count === 1 ? `New drill: ${firstName}` : `${count} new drills added to 18th Man`
-      const listItems = items.map(i =>
-        `<tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;">
-          <a href="${escapeHtml(i.item_url ?? i.url ?? SITE_URL)}" style="color:#e8560a;font-weight:600;font-size:14px;">${escapeHtml(i.item_title ?? i.title)}</a>
+      const firstTitleRaw = items[0]?.item_title ?? items[0]?.title ?? 'New Drill'
+      const subject = count === 1 ? `New drill: ${firstTitleRaw}` : `${count} new drills added to 18th Man`
+      const listItems = items.map(i => {
+        const titleHtml = escapeHtml(i.item_title ?? i.title)
+        const urlHtml = escapeHtml(i.item_url ?? i.url ?? SITE_URL)
+        return `<tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;">
+          <a href="${urlHtml}" style="color:#e8560a;font-weight:600;font-size:14px;">${titleHtml}</a>
         </td></tr>`
-      ).join('')
+      }).join('')
       return {
         subject,
         bodyHtml: `<p style="margin:0 0 16px;color:#a1a1aa;">New drill${count !== 1 ? 's have' : ' has'} been added to the 18th Man drill library.</p>
@@ -140,21 +142,24 @@ function generateAutoDraftContent(
       }
     }
     case 'weekly_focus': {
-      const title = escapeHtml(items[0]?.item_title ?? items[0]?.title ?? "this week's focus")
+      const titleRaw = items[0]?.item_title ?? items[0]?.title ?? "this week's focus"
+      const titleHtml = escapeHtml(titleRaw)
       return {
-        subject: `This week's coaching focus: ${title}`,
-        bodyHtml: `<p style="margin:0 0 16px;color:#a1a1aa;">Your weekly coaching focus has been published: <strong style="color:#ffffff;">${title}</strong>. Head to the app to see the suggested drills and discussion.</p>`,
+        subject: `This week's coaching focus: ${titleRaw}`,
+        bodyHtml: `<p style="margin:0 0 16px;color:#a1a1aa;">Your weekly coaching focus has been published: <strong style="color:#ffffff;">${titleHtml}</strong>. Head to the app to see the suggested drills and discussion.</p>`,
       }
     }
     case 'podcast': {
       const count = items.length
-      const firstName = escapeHtml(items[0]?.item_title ?? items[0]?.title ?? 'New Episode')
-      const subject = count === 1 ? `New podcast: ${firstName}` : `${count} new podcast episodes on 18th Man`
-      const listItems = items.map(i =>
-        `<tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;">
-          <a href="${escapeHtml(i.item_url ?? i.url ?? SITE_URL)}" style="color:#e8560a;font-weight:600;font-size:14px;">${escapeHtml(i.item_title ?? i.title)}</a>
+      const firstTitleRaw = items[0]?.item_title ?? items[0]?.title ?? 'New Episode'
+      const subject = count === 1 ? `New podcast: ${firstTitleRaw}` : `${count} new podcast episodes on 18th Man`
+      const listItems = items.map(i => {
+        const titleHtml = escapeHtml(i.item_title ?? i.title)
+        const urlHtml = escapeHtml(i.item_url ?? i.url ?? SITE_URL)
+        return `<tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;">
+          <a href="${urlHtml}" style="color:#e8560a;font-weight:600;font-size:14px;">${titleHtml}</a>
         </td></tr>`
-      ).join('')
+      }).join('')
       return {
         subject,
         bodyHtml: `<p style="margin:0 0 16px;color:#a1a1aa;">New coaching podcast content is available.</p>
@@ -163,13 +168,15 @@ function generateAutoDraftContent(
     }
     case 'wellbeing': {
       const count = items.length
-      const firstName = escapeHtml(items[0]?.item_title ?? items[0]?.title ?? 'New Resource')
-      const subject = count === 1 ? `New resource: ${firstName}` : `${count} new wellbeing resources on 18th Man`
-      const listItems = items.map(i =>
-        `<tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;">
-          <a href="${escapeHtml(i.item_url ?? i.url ?? SITE_URL)}" style="color:#e8560a;font-weight:600;font-size:14px;">${escapeHtml(i.item_title ?? i.title)}</a>
+      const firstTitleRaw = items[0]?.item_title ?? items[0]?.title ?? 'New Resource'
+      const subject = count === 1 ? `New resource: ${firstTitleRaw}` : `${count} new wellbeing resources on 18th Man`
+      const listItems = items.map(i => {
+        const titleHtml = escapeHtml(i.item_title ?? i.title)
+        const urlHtml = escapeHtml(i.item_url ?? i.url ?? SITE_URL)
+        return `<tr><td style="padding:10px 16px;border-bottom:1px solid #2a2a2a;">
+          <a href="${urlHtml}" style="color:#e8560a;font-weight:600;font-size:14px;">${titleHtml}</a>
         </td></tr>`
-      ).join('')
+      }).join('')
       return {
         subject,
         bodyHtml: `<p style="margin:0 0 16px;color:#a1a1aa;">New wellbeing and coaching resources are available.</p>
@@ -204,7 +211,7 @@ export async function sendCampaign(campaignId: string): Promise<{ sent: number; 
     const { data } = await service.from('profiles').select('id').eq('role', 'coach')
     profileIds = (data ?? []).map((p: { id: string }) => p.id)
   } else if (campaign.segment === 'free') {
-    const { data } = await service.from('profiles').select('id').is('subscription_tier', null)
+    const { data } = await service.from('profiles').select('id').eq('subscription_tier', 'free')
     profileIds = (data ?? []).map((p: { id: string }) => p.id)
   } else if (campaign.segment === 'pro') {
     const { data } = await service.from('profiles').select('id').in('subscription_tier', ['coach', 'club'])
