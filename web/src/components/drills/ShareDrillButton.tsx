@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Share2, Link, Video, Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -23,7 +23,15 @@ export function ShareDrillButton({ drillId, drillTitle, hasAnimation, canvasJson
   const [linkCopied, setLinkCopied] = useState(false)
   const [recording, setRecording] = useState(false)
 
-  const url = `${typeof window !== 'undefined' ? window.location.origin : 'https://18thman.app'}/drills/${drillId}`
+  const linkCopiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (linkCopiedTimerRef.current) clearTimeout(linkCopiedTimerRef.current)
+    }
+  }, [])
+
+  const url = `${window.location.origin}/drills/${drillId}`
 
   async function handleShareLink() {
     if (navigator.share) {
@@ -37,9 +45,13 @@ export function ShareDrillButton({ drillId, drillTitle, hasAnimation, canvasJson
         // User cancelled — not an error
       }
     } else {
-      await navigator.clipboard.writeText(url)
-      setLinkCopied(true)
-      setTimeout(() => setLinkCopied(false), 2000)
+      try {
+        await navigator.clipboard.writeText(url)
+        setLinkCopied(true)
+        linkCopiedTimerRef.current = setTimeout(() => setLinkCopied(false), 2000)
+      } catch {
+        toast.error('Failed to copy link')
+      }
     }
   }
 
@@ -93,7 +105,6 @@ export function ShareDrillButton({ drillId, drillTitle, hasAnimation, canvasJson
   )
 }
 
-// --- placeholder so the file compiles ---
 async function recordDrillAnimation(_canvasJson: CanvasState, _drillTitle: string): Promise<File> {
   throw new Error('Not implemented yet')
 }
