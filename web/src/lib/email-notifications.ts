@@ -1,14 +1,28 @@
-import { createHmac } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { createServiceClient } from '@/lib/supabase/service'
 import { sendNotificationEmailHtml, sendBurstEmailHtml } from '@/lib/email'
 
-const SECRET = process.env.UNSUBSCRIBE_SECRET ?? 'dev-fallback-secret'
+const SECRET = (() => {
+  if (process.env.UNSUBSCRIBE_SECRET) return process.env.UNSUBSCRIBE_SECRET
+  if (process.env.NODE_ENV === 'production') throw new Error('UNSUBSCRIBE_SECRET env var is required in production')
+  return 'dev-fallback-secret'
+})()
+
+function escapeHtml(s: unknown): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
 
 // ── Unsubscribe tokens ─────────────────────────────────────────────────────────
 
 export function generateUnsubscribeToken(userId: string, category: string): string {
   const ts = Date.now().toString()
-  const payload = [userId, category, ts].join(':')
+  const safeCategory = Buffer.from(category).toString('base64url')
+  const payload = [userId, safeCategory, ts].join(':')
   const sig = createHmac('sha256', SECRET).update(payload).digest('hex')
   return Buffer.from(`${payload}:${sig}`).toString('base64url')
 }
@@ -18,11 +32,13 @@ export function verifyUnsubscribeToken(token: string): { userId: string; categor
     const decoded = Buffer.from(token, 'base64url').toString('utf8')
     const parts = decoded.split(':')
     if (parts.length !== 4) return null
-    const [userId, category, ts, sig] = parts
+    const [userId, safeCategory, ts, sig] = parts
     if (Date.now() - parseInt(ts) > 90 * 24 * 60 * 60 * 1000) return null
-    const payload = [userId, category, ts].join(':')
-    const expected = createHmac('sha256', SECRET).update(payload).digest('hex')
-    if (sig !== expected) return null
+    const payload = [userId, safeCategory, ts].join(':')
+    const expectedBuf = Buffer.from(createHmac('sha256', SECRET).update(payload).digest('hex'), 'hex')
+    const sigBuf = Buffer.from(sig, 'hex')
+    if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) return null
+    const category = Buffer.from(safeCategory, 'base64url').toString('utf8')
     return { userId, category }
   } catch {
     return null
@@ -61,47 +77,47 @@ export function getNotificationEmailContent(
   data: Record<string, unknown>,
   recipientName: string,
 ): { subject: string; bodyText: string; ctaLabel: string; ctaPath: string } {
-  const name = recipientName || 'Coach'
+  const name = escapeHtml(recipientName || 'Coach')
   switch (type) {
     case 'new_dm':
       return {
-        subject: `New message from ${data.sender_display_name ?? 'someone'} — 18th Man`,
-        bodyText: `Hi ${name}, you have a new direct message from <strong style="color:#ffffff;">${data.sender_display_name ?? 'someone'}</strong> on 18th Man.`,
+        subject: `New message from ${escapeHtml(data.sender_display_name) || 'someone'} — 18th Man`,
+        bodyText: `Hi ${name}, you have a new direct message from <strong style="color:#ffffff;">${escapeHtml(data.sender_display_name) || 'someone'}</strong> on 18th Man.`,
         ctaLabel: 'Read your message',
         ctaPath: data.conversation_id ? `/chat/dm/${data.conversation_id}` : '/chat',
       }
     case 'drill_rating':
       return {
         subject: `Your drill received a new rating — 18th Man`,
-        bodyText: `Hi ${name}, <strong style="color:#ffffff;">${data.rater_display_name ?? 'A coach'}</strong> left a rating on your drill <strong style="color:#ffffff;">${data.drill_title ?? 'your drill'}</strong>.`,
+        bodyText: `Hi ${name}, <strong style="color:#ffffff;">${escapeHtml(data.rater_display_name) || 'A coach'}</strong> left a rating on your drill <strong style="color:#ffffff;">${escapeHtml(data.drill_title) || 'your drill'}</strong>.`,
         ctaLabel: 'View your drill',
         ctaPath: data.drill_id ? `/drills/${data.drill_id}` : '/drills',
       }
     case 'club_invite':
       return {
-        subject: `You've been invited to join ${data.club_name ?? 'a club'} — 18th Man`,
-        bodyText: `Hi ${name}, <strong style="color:#ffffff;">${data.invited_by_display_name ?? 'Someone'}</strong> has invited you to join <strong style="color:#ffffff;">${data.club_name ?? 'a club'}</strong> on 18th Man.`,
+        subject: `You've been invited to join ${escapeHtml(data.club_name) || 'a club'} — 18th Man`,
+        bodyText: `Hi ${name}, <strong style="color:#ffffff;">${escapeHtml(data.invited_by_display_name) || 'Someone'}</strong> has invited you to join <strong style="color:#ffffff;">${escapeHtml(data.club_name) || 'a club'}</strong> on 18th Man.`,
         ctaLabel: 'View invitation',
         ctaPath: '/clubs',
       }
     case 'group_invite':
       return {
         subject: `You've been invited to join a coaching group — 18th Man`,
-        bodyText: `Hi ${name}, <strong style="color:#ffffff;">${data.invited_by_display_name ?? 'Someone'}</strong> has invited you to join the coaching group <strong style="color:#ffffff;">${data.group_name ?? 'a group'}</strong>.`,
+        bodyText: `Hi ${name}, <strong style="color:#ffffff;">${escapeHtml(data.invited_by_display_name) || 'Someone'}</strong> has invited you to join the coaching group <strong style="color:#ffffff;">${escapeHtml(data.group_name) || 'a group'}</strong>.`,
         ctaLabel: 'View invitation',
         ctaPath: '/groups',
       }
     case 'followed_you':
       return {
-        subject: `${data.follower_display_name ?? 'Someone'} is now following you — 18th Man`,
-        bodyText: `Hi ${name}, <strong style="color:#ffffff;">${data.follower_display_name ?? 'A coach'}</strong> is now following your profile on 18th Man.`,
+        subject: `${escapeHtml(data.follower_display_name) || 'Someone'} is now following you — 18th Man`,
+        bodyText: `Hi ${name}, <strong style="color:#ffffff;">${escapeHtml(data.follower_display_name) || 'A coach'}</strong> is now following your profile on 18th Man.`,
         ctaLabel: 'View their profile',
         ctaPath: data.follower_username ? `/profile/${data.follower_username}` : '/dashboard',
       }
     case 'session_scheduled':
       return {
-        subject: `Session scheduled: ${data.session_title ?? 'new session'} — 18th Man`,
-        bodyText: `Hi ${name}, a session <strong style="color:#ffffff;">${data.session_title ?? 'has been scheduled'}</strong> has been added to your plan.`,
+        subject: `Session scheduled: ${escapeHtml(data.session_title) || 'new session'} — 18th Man`,
+        bodyText: `Hi ${name}, a session <strong style="color:#ffffff;">${escapeHtml(data.session_title) || 'has been scheduled'}</strong> has been added to your plan.`,
         ctaLabel: 'View session',
         ctaPath: data.session_id ? `/sessions/${data.session_id}` : '/sessions',
       }
@@ -188,7 +204,14 @@ export async function dispatchNotificationEmail(params: {
 
   if (recentCount >= threshold) {
     // Send burst summary instead of individual email
-    const result = await sendBurstEmailHtml(email, displayName, recentCount + 1)
+    const burstCategory = 'announcement' // burst covers all categories
+    const burstToken = generateUnsubscribeToken(userId, burstCategory)
+    const burstFooter = `<p style="margin:8px 0 0;font-size:11px;color:#3f3f46;text-align:center;">
+  <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'}/api/unsubscribe?token=${burstToken}" style="color:#3f3f46;text-decoration:underline;">Unsubscribe from notification emails</a>
+  &nbsp;·&nbsp;
+  <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'}/settings#email-preferences" style="color:#3f3f46;text-decoration:underline;">Manage preferences</a>
+</p>`
+    const result = await sendBurstEmailHtml(email, displayName, recentCount + 1, burstFooter)
     if (result.success) {
       await service.from('notification_email_log').insert({
         user_id: userId,
@@ -202,7 +225,6 @@ export async function dispatchNotificationEmail(params: {
     const unsubToken = generateUnsubscribeToken(userId, category)
     const result = await sendNotificationEmailHtml(email, {
       ...content,
-      userId,
       category,
       unsubToken,
     })

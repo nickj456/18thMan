@@ -468,7 +468,7 @@ export async function sendSubscriptionConfirmationEmail(
 
 // ── Unsubscribe footer (added to all notification + campaign emails) ────────────
 
-export function unsubscribeFooter(userId: string, category: string, unsubToken: string): string {
+export function unsubscribeFooter(category: string, unsubToken: string): string {
   const categoryLabel = category.replace(/_/g, ' ')
   return `
     <tr>
@@ -489,7 +489,6 @@ export interface NotificationEmailParams {
   bodyText: string
   ctaLabel: string
   ctaPath: string
-  userId: string
   category: string
   unsubToken: string
 }
@@ -543,7 +542,7 @@ export async function sendNotificationEmailHtml(
               </p>
             </td>
           </tr>
-          ${unsubscribeFooter(params.userId, params.category, params.unsubToken)}
+          ${unsubscribeFooter(params.category, params.unsubToken)}
         </table>
       </td>
     </tr>
@@ -569,6 +568,7 @@ export async function sendBurstEmailHtml(
   to: string,
   displayName: string,
   count: number,
+  unsubFooterHtml?: string,
 ): Promise<EmailResultWithId> {
   const resendClient = getResend()
   if (!resendClient) return { success: false, error: 'RESEND_API_KEY not configured' }
@@ -581,6 +581,9 @@ export async function sendBurstEmailHtml(
     ${para(`You've received <strong style="color:#ffffff;">${count} new notifications</strong> in a short space of time. Open the app to see what's happening.`)}
     ${ctaButton('View your notifications', `${SITE_URL}/notifications`)}
     ${sign()}
+    ${unsubFooterHtml ?? `<p style="margin:8px 0 0;font-size:11px;color:#3f3f46;text-align:center;">
+  <a href="${SITE_URL}/settings#email-preferences" style="color:#3f3f46;text-decoration:underline;">Manage email preferences</a>
+</p>`}
   `)
 
   try {
