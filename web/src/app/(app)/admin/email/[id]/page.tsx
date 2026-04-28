@@ -40,7 +40,8 @@ export default async function AdminEmailCampaignPage({
   // Get admin's email for test sends
   const service = createServiceClient()
   const { data: authUser } = await service.auth.admin.getUserById(user.id)
-  const adminEmail = authUser?.user?.email ?? ''
+  const adminEmail = authUser?.user?.email
+  if (!adminEmail) redirect('/admin/email')
 
   return (
     <div className="max-w-2xl space-y-6">

@@ -71,7 +71,15 @@ export async function sendTestEmail(campaignId: string, toEmail: string): Promis
 }
 
 export async function approveCampaignNow(campaignId: string): Promise<{ error?: string }> {
-  await assertAdmin()
+  const { supabase } = await assertAdmin()
+  // Verify test was sent server-side
+  const { data: campaign } = await supabase
+    .from('email_campaigns')
+    .select('test_sent_at')
+    .eq('id', campaignId)
+    .single()
+  if (!campaign?.test_sent_at) return { error: 'You must send a test email before approving this campaign.' }
+
   const { sent, errors } = await sendCampaign(campaignId)
   if (sent === 0 && errors > 0) {
     return { error: `Campaign send failed — ${errors} error(s), 0 emails delivered.` }
@@ -83,6 +91,14 @@ export async function approveCampaignNow(campaignId: string): Promise<{ error?: 
 
 export async function scheduleCampaign(campaignId: string, scheduledAt: string): Promise<{ error?: string }> {
   const { supabase } = await assertAdmin()
+  // Verify test was sent server-side
+  const { data: campaign } = await supabase
+    .from('email_campaigns')
+    .select('test_sent_at')
+    .eq('id', campaignId)
+    .single()
+  if (!campaign?.test_sent_at) return { error: 'You must send a test email before scheduling this campaign.' }
+
   const { error } = await supabase
     .from('email_campaigns')
     .update({ status: 'scheduled', scheduled_at: scheduledAt })
