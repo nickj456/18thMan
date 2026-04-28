@@ -7,6 +7,7 @@ import { createGroq } from '@ai-sdk/groq'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { fetchLinkPreview } from '@/lib/link-preview'
+import { createCampaignAutoDraft } from '@/lib/email-campaigns'
 
 const groq = createGroq()
 
@@ -73,6 +74,13 @@ export async function createPodcast(formData: FormData) {
 
   // Run AI tagging synchronously so tags are ready when the user lands on the page
   await generatePodcastAI(podcast.id, title!, description)
+
+  createCampaignAutoDraft('podcast', {
+    id: podcast.id,
+    title: title ?? 'New Episode',
+    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'}/podcasts/${podcast.id}`,
+    itemType: 'podcast',
+  }).catch(err => console.error('[auto-draft podcast]', err))
 
   revalidatePath('/podcasts')
   redirect(`/podcasts/${podcast.id}`)

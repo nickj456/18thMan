@@ -465,3 +465,193 @@ export async function sendSubscriptionConfirmationEmail(
     ${sign()}
   `))
 }
+
+// ── Unsubscribe footer (added to all notification + campaign emails) ────────────
+
+export function unsubscribeFooter(category: string, unsubToken: string): string {
+  const categoryLabel = category.replace(/_/g, ' ')
+  return `
+    <tr>
+      <td align="center" style="padding-top:20px;border-top:1px solid #2a2a2a;margin-top:24px;">
+        <p style="margin:0;font-size:11px;color:#3f3f46;line-height:1.8;">
+          <a href="${SITE_URL}/api/unsubscribe?token=${unsubToken}" style="color:#3f3f46;text-decoration:underline;">Unsubscribe from ${categoryLabel} emails</a>
+          &nbsp;·&nbsp;
+          <a href="${SITE_URL}/settings#email-preferences" style="color:#3f3f46;text-decoration:underline;">Manage all email preferences</a>
+        </p>
+      </td>
+    </tr>`
+}
+
+// ── Notification emails ────────────────────────────────────────────────────────
+
+export interface NotificationEmailParams {
+  subject: string
+  bodyText: string
+  ctaLabel: string
+  ctaPath: string
+  category: string
+  unsubToken: string
+}
+
+export interface EmailResultWithId extends EmailResult {
+  messageId?: string
+}
+
+export async function sendNotificationEmailHtml(
+  to: string,
+  params: NotificationEmailParams,
+): Promise<EmailResultWithId> {
+  const resendClient = getResend()
+  if (!resendClient) return { success: false, error: 'RESEND_API_KEY not configured' }
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background:#0d0d0d;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+          <tr>
+            <td align="center" style="padding-bottom:32px;">
+              <img src="${SITE_URL}/logo.png" alt="18th Man" width="56" height="56" style="display:block;" />
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#161616;border:1px solid #2a2a2a;border-radius:16px;padding:40px 40px 36px;color:#d4d4d4;font-size:15px;line-height:1.6;">
+              <p style="margin:0 0 16px;color:#a1a1aa;font-size:15px;line-height:1.6;">${params.bodyText}</p>
+              <table cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
+                <tr>
+                  <td style="background:#e8560a;border-radius:10px;">
+                    <a href="${SITE_URL}${params.ctaPath}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-weight:700;font-size:15px;text-decoration:none;letter-spacing:0.2px;">${params.ctaLabel} →</a>
+                  </td>
+                </tr>
+              </table>
+              <hr style="border:none;border-top:1px solid #2a2a2a;margin:24px 0;" />
+              <p style="margin:0;font-size:13px;color:#52525b;">The 18th Man team</p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding-top:24px;">
+              <p style="margin:0;font-size:12px;color:#52525b;">
+                18th Man · Rugby League Coaching Platform<br/>
+                <a href="${SITE_URL}" style="color:#52525b;">18thman.app</a>
+              </p>
+            </td>
+          </tr>
+          ${unsubscribeFooter(params.category, params.unsubToken)}
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+
+  try {
+    const { data, error } = await resendClient.emails.send({
+      from: FROM,
+      to,
+      subject: params.subject,
+      html,
+    })
+    if (error) return { success: false, error: error.message }
+    return { success: true, messageId: data?.id }
+  } catch (err) {
+    return { success: false, error: String(err) }
+  }
+}
+
+export async function sendBurstEmailHtml(
+  to: string,
+  displayName: string,
+  count: number,
+  unsubFooterHtml?: string,
+): Promise<EmailResultWithId> {
+  const resendClient = getResend()
+  if (!resendClient) return { success: false, error: 'RESEND_API_KEY not configured' }
+
+  const html = layout(`
+    ${heading(`You have ${count} new notifications.`)}
+    ${para('A flurry of activity is waiting for you in 18th Man.')}
+    ${divider()}
+    ${greeting(displayName)}
+    ${para(`You've received <strong style="color:#ffffff;">${count} new notifications</strong> in a short space of time. Open the app to see what's happening.`)}
+    ${ctaButton('View your notifications', `${SITE_URL}/notifications`)}
+    ${sign()}
+    ${unsubFooterHtml ?? `<p style="margin:8px 0 0;font-size:11px;color:#3f3f46;text-align:center;">
+  <a href="${SITE_URL}/settings#email-preferences" style="color:#3f3f46;text-decoration:underline;">Manage email preferences</a>
+</p>`}
+  `)
+
+  try {
+    const { data, error } = await resendClient.emails.send({
+      from: FROM,
+      to,
+      subject: `You have ${count} new notifications — 18th Man`,
+      html,
+    })
+    if (error) return { success: false, error: error.message }
+    return { success: true, messageId: data?.id }
+  } catch (err) {
+    return { success: false, error: String(err) }
+  }
+}
+
+// ── Campaign email template ────────────────────────────────────────────────────
+
+export interface CampaignEmailParams {
+  subject: string
+  bodyHtml: string
+  ctaLabel?: string
+  ctaUrl?: string
+  category?: string
+  unsubToken: string
+}
+
+export async function sendCampaignEmailHtml(
+  to: string,
+  params: CampaignEmailParams,
+): Promise<EmailResultWithId> {
+  const resendClient = getResend()
+  if (!resendClient) return { success: false, error: 'RESEND_API_KEY not configured' }
+
+  const ctaSection = params.ctaLabel && params.ctaUrl
+    ? ctaButton(params.ctaLabel, params.ctaUrl)
+    : ''
+  const category = params.category ?? 'announcement'
+
+  const baseHtml = layout(`
+    <div style="color:#a1a1aa;font-size:15px;line-height:1.6;">${params.bodyHtml}</div>
+    ${ctaSection}
+    ${sign()}
+  `)
+
+  const html = baseHtml + `
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;">
+    <tr>
+      <td align="center" style="padding:8px 16px 0;">
+        <p style="margin:0;font-size:11px;color:#3f3f46;line-height:1.8;">
+          <a href="${SITE_URL}/api/unsubscribe?token=${params.unsubToken}" style="color:#3f3f46;text-decoration:underline;">Unsubscribe from ${category.replace(/_/g, ' ')} emails</a>
+          &nbsp;·&nbsp;
+          <a href="${SITE_URL}/settings#email-preferences" style="color:#3f3f46;text-decoration:underline;">Manage all email preferences</a>
+        </p>
+      </td>
+    </tr>
+  </table>`
+
+  try {
+    const { data, error } = await resendClient.emails.send({
+      from: FROM,
+      to,
+      subject: params.subject,
+      html,
+    })
+    if (error) return { success: false, error: error.message }
+    return { success: true, messageId: data?.id }
+  } catch (err) {
+    return { success: false, error: String(err) }
+  }
+}

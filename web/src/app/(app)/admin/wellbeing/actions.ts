@@ -7,6 +7,7 @@ import { gateway } from '@ai-sdk/gateway'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import type { WellbeingResourceType } from '@/lib/supabase/types'
+import { createCampaignAutoDraft } from '@/lib/email-campaigns'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -34,15 +35,22 @@ export async function createWellbeingResource(formData: FormData) {
     .limit(1)
   const nextOrder = (existing?.[0]?.sort_order ?? 0) + 1
 
-  const { error } = await supabase.from('wellbeing_resources').insert({
+  const { data: resource, error } = await supabase.from('wellbeing_resources').insert({
     type,
     title,
     subtitle,
     content: {},
     sort_order: nextOrder,
     created_by: userId,
-  })
+  }).select('id').single()
   if (error) throw new Error(error.message)
+
+  createCampaignAutoDraft('wellbeing', {
+    id: resource.id,
+    title: title ?? 'New Resource',
+    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'}/wellbeing/${resource.id}`,
+    itemType: 'wellbeing',
+  }).catch(err => console.error('[auto-draft wellbeing]', err))
 
   revalidatePath('/admin/wellbeing')
   revalidatePath('/wellbeing')
@@ -207,7 +215,7 @@ export async function generateWellbeingFromUrl(formData: FormData) {
     }
   }
 
-  const { error } = await supabase.from('wellbeing_resources').insert({
+  const { data: resource, error } = await supabase.from('wellbeing_resources').insert({
     type,
     title,
     subtitle: null,
@@ -215,8 +223,15 @@ export async function generateWellbeingFromUrl(formData: FormData) {
     content,
     sort_order: nextOrder,
     created_by: userId,
-  })
+  }).select('id').single()
   if (error) throw new Error(error.message)
+
+  createCampaignAutoDraft('wellbeing', {
+    id: resource.id,
+    title: title ?? 'New Resource',
+    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'}/wellbeing/${resource.id}`,
+    itemType: 'wellbeing',
+  }).catch(err => console.error('[auto-draft wellbeing]', err))
 
   revalidatePath('/admin/wellbeing')
   revalidatePath('/wellbeing')

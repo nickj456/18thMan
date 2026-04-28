@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { getEffectiveTier, hasClubAccess } from '@/lib/subscription'
 import { ManageSubscriptionButton } from '@/components/pricing/ManageSubscriptionButton'
+import { EmailPreferences } from '@/components/settings/EmailPreferences'
 import {
   CreditCard,
   CheckCircle2,
@@ -60,14 +61,23 @@ export default async function SettingsPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [tier, profileResult] = await Promise.all([
+  const [tier, profileResult, emailPrefResult] = await Promise.all([
     getEffectiveTier(supabase, user.id),
     supabase
       .from('profiles')
       .select('display_name, username, avatar_url, coaching_level, club_id, subscription_tier, stripe_customer_id')
       .eq('id', user.id)
       .single(),
+    supabase
+      .from('email_preferences')
+      .select('category, enabled')
+      .eq('user_id', user.id),
   ])
+
+  const emailPrefs: Record<string, boolean> = {}
+  for (const row of emailPrefResult.data ?? []) {
+    emailPrefs[row.category] = row.enabled
+  }
 
   const profile = profileResult.data
   const clubId = profile?.club_id ?? null
@@ -175,6 +185,11 @@ export default async function SettingsPage({
           )}
         </div>
       </section>
+
+      {/* Email Preferences */}
+      <div className="border-t border-zinc-800 pt-8">
+        <EmailPreferences initialPrefs={emailPrefs} />
+      </div>
 
       {/* Quick links */}
       <section className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">

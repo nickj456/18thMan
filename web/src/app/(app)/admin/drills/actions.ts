@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createCampaignAutoDraft } from '@/lib/email-campaigns'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -16,12 +17,22 @@ export async function approveDrill(drillId: string) {
   const { supabase, error } = await requireAdmin()
   if (error || !supabase) return { error }
 
-  const { error: dbError } = await supabase
+  const { data: drill, error: dbError } = await supabase
     .from('drills')
     .update({ approval_status: 'approved' })
     .eq('id', drillId)
+    .select('title')
+    .single()
 
   if (dbError) return { error: dbError.message }
+
+  createCampaignAutoDraft('new_public_drill', {
+    id: drillId,
+    title: drill?.title ?? 'New Drill',
+    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'}/drills/${drillId}`,
+    itemType: 'drill',
+  }).catch(err => console.error('[auto-draft drill]', err))
+
   revalidatePath('/admin/drills')
   revalidatePath('/drills')
   return { success: true }
