@@ -44,6 +44,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { SaveDrillButton } from '@/components/drills/SaveDrillButton'
+import { ShareDrillButton } from '@/components/drills/ShareDrillButton'
 import { DrillRatingForm } from '@/components/drills/DrillRatingForm'
 import { AiGuideDisplay } from '@/components/drills/AiGuideDisplay'
 import { RegenerateGuideButton } from '@/components/drills/RegenerateGuideButton'
@@ -89,6 +90,8 @@ export default async function DrillDetailPage({
   if (!drillResult.data) notFound()
 
   const drill = drillResult.data
+  const canvasState = drill.canvas_json as CanvasState | null
+  const hasAnimation = !!(canvasState?.keyframes && canvasState.keyframes.length >= 2)
   const ratings = ratingsResult.data ?? []
   const userRole = profileResult.data?.role ?? 'viewer'
   const canInteract = userRole !== 'viewer'
@@ -149,6 +152,12 @@ export default async function DrillDetailPage({
           {canInteract && (
             <SaveDrillButton drillId={id} initialSaved={isSaved} />
           )}
+          <ShareDrillButton
+            drillId={id}
+            drillTitle={drill.title}
+            hasAnimation={hasAnimation}
+            canvasJson={canvasState}
+          />
           {(userRole === 'admin' || drill.author_id === user?.id) && (
             <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/drills/${id}/edit`} />}>
               <PenTool className="size-4 mr-1" />
