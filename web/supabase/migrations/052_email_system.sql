@@ -29,10 +29,11 @@ create table public.email_campaigns (
   status          text not null default 'draft',
   scheduled_at    timestamptz,
   sent_at         timestamptz,
-  created_by      uuid references public.profiles(id),
+  created_by      uuid references public.profiles(id) on delete set null,
   test_sent_at    timestamptz,
   resend_batch_id text,
-  created_at      timestamptz not null default now()
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
 );
 create index email_campaigns_status_idx on public.email_campaigns(status, scheduled_at);
 create index email_campaigns_trigger_type_status_idx on public.email_campaigns(trigger_type, status);
@@ -64,7 +65,7 @@ create table public.email_sends (
   id                uuid primary key default gen_random_uuid(),
   user_id           uuid references public.profiles(id),
   campaign_id       uuid references public.email_campaigns(id),
-  notification_id   uuid references public.notifications(id),
+  notification_id   uuid references public.notifications(id) on delete set null,
   category          text not null,
   sent_at           timestamptz not null default now(),
   resend_message_id text
@@ -86,6 +87,7 @@ create table public.notification_email_log (
 );
 create index notification_email_log_user_sent_idx on public.notification_email_log(user_id, sent_at desc);
 alter table public.notification_email_log enable row level security;
+-- No user-facing policies: this table is accessed only via the service role client
 
 -- ── email_settings ─────────────────────────────────────────────────────────────
 create table public.email_settings (
