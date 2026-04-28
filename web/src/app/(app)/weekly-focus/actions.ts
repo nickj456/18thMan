@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createCampaignAutoDraft } from '@/lib/email-campaigns'
 
 function getMonday(d: Date): Date {
   const copy = new Date(d)
@@ -40,14 +41,24 @@ export async function createWeeklyFocus(formData: FormData) {
 
   const week_start = getMonday(new Date()).toISOString().split('T')[0]
 
-  const { error } = await supabase
+  const { data: focus, error } = await supabase
     .from('weekly_focuses')
     .upsert(
       { club_id: clubId, week_start, topic, description, drill_ids, next_topic, created_by: user.id },
       { onConflict: 'club_id,week_start' },
     )
+    .select('id')
+    .single()
 
   if (error) return { error: error.message }
+
+  createCampaignAutoDraft('weekly_focus', {
+    id: focus.id,
+    title: topic ?? 'Weekly Focus',
+    url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'}/weekly-focus`,
+    itemType: 'weekly_focus',
+  }).catch(err => console.error('[auto-draft weekly-focus]', err))
+
   revalidatePath('/weekly-focus')
   revalidatePath('/dashboard')
   redirect('/weekly-focus')
