@@ -26,16 +26,19 @@ export function ShareDrillButton({ drillId, drillTitle, hasAnimation, canvasJson
   const [recording, setRecording] = useState(false)
 
   const linkCopiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
   useEffect(() => {
     return () => {
       if (linkCopiedTimerRef.current) clearTimeout(linkCopiedTimerRef.current)
+      recorderRef.current?.stop()
+      streamRef.current?.getTracks().forEach(t => t.stop())
     }
   }, [])
 
-  const url = `${window.location.origin}/drills/${drillId}`
-
   async function handleShareLink() {
+    const url = `${window.location.origin}/drills/${drillId}`
     if (navigator.share) {
       try {
         await navigator.share({
@@ -61,7 +64,10 @@ export function ShareDrillButton({ drillId, drillTitle, hasAnimation, canvasJson
     if (!canvasJson) return
     setRecording(true)
     try {
-      const file = await recordDrillAnimation(canvasJson, drillTitle)
+      const file = await recordDrillAnimation(canvasJson, drillTitle, (recorder, stream) => {
+        recorderRef.current = recorder
+        streamRef.current = stream
+      })
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: drillTitle })
       } else {
@@ -80,6 +86,8 @@ export function ShareDrillButton({ drillId, drillTitle, hasAnimation, canvasJson
       }
     } finally {
       setRecording(false)
+      recorderRef.current = null
+      streamRef.current = null
     }
   }
 
@@ -271,7 +279,11 @@ function getSupportedMimeType(): string {
   return candidates.find(t => MediaRecorder.isTypeSupported(t)) ?? 'video/webm'
 }
 
-async function recordDrillAnimation(canvasJson: CanvasState, drillTitle: string): Promise<File> {
+async function recordDrillAnimation(
+  canvasJson: CanvasState,
+  drillTitle: string,
+  onRecorderReady?: (recorder: MediaRecorder, stream: MediaStream) => void
+): Promise<File> {
   if (!('captureStream' in HTMLCanvasElement.prototype)) {
     throw new Error("Video sharing isn't supported on this browser")
   }
@@ -279,12 +291,14 @@ async function recordDrillAnimation(canvasJson: CanvasState, drillTitle: string)
   const canvas = document.createElement('canvas')
   canvas.width = COMP_WIDTH
   canvas.height = COMP_HEIGHT
-  const ctx = canvas.getContext('2d')!
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error("Video sharing isn't supported on this browser")
   const mimeType = getSupportedMimeType()
   const stream = (canvas as HTMLCanvasElement & { captureStream(fps?: number): MediaStream }).captureStream(30)
   const recorder = new MediaRecorder(stream, { mimeType })
   const chunks: Blob[] = []
   recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data) }
+  onRecorderReady?.(recorder, stream)
 
   const totalFrames = canvasJson.duration ?? 90
   const fps = 30
@@ -296,14 +310,17 @@ async function recordDrillAnimation(canvasJson: CanvasState, drillTitle: string)
       const safeName = drillTitle.replace(/[^a-z0-9]/gi, '-').toLowerCase()
       resolve(new File([blob], `drill-${safeName}.${ext}`, { type: mimeType }))
     }
-    recorder.onerror = (e) => reject(e)
+    recorder.onerror = (e) => {
+      const err = (e as Event & { error?: DOMException }).error
+      reject(new Error(err?.message ?? 'MediaRecorder error'))
+    }
     recorder.start()
 
     let startTime: number | null = null
     function renderLoop(timestamp: number) {
       if (startTime === null) startTime = timestamp
       const frame = Math.min(Math.floor(((timestamp - startTime) / 1000) * fps), totalFrames)
-      drawDrillFrame(ctx, canvasJson, frame)
+      drawDrillFrame(ctx!, canvasJson, frame)
       if (frame >= totalFrames) {
         recorder.stop()
         return
