@@ -607,7 +607,6 @@ export interface CampaignEmailParams {
   bodyHtml: string
   ctaLabel?: string
   ctaUrl?: string
-  userId: string
   category?: string
   unsubToken: string
 }
