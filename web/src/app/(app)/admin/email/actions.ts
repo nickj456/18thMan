@@ -73,6 +73,9 @@ export async function sendTestEmail(campaignId: string, toEmail: string): Promis
 export async function approveCampaignNow(campaignId: string): Promise<{ error?: string }> {
   await assertAdmin()
   const { sent, errors } = await sendCampaign(campaignId)
+  if (sent === 0 && errors > 0) {
+    return { error: `Campaign send failed — ${errors} error(s), 0 emails delivered.` }
+  }
   console.log(`[approveCampaignNow] sent: ${sent}, errors: ${errors}`)
   revalidatePath('/admin/email')
   redirect('/admin/email?tab=sent')

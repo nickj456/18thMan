@@ -271,10 +271,14 @@ export async function sendCampaign(campaignId: string): Promise<{ sent: number; 
     }
   }
 
-  await service
+  const { error: updateError } = await service
     .from('email_campaigns')
     .update({ status: 'sent', sent_at: new Date().toISOString() })
     .eq('id', campaignId)
+
+  if (updateError) {
+    console.error('[sendCampaign] failed to update campaign status:', updateError)
+  }
 
   return { sent, errors }
 }
