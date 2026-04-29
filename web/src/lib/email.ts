@@ -611,13 +611,7 @@ export interface CampaignEmailParams {
   unsubToken: string
 }
 
-export async function sendCampaignEmailHtml(
-  to: string,
-  params: CampaignEmailParams,
-): Promise<EmailResultWithId> {
-  const resendClient = getResend()
-  if (!resendClient) return { success: false, error: 'RESEND_API_KEY not configured' }
-
+export function buildCampaignEmailHtml(params: Omit<CampaignEmailParams, 'subject'>): string {
   const ctaSection = params.ctaLabel && params.ctaUrl
     ? ctaButton(params.ctaLabel, params.ctaUrl)
     : ''
@@ -629,7 +623,7 @@ export async function sendCampaignEmailHtml(
     ${sign()}
   `)
 
-  const html = baseHtml + `
+  return baseHtml + `
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;">
     <tr>
       <td align="center" style="padding:8px 16px 0;">
@@ -641,6 +635,16 @@ export async function sendCampaignEmailHtml(
       </td>
     </tr>
   </table>`
+}
+
+export async function sendCampaignEmailHtml(
+  to: string,
+  params: CampaignEmailParams,
+): Promise<EmailResultWithId> {
+  const resendClient = getResend()
+  if (!resendClient) return { success: false, error: 'RESEND_API_KEY not configured' }
+
+  const html = buildCampaignEmailHtml(params)
 
   try {
     const { data, error } = await resendClient.emails.send({
