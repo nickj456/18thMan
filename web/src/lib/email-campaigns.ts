@@ -229,7 +229,7 @@ export async function sendCampaign(campaignId: string): Promise<{ sent: number; 
 
   // Fetch attachment buffers once (shared across all recipients)
   const campaignAttachments = (campaign.attachments ?? []) as Array<{
-    type: string; url: string; filename: string
+    type: 'file' | 'session_plan'; url: string; filename: string
   }>
 
   const resendAttachments: { filename: string; content: Buffer }[] = []
