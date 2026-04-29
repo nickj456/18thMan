@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const FROM = '18th Man <no-reply@18thman.app>'
+const FROM = '18th Man <hello@18thman.app>'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
 
 function getResend(): Resend | null {
