@@ -4,9 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { EMAIL_CATEGORIES } from './email-constants'
 
-export { EMAIL_CATEGORIES } from './email-constants'
-export type { EmailCategoryKey } from './email-constants'
-
 export async function saveEmailPreferences(
   prefs: Record<string, boolean>,
 ): Promise<{ error?: string }> {
