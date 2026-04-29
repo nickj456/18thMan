@@ -119,6 +119,26 @@ export async function cancelCampaign(campaignId: string): Promise<{ error?: stri
   return {}
 }
 
+export interface EmailAttachment {
+  type: 'file' | 'session_plan'
+  url: string
+  filename: string
+}
+
+export async function updateCampaignAttachments(
+  campaignId: string,
+  attachments: EmailAttachment[],
+): Promise<{ error?: string }> {
+  const { supabase } = await assertAdmin()
+  const { error } = await supabase
+    .from('email_campaigns')
+    .update({ attachments })
+    .eq('id', campaignId)
+  if (error) return { error: error.message }
+  revalidatePath(`/admin/email/${campaignId}`)
+  return {}
+}
+
 export async function deleteCampaign(campaignId: string): Promise<{ error?: string }> {
   const { supabase } = await assertAdmin()
   const { error } = await supabase

@@ -1,6 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { generateUnsubscribeToken } from '@/lib/email-notifications'
-import { sendCampaignEmailHtml } from '@/lib/email'
+import { sendCampaignEmailHtml, buildCampaignEmailHtml } from '@/lib/email'
 
 export type TriggerType = 'new_public_drill' | 'weekly_focus' | 'podcast' | 'wellbeing' | 'announcement' | 'poll'
 export type CampaignSegment = 'all' | 'coaches' | 'club_admins' | 'free' | 'pro'
@@ -227,6 +227,28 @@ export async function sendCampaign(campaignId: string): Promise<{ sent: number; 
 
   if (!profileIds.length) return { sent: 0, errors: 0 }
 
+  // Fetch attachment buffers once (shared across all recipients)
+  const campaignAttachments = (campaign.attachments ?? []) as Array<{
+    type: string; url: string; filename: string
+  }>
+
+  const resendAttachments: { filename: string; content: Buffer }[] = []
+  for (const att of campaignAttachments) {
+    try {
+      const res = await fetch(att.url)
+      if (res.ok) {
+        resendAttachments.push({
+          filename: att.filename,
+          content: Buffer.from(await res.arrayBuffer()),
+        })
+      } else {
+        console.error('[sendCampaign] attachment fetch failed:', att.url, res.status)
+      }
+    } catch (err) {
+      console.error('[sendCampaign] attachment fetch error:', att.url, err)
+    }
+  }
+
   // Batch-fetch display names for all recipients
   const { data: profilesData } = await service
     .from('profiles')
@@ -269,14 +291,38 @@ export async function sendCampaign(campaignId: string): Promise<{ sent: number; 
     const personalizedBody = campaign.body_html.replace(/\{\{name\}\}/g, safeDisplayName)
 
     const unsubToken = generateUnsubscribeToken(profileId, category)
-    const result = await sendCampaignEmailHtml(email, {
-      subject: campaign.subject,
-      bodyHtml: personalizedBody,
-      ctaLabel: campaign.cta_label ?? undefined,
-      ctaUrl: campaign.cta_url ?? undefined,
-      category,
-      unsubToken,
-    })
+
+    let result: { success: boolean; error?: string; messageId?: string }
+
+    if (resendAttachments.length > 0) {
+      const resendClient = new (await import('resend')).Resend(process.env.RESEND_API_KEY)
+      const html = buildCampaignEmailHtml({
+        bodyHtml: personalizedBody,
+        ctaLabel: campaign.cta_label ?? undefined,
+        ctaUrl: campaign.cta_url ?? undefined,
+        category,
+        unsubToken,
+      })
+      const { data, error } = await resendClient.emails.send({
+        from: '18th Man <no-reply@18thman.app>',
+        to: email,
+        subject: campaign.subject,
+        html,
+        attachments: resendAttachments,
+      })
+      result = error
+        ? { success: false, error: error.message }
+        : { success: true, messageId: data?.id }
+    } else {
+      result = await sendCampaignEmailHtml(email, {
+        subject: campaign.subject,
+        bodyHtml: personalizedBody,
+        ctaLabel: campaign.cta_label ?? undefined,
+        ctaUrl: campaign.cta_url ?? undefined,
+        category,
+        unsubToken,
+      })
+    }
 
     if (result.success) {
       await service.from('email_sends').insert({
