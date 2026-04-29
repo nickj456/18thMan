@@ -15,8 +15,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'bodyHtml is required' }, { status: 400 })
   }
 
+  const previewBody = (body.bodyHtml as string).replace(/\{\{name\}\}/g, 'Coach')
+
   const html = buildCampaignEmailHtml({
-    bodyHtml: body.bodyHtml,
+    bodyHtml: previewBody,
     ctaLabel: body.ctaLabel || undefined,
     ctaUrl: body.ctaUrl || undefined,
     category: 'announcement',

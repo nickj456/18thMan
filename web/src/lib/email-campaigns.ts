@@ -247,10 +247,19 @@ export async function sendCampaign(campaignId: string): Promise<{ sent: number; 
     const email = authUser?.user?.email
     if (!email) continue
 
+    const { data: profile } = await service
+      .from('profiles')
+      .select('display_name')
+      .eq('id', profileId)
+      .single()
+    const displayName = profile?.display_name || 'Coach'
+
+    const personalizedBody = campaign.body_html.replace(/\{\{name\}\}/g, displayName)
+
     const unsubToken = generateUnsubscribeToken(profileId, category)
     const result = await sendCampaignEmailHtml(email, {
       subject: campaign.subject,
-      bodyHtml: campaign.body_html,
+      bodyHtml: personalizedBody,
       ctaLabel: campaign.cta_label ?? undefined,
       ctaUrl: campaign.cta_url ?? undefined,
       category,
