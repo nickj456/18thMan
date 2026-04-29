@@ -44,7 +44,7 @@ export default async function AdminEmailCampaignPage({
   if (!adminEmail) redirect('/admin/email')
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-6xl space-y-6">
       <div className="flex items-center gap-3">
         <Link href="/admin/email" className="text-zinc-500 hover:text-zinc-300 transition-colors">
           <ArrowLeft size={16} />
