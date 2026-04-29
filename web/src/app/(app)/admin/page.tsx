@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2, Clock, HeartPulse, FileText } from 'lucide-react'
+import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2, Clock, HeartPulse, FileText, Mail } from 'lucide-react'
 
 export const metadata = { title: 'Admin — 18th Man' }
 
@@ -97,6 +97,13 @@ export default async function AdminPage() {
       label: 'Match Report Builder',
       description: 'Generate & send Coaching Eye PDFs',
       colour: 'border-[rgba(232,86,10,0.2)] hover:border-[rgba(232,86,10,0.4)] text-[#e8560a]',
+    },
+    {
+      href: '/admin/email',
+      icon: Mail,
+      label: 'Email Campaigns',
+      description: 'Compose, approve & send coach emails',
+      colour: 'border-sky-500/20 hover:border-sky-500/40 text-sky-400',
     },
   ]
 
