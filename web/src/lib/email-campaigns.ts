@@ -227,6 +227,16 @@ export async function sendCampaign(campaignId: string): Promise<{ sent: number; 
 
   if (!profileIds.length) return { sent: 0, errors: 0 }
 
+  // Batch-fetch display names for all recipients
+  const { data: profilesData } = await service
+    .from('profiles')
+    .select('id, display_name')
+    .in('id', profileIds)
+
+  const displayNameMap = new Map(
+    (profilesData ?? []).map(p => [p.id, p.display_name || 'Coach'])
+  )
+
   const category = campaign.trigger_type === 'announcement' || campaign.trigger_type === 'poll'
     ? 'announcement'
     : campaign.trigger_type
@@ -247,14 +257,16 @@ export async function sendCampaign(campaignId: string): Promise<{ sent: number; 
     const email = authUser?.user?.email
     if (!email) continue
 
-    const { data: profile } = await service
-      .from('profiles')
-      .select('display_name')
-      .eq('id', profileId)
-      .single()
-    const displayName = profile?.display_name || 'Coach'
+    const displayName = displayNameMap.get(profileId) ?? 'Coach'
 
-    const personalizedBody = campaign.body_html.replace(/\{\{name\}\}/g, displayName)
+    const safeDisplayName = displayName
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+
+    const personalizedBody = campaign.body_html.replace(/\{\{name\}\}/g, safeDisplayName)
 
     const unsubToken = generateUnsubscribeToken(profileId, category)
     const result = await sendCampaignEmailHtml(email, {
