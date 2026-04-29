@@ -119,6 +119,16 @@ export async function cancelCampaign(campaignId: string): Promise<{ error?: stri
   return {}
 }
 
+export async function deleteCampaign(campaignId: string): Promise<{ error?: string }> {
+  const { supabase } = await assertAdmin()
+  const { error } = await supabase
+    .from('email_campaigns')
+    .delete()
+    .eq('id', campaignId)
+  if (error) return { error: error.message }
+  redirect('/admin/email')
+}
+
 export async function createAdminComposedCampaign(data: {
   subject: string
   body_html: string

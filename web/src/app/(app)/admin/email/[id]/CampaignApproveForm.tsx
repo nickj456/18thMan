@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useTransition, useEffect, useRef } from 'react'
-import { Send, Clock, TestTube, Eye } from 'lucide-react'
-import { updateCampaign, sendTestEmail, approveCampaignNow, scheduleCampaign } from '../actions'
+import { Send, Clock, TestTube, Eye, Trash2 } from 'lucide-react'
+import { updateCampaign, sendTestEmail, approveCampaignNow, scheduleCampaign, deleteCampaign } from '../actions'
 
 interface Campaign {
   id: string
@@ -44,6 +44,8 @@ export function CampaignApproveForm({ campaign, adminEmail, suggestedSchedule }:
   const [isTesting, startTest] = useTransition()
   const [isApproving, startApprove] = useTransition()
   const [isScheduling, startSchedule] = useTransition()
+  const [isDeleting, startDelete] = useTransition()
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Fetch preview HTML with 300ms debounce whenever editable fields change
@@ -117,6 +119,13 @@ export function CampaignApproveForm({ campaign, adminEmail, suggestedSchedule }:
     if (!testSent) return
     startSchedule(async () => {
       await scheduleCampaign(campaign.id, new Date(scheduledAt).toISOString())
+    })
+  }
+
+  function handleDelete() {
+    if (!confirmDelete) { setConfirmDelete(true); return }
+    startDelete(async () => {
+      await deleteCampaign(campaign.id)
     })
   }
 
@@ -206,6 +215,20 @@ export function CampaignApproveForm({ campaign, adminEmail, suggestedSchedule }:
           >
             <Send size={14} />
             {isApproving ? 'Sending...' : 'Approve & send now'}
+          </button>
+
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            onBlur={() => setConfirmDelete(false)}
+            className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ml-auto ${
+              confirmDelete
+                ? 'border-red-500/60 bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                : 'border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <Trash2 size={14} />
+            {isDeleting ? 'Deleting...' : confirmDelete ? 'Confirm delete' : 'Delete'}
           </button>
         </div>
       </div>
