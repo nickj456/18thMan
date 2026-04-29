@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useTransition, useEffect, useRef } from 'react'
-import { Send, Clock, TestTube, Eye, Trash2 } from 'lucide-react'
-import { updateCampaign, sendTestEmail, approveCampaignNow, scheduleCampaign, deleteCampaign } from '../actions'
+import { Send, Clock, TestTube, Eye, Trash2, ImagePlus, Paperclip, X, FileText, BookOpen } from 'lucide-react'
+import { updateCampaign, sendTestEmail, approveCampaignNow, scheduleCampaign, deleteCampaign, updateCampaignAttachments, type EmailAttachment } from '../actions'
 
 interface Campaign {
   id: string
@@ -14,6 +14,7 @@ interface Campaign {
   status: string
   test_sent_at: string | null
   scheduled_at: string | null
+  attachments?: EmailAttachment[]
 }
 
 interface CampaignApproveFormProps {
@@ -47,6 +48,17 @@ export function CampaignApproveForm({ campaign, adminEmail, suggestedSchedule }:
   const [isDeleting, startDelete] = useTransition()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const bodyRef = useRef<HTMLTextAreaElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const pdfInputRef = useRef<HTMLInputElement>(null)
+  const [attachments, setAttachments] = useState<EmailAttachment[]>(
+    (campaign as Campaign & { attachments?: EmailAttachment[] }).attachments ?? []
+  )
+  const [isUploading, setIsUploading] = useState(false)
+  const [attachmentError, setAttachmentError] = useState('')
+  const [showSessionPicker, setShowSessionPicker] = useState(false)
+  const [sessionPlans, setSessionPlans] = useState<{ id: string; title: string }[]>([])
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
 
   // Fetch preview HTML with 300ms debounce whenever editable fields change
   useEffect(() => {
@@ -129,6 +141,105 @@ export function CampaignApproveForm({ campaign, adminEmail, suggestedSchedule }:
     })
   }
 
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIsUploading(true)
+    setAttachmentError('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/admin/email-assets/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) { setAttachmentError(data.error ?? 'Upload failed'); return }
+      const tag = `<img src="${data.url}" alt="${file.name.replace(/\.[^.]+$/, '')}" width="480" style="display:block;width:100%;max-width:480px;height:auto;border-radius:10px;margin:0 0 16px;" />`
+      const textarea = bodyRef.current
+      if (textarea) {
+        const start = textarea.selectionStart ?? body.length
+        const end = textarea.selectionEnd ?? body.length
+        const newBody = body.slice(0, start) + tag + body.slice(end)
+        setBody(newBody)
+        requestAnimationFrame(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + tag.length
+          textarea.focus()
+        })
+      } else {
+        setBody(prev => prev + '\n' + tag)
+      }
+    } catch {
+      setAttachmentError('Image upload failed')
+    } finally {
+      setIsUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  async function handlePdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (attachments.length >= 2) { setAttachmentError('Maximum 2 attachments per campaign'); return }
+    setIsUploading(true)
+    setAttachmentError('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/admin/email-assets/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) { setAttachmentError(data.error ?? 'Upload failed'); return }
+      const newAttachments: EmailAttachment[] = [...attachments, { type: 'file', url: data.url, filename: file.name }]
+      setAttachments(newAttachments)
+      await updateCampaignAttachments(campaign.id, newAttachments)
+    } catch {
+      setAttachmentError('PDF upload failed')
+    } finally {
+      setIsUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  async function loadSessionPlans() {
+    setShowSessionPicker(true)
+    if (sessionPlans.length > 0) return
+    try {
+      const res = await fetch('/api/admin/session-plans')
+      if (res.ok) {
+        const data = await res.json()
+        setSessionPlans(data.sessions ?? [])
+      }
+    } catch {
+      setAttachmentError('Failed to load session plans')
+    }
+  }
+
+  async function attachSessionPlan(sessionId: string) {
+    if (attachments.length >= 2) { setAttachmentError('Maximum 2 attachments per campaign'); return }
+    setIsGeneratingPdf(true)
+    setShowSessionPicker(false)
+    setAttachmentError('')
+    try {
+      const res = await fetch('/api/admin/session-plan-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setAttachmentError(data.error ?? 'PDF generation failed'); return }
+      const newAttachments: EmailAttachment[] = [...attachments, { type: 'session_plan', url: data.url, filename: data.filename }]
+      setAttachments(newAttachments)
+      await updateCampaignAttachments(campaign.id, newAttachments)
+    } catch {
+      setAttachmentError('Failed to generate PDF')
+    } finally {
+      setIsGeneratingPdf(false)
+    }
+  }
+
+  async function removeAttachment(index: number) {
+    const newAttachments = attachments.filter((_, i) => i !== index)
+    setAttachments(newAttachments)
+    await updateCampaignAttachments(campaign.id, newAttachments)
+  }
+
   void isSaving
 
   return (
@@ -147,8 +258,24 @@ export function CampaignApproveForm({ campaign, adminEmail, suggestedSchedule }:
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Body HTML</label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Body HTML</label>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-600">Use <code className="text-[#e8560a]">{'{{name}}'}</code> for recipient&apos;s name</span>
+              <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={handleImageUpload} />
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isUploading}
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 transition-colors disabled:opacity-50"
+              >
+                <ImagePlus size={12} />
+                {isUploading ? 'Uploading...' : 'Insert image'}
+              </button>
+            </div>
+          </div>
           <textarea
+            ref={bodyRef}
             value={body}
             onChange={e => setBody(e.target.value)}
             onBlur={save}
@@ -176,6 +303,84 @@ export function CampaignApproveForm({ campaign, adminEmail, suggestedSchedule }:
             className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-zinc-500">
             {SEGMENTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
+        </div>
+
+        {/* ── PDF Attachments ── */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+              Attachments <span className="text-zinc-600 normal-case font-normal">(PDF · max 2)</span>
+            </label>
+            {attachments.length < 2 && (
+              <div className="flex items-center gap-2 relative">
+                <input ref={pdfInputRef} type="file" accept="application/pdf" className="hidden" onChange={handlePdfUpload} />
+                <button
+                  type="button"
+                  onClick={() => pdfInputRef.current?.click()}
+                  disabled={isUploading || isGeneratingPdf}
+                  className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 transition-colors disabled:opacity-50"
+                >
+                  <Paperclip size={12} />
+                  Upload PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={loadSessionPlans}
+                  disabled={isUploading || isGeneratingPdf}
+                  className="flex items-center gap-1 text-xs px-2 py-1 rounded border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 transition-colors disabled:opacity-50"
+                >
+                  <BookOpen size={12} />
+                  {isGeneratingPdf ? 'Generating...' : 'Coaching plan'}
+                </button>
+                {showSessionPicker && (
+                  <div className="absolute right-0 top-8 z-10 w-72 bg-zinc-900 border border-zinc-700 rounded-xl shadow-xl p-2 space-y-1">
+                    <p className="text-xs text-zinc-500 px-2 py-1">Select a session plan:</p>
+                    {sessionPlans.length === 0 && (
+                      <p className="text-xs text-zinc-600 px-2 py-2">No session plans found</p>
+                    )}
+                    {sessionPlans.map(s => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => attachSessionPlan(s.id)}
+                        className="w-full text-left text-sm text-zinc-300 px-3 py-2 rounded-lg hover:bg-zinc-800 transition-colors truncate"
+                      >
+                        {s.title}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setShowSessionPicker(false)}
+                      className="w-full text-xs text-zinc-600 px-3 py-1.5 hover:text-zinc-400 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {attachmentError && <p className="text-xs text-red-400">{attachmentError}</p>}
+          {attachments.length === 0 ? (
+            <p className="text-xs text-zinc-600">No attachments — uploaded PDFs will be sent with every email</p>
+          ) : (
+            <div className="space-y-1.5">
+              {attachments.map((att, i) => (
+                <div key={i} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-zinc-900 border border-zinc-800">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText size={14} className="text-zinc-500 flex-shrink-0" />
+                    <span className="text-xs text-zinc-300 truncate">{att.filename}</span>
+                    {att.type === 'session_plan' && (
+                      <span className="text-xs text-sky-400 flex-shrink-0 ml-1">Coaching plan</span>
+                    )}
+                  </div>
+                  <button type="button" onClick={() => removeAttachment(i)} className="text-zinc-600 hover:text-red-400 transition-colors flex-shrink-0 ml-2">
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {error && <p className="text-sm text-red-400">{error}</p>}
