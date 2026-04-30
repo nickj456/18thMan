@@ -1,11 +1,28 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ArrowLeft, Users, Mail } from 'lucide-react'
 import { UserRoleSelect } from './UserRoleSelect'
 import { DeleteUserButton } from './DeleteUserButton'
 import type { UserRole } from '@/lib/supabase/types'
+
+function timeAgo(dateStr: string | null): string {
+  if (!dateStr) return 'Never'
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 2) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  if (days === 1) return 'Yesterday'
+  if (days < 30) return `${days}d ago`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months}mo ago`
+  return `${Math.floor(months / 12)}y ago`
+}
 
 export const metadata = { title: 'User Management — Admin' }
 
@@ -43,6 +60,16 @@ export default async function AdminUsersPage({
   }
 
   const { data: profiles } = await query
+
+  // Fetch last sign-in for all users via auth admin API
+  const service = createServiceClient()
+  const lastSeenMap = new Map<string, string | null>()
+  try {
+    const { data: authUsers } = await service.auth.admin.listUsers({ perPage: 1000 })
+    for (const u of authUsers?.users ?? []) {
+      lastSeenMap.set(u.id, u.last_sign_in_at ?? null)
+    }
+  } catch { /* non-fatal — page still works without it */ }
 
   const clubIds = [...new Set((profiles ?? []).map(p => p.club_id).filter(Boolean))] as string[]
   const { data: clubsData } = clubIds.length > 0
@@ -135,6 +162,7 @@ export default async function AdminUsersPage({
                     <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">User</th>
                     <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Club</th>
                     <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Joined</th>
+                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Last seen</th>
                     <th className="text-right text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Role</th>
                     <th className="px-5 py-3" />
                   </tr>
@@ -166,6 +194,17 @@ export default async function AdminUsersPage({
                         </td>
                         <td className="px-5 py-3.5 text-zinc-500 text-xs">
                           {new Date(profile.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td className="px-5 py-3.5 text-xs">
+                          {(() => {
+                            const t = timeAgo(lastSeenMap.get(profile.id) ?? null)
+                            const isRecent = t === 'Just now' || t.endsWith('m ago') || t.endsWith('h ago')
+                            return (
+                              <span className={isRecent ? 'text-emerald-400' : 'text-zinc-600'}>
+                                {t}
+                              </span>
+                            )
+                          })()}
                         </td>
                         <td className="px-5 py-3.5 text-right">
                           <UserRoleSelect
