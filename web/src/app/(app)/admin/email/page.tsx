@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Plus, Send, FileText, AlertCircle } from 'lucide-react'
+import { createServiceClient } from '@/lib/supabase/service'
+import { ArrowLeft, Plus, Send, FileText, AlertCircle, MailOpen, MousePointerClick } from 'lucide-react'
 
 export const metadata = { title: 'Email Campaigns — Admin' }
 
@@ -42,6 +43,25 @@ export default async function AdminEmailPage({
   const queue = (campaigns ?? []).filter(c => ['draft', 'ready'].includes(c.status))
   const scheduled = (campaigns ?? []).filter(c => c.status === 'scheduled')
   const sent = (campaigns ?? []).filter(c => c.status === 'sent')
+
+  // Fetch open/click stats for sent campaigns
+  const sentIds = sent.map(c => c.id)
+  const statsMap = new Map<string, { total: number; opened: number; clicked: number }>()
+  if (sentIds.length > 0) {
+    const service = createServiceClient()
+    const { data: sends } = await service
+      .from('email_sends')
+      .select('campaign_id, opened_at, clicked_at')
+      .in('campaign_id', sentIds)
+    for (const s of sends ?? []) {
+      const existing = statsMap.get(s.campaign_id) ?? { total: 0, opened: 0, clicked: 0 }
+      statsMap.set(s.campaign_id, {
+        total: existing.total + 1,
+        opened: existing.opened + (s.opened_at ? 1 : 0),
+        clicked: existing.clicked + (s.clicked_at ? 1 : 0),
+      })
+    }
+  }
 
   const tabs = [
     { key: 'queue', label: 'Queue', count: queue.length, items: queue },
@@ -132,6 +152,28 @@ export default async function AdminEmailPage({
                     {campaign.scheduled_at && ` · Scheduled: ${new Date(campaign.scheduled_at).toLocaleString('en-GB')}`}
                     {campaign.sent_at && ` · Sent: ${new Date(campaign.sent_at).toLocaleString('en-GB')}`}
                   </p>
+                  {campaign.status === 'sent' && (() => {
+                    const stats = statsMap.get(campaign.id)
+                    if (!stats || stats.total === 0) return null
+                    const openPct = Math.round((stats.opened / stats.total) * 100)
+                    const clickPct = Math.round((stats.clicked / stats.total) * 100)
+                    return (
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span className="flex items-center gap-1 text-xs text-zinc-500">
+                          <MailOpen size={11} className="text-emerald-500" />
+                          <span className="text-emerald-400 font-medium">{openPct}%</span> opened
+                          <span className="text-zinc-700 mx-1">·</span>
+                          {stats.opened}/{stats.total}
+                        </span>
+                        {stats.clicked > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-zinc-500">
+                            <MousePointerClick size={11} className="text-sky-500" />
+                            <span className="text-sky-400 font-medium">{clickPct}%</span> clicked
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
                 <FileText size={16} className="text-zinc-600 flex-shrink-0 mt-1" />
               </Link>
