@@ -304,7 +304,7 @@ export async function sendCampaign(campaignId: string): Promise<{ sent: number; 
         unsubToken,
       })
       const { data, error } = await resendClient.emails.send({
-        from: '18th Man <no-reply@18thman.app>',
+        from: '18th Man <hello@18thman.app>',
         to: email,
         subject: campaign.subject,
         html,

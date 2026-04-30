@@ -49,10 +49,19 @@ export async function sendTestEmail(campaignId: string, toEmail: string): Promis
     : campaign.trigger_type
   const unsubToken = generateUnsubscribeToken(user.id, category)
 
+  // Replace {{name}} with admin's own display name for the test send
+  const { data: adminProfile } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('id', user.id)
+    .single()
+  const testName = adminProfile?.display_name || 'Coach'
+  const testBody = campaign.body_html.replace(/\{\{name\}\}/g, testName)
+
   // Note: CampaignEmailParams does NOT have userId field
   const result = await sendCampaignEmailHtml(toEmail, {
     subject: `[TEST] ${campaign.subject}`,
-    bodyHtml: campaign.body_html,
+    bodyHtml: testBody,
     ctaLabel: campaign.cta_label ?? undefined,
     ctaUrl: campaign.cta_url ?? undefined,
     category,
