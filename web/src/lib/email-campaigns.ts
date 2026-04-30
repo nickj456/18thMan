@@ -256,7 +256,7 @@ export async function sendCampaign(campaignId: string): Promise<{ sent: number; 
     .in('id', profileIds)
 
   const displayNameMap = new Map(
-    (profilesData ?? []).map(p => [p.id, p.display_name || 'Coach'])
+    (profilesData ?? []).map(p => [p.id, (p.display_name || 'Coach').split(' ')[0]])
   )
 
   const category = campaign.trigger_type === 'announcement' || campaign.trigger_type === 'poll'

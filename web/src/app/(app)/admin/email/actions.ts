@@ -55,7 +55,7 @@ export async function sendTestEmail(campaignId: string, toEmail: string): Promis
     .select('display_name')
     .eq('id', user.id)
     .single()
-  const testName = adminProfile?.display_name || 'Coach'
+  const testName = (adminProfile?.display_name || 'Coach').split(' ')[0]
   const testBody = campaign.body_html.replace(/\{\{name\}\}/g, testName)
 
   // Note: CampaignEmailParams does NOT have userId field
