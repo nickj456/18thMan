@@ -136,7 +136,7 @@ function NutritionMeta({ resource }: { resource: WellbeingResource }) {
         <span className="rounded-md bg-muted px-2 py-1">{mealCount} meals</span>
       )}
       {cals !== null && (
-        <span className="rounded-md bg-muted px-2 py-1">{cals.toLocaleString()} kcal / day</span>
+        <span className="rounded-md bg-muted px-2 py-1">{cals} / day</span>
       )}
     </div>
   )
