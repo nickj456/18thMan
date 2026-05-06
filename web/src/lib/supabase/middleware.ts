@@ -27,9 +27,15 @@ export async function updateSession(request: NextRequest) {
 
   // Protect app routes
   const isAppRoute = request.nextUrl.pathname.startsWith('/(app)') ||
-    ['/dashboard', '/drills', '/sessions', '/chat', '/profile', '/admin', '/game-plans', '/groups', '/clubs', '/settings', '/notifications'].some(p =>
+    ['/dashboard', '/sessions', '/chat', '/admin', '/game-plans', '/groups', '/clubs', '/settings', '/notifications'].some(p =>
       request.nextUrl.pathname.startsWith(p)
-    )
+    ) ||
+    // Protect drill creation/edit but not the public library and detail pages
+    request.nextUrl.pathname === '/drills/new' ||
+    /^\/drills\/[^/]+\/edit/.test(request.nextUrl.pathname) ||
+    // Protect profile edit but not public profile pages
+    /^\/profile\/[^/]+\/edit/.test(request.nextUrl.pathname) ||
+    request.nextUrl.pathname === '/profile'
 
   if (isAppRoute && !user) {
     const url = request.nextUrl.clone()
