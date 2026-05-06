@@ -5,9 +5,9 @@ import { login, loginWithOAuth } from './actions'
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; email?: string }>
 }) {
-  const { error } = await searchParams
+  const { error, email } = await searchParams
 
   return (
     <>
@@ -177,6 +177,7 @@ export default async function LoginPage({
             name="email"
             type="email"
             placeholder="coach@club.com"
+            defaultValue={email ? decodeURIComponent(email) : undefined}
             required
             className="auth-input"
           />
