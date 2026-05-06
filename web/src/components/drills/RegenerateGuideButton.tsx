@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { regenerateDrillGuide } from '@/app/(app)/drills/actions'
+import { regenerateDrillGuide } from '@/app/(discover)/drills/actions'
 
 export function RegenerateGuideButton({ drillId }: { drillId: string }) {
   const [loading, setLoading] = useState(false)

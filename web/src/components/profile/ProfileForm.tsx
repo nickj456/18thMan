@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { updateProfile } from '@/app/(app)/profile/actions'
+import { updateProfile } from '@/app/(discover)/profile/actions'
 import type { Profile } from '@/lib/supabase/types'
 
 const SOCIAL_PLATFORMS = [

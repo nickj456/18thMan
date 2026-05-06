@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from 'react'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Camera, Loader2 } from 'lucide-react'
-import { uploadAvatar } from '@/app/(app)/profile/actions'
+import { uploadAvatar } from '@/app/(discover)/profile/actions'
 import { toast } from 'sonner'
 
 interface AvatarUploadProps {

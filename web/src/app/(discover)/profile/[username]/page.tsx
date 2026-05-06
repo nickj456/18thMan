@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { PenTool, CalendarDays, MapPin, Award, ArrowLeft, MessageSquare, UserPlus, UserMinus } from 'lucide-react'
 import { startDm } from '@/app/(app)/chat/dm/actions'
-import { followUser, unfollowUser } from '@/app/(app)/profile/actions'
+import { followUser, unfollowUser } from '@/app/(discover)/profile/actions'
 
 async function startDmAction(userId: string) {
   'use server'

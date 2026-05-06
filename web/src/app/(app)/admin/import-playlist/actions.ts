@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { generateDrillGuideFromYoutube, generateDrillGuideFromMetadata } from '@/app/(app)/drills/youtube-actions'
+import { generateDrillGuideFromYoutube, generateDrillGuideFromMetadata } from '@/app/(discover)/drills/youtube-actions'
 import { youtubeThumbnail } from '@/lib/youtube'
 
 export interface PlaylistVideo {

@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Star } from 'lucide-react'
-import { submitRating } from '@/app/(app)/drills/actions'
+import { submitRating } from '@/app/(discover)/drills/actions'
 
 interface DrillRatingFormProps {
   drillId: string

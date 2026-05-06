@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Bookmark } from 'lucide-react'
-import { saveDrill, unsaveDrill } from '@/app/(app)/drills/actions'
+import { saveDrill, unsaveDrill } from '@/app/(discover)/drills/actions'
 
 interface SaveDrillButtonProps {
   drillId: string

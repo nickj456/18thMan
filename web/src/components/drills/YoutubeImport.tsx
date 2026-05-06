@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { TvMinimalPlay, Sparkles, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
-import { generateDrillGuideFromYoutube, saveDrillYoutube } from '@/app/(app)/drills/youtube-actions'
+import { generateDrillGuideFromYoutube, saveDrillYoutube } from '@/app/(discover)/drills/youtube-actions'
 import type { AiGuide } from '@/lib/supabase/types'
 
 interface YoutubeImportProps {
