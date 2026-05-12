@@ -14,6 +14,11 @@ const HANDLE_STROKE_WIDTH = 2
 const PLAYER_RADIUS: Record<'sm' | 'md' | 'lg', number> = { sm: 13, md: 18, lg: 24 }
 const PLAYER_FONT:   Record<'sm' | 'md' | 'lg', number> = { sm: 10, md: 13, lg: 16 }
 
+// Counteracts the outer ThreeDWrapper Group's scaleY (0.70) so player icons,
+// the ball, cones, and text render as proper shapes rather than squished ellipses.
+// Lines and zones are intentionally left compressed — they follow pitch perspective.
+const INV_3D_SCALE_Y = 1 / 0.70
+
 // ── Rugby league ball (Steeden-style) ────────────────────────────────────────
 function RugbyBall({ el, selected, onSelect, onChange, is3D }: ElementProps) {
   const rx = 26
@@ -23,11 +28,13 @@ function RugbyBall({ el, selected, onSelect, onChange, is3D }: ElementProps) {
     <Group
       x={el.x}
       y={el.y}
+      scaleY={is3D ? INV_3D_SCALE_Y : 1}
       draggable
       onClick={onSelect}
       onTap={onSelect}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
     >
+
       {/* Ground shadow in 3D mode */}
       {is3D && (
         <Ellipse
@@ -205,7 +212,7 @@ function AttackerEl({ el, selected, onSelect, onChange, onDblClick, is3D }: Elem
   const baseColor = el.color ?? '#ef4444'
 
   return (
-    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+    <Group x={el.x} y={el.y} scaleY={is3D ? INV_3D_SCALE_Y : 1} draggable onClick={onSelect} onTap={onSelect}
       onDblClick={onDblClick} onDblTap={onDblClick}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
       {/* Drop shadow in 3D mode */}
@@ -241,7 +248,7 @@ function DefenderEl({ el, selected, onSelect, onChange, onDblClick, is3D }: Elem
   const baseColor = el.color ?? '#3b82f6'
 
   return (
-    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+    <Group x={el.x} y={el.y} scaleY={is3D ? INV_3D_SCALE_Y : 1} draggable onClick={onSelect} onTap={onSelect}
       onDblClick={onDblClick} onDblTap={onDblClick}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
       {is3D && (
@@ -275,7 +282,7 @@ function ConeEl({ el, selected, onSelect, onChange, is3D }: ElementProps) {
 
   if (is3D) {
     return (
-      <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+      <Group x={el.x} y={el.y} scaleY={INV_3D_SCALE_Y} draggable onClick={onSelect} onTap={onSelect}
         onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
         {/* Ground shadow */}
         <Ellipse
@@ -314,7 +321,7 @@ function ConeEl({ el, selected, onSelect, onChange, is3D }: ElementProps) {
   }
 
   return (
-    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+    <Group x={el.x} y={el.y} scaleY={1} draggable onClick={onSelect} onTap={onSelect}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
       <Line points={[0, -size, size * 0.75, size * 0.5, -size * 0.75, size * 0.5]} closed
         fill={el.color ?? '#f59e0b'}
@@ -552,22 +559,26 @@ function ZoneEl({ el, selected, onSelect, onChange }: ElementProps) {
 }
 
 // ── Text label ────────────────────────────────────────────────────────────────
-function TextEl({ el, selected, onSelect, onChange, onDblClick }: ElementProps) {
+function TextEl({ el, selected, onSelect, onChange, onDblClick, is3D }: ElementProps) {
   return (
-    <Text
+    <Group
       x={el.x} y={el.y}
-      text={el.label ?? 'Label'}
-      fill={el.color ?? '#fff'}
-      fontSize={15}
-      fontStyle="bold"
-      stroke={selected ? 'rgba(255,255,255,0.4)' : undefined}
-      strokeWidth={selected ? 4 : undefined}
+      scaleY={is3D ? INV_3D_SCALE_Y : 1}
       draggable
       onClick={onSelect} onTap={onSelect}
-      onDblClick={onDblClick}
-      onDblTap={onDblClick}
+      onDblClick={onDblClick} onDblTap={onDblClick}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
-    />
+    >
+      <Text
+        x={0} y={0}
+        text={el.label ?? 'Label'}
+        fill={el.color ?? '#fff'}
+        fontSize={15}
+        fontStyle="bold"
+        stroke={selected ? 'rgba(255,255,255,0.4)' : undefined}
+        strokeWidth={selected ? 4 : undefined}
+      />
+    </Group>
   )
 }
 
