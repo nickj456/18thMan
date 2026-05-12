@@ -1,13 +1,64 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Stage, Layer, Arrow, Line } from 'react-konva'
+import { Stage, Layer, Arrow, Line, Shape } from 'react-konva'
 import type Konva from 'konva'
 import { PitchBackgroundLayer } from './PitchBackground'
 import { CanvasElements } from './CanvasElements'
 import { Toolbar } from './Toolbar'
 import { CANVAS_WIDTH, CANVAS_HEIGHT, DRAW_TOOLS, type CanvasElement, type CanvasState, type ToolType } from './types'
 import { nanoid } from 'nanoid'
+
+// ── Kick arc preview — shown while dragging to draw ──────────────────────────
+function KickPreview({ x1, y1, x2, y2, color }: { x1: number; y1: number; x2: number; y2: number; color: string }) {
+  const cpx = (x1 + x2) / 2
+  const dist = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+  const arcLift = Math.max(45, dist * 0.46)
+  const cpy = (y1 + y2) / 2 - arcLift
+  const angle = Math.atan2(y2 - cpy, x2 - cpx)
+  const arrowLen = 13
+
+  return (
+    <Shape
+      sceneFunc={(ctx, shape) => {
+        ctx.save()
+        ctx.beginPath()
+        ctx.moveTo(x1, y1)
+        ctx.quadraticCurveTo(cpx, cpy, x2, y2)
+        ctx.strokeShape(shape)
+        ctx.restore()
+
+        ctx.beginPath()
+        ctx.moveTo(x2, y2)
+        ctx.lineTo(x2 - arrowLen * Math.cos(angle - Math.PI / 6), y2 - arrowLen * Math.sin(angle - Math.PI / 6))
+        ctx.lineTo(x2 - arrowLen * Math.cos(angle + Math.PI / 6), y2 - arrowLen * Math.sin(angle + Math.PI / 6))
+        ctx.closePath()
+        ctx.fillStyle = color
+        ctx.fill()
+
+        ctx.save()
+        ctx.translate(cpx, cpy)
+        ctx.beginPath()
+        ctx.moveTo(-10, 0)
+        ctx.bezierCurveTo(-6, -6.5, 6, -6.5, 10, 0)
+        ctx.bezierCurveTo(6, 6.5, -6, 6.5, -10, 0)
+        ctx.closePath()
+        ctx.fillStyle = 'rgba(245,245,240,0.9)'
+        ctx.fill()
+        ctx.setLineDash([])
+        ctx.strokeStyle = color
+        ctx.lineWidth = 1.5
+        ctx.stroke()
+        ctx.restore()
+      }}
+      stroke={color}
+      strokeWidth={2.5}
+      dash={[7, 4]}
+      opacity={0.7}
+      listening={false}
+    />
+  )
+}
 
 function makeElement(tool: ToolType, x: number, y: number, count: number): CanvasElement {
   const base = { id: nanoid(), type: tool, x, y }
@@ -24,6 +75,7 @@ function makeElement(tool: ToolType, x: number, y: number, count: number): Canva
 
 function defaultLineColor(tool: ToolType) {
   if (tool === 'arrow') return '#22c55e'
+  if (tool === 'kick')  return '#fbbf24'
   return '#a3a3a3'
 }
 
@@ -72,6 +124,7 @@ export function DrillCanvas({
 }: DrillCanvasProps) {
   const attackerCount = useRef(0)
   const defenderCount = useRef(0)
+  const [is3D, setIs3D] = useState(false)
   const [drawingEl, setDrawingEl] = useState<DrawingState | null>(null)
   // Store all editing data directly — don't look up from state.elements (timing issues)
   const [editingText, setEditingText] = useState<EditingText | null>(null)
@@ -276,6 +329,8 @@ export function DrillCanvas({
         onBackgroundChange={(bg) => onStateChange({ ...state, background: bg })}
         pitchFlipped={state.pitchFlipped ?? false}
         onFlipPitch={() => onStateChange({ ...state, pitchFlipped: !state.pitchFlipped })}
+        is3D={is3D}
+        onToggle3D={() => setIs3D(v => !v)}
         hasSelection={!!selectedId}
         onDelete={handleDelete}
         onUndo={onUndo}
@@ -287,7 +342,21 @@ export function DrillCanvas({
       />
 
       <div ref={containerRef} className="flex-1 overflow-auto bg-zinc-950 flex items-center justify-center p-4">
-        <div style={{ position: 'relative', width: CANVAS_WIDTH * scale, height: CANVAS_HEIGHT * scale, cursor: activeTool === 'select' ? 'default' : isDraw ? 'crosshair' : 'copy' }}>
+        <div style={{
+          position: 'relative',
+          width: CANVAS_WIDTH * scale,
+          height: CANVAS_HEIGHT * scale,
+          cursor: activeTool === 'select' ? 'default' : isDraw ? 'crosshair' : 'copy',
+          ...(is3D && {
+            transform: 'perspective(1100px) rotateX(24deg)',
+            transformOrigin: '50% 72%',
+            transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          }),
+          ...(!is3D && {
+            transform: 'none',
+            transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          }),
+        }}>
           {/* Text editing overlay — absolutely positioned over the canvas */}
           {editingText && (
             <textarea
@@ -359,6 +428,7 @@ export function DrillCanvas({
                 onSelect={onSelectId}
                 onChange={handleElementChange}
                 onEditText={startTextEdit}
+                is3D={is3D}
               />
               {/* Live preview while drawing */}
               {drawingEl && drawingEl.type === 'arrow' && (
@@ -383,6 +453,13 @@ export function DrillCanvas({
                   listening={false}
                 />
               )}
+              {drawingEl && drawingEl.type === 'kick' && (
+                <KickPreview
+                  x1={drawingEl.x1} y1={drawingEl.y1}
+                  x2={drawingEl.x2} y2={drawingEl.y2}
+                  color={drawingEl.color}
+                />
+              )}
             </Layer>
           </Stage>
         </div>
@@ -391,16 +468,17 @@ export function DrillCanvas({
       {/* Status bar */}
       <div className="absolute bottom-2 left-16 flex gap-3 text-[11px] text-zinc-500 pointer-events-none select-none">
         <span>{attackers} att · {defenders} def · {state.elements.length} total</span>
-        {activeTool !== 'select' && isDraw && (
+        {is3D && <span className="text-indigo-400">3D view — toggle 3D off to edit precisely</span>}
+        {!is3D && activeTool !== 'select' && isDraw && (
           <span className="text-zinc-400">{isTouch ? 'Drag to draw · Apple Pencil supported' : 'Click and drag to draw · Esc to cancel'}</span>
         )}
-        {activeTool !== 'select' && !isDraw && !editingText && (
+        {!is3D && activeTool !== 'select' && !isDraw && !editingText && (
           <span className="text-zinc-400">{isTouch ? 'Tap canvas to place' : 'Click canvas to place · Esc to cancel'}</span>
         )}
-        {selectedId && !editingText && (
+        {!is3D && selectedId && !editingText && (
           <span className="text-zinc-400">Del to delete · double-click text to edit</span>
         )}
-        {editingText && (
+        {!is3D && editingText && (
           <span className="text-zinc-400">Type your label · Enter or click away to save · Esc to cancel</span>
         )}
       </div>

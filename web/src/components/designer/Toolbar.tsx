@@ -16,6 +16,8 @@ import {
   Undo2,
   Eraser,
   RotateCw,
+  TrendingUp,
+  Box,
 } from 'lucide-react'
 
 const TOOLS: { id: ToolType; label: string; icon: React.ReactNode; color?: string }[] = [
@@ -27,6 +29,7 @@ const TOOLS: { id: ToolType; label: string; icon: React.ReactNode; color?: strin
   { id: 'arrow',    label: 'Run',     icon: <MoveRight size={15} />,     color: 'text-green-400' },
   { id: 'line',     label: 'Pass',    icon: <Minus size={15} />,         color: 'text-zinc-300' },
   { id: 'dotted',   label: 'Dotted',  icon: <MoreHorizontal size={15} />,color: 'text-zinc-400' },
+  { id: 'kick',     label: 'Kick',    icon: <TrendingUp size={15} />,    color: 'text-amber-400' },
   { id: 'zone',     label: 'Zone',    icon: <Square size={15} />,        color: 'text-red-300' },
   { id: 'text',     label: 'Label',   icon: <Type size={15} /> },
 ]
@@ -51,6 +54,8 @@ interface ToolbarProps {
   onBackgroundChange: (bg: PitchBackground) => void
   pitchFlipped: boolean
   onFlipPitch: () => void
+  is3D: boolean
+  onToggle3D: () => void
   hasSelection: boolean
   onDelete: () => void
   onUndo: () => void
@@ -65,6 +70,7 @@ export function Toolbar({
   activeTool, onToolChange,
   background, onBackgroundChange,
   pitchFlipped, onFlipPitch,
+  is3D, onToggle3D,
   hasSelection, onDelete,
   onUndo, onClear,
   canUndo, hasElements,
@@ -125,6 +131,19 @@ export function Toolbar({
         >
           <RotateCw size={12} />
           <span>Vertical</span>
+        </button>
+        <button
+          title="Toggle 3D perspective view"
+          onClick={onToggle3D}
+          className={cn(
+            'flex flex-col items-center gap-0.5 rounded-md py-1 px-1 text-[9px] leading-tight text-center transition-colors mt-0.5',
+            is3D
+              ? 'bg-indigo-600 text-white'
+              : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+          )}
+        >
+          <Box size={12} />
+          <span>3D</span>
         </button>
       </div>
 
