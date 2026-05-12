@@ -346,16 +346,14 @@ export function DrillCanvas({
           position: 'relative',
           width: CANVAS_WIDTH * scale,
           height: CANVAS_HEIGHT * scale,
-          cursor: activeTool === 'select' ? 'default' : isDraw ? 'crosshair' : 'copy',
-          ...(is3D && {
-            transform: 'perspective(1100px) rotateX(24deg)',
-            transformOrigin: '50% 72%',
-            transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          }),
-          ...(!is3D && {
-            transform: 'none',
-            transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          }),
+          cursor: is3D ? 'default' : activeTool === 'select' ? 'default' : isDraw ? 'crosshair' : 'copy',
+          transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          transform: is3D ? 'perspective(1100px) rotateX(24deg)' : undefined,
+          transformOrigin: is3D ? '50% 72%' : undefined,
+          // pointer-events disabled in 3D mode: CSS rotateX distorts Konva's coordinate
+          // mapping (getBoundingClientRect returns a shrunken bounding box), so all
+          // drag positions are wrong. 3D is view-only; toggle off to edit.
+          pointerEvents: is3D ? 'none' : undefined,
         }}>
           {/* Text editing overlay — absolutely positioned over the canvas */}
           {editingText && (
