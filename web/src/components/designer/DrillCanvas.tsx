@@ -1,13 +1,27 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Stage, Layer, Arrow, Line, Shape } from 'react-konva'
+import { Stage, Layer, Arrow, Line, Shape, Group } from 'react-konva'
 import type Konva from 'konva'
 import { PitchBackgroundLayer } from './PitchBackground'
 import { CanvasElements } from './CanvasElements'
 import { Toolbar } from './Toolbar'
 import { CANVAS_WIDTH, CANVAS_HEIGHT, DRAW_TOOLS, type CanvasElement, type CanvasState, type ToolType } from './types'
 import { nanoid } from 'nanoid'
+
+// ── 3-D Konva Group transform ────────────────────────────────────────────────
+// Moving the 3D effect inside Konva (not CSS) keeps pointer-event coordinates
+// accurate: Konva maps clicks/drags through the Group's inverse transform so
+// elements remain fully interactive in 3D mode.
+const GROUP_3D_Y = CANVAS_HEIGHT * 0.12   // ≈ 72 px top inset
+const GROUP_3D_SCALE_Y = 0.70             // 30 % Y compression for pitch tilt
+
+function ThreeDWrapper({ active, children }: { active: boolean; children: React.ReactNode }) {
+  if (active) {
+    return <Group y={GROUP_3D_Y} scaleY={GROUP_3D_SCALE_Y}>{children}</Group>
+  }
+  return <>{children}</>
+}
 
 // ── Kick arc preview — shown while dragging to draw ──────────────────────────
 function KickPreview({ x1, y1, x2, y2, color }: { x1: number; y1: number; x2: number; y2: number; color: string }) {
@@ -176,12 +190,20 @@ export function DrillCanvas({
     return () => window.removeEventListener('keydown', handleKey)
   })
 
-  // Works for mouse, touch, and Apple Pencil — getPointerPosition() normalises all three
+  // Works for mouse, touch, and Apple Pencil — getPointerPosition() normalises all three.
+  // In 3D mode we inverse the Konva Group transform so newly-placed elements land at
+  // the correct canvas-logical position (the Group handles hit-testing for existing
+  // elements automatically via its own inverse transform).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function getPos(e: Konva.KonvaEventObject<any>) {
     const pos = e.target.getStage()?.getPointerPosition() ?? null
     if (!pos) return null
-    return { x: pos.x / scale, y: pos.y / scale }
+    const sx = pos.x / scale
+    const sy = pos.y / scale
+    if (is3D) {
+      return { x: sx, y: (sy - GROUP_3D_Y) / GROUP_3D_SCALE_Y }
+    }
+    return { x: sx, y: sy }
   }
 
   // ── Click/Tap-to-place (non-draw tools) ──────────────────────────────────
@@ -346,14 +368,7 @@ export function DrillCanvas({
           position: 'relative',
           width: CANVAS_WIDTH * scale,
           height: CANVAS_HEIGHT * scale,
-          cursor: is3D ? 'default' : activeTool === 'select' ? 'default' : isDraw ? 'crosshair' : 'copy',
-          transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          transform: is3D ? 'perspective(1100px) rotateX(24deg)' : undefined,
-          transformOrigin: is3D ? '50% 72%' : undefined,
-          // pointer-events disabled in 3D mode: CSS rotateX distorts Konva's coordinate
-          // mapping (getBoundingClientRect returns a shrunken bounding box), so all
-          // drag positions are wrong. 3D is view-only; toggle off to edit.
-          pointerEvents: is3D ? 'none' : undefined,
+          cursor: activeTool === 'select' ? 'default' : isDraw ? 'crosshair' : 'copy',
         }}>
           {/* Text editing overlay — absolutely positioned over the canvas */}
           {editingText && (
@@ -416,48 +431,52 @@ export function DrillCanvas({
             onTouchEnd={handleMouseUp}
           >
             <Layer>
-              <PitchBackgroundLayer type={state.background} flipped={state.pitchFlipped} />
+              <ThreeDWrapper active={is3D}>
+                <PitchBackgroundLayer type={state.background} flipped={state.pitchFlipped} />
+              </ThreeDWrapper>
             </Layer>
             <Layer>
-              <CanvasElements
-                elements={state.elements}
-                selectedId={selectedId}
-                editingTextId={editingText?.id ?? null}
-                onSelect={onSelectId}
-                onChange={handleElementChange}
-                onEditText={startTextEdit}
-                is3D={is3D}
-              />
-              {/* Live preview while drawing */}
-              {drawingEl && drawingEl.type === 'arrow' && (
-                <Arrow
-                  points={[drawingEl.x1, drawingEl.y1, drawingEl.x2, drawingEl.y2]}
-                  stroke={drawingEl.color}
-                  fill={drawingEl.color}
-                  strokeWidth={2.5}
-                  pointerLength={12}
-                  pointerWidth={9}
-                  opacity={0.7}
-                  listening={false}
+              <ThreeDWrapper active={is3D}>
+                <CanvasElements
+                  elements={state.elements}
+                  selectedId={selectedId}
+                  editingTextId={editingText?.id ?? null}
+                  onSelect={onSelectId}
+                  onChange={handleElementChange}
+                  onEditText={startTextEdit}
+                  is3D={is3D}
                 />
-              )}
-              {drawingEl && (drawingEl.type === 'line' || drawingEl.type === 'dotted') && (
-                <Line
-                  points={[drawingEl.x1, drawingEl.y1, drawingEl.x2, drawingEl.y2]}
-                  stroke={drawingEl.color}
-                  strokeWidth={2}
-                  dash={drawingEl.type === 'dotted' ? [4, 6] : undefined}
-                  opacity={0.7}
-                  listening={false}
-                />
-              )}
-              {drawingEl && drawingEl.type === 'kick' && (
-                <KickPreview
-                  x1={drawingEl.x1} y1={drawingEl.y1}
-                  x2={drawingEl.x2} y2={drawingEl.y2}
-                  color={drawingEl.color}
-                />
-              )}
+                {/* Live preview while drawing */}
+                {drawingEl && drawingEl.type === 'arrow' && (
+                  <Arrow
+                    points={[drawingEl.x1, drawingEl.y1, drawingEl.x2, drawingEl.y2]}
+                    stroke={drawingEl.color}
+                    fill={drawingEl.color}
+                    strokeWidth={2.5}
+                    pointerLength={12}
+                    pointerWidth={9}
+                    opacity={0.7}
+                    listening={false}
+                  />
+                )}
+                {drawingEl && (drawingEl.type === 'line' || drawingEl.type === 'dotted') && (
+                  <Line
+                    points={[drawingEl.x1, drawingEl.y1, drawingEl.x2, drawingEl.y2]}
+                    stroke={drawingEl.color}
+                    strokeWidth={2}
+                    dash={drawingEl.type === 'dotted' ? [4, 6] : undefined}
+                    opacity={0.7}
+                    listening={false}
+                  />
+                )}
+                {drawingEl && drawingEl.type === 'kick' && (
+                  <KickPreview
+                    x1={drawingEl.x1} y1={drawingEl.y1}
+                    x2={drawingEl.x2} y2={drawingEl.y2}
+                    color={drawingEl.color}
+                  />
+                )}
+              </ThreeDWrapper>
             </Layer>
           </Stage>
         </div>
@@ -466,17 +485,17 @@ export function DrillCanvas({
       {/* Status bar */}
       <div className="absolute bottom-2 left-16 flex gap-3 text-[11px] text-zinc-500 pointer-events-none select-none">
         <span>{attackers} att · {defenders} def · {state.elements.length} total</span>
-        {is3D && <span className="text-indigo-400">3D view — toggle 3D off to edit precisely</span>}
-        {!is3D && activeTool !== 'select' && isDraw && (
+        {is3D && <span className="text-indigo-400">3D</span>}
+        {activeTool !== 'select' && isDraw && (
           <span className="text-zinc-400">{isTouch ? 'Drag to draw · Apple Pencil supported' : 'Click and drag to draw · Esc to cancel'}</span>
         )}
-        {!is3D && activeTool !== 'select' && !isDraw && !editingText && (
+        {activeTool !== 'select' && !isDraw && !editingText && (
           <span className="text-zinc-400">{isTouch ? 'Tap canvas to place' : 'Click canvas to place · Esc to cancel'}</span>
         )}
-        {!is3D && selectedId && !editingText && (
+        {selectedId && !editingText && (
           <span className="text-zinc-400">Del to delete · double-click text to edit</span>
         )}
-        {!is3D && editingText && (
+        {editingText && (
           <span className="text-zinc-400">Type your label · Enter or click away to save · Esc to cancel</span>
         )}
       </div>
