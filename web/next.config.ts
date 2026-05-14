@@ -12,8 +12,15 @@ const nextConfig: NextConfig = {
       { hostname: 'khslkwspsqyopicxufun.supabase.co' },
     ],
   },
-  // Keep Remotion's Node.js-only packages out of the client/edge bundle
   serverExternalPackages: ['@remotion/bundler', '@remotion/renderer', '@remotion/compositor-win32-x64-msvc'],
+  async rewrites() {
+    return [
+      {
+        source: '/scout/:id',
+        destination: 'https://khslkwspsqyopicxufun.supabase.co/functions/v1/player-report/:id',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
