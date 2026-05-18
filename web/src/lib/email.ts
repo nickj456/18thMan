@@ -239,22 +239,32 @@ export async function sendUpgradeNudgeEmail(to: string, displayName: string, fea
   `))
 }
 
-/** Sent to a lead who requested the free session plan PDF */
+const DRIP_WEEK_META = [
+  { title: 'Ball Handling &amp; Passing', detail: 'Passing grids, offloads, quick hands', mins: '70 min' },
+  { title: 'Defensive Shape',             detail: 'Flat line drill, tackle technique, conditioned game', mins: '70 min' },
+  { title: 'Attack Plays &amp; Structure', detail: 'Set pieces, broken-field running, small-sided game', mins: '75 min' },
+  { title: 'Full Run Session',             detail: 'Review weeks 1–3, full training game', mins: '75 min' },
+]
+
+/** Sent to a lead with a single week's session plan PDF */
 export async function sendLeadMagnetEmail(
   to: string,
   ageGroup: string | null,
   pdfBuffer: Buffer,
+  weekNumber: number,
 ): Promise<EmailResult> {
   const ageNote = ageGroup ? ` — ${ageGroup}` : ''
+  const meta = DRIP_WEEK_META[weekNumber - 1]
+  const isFirst = weekNumber === 1
 
-  const weeks = [
-    { num: '1', title: 'Ball Handling &amp; Passing', detail: 'Passing grids, offloads, quick hands', mins: '70 min' },
-    { num: '2', title: 'Defensive Shape', detail: 'Flat line drill, tackle technique, conditioned game', mins: '70 min' },
-    { num: '3', title: 'Attack Plays &amp; Structure', detail: 'Set pieces, broken-field running, small-sided game', mins: '75 min' },
-    { num: '4', title: 'Full Run Session', detail: 'Review weeks 1–3, full training game', mins: '75 min' },
-  ]
+  const subjectPrefix = isFirst
+    ? 'Your free coaching plan starts here'
+    : `Week ${weekNumber} of your coaching plan is ready`
 
-  // Light-theme email: dark text on white/light backgrounds — reliable across all email clients
+  const intro = isFirst
+    ? `Your 4-week rugby league training plan kicks off with Week 1. You'll get a new session each week — <strong style="color:#18181b;">Week 2 arrives in 7 days.</strong>`
+    : `Week ${weekNumber} of your 4-week plan is attached. ${weekNumber < 4 ? `Week ${weekNumber + 1} is coming next week.` : "This is the final session — make it count."}`
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head>
@@ -268,36 +278,34 @@ export async function sendLeadMagnetEmail(
       <img src="${SITE_URL}/logo.png" alt="18th Man" width="44" height="44" style="display:block;" />
     </td></tr>
 
-    <!-- Ember header -->
+    <!-- Header -->
     <tr><td bgcolor="#e8560a" style="background:#e8560a;border-radius:12px 12px 0 0;padding:24px 32px 20px;">
-      <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:1.8px;text-transform:uppercase;">Free Coaching Resource</p>
-      <h1 style="margin:0;font-size:22px;font-weight:800;color:#ffffff;line-height:1.2;letter-spacing:-0.3px;">Your 4-Week Training Plan${ageNote}</h1>
+      <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:1.8px;text-transform:uppercase;">Week ${weekNumber} of 4${ageNote}</p>
+      <h1 style="margin:0;font-size:22px;font-weight:800;color:#ffffff;line-height:1.2;letter-spacing:-0.3px;">${meta.title}</h1>
     </td></tr>
 
-    <!-- White card body -->
+    <!-- Body -->
     <tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:0 0 12px 12px;padding:28px 32px 32px;border:1px solid #e4e4e7;border-top:none;">
 
       <p style="margin:0 0 6px;font-size:15px;color:#18181b;line-height:1.6;">Hey Coach,</p>
-      <p style="margin:0 0 24px;font-size:15px;color:#18181b;line-height:1.6;">Your 4-week rugby league training plan is attached.</p>
+      <p style="margin:0 0 24px;font-size:15px;color:#52525b;line-height:1.6;">${intro}</p>
 
-      <!-- Week table -->
+      <!-- Session summary -->
       <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #e4e4e7;border-radius:8px;overflow:hidden;">
-        ${weeks.map((w, i) => `
         <tr>
-          <td width="44" bgcolor="#e8560a" align="center" valign="middle" style="background:#e8560a;padding:14px 0;${i < weeks.length - 1 ? 'border-bottom:1px solid rgba(255,255,255,0.15);' : ''}">
-            <span style="font-size:16px;font-weight:800;color:#ffffff;">${w.num}</span>
+          <td width="44" bgcolor="#e8560a" align="center" valign="middle" style="background:#e8560a;padding:18px 0;">
+            <span style="font-size:20px;font-weight:800;color:#ffffff;">${weekNumber}</span>
           </td>
-          <td bgcolor="${i % 2 === 0 ? '#ffffff' : '#fafafa'}" style="background:${i % 2 === 0 ? '#ffffff' : '#fafafa'};padding:11px 14px;${i < weeks.length - 1 ? 'border-bottom:1px solid #e4e4e7;' : ''}">
-            <p style="margin:0 0 1px;font-size:13px;font-weight:700;color:#18181b;">${w.title}</p>
-            <p style="margin:0;font-size:12px;color:#71717a;">${w.detail} &nbsp;&middot;&nbsp; <strong style="color:#e8560a;">${w.mins}</strong></p>
+          <td bgcolor="#ffffff" style="background:#ffffff;padding:14px 16px;">
+            <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#18181b;">${meta.title}</p>
+            <p style="margin:0;font-size:12px;color:#71717a;">${meta.detail} &nbsp;&middot;&nbsp; <strong style="color:#e8560a;">${meta.mins}</strong></p>
           </td>
-        </tr>`).join('')}
+        </tr>
       </table>
 
-      <p style="margin:0 0 20px;font-size:14px;color:#71717a;line-height:1.6;">Each session includes drill descriptions, durations, and coach notes. Print it and take it to training.</p>
+      <p style="margin:0 0 20px;font-size:14px;color:#71717a;line-height:1.6;">Session plan is attached as a PDF — print it and take it to training.</p>
 
       <hr style="border:none;border-top:1px solid #e4e4e7;margin:0 0 20px;" />
-
       <p style="margin:0 0 20px;font-size:15px;color:#52525b;line-height:1.6;">The 18th Man team</p>
 
       <!-- CTA -->
@@ -326,9 +334,100 @@ export async function sendLeadMagnetEmail(
 
   return send(
     to,
-    `Your free 4-week rugby league training plan${ageNote}`,
+    `${subjectPrefix}${ageNote} — 18th Man`,
     html,
-    [{ filename: '18th-man-4-week-session-plan.pdf', content: pdfBuffer }],
+    [{ filename: `18th-man-week-${weekNumber}-session-plan.pdf`, content: pdfBuffer }],
+  )
+}
+
+/** Sent after Week 4 to convert leads into sign-ups */
+export async function sendDripConversionEmail(
+  to: string,
+  ageGroup: string | null,
+): Promise<EmailResult> {
+  const ageNote = ageGroup ? ` — ${ageGroup}` : ''
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f4f4f5" style="background:#f4f4f5;padding:40px 16px;">
+  <tr><td align="center">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;">
+
+    <!-- Logo -->
+    <tr><td align="center" style="padding-bottom:24px;">
+      <img src="${SITE_URL}/logo.png" alt="18th Man" width="44" height="44" style="display:block;" />
+    </td></tr>
+
+    <!-- Header -->
+    <tr><td bgcolor="#0d1117" style="background:#0d1117;border-radius:12px 12px 0 0;padding:24px 32px 20px;">
+      <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:#e8560a;letter-spacing:1.8px;text-transform:uppercase;">4-Week Plan Complete${ageNote}</p>
+      <h1 style="margin:0;font-size:22px;font-weight:800;color:#ffffff;line-height:1.2;letter-spacing:-0.3px;">You've finished the plan. What's next?</h1>
+    </td></tr>
+
+    <!-- Body -->
+    <tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:0 0 12px 12px;padding:28px 32px 32px;border:1px solid #e4e4e7;border-top:none;">
+
+      <p style="margin:0 0 6px;font-size:15px;color:#18181b;line-height:1.6;">Hey Coach,</p>
+      <p style="margin:0 0 24px;font-size:15px;color:#52525b;line-height:1.6;">
+        You've worked through all four sessions. That's a full month of structured, purposeful coaching — well done.
+      </p>
+
+      <p style="margin:0 0 16px;font-size:15px;color:#52525b;line-height:1.6;">
+        If you want to keep building on it, 18th Man lets you design your own drills, plan sessions with AI, and share what works with your coaching staff — all for free.
+      </p>
+
+      <!-- Feature list -->
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #e4e4e7;border-radius:8px;overflow:hidden;">
+        ${[
+          ['🎨', 'Visual Drill Designer', 'Build and save your own drills on a canvas'],
+          ['📋', 'Session Planning', 'Plan full training weeks with timings and structure'],
+          ['🤖', 'AI Coaching Chat', 'Get tactical advice and session ideas instantly'],
+          ['🏉', 'Club &amp; Group Tools', 'Share plans with your whole coaching staff'],
+        ].map(([icon, title, desc], i, arr) => `
+        <tr>
+          <td width="44" align="center" valign="top" style="padding:14px 0 14px 14px;${i < arr.length - 1 ? 'border-bottom:1px solid #e4e4e7;' : ''}">
+            <span style="font-size:18px;">${icon}</span>
+          </td>
+          <td style="padding:14px;${i < arr.length - 1 ? 'border-bottom:1px solid #e4e4e7;' : ''}">
+            <p style="margin:0 0 2px;font-size:13px;font-weight:700;color:#18181b;">${title}</p>
+            <p style="margin:0;font-size:12px;color:#71717a;">${desc}</p>
+          </td>
+        </tr>`).join('')}
+      </table>
+
+      <hr style="border:none;border-top:1px solid #e4e4e7;margin:0 0 20px;" />
+      <p style="margin:0 0 20px;font-size:15px;color:#52525b;line-height:1.6;">The 18th Man team</p>
+
+      <!-- CTA -->
+      <table cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+        <tr><td bgcolor="#e8560a" style="background:#e8560a;border-radius:8px;">
+          <a href="${SITE_URL}/signup" style="display:inline-block;padding:13px 28px;color:#ffffff;font-weight:700;font-size:15px;text-decoration:none;">Create your free account →</a>
+        </td></tr>
+      </table>
+      <p style="margin:0;font-size:12px;color:#a1a1aa;">Free for all coaches &nbsp;&middot;&nbsp; No credit card needed</p>
+
+    </td></tr>
+
+    <!-- Footer -->
+    <tr><td align="center" style="padding-top:20px;">
+      <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;">
+        18th Man &nbsp;&middot;&nbsp; Rugby League Coaching Platform<br/>
+        <a href="${SITE_URL}" style="color:#a1a1aa;">18thman.app</a>
+      </p>
+    </td></tr>
+
+  </table>
+  </td></tr>
+</table>
+</body>
+</html>`
+
+  return send(
+    to,
+    `You've completed the 4-week plan — what's next?${ageNote}`,
+    html,
   )
 }
 

@@ -30,28 +30,32 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createClient()
+    const now = new Date().toISOString()
 
-    // Upsert lead — update age_group if they submit again
+    // Upsert lead — only update age_group if re-submitting; don't reset drip progress
     await supabase.from('leads').upsert(
       {
         email: email.toLowerCase().trim(),
         age_group: typeof age_group === 'string' && age_group ? age_group : null,
         source: 'session_plan',
-        updated_at: new Date().toISOString(),
+        drip_week: 1,
+        last_drip_at: now,
+        updated_at: now,
       },
-      { onConflict: 'email,source' },
+      { onConflict: 'email,source', ignoreDuplicates: false },
     )
     // Ignore upsert errors — don't block delivery over a DB hiccup
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const render = renderToBuffer as (el: unknown) => Promise<Buffer>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = await render(createElement(LeadMagnetSessionPDF as any, { logoSrc: LOGO_DATA_URI }))
+    const buffer = await render(createElement(LeadMagnetSessionPDF as any, { logoSrc: LOGO_DATA_URI, weekNumber: 1 }))
 
     await sendLeadMagnetEmail(
       email.toLowerCase().trim(),
       typeof age_group === 'string' && age_group ? age_group : null,
       Buffer.from(buffer),
+      1,
     )
 
     return Response.json({ success: true })

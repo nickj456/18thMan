@@ -548,18 +548,21 @@ const WEEKS: Week[] = [
 
 interface Props {
   logoSrc?: string
+  weekNumber: number
 }
 
-export function LeadMagnetSessionPDF({ logoSrc }: Props = {}) {
+export function LeadMagnetSessionPDF({ logoSrc, weekNumber }: Props) {
+  const week = WEEKS[weekNumber - 1]
   const today = new Date().toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   })
+  const totalMins = week.drills.reduce((sum, d) => sum + d.duration, 0)
 
   return (
     <Document
-      title="4-Week Rugby League Training Plan"
+      title={`Week ${weekNumber} — ${week.title}`}
       author="18th Man"
       subject="Free Rugby League Session Plan"
       creator="18th Man"
@@ -593,15 +596,15 @@ export function LeadMagnetSessionPDF({ logoSrc }: Props = {}) {
 
           {/* Title */}
           <View style={s.coverDivider} />
-          <Text style={s.docTitle}>4-Week Rugby League{'\n'}Training Plan</Text>
+          <Text style={s.docTitle}>Week {weekNumber} of 4{'\n'}{week.title}</Text>
           <View style={s.docMeta}>
             <View style={s.docMetaItem}>
               <View style={s.docMetaDot} />
-              <Text style={s.docMetaText}>All Ages &amp; Grades</Text>
+              <Text style={s.docMetaText}>4-Week Training Plan</Text>
             </View>
             <View style={s.docMetaItem}>
               <View style={s.docMetaDot} />
-              <Text style={s.docMetaText}>70–75 Minutes Per Session</Text>
+              <Text style={s.docMetaText}>{totalMins} Minutes</Text>
             </View>
             <View style={s.docMetaItem}>
               <View style={s.docMetaDot} />
@@ -613,69 +616,57 @@ export function LeadMagnetSessionPDF({ logoSrc }: Props = {}) {
         {/* ── Body ─────────────────────────────────────────────── */}
         <View style={s.body}>
 
-          {/* Intro */}
-          <Text style={s.introPara}>
-            Four sessions across four weeks, each around 75 minutes. The sessions build on each
-            other — individual skills first, then defensive and attacking structure, finishing with
-            a full training game. Adapt drills to your squad&apos;s age and ability.
-          </Text>
+          {/* Week block */}
+          <View style={s.weekBlock} wrap={false}>
 
-          {/* Week sections */}
-          {WEEKS.map(week => {
-            const totalMins = week.drills.reduce((sum, d) => sum + d.duration, 0)
-            return (
-              <View key={week.number} style={s.weekBlock} wrap={false}>
-
-                {/* Week header */}
-                <View style={s.weekHeaderRow}>
-                  <View style={s.weekNumBlock}>
-                    <Text style={s.weekNum}>{week.number}</Text>
-                    <Text style={s.weekNumLabel}>WEEK</Text>
-                  </View>
-                  <View style={s.weekTitleBlock}>
-                    <Text style={s.weekTitle}>{week.title}</Text>
-                    <View style={s.focusTag}>
-                      <Text style={s.focusTagText}>{week.focus}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Drill list */}
-                <View style={s.drillList}>
-                  {week.drills.map((drill, i) => (
-                    <View key={i} style={s.drillRow}>
-                      <View style={s.drillStep}>
-                        <Text style={s.drillStepText}>{i + 1}</Text>
-                      </View>
-                      <View style={s.drillContent}>
-                        <Text style={s.drillTitle}>{drill.title}</Text>
-                        <Text style={s.drillDesc}>{drill.description}</Text>
-                      </View>
-                      <View style={s.durationPill}>
-                        <Text style={s.durationText}>{drill.duration} min</Text>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Session total */}
-                <View style={s.sessionTotal}>
-                  <Text style={s.sessionTotalLabel}>Total session time:</Text>
-                  <Text style={s.sessionTotalValue}>{totalMins} min</Text>
-                </View>
-
-                {/* Coach notes */}
-                <View style={s.coachNotes}>
-                  <View style={s.coachNotesAccent} />
-                  <View style={s.coachNotesInner}>
-                    <Text style={s.coachNotesLabel}>COACH NOTES</Text>
-                    <Text style={s.coachNotesText}>{week.coachNotes}</Text>
-                  </View>
-                </View>
-
+            {/* Week header */}
+            <View style={s.weekHeaderRow}>
+              <View style={s.weekNumBlock}>
+                <Text style={s.weekNum}>{week.number}</Text>
+                <Text style={s.weekNumLabel}>WEEK</Text>
               </View>
-            )
-          })}
+              <View style={s.weekTitleBlock}>
+                <Text style={s.weekTitle}>{week.title}</Text>
+                <View style={s.focusTag}>
+                  <Text style={s.focusTagText}>{week.focus}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Drill list */}
+            <View style={s.drillList}>
+              {week.drills.map((drill, i) => (
+                <View key={i} style={s.drillRow}>
+                  <View style={s.drillStep}>
+                    <Text style={s.drillStepText}>{i + 1}</Text>
+                  </View>
+                  <View style={s.drillContent}>
+                    <Text style={s.drillTitle}>{drill.title}</Text>
+                    <Text style={s.drillDesc}>{drill.description}</Text>
+                  </View>
+                  <View style={s.durationPill}>
+                    <Text style={s.durationText}>{drill.duration} min</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* Session total */}
+            <View style={s.sessionTotal}>
+              <Text style={s.sessionTotalLabel}>Total session time:</Text>
+              <Text style={s.sessionTotalValue}>{totalMins} min</Text>
+            </View>
+
+            {/* Coach notes */}
+            <View style={s.coachNotes}>
+              <View style={s.coachNotesAccent} />
+              <View style={s.coachNotesInner}>
+                <Text style={s.coachNotesLabel}>COACH NOTES</Text>
+                <Text style={s.coachNotesText}>{week.coachNotes}</Text>
+              </View>
+            </View>
+
+          </View>
 
           {/* CTA */}
           <View style={s.ctaBox}>
