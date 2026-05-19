@@ -49,58 +49,103 @@ function htmlPage(title: string, icon: string, heading: string, body: string, st
   )
 }
 
-// Returns null if access is allowed, or an HTML Response if it should be blocked.
-async function checkGroupAccess(id: string): Promise<Response | null> {
+// Injects a "Watch on Veo" banner and a timestamp deep-link script into
+// the Edge Function's HTML response. Both are inserted right before </body>.
+function injectVeo(html: string, veoUrl: string): string {
+  // Escape the URL for safe embedding in a JS string literal
+  const safeUrl = veoUrl.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+
+  const banner = `
+<div style="position:sticky;top:0;z-index:999;background:#0f172a;border-bottom:1px solid #1e293b;padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:8px;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+  <a href="${veoUrl}" target="_blank" rel="noopener noreferrer" style="color:#3b82f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:0.875rem;font-weight:600;text-decoration:none;letter-spacing:0.01em;">Watch on Veo</a>
+</div>
+<script>
+(function(){
+  var base='${safeUrl}'.replace(/#[\\s\\S]*$/,'').replace(/\\/$/,'');
+  function toLink(sec){
+    var mm=String(Math.floor(sec/60)).padStart(2,'0');
+    var ss=String(sec%60).padStart(2,'0');
+    return base+'/#t='+mm+':'+ss;
+  }
+  // Elements carrying data-ts="<seconds>" get replaced with Veo deep-links
+  document.querySelectorAll('[data-ts]').forEach(function(el){
+    var sec=parseInt(el.getAttribute('data-ts'),10);
+    if(isNaN(sec))return;
+    var a=document.createElement('a');
+    a.href=toLink(sec);
+    a.target='_blank';
+    a.rel='noopener noreferrer';
+    a.style.cssText='color:#3b82f6;text-decoration:underline;font-weight:600;';
+    a.textContent=el.textContent;
+    el.parentNode.replaceChild(a,el);
+  });
+})();
+</script>`
+
+  const insertBefore = '</body>'
+  const idx = html.lastIndexOf(insertBefore)
+  if (idx === -1) return html + banner
+  return html.slice(0, idx) + banner + html.slice(idx)
+}
+
+type ReviewMeta = { group_id: string | null; veo_url: string | null }
+
+async function getReviewMeta(id: string): Promise<{ meta: ReviewMeta | null; blocked: Response | null }> {
   const supabase = await createClient()
 
-  const { data: review } = await supabase
+  const { data: meta } = await supabase
     .from('squad_reviews')
-    .select('group_id')
+    .select('group_id, veo_url')
     .eq('id', id)
     .single()
 
-  // No row found — let the Edge Function handle the 404.
-  // No group_id set — open review, anyone can access.
-  if (!review?.group_id) return null
+  if (!meta?.group_id) return { meta: meta ?? null, blocked: null }
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return htmlPage(
-      'Restricted review',
-      '🔒',
-      'This review is restricted to a specific group.',
-      'Contact your coach if you think you should have access.',
-      403,
-    )
+    return {
+      meta,
+      blocked: htmlPage(
+        'Restricted review',
+        '🔒',
+        'This review is restricted to a specific group.',
+        'Contact your coach if you think you should have access.',
+        403,
+      ),
+    }
   }
 
   const [{ data: membership }, { data: creator }] = await Promise.all([
     supabase
       .from('group_invitations')
       .select('id')
-      .eq('group_id', review.group_id)
+      .eq('group_id', meta.group_id)
       .eq('user_id', user.id)
       .eq('status', 'accepted')
       .maybeSingle(),
     supabase
       .from('coaching_groups')
       .select('id')
-      .eq('id', review.group_id)
+      .eq('id', meta.group_id)
       .eq('created_by', user.id)
       .maybeSingle(),
   ])
 
   if (!membership && !creator) {
-    return htmlPage(
-      'Restricted review',
-      '🔒',
-      'This review is restricted to a specific group.',
-      'Contact your coach if you think you should have access.',
-      403,
-    )
+    return {
+      meta,
+      blocked: htmlPage(
+        'Restricted review',
+        '🔒',
+        'This review is restricted to a specific group.',
+        'Contact your coach if you think you should have access.',
+        403,
+      ),
+    }
   }
 
-  return null
+  return { meta, blocked: null }
 }
 
 export async function GET(
@@ -108,8 +153,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-
-  const blocked = await checkGroupAccess(id)
+  const { meta, blocked } = await getReviewMeta(id)
   if (blocked) return blocked
 
   const res = await fetch(
@@ -124,7 +168,11 @@ export async function GET(
       404,
     )
   }
-  const html = await res.text()
+
+  let html = await res.text()
+  if (meta?.veo_url) {
+    html = injectVeo(html, meta.veo_url)
+  }
   return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
 }
 
@@ -133,8 +181,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-
-  const blocked = await checkGroupAccess(id)
+  const { blocked } = await getReviewMeta(id)
   if (blocked) return Response.json({ error: 'Access denied' }, { status: 403 })
 
   const body = await req.json()

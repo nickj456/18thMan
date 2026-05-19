@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Star, MessageSquare, Users, Calendar, User } from 'lucide-react'
+import { ArrowLeft, Star, MessageSquare, Users, Calendar, User, PlayCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 type Player = {
@@ -28,6 +28,14 @@ type MatchInfo = {
   date?: string
   venue?: string
   round?: string
+}
+
+// Converts a raw seconds value to a Veo deep-link: {base}/#t=MM:SS
+function veoLink(veoUrl: string, seconds: number): string {
+  const mm = String(Math.floor(seconds / 60)).padStart(2, '0')
+  const ss = String(seconds % 60).padStart(2, '0')
+  const base = veoUrl.replace(/#.*$/, '').replace(/\/$/, '')
+  return `${base}/#t=${mm}:${ss}`
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -92,6 +100,7 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
   const responses = (responsesResult.data ?? []) as Response[]
   const players = (review.players_data ?? []) as Player[]
   const matchInfo = review.match_info as MatchInfo | null
+  const veoUrl = review.veo_url as string | null
 
   // Aggregate scores and feedback per player
   const playerStats = players.map(player => {
@@ -127,6 +136,23 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
         <ArrowLeft size={14} />
         All reviews
       </Link>
+
+      {/* Veo video button */}
+      {veoUrl && (
+        <a
+          href={veoUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 hover:border-blue-500/50 hover:bg-blue-500/15 transition-colors"
+        >
+          <PlayCircle size={20} className="text-blue-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-blue-300">Watch on Veo</p>
+            <p className="text-xs text-zinc-500 mt-0.5 truncate">{veoUrl}</p>
+          </div>
+          <span className="text-xs text-blue-400 shrink-0">Open ↗</span>
+        </a>
+      )}
 
       {/* Match header card */}
       <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 space-y-4">
@@ -259,6 +285,37 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
                     ))}
                   </div>
                 )}
+
+                {/* Clip timestamps — rendered as Veo deep-links when veoUrl is set */}
+                {veoUrl && (() => {
+                  const raw = player.stats as Record<string, unknown> | undefined
+                  const clips = (raw?.clips ?? raw?.events ?? raw?.timestamps) as
+                    | { time?: number; t?: number; timestamp?: number; label?: string; note?: string; tag?: string }[]
+                    | undefined
+                  if (!Array.isArray(clips) || clips.length === 0) return null
+                  return (
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-800/80">
+                      {clips.map((clip, i) => {
+                        const sec = clip.time ?? clip.t ?? clip.timestamp
+                        if (typeof sec !== 'number') return null
+                        const label = clip.label ?? clip.note ?? clip.tag
+                        return (
+                          <a
+                            key={i}
+                            href={veoLink(veoUrl, sec)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-md px-2 py-1 hover:bg-blue-500/20 transition-colors"
+                          >
+                            <PlayCircle size={11} />
+                            {label ? `${label} · ` : ''}
+                            {String(Math.floor(sec / 60)).padStart(2, '0')}:{String(sec % 60).padStart(2, '0')}
+                          </a>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
               </div>
             ))}
           </div>
