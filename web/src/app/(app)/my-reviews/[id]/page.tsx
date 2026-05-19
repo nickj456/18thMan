@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, Star, MessageSquare, Users, Calendar, User } from 'lucide-react'
@@ -69,7 +69,24 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
       .order('created_at', { ascending: true }),
   ])
 
-  if (!reviewResult.data) notFound()
+  if (!reviewResult.data) {
+    return (
+      <div className="space-y-4 max-w-4xl">
+        <Link
+          href="/my-reviews"
+          className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+        >
+          <ArrowLeft size={14} />
+          All reviews
+        </Link>
+        <div className="flex flex-col items-center gap-3 py-16 rounded-xl border border-zinc-800 text-center">
+          <MessageSquare size={32} className="text-zinc-700" />
+          <p className="text-sm font-medium text-zinc-400">This review is no longer available.</p>
+          <p className="text-xs text-zinc-600">It may have been deleted from the Match Analyst app.</p>
+        </div>
+      </div>
+    )
+  }
 
   const review = reviewResult.data
   const responses = (responsesResult.data ?? []) as Response[]
