@@ -32,6 +32,7 @@ import {
   ClipboardList,
   Target,
   HeartPulse,
+  ClipboardCheck,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -63,6 +64,7 @@ const navItems = [
   { href: '/podcasts', label: 'Podcasts', icon: Headphones },
   { href: '/wellbeing', label: 'Wellbeing', icon: HeartPulse },
   { href: '/analysis', label: 'Coaching Eye', icon: Video },
+  { href: '/my-reviews', label: 'Match Reviews', icon: ClipboardCheck },
 ]
 
 const resourceItems = [
@@ -112,7 +114,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
               {navItems.map(({ href, label, icon: Icon }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
-                    isActive={pathname === href}
+                    isActive={pathname === href || (href === '/my-reviews' && pathname.startsWith('/my-reviews/'))}
                     render={<Link href={href} onClick={closeMobile} />}
                   >
                     <Icon className="size-4" />
