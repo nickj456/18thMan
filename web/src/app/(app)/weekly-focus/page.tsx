@@ -25,15 +25,16 @@ const CATEGORY_COLOUR: Record<string, string> = {
   'Fitness & Game Sense': 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
 }
 
-function topicCategory(topic: string): string {
+function topicCategory(topic: string): string | null {
   const map: Record<string, string> = {
     'Offloading': 'Attacking', 'Support Play': 'Attacking', 'Line Breaks & Edge Play': 'Attacking', 'Dummy Half Play': 'Attacking',
     'Tackle Technique': 'Defensive', 'Line Speed & Drift Defence': 'Defensive', 'Marker Defence': 'Defensive', 'Goal Line Defence': 'Defensive',
+    'Edge Defence': 'Defensive', 'Rush Defence': 'Defensive', 'Blitz Defence': 'Defensive',
     'Pass Accuracy': 'Ball Handling', 'Handling Under Pressure': 'Ball Handling', 'Catching High Balls': 'Ball Handling',
     'Kick-Off Receipts': 'Set Piece & Kicking', 'Grubber Kicks': 'Set Piece & Kicking', 'Bomb Kicks': 'Set Piece & Kicking', 'Scrum Technique': 'Set Piece & Kicking',
     'Agility & Conditioning': 'Fitness & Game Sense', 'Decision Making': 'Fitness & Game Sense', 'Game Management': 'Fitness & Game Sense',
   }
-  return map[topic] ?? 'Attacking'
+  return map[topic] ?? null
 }
 
 export default async function WeeklyFocusPage() {
