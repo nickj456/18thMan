@@ -15,8 +15,14 @@ interface Props {
   canTap: boolean
 }
 
-type Tab = 'carries' | 'tackles' | 'sets'
+type Tab = 'carries' | 'tackles' | 'sets' | 'score'
 type Mode = 'tap' | 'review'
+
+function workloadColor(pct: number) {
+  if (pct >= 25) return 'bg-red-900/40 text-red-400 border border-red-800/40'
+  if (pct >= 15) return 'bg-amber-900/40 text-amber-400 border border-amber-800/40'
+  return 'bg-zinc-800 text-zinc-500 border border-zinc-700'
+}
 
 export function GameStatsClient({
   session,
@@ -53,8 +59,8 @@ export function GameStatsClient({
     setTimerSeconds(0)
   }
 
-  const minutes = String(Math.floor(timerSeconds / 60)).padStart(2, '0')
-  const seconds = String(timerSeconds % 60).padStart(2, '0')
+  const timerMins = String(Math.floor(timerSeconds / 60)).padStart(2, '0')
+  const timerSecs = String(timerSeconds % 60).padStart(2, '0')
 
   const match = Array.isArray(session.match) ? session.match[0] : session.match
 
@@ -63,38 +69,34 @@ export function GameStatsClient({
     const supabase = createClient()
     const channel = supabase
       .channel(`game_stats:${session.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'game_stat_events', filter: `session_id=eq.${session.id}` },
-        (payload) => {
-          setEvents(prev => {
-            if (prev.some(e => e.id === payload.new.id)) return prev
-            return [...prev, payload.new as GameStatEvent]
-          })
-        },
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'game_stat_events', filter: `session_id=eq.${session.id}` },
-        (payload) => {
-          setEvents(prev => prev.filter(e => e.id !== (payload.old as GameStatEvent).id))
-        },
-      )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_stat_events', filter: `session_id=eq.${session.id}` }, (payload) => {
+        setEvents(prev => prev.some(e => e.id === payload.new.id) ? prev : [...prev, payload.new as GameStatEvent])
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'game_stat_events', filter: `session_id=eq.${session.id}` }, (payload) => {
+        setEvents(prev => prev.filter(e => e.id !== (payload.old as GameStatEvent).id))
+      })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [session.id])
 
   // ── Derived counts ──────────────────────────────────────────────────────────
-  const carryEvents  = useMemo(() => events.filter(e => e.stat_type === 'carry'), [events])
-  const tackleEvents = useMemo(() => events.filter(e => e.stat_type === 'tackle'), [events])
-  const setEventsAll = useMemo(() => events.filter(e => e.stat_type === 'set_completion'), [events])
+  const carryEvents       = useMemo(() => events.filter(e => e.stat_type === 'carry'), [events])
+  const tackleEvents      = useMemo(() => events.filter(e => e.stat_type === 'tackle'), [events])
+  const setEventsAll      = useMemo(() => events.filter(e => e.stat_type === 'set_completion'), [events])
+  const tryEvents         = useMemo(() => events.filter(e => e.stat_type === 'try'), [events])
+  const conversionEvents  = useMemo(() => events.filter(e => e.stat_type === 'conversion'), [events])
+  const oppTryEvents      = useMemo(() => events.filter(e => e.stat_type === 'opposition_try'), [events])
+  const oppConvEvents     = useMemo(() => events.filter(e => e.stat_type === 'opposition_conversion'), [events])
+
+  const ourScore   = tryEvents.length * 4 + conversionEvents.length * 2
+  const theirScore = oppTryEvents.length * 4 + oppConvEvents.length * 2
 
   const totalCarries  = carryEvents.length
   const totalTackles  = tackleEvents.length
   const setsCompleted = setEventsAll.filter(e => e.completed).length
   const setsTotal     = setEventsAll.length
 
-  function playerCount(playerId: string, statType: 'carry' | 'tackle') {
+  function playerCount(playerId: string, statType: 'carry' | 'tackle' | 'try') {
     return events.filter(e => e.player_id === playerId && e.stat_type === statType && e.half === activeHalf).length
   }
 
@@ -102,14 +104,9 @@ export function GameStatsClient({
   async function handleAdd(statType: StatType, playerId: string | null, completed: boolean | null) {
     const tempId = `temp-${Date.now()}-${Math.random()}`
     const optimistic: GameStatEvent = {
-      id: tempId,
-      session_id: session.id,
-      player_id: playerId,
-      stat_type: statType,
-      half: activeHalf,
-      completed,
-      created_by: currentUserId,
-      created_at: new Date().toISOString(),
+      id: tempId, session_id: session.id, player_id: playerId,
+      stat_type: statType, half: activeHalf, completed,
+      created_by: currentUserId, created_at: new Date().toISOString(),
     }
     setEvents(prev => [...prev, optimistic])
     const result = await addEvent(session.id, statType, activeHalf, playerId, completed)
@@ -120,7 +117,7 @@ export function GameStatsClient({
     }
   }
 
-  async function handleUndo(statType: 'carry' | 'tackle', playerId: string) {
+  async function handleUndo(statType: 'carry' | 'tackle' | 'try', playerId: string) {
     const target = [...events].reverse().find(
       e => e.stat_type === statType && e.player_id === playerId && e.half === activeHalf && e.created_by === currentUserId && !e.id.startsWith('temp-'),
     )
@@ -130,9 +127,9 @@ export function GameStatsClient({
     if (result.error) setEvents(prev => [...prev, target])
   }
 
-  async function handleUndoSet() {
+  async function handleUndoNoPlayer(statType: 'set_completion' | 'conversion' | 'opposition_try' | 'opposition_conversion') {
     const target = [...events].reverse().find(
-      e => e.stat_type === 'set_completion' && e.half === activeHalf && e.created_by === currentUserId && !e.id.startsWith('temp-'),
+      e => e.stat_type === statType && e.half === activeHalf && e.created_by === currentUserId && !e.id.startsWith('temp-'),
     )
     if (!target) return
     setEvents(prev => prev.filter(e => e.id !== target.id))
@@ -163,7 +160,16 @@ export function GameStatsClient({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="app-heading text-xl">vs {match?.opponent ?? '—'}</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">{matchDate}</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-xs text-zinc-500">{matchDate}</p>
+            {(ourScore > 0 || theirScore > 0) && (
+              <p className="text-sm font-bold">
+                <span className="text-[#e8560a]">{ourScore}</span>
+                <span className="text-zinc-600"> — </span>
+                <span className="text-zinc-300">{theirScore}</span>
+              </p>
+            )}
+          </div>
         </div>
         {isEnded ? (
           <span className="text-xs text-zinc-400 bg-zinc-800 border border-zinc-700 px-2.5 py-1 rounded-full font-semibold">
@@ -177,22 +183,15 @@ export function GameStatsClient({
         )}
       </div>
 
-      {/* End match confirm */}
+      {/* End match confirmation */}
       {confirmEnd && !isEnded && (
         <div className="rounded-xl border border-red-700/40 bg-red-900/20 px-4 py-3 flex items-center justify-between gap-3">
           <p className="text-sm text-red-300 font-medium">End the match? This can't be undone.</p>
           <div className="flex gap-2 shrink-0">
-            <button
-              onClick={() => setConfirmEnd(false)}
-              className="px-3 py-1.5 rounded-lg text-xs border border-zinc-700 text-zinc-400 hover:bg-zinc-800 transition-colors"
-            >
+            <button onClick={() => setConfirmEnd(false)} className="px-3 py-1.5 rounded-lg text-xs border border-zinc-700 text-zinc-400 hover:bg-zinc-800 transition-colors">
               Cancel
             </button>
-            <button
-              onClick={handleEndMatch}
-              disabled={isEnding}
-              className="px-3 py-1.5 rounded-lg text-xs bg-red-600 hover:bg-red-700 text-white font-semibold disabled:opacity-50 transition-colors"
-            >
+            <button onClick={handleEndMatch} disabled={isEnding} className="px-3 py-1.5 rounded-lg text-xs bg-red-600 hover:bg-red-700 text-white font-semibold disabled:opacity-50 transition-colors">
               {isEnding ? 'Ending…' : 'End Match'}
             </button>
           </div>
@@ -200,10 +199,10 @@ export function GameStatsClient({
       )}
 
       {/* Timer */}
-      {canTap && (
+      {canTap && !isEnded && (
         <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3">
           <span className="font-mono text-2xl font-bold text-white tracking-widest w-20">
-            {minutes}:{seconds}
+            {timerMins}:{timerSecs}
           </span>
           <div className="flex gap-2 flex-1">
             <button
@@ -227,17 +226,15 @@ export function GameStatsClient({
         </div>
       )}
 
-      {/* Half toggle — always visible in tap mode */}
-      {canTap && mode === 'tap' && (
+      {/* Half toggle */}
+      {canTap && mode === 'tap' && !isEnded && (
         <div className="flex rounded-xl border border-zinc-800 overflow-hidden">
           {([1, 2] as const).map(h => (
             <button
               key={h}
               onClick={() => setActiveHalf(h)}
               className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
-                activeHalf === h
-                  ? 'bg-[#e8560a] text-white'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                activeHalf === h ? 'bg-[#e8560a] text-white' : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
               {h === 1 ? '1st Half' : '2nd Half'}
@@ -253,7 +250,8 @@ export function GameStatsClient({
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`flex-1 py-2 text-xs font-semibold uppercase tracking-widest transition-colors ${
+              disabled={m === 'tap' && isEnded}
+              className={`flex-1 py-2 text-xs font-semibold uppercase tracking-widest transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
                 mode === m ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
@@ -279,28 +277,16 @@ export function GameStatsClient({
         </div>
       </div>
 
-      {/* End Match button — only in tap mode, not yet ended */}
-      {canTap && !isEnded && mode === 'tap' && (
-        <button
-          onClick={() => setConfirmEnd(true)}
-          className="w-full py-2 rounded-lg border border-red-700/30 text-red-400/70 text-xs font-semibold hover:bg-red-900/20 hover:text-red-400 hover:border-red-700/50 transition-colors"
-        >
-          End Match
-        </button>
-      )}
-
       {mode === 'tap' && canTap && !isEnded ? (
         <>
           {/* Tab bar */}
           <div className="flex rounded-lg border border-zinc-800 overflow-hidden">
-            {(['carries', 'tackles', 'sets'] as Tab[]).map(t => (
+            {(['carries', 'tackles', 'sets', 'score'] as Tab[]).map(t => (
               <button
                 key={t}
                 onClick={() => setActiveTab(t)}
                 className={`flex-1 py-2 text-xs font-semibold uppercase tracking-widest transition-colors ${
-                  activeTab === t
-                    ? 'text-[#e8560a] border-b-2 border-[#e8560a]'
-                    : 'text-zinc-500 hover:text-zinc-300'
+                  activeTab === t ? 'text-[#e8560a] border-b-2 border-[#e8560a]' : 'text-zinc-500 hover:text-zinc-300'
                 }`}
               >
                 {t}
@@ -313,9 +299,8 @@ export function GameStatsClient({
               players={players}
               statType="carry"
               playerCount={playerCount}
-              canTap={canTap}
-              onAdd={(playerId) => handleAdd('carry', playerId, null)}
-              onUndo={(playerId) => handleUndo('carry', playerId)}
+              onAdd={(id) => handleAdd('carry', id, null)}
+              onUndo={(id) => handleUndo('carry', id)}
             />
           )}
           {activeTab === 'tackles' && (
@@ -323,9 +308,8 @@ export function GameStatsClient({
               players={players}
               statType="tackle"
               playerCount={playerCount}
-              canTap={canTap}
-              onAdd={(playerId) => handleAdd('tackle', playerId, null)}
-              onUndo={(playerId) => handleUndo('tackle', playerId)}
+              onAdd={(id) => handleAdd('tackle', id, null)}
+              onUndo={(id) => handleUndo('tackle', id)}
             />
           )}
           {activeTab === 'sets' && (
@@ -333,21 +317,55 @@ export function GameStatsClient({
               events={setEventsAll}
               activeHalf={activeHalf}
               onAdd={(completed) => handleAdd('set_completion', null, completed)}
-              onUndoLast={handleUndoSet}
+              onUndoLast={() => handleUndoNoPlayer('set_completion')}
+            />
+          )}
+          {activeTab === 'score' && (
+            <ScoreTab
+              players={players}
+              playerCount={playerCount}
+              ourTries={tryEvents.length}
+              ourConversions={conversionEvents.length}
+              oppTries={oppTryEvents.length}
+              oppConversions={oppConvEvents.length}
+              ourScore={ourScore}
+              theirScore={theirScore}
+              onAddTry={(id) => handleAdd('try', id, null)}
+              onUndoTry={(id) => handleUndo('try', id)}
+              onAddConversion={() => handleAdd('conversion', null, null)}
+              onUndoConversion={() => handleUndoNoPlayer('conversion')}
+              onAddOppTry={() => handleAdd('opposition_try', null, null)}
+              onUndoOppTry={() => handleUndoNoPlayer('opposition_try')}
+              onAddOppConversion={() => handleAdd('opposition_conversion', null, null)}
+              onUndoOppConversion={() => handleUndoNoPlayer('opposition_conversion')}
             />
           )}
         </>
       ) : (
-        <ReviewPanel
-          players={players}
-          carryEvents={carryEvents}
-          tackleEvents={tackleEvents}
-          setEvents={setEventsAll}
-          sessionId={session.id}
-          groupId={groupId}
-          opponent={match?.opponent ?? '—'}
-          matchDate={match?.match_date ?? ''}
-        />
+        <>
+          <ReviewPanel
+            players={players}
+            carryEvents={carryEvents}
+            tackleEvents={tackleEvents}
+            setEvents={setEventsAll}
+            tryEvents={tryEvents}
+            conversionEvents={conversionEvents}
+            ourScore={ourScore}
+            theirScore={theirScore}
+            opponent={match?.opponent ?? '—'}
+            sessionId={session.id}
+            groupId={groupId}
+            matchDate={match?.match_date ?? ''}
+          />
+          {canTap && !isEnded && (
+            <button
+              onClick={() => setConfirmEnd(true)}
+              className="w-full py-2 rounded-lg border border-red-700/30 text-red-400/70 text-xs font-semibold hover:bg-red-900/20 hover:text-red-400 hover:border-red-700/50 transition-colors"
+            >
+              End Match
+            </button>
+          )}
+        </>
       )}
     </div>
   )
@@ -356,21 +374,15 @@ export function GameStatsClient({
 // ── PlayerStatTab ─────────────────────────────────────────────────────────────
 
 function PlayerStatTab({
-  players,
-  statType,
-  playerCount,
-  canTap,
-  onAdd,
-  onUndo,
+  players, statType, playerCount, onAdd, onUndo,
 }: {
   players: Pick<Player, 'id' | 'name'>[]
-  statType: 'carry' | 'tackle'
-  playerCount: (playerId: string, statType: 'carry' | 'tackle') => number
-  canTap: boolean
-  onAdd: (playerId: string) => void
-  onUndo: (playerId: string) => void
+  statType: 'carry' | 'tackle' | 'try'
+  playerCount: (id: string, statType: 'carry' | 'tackle' | 'try') => number
+  onAdd: (id: string) => void
+  onUndo: (id: string) => void
 }) {
-  const accentClass = statType === 'carry' ? 'bg-[#e8560a]' : 'bg-blue-500'
+  const accentClass = statType === 'carry' ? 'bg-[#e8560a]' : statType === 'tackle' ? 'bg-blue-500' : 'bg-emerald-600'
 
   return (
     <div className="rounded-xl border border-zinc-800 overflow-hidden">
@@ -381,25 +393,21 @@ function PlayerStatTab({
             <li key={p.id} className="flex items-center gap-3 px-4 py-3">
               <span className="flex-1 text-sm text-zinc-200 truncate">{p.name}</span>
               <span className="text-lg font-bold text-white w-8 text-right">{count}</span>
-              {canTap && (
-                <>
-                  <button
-                    onClick={() => onUndo(p.id)}
-                    disabled={count === 0}
-                    aria-label={`Undo last ${statType} for ${p.name}`}
-                    className="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-zinc-400 transition-colors text-base"
-                  >
-                    ↩
-                  </button>
-                  <button
-                    onClick={() => onAdd(p.id)}
-                    aria-label={`Add ${statType} for ${p.name}`}
-                    className={`w-9 h-9 rounded-lg ${accentClass} hover:opacity-90 flex items-center justify-center text-white font-bold text-xl transition-opacity active:scale-95`}
-                  >
-                    +
-                  </button>
-                </>
-              )}
+              <button
+                onClick={() => onUndo(p.id)}
+                disabled={count === 0}
+                aria-label={`Undo ${statType} for ${p.name}`}
+                className="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-zinc-400 transition-colors text-base"
+              >
+                ↩
+              </button>
+              <button
+                onClick={() => onAdd(p.id)}
+                aria-label={`Add ${statType} for ${p.name}`}
+                className={`w-9 h-9 rounded-lg ${accentClass} hover:opacity-90 flex items-center justify-center text-white font-bold text-xl transition-opacity active:scale-95`}
+              >
+                +
+              </button>
             </li>
           )
         })}
@@ -408,14 +416,109 @@ function PlayerStatTab({
   )
 }
 
+// ── ScoreTab ──────────────────────────────────────────────────────────────────
+
+function ScoreTab({
+  players, playerCount,
+  ourTries, ourConversions, oppTries, oppConversions, ourScore, theirScore,
+  onAddTry, onUndoTry, onAddConversion, onUndoConversion,
+  onAddOppTry, onUndoOppTry, onAddOppConversion, onUndoOppConversion,
+}: {
+  players: Pick<Player, 'id' | 'name'>[]
+  playerCount: (id: string, statType: 'carry' | 'tackle' | 'try') => number
+  ourTries: number; ourConversions: number; oppTries: number; oppConversions: number
+  ourScore: number; theirScore: number
+  onAddTry: (id: string) => void; onUndoTry: (id: string) => void
+  onAddConversion: () => void; onUndoConversion: () => void
+  onAddOppTry: () => void; onUndoOppTry: () => void
+  onAddOppConversion: () => void; onUndoOppConversion: () => void
+}) {
+  return (
+    <div className="space-y-4">
+      {/* Live scoreboard */}
+      <div className="grid grid-cols-3 rounded-xl border border-zinc-800 overflow-hidden text-center">
+        <div className="py-4 border-r border-zinc-800">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#e8560a] mb-1">Us</p>
+          <p className="text-4xl font-bold text-white">{ourScore}</p>
+          <p className="text-[10px] text-zinc-600 mt-1">{ourTries}T {ourConversions}G</p>
+        </div>
+        <div className="py-4 flex items-center justify-center">
+          <span className="text-2xl font-bold text-zinc-600">—</span>
+        </div>
+        <div className="py-4 border-l border-zinc-800">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Them</p>
+          <p className="text-4xl font-bold text-zinc-300">{theirScore}</p>
+          <p className="text-[10px] text-zinc-600 mt-1">{oppTries}T {oppConversions}G</p>
+        </div>
+      </div>
+
+      {/* Our tries — per player */}
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-2">Our Tries</p>
+        <PlayerStatTab
+          players={players}
+          statType="try"
+          playerCount={playerCount}
+          onAdd={onAddTry}
+          onUndo={onUndoTry}
+        />
+      </div>
+
+      {/* Our conversion */}
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-2">Our Conversion</p>
+        <div className="flex gap-3">
+          <button
+            onClick={onAddConversion}
+            className="flex-1 py-4 rounded-xl bg-emerald-900/40 border border-emerald-700/40 text-emerald-400 font-bold text-lg hover:bg-emerald-800/50 active:scale-95 transition-all"
+          >
+            +2 pts
+          </button>
+          <button
+            onClick={onUndoConversion}
+            disabled={ourConversions === 0}
+            className="px-5 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-zinc-700 transition-colors text-base"
+          >
+            ↩
+          </button>
+        </div>
+      </div>
+
+      {/* Opposition */}
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Opposition</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <button
+              onClick={onAddOppTry}
+              className="w-full py-4 rounded-xl bg-red-900/30 border border-red-800/40 text-red-400 font-bold text-base hover:bg-red-900/50 active:scale-95 transition-all"
+            >
+              Try +4
+            </button>
+            <button onClick={onUndoOppTry} disabled={oppTries === 0} className="w-full py-1.5 rounded-lg text-xs border border-zinc-700 text-zinc-500 disabled:opacity-30 hover:bg-zinc-800 transition-colors">
+              ↩ Undo
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            <button
+              onClick={onAddOppConversion}
+              className="w-full py-4 rounded-xl bg-red-900/30 border border-red-800/40 text-red-400 font-bold text-base hover:bg-red-900/50 active:scale-95 transition-all"
+            >
+              Conv +2
+            </button>
+            <button onClick={onUndoOppConversion} disabled={oppConversions === 0} className="w-full py-1.5 rounded-lg text-xs border border-zinc-700 text-zinc-500 disabled:opacity-30 hover:bg-zinc-800 transition-colors">
+              ↩ Undo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── SetsTab ───────────────────────────────────────────────────────────────────
 
-function SetsTab({
-  events,
-  activeHalf,
-  onAdd,
-  onUndoLast,
-}: {
+function SetsTab({ events, activeHalf, onAdd, onUndoLast }: {
   events: GameStatEvent[]
   activeHalf: 1 | 2
   onAdd: (completed: boolean) => void
@@ -429,23 +532,15 @@ function SetsTab({
 
   return (
     <div className="space-y-3">
-      {/* Big YES / NO buttons */}
       <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={() => onAdd(true)}
-          className="py-6 rounded-xl bg-emerald-900/40 border border-emerald-700/40 text-emerald-400 font-bold text-lg hover:bg-emerald-800/50 active:scale-95 transition-all"
-        >
+        <button onClick={() => onAdd(true)} className="py-6 rounded-xl bg-emerald-900/40 border border-emerald-700/40 text-emerald-400 font-bold text-lg hover:bg-emerald-800/50 active:scale-95 transition-all">
           YES ✓
         </button>
-        <button
-          onClick={() => onAdd(false)}
-          className="py-6 rounded-xl bg-red-900/40 border border-red-700/40 text-red-400 font-bold text-lg hover:bg-red-800/50 active:scale-95 transition-all"
-        >
+        <button onClick={() => onAdd(false)} className="py-6 rounded-xl bg-red-900/40 border border-red-700/40 text-red-400 font-bold text-lg hover:bg-red-800/50 active:scale-95 transition-all">
           NO ✗
         </button>
       </div>
 
-      {/* Running tally */}
       <div className="grid grid-cols-3 rounded-xl border border-zinc-800 overflow-hidden">
         <div className="py-3 text-center border-r border-zinc-800">
           <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Complete</p>
@@ -461,22 +556,12 @@ function SetsTab({
         </div>
       </div>
 
-      {/* Last 5 sets */}
       {last5.length > 0 && (
         <div>
-          <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-2">
-            Last {last5.length} sets
-          </p>
+          <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-2">Last {last5.length} sets</p>
           <div className="flex gap-2">
             {last5.map(e => (
-              <div
-                key={e.id}
-                className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${
-                  e.completed
-                    ? 'bg-emerald-900/60 text-emerald-400 border border-emerald-700/40'
-                    : 'bg-red-900/60 text-red-400 border border-red-700/40'
-                }`}
-              >
+              <div key={e.id} className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${e.completed ? 'bg-emerald-900/60 text-emerald-400 border border-emerald-700/40' : 'bg-red-900/60 text-red-400 border border-red-700/40'}`}>
                 {e.completed ? '✓' : '✗'}
               </div>
             ))}
@@ -485,10 +570,7 @@ function SetsTab({
       )}
 
       {total > 0 && (
-        <button
-          onClick={onUndoLast}
-          className="text-xs text-zinc-500 hover:text-zinc-300 underline underline-offset-2 transition-colors"
-        >
+        <button onClick={onUndoLast} className="text-xs text-zinc-500 hover:text-zinc-300 underline underline-offset-2 transition-colors">
           Undo last set
         </button>
       )}
@@ -499,24 +581,25 @@ function SetsTab({
 // ── ReviewPanel ───────────────────────────────────────────────────────────────
 
 function ReviewPanel({
-  players,
-  carryEvents,
-  tackleEvents,
-  setEvents,
-  sessionId,
-  groupId,
-  opponent,
-  matchDate,
+  players, carryEvents, tackleEvents, setEvents, tryEvents, conversionEvents,
+  ourScore, theirScore, sessionId, groupId, opponent, matchDate,
 }: {
   players: Pick<Player, 'id' | 'name'>[]
   carryEvents: GameStatEvent[]
   tackleEvents: GameStatEvent[]
   setEvents: GameStatEvent[]
+  tryEvents: GameStatEvent[]
+  conversionEvents: GameStatEvent[]
+  ourScore: number
+  theirScore: number
   sessionId: string
   groupId: string
   opponent: string
   matchDate: string
 }) {
+  const totalCarries = carryEvents.length
+  const totalTackles = tackleEvents.length
+
   const carriesByPlayer = players
     .map(p => ({ ...p, count: carryEvents.filter(e => e.player_id === p.id).length }))
     .filter(p => p.count > 0)
@@ -524,6 +607,11 @@ function ReviewPanel({
 
   const tacklesByPlayer = players
     .map(p => ({ ...p, count: tackleEvents.filter(e => e.player_id === p.id).length }))
+    .filter(p => p.count > 0)
+    .sort((a, b) => b.count - a.count)
+
+  const triesByPlayer = players
+    .map(p => ({ ...p, count: tryEvents.filter(e => e.player_id === p.id).length }))
     .filter(p => p.count > 0)
     .sort((a, b) => b.count - a.count)
 
@@ -541,7 +629,7 @@ function ReviewPanel({
     : ''
 
   const shareText = encodeURIComponent(
-    `18th Man — Game Stats\nvs ${opponent} · ${date}\n\nCarries: ${carryEvents.length} | Tackles: ${tackleEvents.length} | Sets: ${h1Completed + h2Completed}/${setEvents.length}\n\n${reviewUrl}`,
+    `18th Man — Game Stats\nvs ${opponent} · ${date}\nFinal: Us ${ourScore} — ${theirScore} Them\n\nCarries: ${totalCarries} | Tackles: ${totalTackles} | Sets: ${h1Completed + h2Completed}/${setEvents.length}\n\n${reviewUrl}`,
   )
 
   function copyLink() {
@@ -550,6 +638,25 @@ function ReviewPanel({
 
   return (
     <div className="space-y-4">
+      {/* Score */}
+      <div className="rounded-xl border border-zinc-800 overflow-hidden">
+        <div className="grid grid-cols-3 text-center">
+          <div className="py-4 border-r border-zinc-800">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#e8560a] mb-1">Us</p>
+            <p className="text-4xl font-bold text-white">{ourScore}</p>
+            <p className="text-[10px] text-zinc-600 mt-1">{tryEvents.length}T {conversionEvents.length}G</p>
+          </div>
+          <div className="py-4 flex items-center justify-center">
+            <span className="text-2xl font-bold text-zinc-600">—</span>
+          </div>
+          <div className="py-4 border-l border-zinc-800">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Them</p>
+            <p className="text-4xl font-bold text-zinc-300">{theirScore}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Carries */}
       <section>
         <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#e8560a] mb-2">Attack — Carries</h2>
         {carriesByPlayer.length === 0 ? (
@@ -557,17 +664,26 @@ function ReviewPanel({
         ) : (
           <div className="rounded-xl border border-zinc-800 overflow-hidden">
             <ul className="divide-y divide-zinc-800 bg-zinc-900">
-              {carriesByPlayer.map(p => (
-                <li key={p.id} className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-zinc-200">{p.name}</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e8560a]/20 text-[#e8560a]">{p.count}</span>
-                </li>
-              ))}
+              {carriesByPlayer.map(p => {
+                const pct = totalCarries > 0 ? Math.round((p.count / totalCarries) * 100) : 0
+                return (
+                  <li key={p.id} className="flex items-center justify-between px-4 py-3">
+                    <span className="text-sm text-zinc-200 flex-1">{p.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white">{p.count}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${workloadColor(pct)}`}>
+                        {pct}%
+                      </span>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         )}
       </section>
 
+      {/* Tackles */}
       <section>
         <h2 className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-2">Defence — Tackles</h2>
         {tacklesByPlayer.length === 0 ? (
@@ -575,37 +691,60 @@ function ReviewPanel({
         ) : (
           <div className="rounded-xl border border-zinc-800 overflow-hidden">
             <ul className="divide-y divide-zinc-800 bg-zinc-900">
-              {tacklesByPlayer.map(p => (
-                <li key={p.id} className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-zinc-200">{p.name}</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-400">{p.count}</span>
-                </li>
-              ))}
+              {tacklesByPlayer.map(p => {
+                const pct = totalTackles > 0 ? Math.round((p.count / totalTackles) * 100) : 0
+                return (
+                  <li key={p.id} className="flex items-center justify-between px-4 py-3">
+                    <span className="text-sm text-zinc-200 flex-1">{p.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white">{p.count}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${workloadColor(pct)}`}>
+                        {pct}%
+                      </span>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         )}
       </section>
 
+      {/* Tries */}
+      {triesByPlayer.length > 0 && (
+        <section>
+          <h2 className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-2">Tries Scored</h2>
+          <div className="rounded-xl border border-zinc-800 overflow-hidden">
+            <ul className="divide-y divide-zinc-800 bg-zinc-900">
+              {triesByPlayer.map(p => (
+                <li key={p.id} className="flex items-center justify-between px-4 py-3">
+                  <span className="text-sm text-zinc-200">{p.name}</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 border border-emerald-800/40">{p.count}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* Set completion */}
       <section>
         <h2 className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-2">Set Completion</h2>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-center">
             <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">1st Half</p>
             <p className="text-2xl font-bold text-white">{h1Completed}/{h1Sets.length}</p>
-            {h1Sets.length > 0 && (
-              <p className="text-xs text-zinc-500 mt-0.5">{Math.round((h1Completed / h1Sets.length) * 100)}%</p>
-            )}
+            {h1Sets.length > 0 && <p className="text-xs text-zinc-500 mt-0.5">{Math.round((h1Completed / h1Sets.length) * 100)}%</p>}
           </div>
           <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-center">
             <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">2nd Half</p>
             <p className="text-2xl font-bold text-white">{h2Completed}/{h2Sets.length}</p>
-            {h2Sets.length > 0 && (
-              <p className="text-xs text-zinc-500 mt-0.5">{Math.round((h2Completed / h2Sets.length) * 100)}%</p>
-            )}
+            {h2Sets.length > 0 && <p className="text-xs text-zinc-500 mt-0.5">{Math.round((h2Completed / h2Sets.length) * 100)}%</p>}
           </div>
         </div>
       </section>
 
+      {/* Share */}
       <div className="flex gap-2 pt-2">
         <a
           href={`https://wa.me/?text=${shareText}`}

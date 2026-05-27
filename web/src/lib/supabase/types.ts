@@ -493,7 +493,7 @@ export type FocusTopic = typeof FOCUS_TOPICS[number]['label']
 
 // ── Game Stats ────────────────────────────────────────────────────────────────
 
-export type StatType = 'carry' | 'tackle' | 'set_completion'
+export type StatType = 'carry' | 'tackle' | 'set_completion' | 'try' | 'conversion' | 'opposition_try' | 'opposition_conversion'
 
 export interface GameStatSession {
   id: string
