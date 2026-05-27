@@ -491,6 +491,33 @@ export const FOCUS_TOPICS = [
 
 export type FocusTopic = typeof FOCUS_TOPICS[number]['label']
 
+// ── Game Stats ────────────────────────────────────────────────────────────────
+
+export type StatType = 'carry' | 'tackle' | 'set_completion'
+
+export interface GameStatSession {
+  id: string
+  group_id: string
+  match_id: string
+  created_by: string
+  created_at: string
+}
+
+export interface GameStatSessionWithMatch extends GameStatSession {
+  match: Pick<Match, 'id' | 'opponent' | 'match_date' | 'location'>
+}
+
+export interface GameStatEvent {
+  id: string
+  session_id: string
+  player_id: string | null
+  stat_type: StatType
+  half: 1 | 2
+  completed: boolean | null
+  created_by: string
+  created_at: string
+}
+
 // ── Wellbeing ─────────────────────────────────────────────────────────────────
 
 export type WellbeingResourceType = 'nutrition_plan' | 'nutrition_guide' | 'mental_health'
