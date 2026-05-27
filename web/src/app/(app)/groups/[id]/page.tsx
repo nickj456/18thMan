@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Users2, UserPlus, Clock, XCircle, CalendarDays, Plus, Sparkles, LayoutList, ChevronRight, Users } from 'lucide-react'
+import { ArrowLeft, Users2, UserPlus, Clock, XCircle, CalendarDays, Plus, Sparkles, LayoutList, ChevronRight, Users, Activity } from 'lucide-react'
 import { InviteGroupMemberForm } from './InviteGroupMemberForm'
 import { RemoveGroupMemberButton } from './RemoveGroupMemberButton'
 
@@ -220,6 +220,33 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
               <p className="text-xs text-zinc-600">
                 {playerCount ? `${playerCount} player${playerCount !== 1 ? 's' : ''} · profiles, notes & ratings` : 'Add players to your squad'}
               </p>
+            </div>
+          </div>
+          <ChevronRight size={14} className="text-zinc-600 group-hover:translate-x-0.5 transition-transform" />
+        </Link>
+      </section>
+
+      {/* Game Stats */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+            <Activity size={12} className="text-[#e8560a]" /> Game Stats
+          </h2>
+          <Link href={`/groups/${id}/game-stats`} className="flex items-center gap-1 text-xs text-[#e8560a] hover:text-[#d14d09] transition-colors">
+            View all <ChevronRight size={12} />
+          </Link>
+        </div>
+        <Link
+          href={`/groups/${id}/game-stats`}
+          className="flex items-center justify-between gap-4 p-4 rounded-xl border border-zinc-800 bg-zinc-900 hover:border-zinc-700 hover:bg-zinc-800/60 transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#e8560a]/10 border border-[#e8560a]/20 flex items-center justify-center shrink-0">
+              <Activity size={14} className="text-[#e8560a]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-zinc-200">Game Stats</p>
+              <p className="text-xs text-zinc-600">Live carries, tackles &amp; set completion</p>
             </div>
           </div>
           <ChevronRight size={14} className="text-zinc-600 group-hover:translate-x-0.5 transition-transform" />
