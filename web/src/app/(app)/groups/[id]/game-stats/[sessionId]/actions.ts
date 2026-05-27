@@ -42,6 +42,7 @@ export async function undoEvent(
     .from('game_stat_events')
     .delete()
     .eq('id', eventId)
+    .eq('created_by', user.id)
 
   if (error) return { error: error.message }
   return {}
