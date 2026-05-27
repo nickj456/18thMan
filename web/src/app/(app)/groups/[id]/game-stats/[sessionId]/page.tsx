@@ -26,7 +26,7 @@ export default async function GameStatsSessionPage({
 
   const { data: session } = await supabase
     .from('game_stat_sessions')
-    .select('id, group_id, match_id, created_by, created_at, match:matches(id, opponent, match_date, location)')
+    .select('id, group_id, match_id, created_by, created_at, ended_at, match:matches(id, opponent, match_date, location)')
     .eq('id', sessionId)
     .single() as { data: GameStatSessionWithMatch | null }
 

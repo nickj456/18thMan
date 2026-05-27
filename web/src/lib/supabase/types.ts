@@ -501,6 +501,7 @@ export interface GameStatSession {
   match_id: string
   created_by: string
   created_at: string
+  ended_at: string | null
 }
 
 export interface GameStatSessionWithMatch extends GameStatSession {

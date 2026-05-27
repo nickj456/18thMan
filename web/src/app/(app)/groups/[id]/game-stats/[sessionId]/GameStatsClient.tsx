@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { addEvent, undoEvent } from './actions'
+import { addEvent, undoEvent, endSession } from './actions'
 import type { GameStatSessionWithMatch, GameStatEvent, StatType } from '@/lib/supabase/types'
 import type { Player } from '@/lib/supabase/types'
 
@@ -27,9 +27,12 @@ export function GameStatsClient({
   canTap,
 }: Props) {
   const [events, setEvents] = useState<GameStatEvent[]>(initialEvents)
-  const [mode, setMode] = useState<Mode>('tap')
+  const [mode, setMode] = useState<Mode>(session.ended_at ? 'review' : 'tap')
   const [activeTab, setActiveTab] = useState<Tab>('carries')
   const [activeHalf, setActiveHalf] = useState<1 | 2>(1)
+  const [isEnded, setIsEnded] = useState(!!session.ended_at)
+  const [confirmEnd, setConfirmEnd] = useState(false)
+  const [isEnding, setIsEnding] = useState(false)
 
   // ── Timer ────────────────────────────────────────────────────────────────────
   const [timerSeconds, setTimerSeconds] = useState(0)
@@ -137,6 +140,18 @@ export function GameStatsClient({
     if (result.error) setEvents(prev => [...prev, target])
   }
 
+  async function handleEndMatch() {
+    setIsEnding(true)
+    setTimerRunning(false)
+    const result = await endSession(session.id)
+    if (!result.error) {
+      setIsEnded(true)
+      setMode('review')
+      setConfirmEnd(false)
+    }
+    setIsEnding(false)
+  }
+
   // ── Render ──────────────────────────────────────────────────────────────────
   const matchDate = match
     ? new Date(match.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
@@ -150,11 +165,39 @@ export function GameStatsClient({
           <h1 className="app-heading text-xl">vs {match?.opponent ?? '—'}</h1>
           <p className="text-xs text-zinc-500 mt-0.5">{matchDate}</p>
         </div>
-        <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-full">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          Live
-        </span>
+        {isEnded ? (
+          <span className="text-xs text-zinc-400 bg-zinc-800 border border-zinc-700 px-2.5 py-1 rounded-full font-semibold">
+            Final
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Live
+          </span>
+        )}
       </div>
+
+      {/* End match confirm */}
+      {confirmEnd && !isEnded && (
+        <div className="rounded-xl border border-red-700/40 bg-red-900/20 px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-red-300 font-medium">End the match? This can't be undone.</p>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => setConfirmEnd(false)}
+              className="px-3 py-1.5 rounded-lg text-xs border border-zinc-700 text-zinc-400 hover:bg-zinc-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleEndMatch}
+              disabled={isEnding}
+              className="px-3 py-1.5 rounded-lg text-xs bg-red-600 hover:bg-red-700 text-white font-semibold disabled:opacity-50 transition-colors"
+            >
+              {isEnding ? 'Ending…' : 'End Match'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Timer */}
       {canTap && (
@@ -236,7 +279,17 @@ export function GameStatsClient({
         </div>
       </div>
 
-      {mode === 'tap' && canTap ? (
+      {/* End Match button — only in tap mode, not yet ended */}
+      {canTap && !isEnded && mode === 'tap' && (
+        <button
+          onClick={() => setConfirmEnd(true)}
+          className="w-full py-2 rounded-lg border border-red-700/30 text-red-400/70 text-xs font-semibold hover:bg-red-900/20 hover:text-red-400 hover:border-red-700/50 transition-colors"
+        >
+          End Match
+        </button>
+      )}
+
+      {mode === 'tap' && canTap && !isEnded ? (
         <>
           {/* Tab bar */}
           <div className="flex rounded-lg border border-zinc-800 overflow-hidden">
