@@ -14,6 +14,16 @@ export async function addEvent(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || !['coach', 'admin'].includes(profile.role)) {
+    return { error: 'Forbidden' }
+  }
+
   const { data, error } = await supabase
     .from('game_stat_events')
     .insert({
