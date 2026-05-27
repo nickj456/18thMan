@@ -67,11 +67,23 @@ export async function endSession(
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, club_id')
     .eq('id', user.id)
     .single()
 
   if (!profile || !['coach', 'admin'].includes(profile.role)) {
+    return { error: 'Forbidden' }
+  }
+
+  // Verify the session belongs to a group in the caller's club
+  const { data: session } = await supabase
+    .from('game_stat_sessions')
+    .select('group_id, coaching_groups!inner(club_id)')
+    .eq('id', sessionId)
+    .single() as { data: { group_id: string; coaching_groups: { club_id: string } } | null }
+
+  const clubId = session?.coaching_groups?.club_id
+  if (!session || clubId !== profile.club_id) {
     return { error: 'Forbidden' }
   }
 
