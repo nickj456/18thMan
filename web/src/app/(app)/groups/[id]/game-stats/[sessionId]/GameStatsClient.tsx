@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { addEvent, undoEvent } from './actions'
 import type { GameStatSessionWithMatch, GameStatEvent, StatType } from '@/lib/supabase/types'
@@ -31,6 +31,28 @@ export function GameStatsClient({
   const [activeTab, setActiveTab] = useState<Tab>('carries')
   const [activeHalf, setActiveHalf] = useState<1 | 2>(1)
 
+  // ── Timer ────────────────────────────────────────────────────────────────────
+  const [timerSeconds, setTimerSeconds] = useState(0)
+  const [timerRunning, setTimerRunning] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    if (timerRunning) {
+      intervalRef.current = setInterval(() => setTimerSeconds(s => s + 1), 1000)
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [timerRunning])
+
+  function resetTimer() {
+    setTimerRunning(false)
+    setTimerSeconds(0)
+  }
+
+  const minutes = String(Math.floor(timerSeconds / 60)).padStart(2, '0')
+  const seconds = String(timerSeconds % 60).padStart(2, '0')
+
   const match = Array.isArray(session.match) ? session.match[0] : session.match
 
   // ── Realtime ────────────────────────────────────────────────────────────────
@@ -40,12 +62,7 @@ export function GameStatsClient({
       .channel(`game_stats:${session.id}`)
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'game_stat_events',
-          filter: `session_id=eq.${session.id}`,
-        },
+        { event: 'INSERT', schema: 'public', table: 'game_stat_events', filter: `session_id=eq.${session.id}` },
         (payload) => {
           setEvents(prev => {
             if (prev.some(e => e.id === payload.new.id)) return prev
@@ -55,18 +72,12 @@ export function GameStatsClient({
       )
       .on(
         'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'game_stat_events',
-          filter: `session_id=eq.${session.id}`,
-        },
+        { event: 'DELETE', schema: 'public', table: 'game_stat_events', filter: `session_id=eq.${session.id}` },
         (payload) => {
           setEvents(prev => prev.filter(e => e.id !== (payload.old as GameStatEvent).id))
         },
       )
       .subscribe()
-
     return () => { supabase.removeChannel(channel) }
   }, [session.id])
 
@@ -81,15 +92,11 @@ export function GameStatsClient({
   const setsTotal     = setEventsAll.length
 
   function playerCount(playerId: string, statType: 'carry' | 'tackle') {
-    return events.filter(e => e.player_id === playerId && e.stat_type === statType).length
+    return events.filter(e => e.player_id === playerId && e.stat_type === statType && e.half === activeHalf).length
   }
 
   // ── Mutations ───────────────────────────────────────────────────────────────
-  async function handleAdd(
-    statType: StatType,
-    playerId: string | null,
-    completed: boolean | null,
-  ) {
+  async function handleAdd(statType: StatType, playerId: string | null, completed: boolean | null) {
     const tempId = `temp-${Date.now()}-${Math.random()}`
     const optimistic: GameStatEvent = {
       id: tempId,
@@ -102,7 +109,6 @@ export function GameStatsClient({
       created_at: new Date().toISOString(),
     }
     setEvents(prev => [...prev, optimistic])
-
     const result = await addEvent(session.id, statType, activeHalf, playerId, completed)
     if ('error' in result) {
       setEvents(prev => prev.filter(e => e.id !== tempId))
@@ -112,15 +118,9 @@ export function GameStatsClient({
   }
 
   async function handleUndo(statType: 'carry' | 'tackle', playerId: string) {
-    const target = [...events]
-      .reverse()
-      .find(
-        e =>
-          e.stat_type === statType &&
-          e.player_id === playerId &&
-          e.created_by === currentUserId &&
-          !e.id.startsWith('temp-'),
-      )
+    const target = [...events].reverse().find(
+      e => e.stat_type === statType && e.player_id === playerId && e.half === activeHalf && e.created_by === currentUserId && !e.id.startsWith('temp-'),
+    )
     if (!target) return
     setEvents(prev => prev.filter(e => e.id !== target.id))
     const result = await undoEvent(target.id)
@@ -128,14 +128,9 @@ export function GameStatsClient({
   }
 
   async function handleUndoSet() {
-    const target = [...events]
-      .reverse()
-      .find(
-        e =>
-          e.stat_type === 'set_completion' &&
-          e.created_by === currentUserId &&
-          !e.id.startsWith('temp-'),
-      )
+    const target = [...events].reverse().find(
+      e => e.stat_type === 'set_completion' && e.half === activeHalf && e.created_by === currentUserId && !e.id.startsWith('temp-'),
+    )
     if (!target) return
     setEvents(prev => prev.filter(e => e.id !== target.id))
     const result = await undoEvent(target.id)
@@ -144,20 +139,16 @@ export function GameStatsClient({
 
   // ── Render ──────────────────────────────────────────────────────────────────
   const matchDate = match
-    ? new Date(match.match_date).toLocaleDateString('en-GB', {
-        day: 'numeric', month: 'short',
-      })
+    ? new Date(match.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
     : ''
 
   return (
-    <div className="max-w-lg space-y-0">
+    <div className="max-w-lg space-y-3">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="app-heading text-xl">
-            vs {match?.opponent ?? '—'}
-          </h1>
-          <p className="text-xs text-zinc-500 mt-0.5">{matchDate} · Live</p>
+          <h1 className="app-heading text-xl">vs {match?.opponent ?? '—'}</h1>
+          <p className="text-xs text-zinc-500 mt-0.5">{matchDate}</p>
         </div>
         <span className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-full">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -165,17 +156,62 @@ export function GameStatsClient({
         </span>
       </div>
 
+      {/* Timer */}
+      {canTap && (
+        <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3">
+          <span className="font-mono text-2xl font-bold text-white tracking-widest w-20">
+            {minutes}:{seconds}
+          </span>
+          <div className="flex gap-2 flex-1">
+            <button
+              onClick={() => setTimerRunning(r => !r)}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                timerRunning
+                  ? 'bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30'
+                  : 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30'
+              }`}
+            >
+              {timerRunning ? 'Pause' : timerSeconds > 0 ? 'Resume' : 'Start'}
+            </button>
+            <button
+              onClick={resetTimer}
+              disabled={timerSeconds === 0}
+              className="flex-1 py-1.5 rounded-lg text-xs font-semibold border border-zinc-700 text-zinc-400 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Half toggle — always visible in tap mode */}
+      {canTap && mode === 'tap' && (
+        <div className="flex rounded-xl border border-zinc-800 overflow-hidden">
+          {([1, 2] as const).map(h => (
+            <button
+              key={h}
+              onClick={() => setActiveHalf(h)}
+              className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-widest transition-colors ${
+                activeHalf === h
+                  ? 'bg-[#e8560a] text-white'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {h === 1 ? '1st Half' : '2nd Half'}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Mode toggle */}
       {canTap && (
-        <div className="flex rounded-lg border border-zinc-800 overflow-hidden mb-3">
+        <div className="flex rounded-lg border border-zinc-800 overflow-hidden">
           {(['tap', 'review'] as Mode[]).map(m => (
             <button
               key={m}
               onClick={() => setMode(m)}
               className={`flex-1 py-2 text-xs font-semibold uppercase tracking-widest transition-colors ${
-                mode === m
-                  ? 'bg-zinc-800 text-zinc-100'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                mode === m ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
               {m === 'tap' ? 'Tap' : 'Review'}
@@ -185,7 +221,7 @@ export function GameStatsClient({
       )}
 
       {/* Summary bar */}
-      <div className="grid grid-cols-3 rounded-xl border border-zinc-800 overflow-hidden mb-3">
+      <div className="grid grid-cols-3 rounded-xl border border-zinc-800 overflow-hidden">
         <div className="py-3 text-center border-r border-zinc-800">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#e8560a]">Carries</p>
           <p className="text-2xl font-bold text-white mt-0.5">{totalCarries}</p>
@@ -196,16 +232,14 @@ export function GameStatsClient({
         </div>
         <div className="py-3 text-center">
           <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Sets</p>
-          <p className="text-2xl font-bold text-white mt-0.5">
-            {setsCompleted}/{setsTotal}
-          </p>
+          <p className="text-2xl font-bold text-white mt-0.5">{setsCompleted}/{setsTotal}</p>
         </div>
       </div>
 
       {mode === 'tap' && canTap ? (
         <>
           {/* Tab bar */}
-          <div className="flex rounded-lg border border-zinc-800 overflow-hidden mb-3">
+          <div className="flex rounded-lg border border-zinc-800 overflow-hidden">
             {(['carries', 'tackles', 'sets'] as Tab[]).map(t => (
               <button
                 key={t}
@@ -245,7 +279,6 @@ export function GameStatsClient({
             <SetsTab
               events={setEventsAll}
               activeHalf={activeHalf}
-              onHalfChange={setActiveHalf}
               onAdd={(completed) => handleAdd('set_completion', null, completed)}
               onUndoLast={handleUndoSet}
             />
@@ -327,13 +360,11 @@ function PlayerStatTab({
 function SetsTab({
   events,
   activeHalf,
-  onHalfChange,
   onAdd,
   onUndoLast,
 }: {
   events: GameStatEvent[]
   activeHalf: 1 | 2
-  onHalfChange: (half: 1 | 2) => void
   onAdd: (completed: boolean) => void
   onUndoLast: () => void
 }) {
@@ -345,36 +376,19 @@ function SetsTab({
 
   return (
     <div className="space-y-3">
-      {/* Half toggle */}
-      <div className="flex rounded-lg border border-zinc-800 overflow-hidden">
-        {([1, 2] as const).map(h => (
-          <button
-            key={h}
-            onClick={() => onHalfChange(h)}
-            className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-widest transition-colors ${
-              activeHalf === h
-                ? 'bg-[#e8560a] text-white'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            {h === 1 ? '1st Half' : '2nd Half'}
-          </button>
-        ))}
-      </div>
-
       {/* Big YES / NO buttons */}
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => onAdd(true)}
           className="py-6 rounded-xl bg-emerald-900/40 border border-emerald-700/40 text-emerald-400 font-bold text-lg hover:bg-emerald-800/50 active:scale-95 transition-all"
         >
-          YES — COMPLETE ✓
+          YES ✓
         </button>
         <button
           onClick={() => onAdd(false)}
           className="py-6 rounded-xl bg-red-900/40 border border-red-700/40 text-red-400 font-bold text-lg hover:bg-red-800/50 active:scale-95 transition-all"
         >
-          NO — INCOMPLETE ✗
+          NO ✗
         </button>
       </div>
 
@@ -417,7 +431,6 @@ function SetsTab({
         </div>
       )}
 
-      {/* Undo last */}
       {total > 0 && (
         <button
           onClick={onUndoLast}
@@ -484,11 +497,8 @@ function ReviewPanel({
 
   return (
     <div className="space-y-4">
-      {/* Carries */}
       <section>
-        <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#e8560a] mb-2">
-          Attack — Carries
-        </h2>
+        <h2 className="text-[10px] font-bold uppercase tracking-widest text-[#e8560a] mb-2">Attack — Carries</h2>
         {carriesByPlayer.length === 0 ? (
           <p className="text-xs text-zinc-600 px-1">No carries recorded yet.</p>
         ) : (
@@ -497,9 +507,7 @@ function ReviewPanel({
               {carriesByPlayer.map(p => (
                 <li key={p.id} className="flex items-center justify-between px-4 py-3">
                   <span className="text-sm text-zinc-200">{p.name}</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e8560a]/20 text-[#e8560a]">
-                    {p.count}
-                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e8560a]/20 text-[#e8560a]">{p.count}</span>
                 </li>
               ))}
             </ul>
@@ -507,11 +515,8 @@ function ReviewPanel({
         )}
       </section>
 
-      {/* Tackles */}
       <section>
-        <h2 className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-2">
-          Defence — Tackles
-        </h2>
+        <h2 className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-2">Defence — Tackles</h2>
         {tacklesByPlayer.length === 0 ? (
           <p className="text-xs text-zinc-600 px-1">No tackles recorded yet.</p>
         ) : (
@@ -520,9 +525,7 @@ function ReviewPanel({
               {tacklesByPlayer.map(p => (
                 <li key={p.id} className="flex items-center justify-between px-4 py-3">
                   <span className="text-sm text-zinc-200">{p.name}</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-400">
-                    {p.count}
-                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-400">{p.count}</span>
                 </li>
               ))}
             </ul>
@@ -530,38 +533,26 @@ function ReviewPanel({
         )}
       </section>
 
-      {/* Set completion */}
       <section>
-        <h2 className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-2">
-          Set Completion
-        </h2>
+        <h2 className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-2">Set Completion</h2>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-center">
             <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">1st Half</p>
-            <p className="text-2xl font-bold text-white">
-              {h1Completed}/{h1Sets.length}
-            </p>
+            <p className="text-2xl font-bold text-white">{h1Completed}/{h1Sets.length}</p>
             {h1Sets.length > 0 && (
-              <p className="text-xs text-zinc-500 mt-0.5">
-                {Math.round((h1Completed / h1Sets.length) * 100)}%
-              </p>
+              <p className="text-xs text-zinc-500 mt-0.5">{Math.round((h1Completed / h1Sets.length) * 100)}%</p>
             )}
           </div>
           <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-center">
             <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">2nd Half</p>
-            <p className="text-2xl font-bold text-white">
-              {h2Completed}/{h2Sets.length}
-            </p>
+            <p className="text-2xl font-bold text-white">{h2Completed}/{h2Sets.length}</p>
             {h2Sets.length > 0 && (
-              <p className="text-xs text-zinc-500 mt-0.5">
-                {Math.round((h2Completed / h2Sets.length) * 100)}%
-              </p>
+              <p className="text-xs text-zinc-500 mt-0.5">{Math.round((h2Completed / h2Sets.length) * 100)}%</p>
             )}
           </div>
         </div>
       </section>
 
-      {/* Share bar */}
       <div className="flex gap-2 pt-2">
         <a
           href={`https://wa.me/?text=${shareText}`}
