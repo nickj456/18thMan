@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Activity, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { Activity, Loader2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createSession } from './actions'
 import type { Match } from '@/lib/supabase/types'
@@ -33,9 +34,15 @@ export function CreateSessionForm({ groupId, matches }: Props) {
           Select Match
         </label>
         {matches.length === 0 ? (
-          <p className="text-sm text-zinc-500">
-            No matches found for this group. Add matches via the Squad → Matches section first.
-          </p>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 px-5 py-6 flex flex-col items-center gap-3 text-center">
+            <p className="text-sm text-zinc-400">No matches found for this group.</p>
+            <Link
+              href={`/groups/${groupId}/squad`}
+              className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg bg-[#e8560a]/10 border border-[#e8560a]/20 text-[#e8560a] hover:bg-[#e8560a]/20 transition-colors"
+            >
+              <Plus size={14} /> Add a match
+            </Link>
+          </div>
         ) : (
           <div className="rounded-xl border border-zinc-800 overflow-hidden">
             <ul className="divide-y divide-zinc-800 bg-zinc-900">
