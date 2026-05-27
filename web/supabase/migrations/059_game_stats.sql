@@ -101,6 +101,7 @@ create policy "gse_insert"
         and p.id = auth.uid()
         and p.role in ('coach', 'admin')
     )
+    and public.effective_tier(auth.uid()) in ('club', 'trial')
   );
 
 create policy "gse_delete"
