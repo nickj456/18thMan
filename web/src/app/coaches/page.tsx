@@ -3,6 +3,7 @@ import Image from 'next/image'
 import QRCode from 'qrcode'
 import { Barlow_Condensed } from 'next/font/google'
 import { FeatureGrid } from './FeatureGrid'
+import { QRExpand } from './QRExpand'
 
 const barlow = Barlow_Condensed({
   weight: ['400', '600', '700', '800'],
@@ -55,19 +56,7 @@ export default async function CoachesPage() {
 
       {/* QR + CTA */}
       <div style={{ textAlign: 'center' }}>
-        <div
-          style={{
-            display: 'inline-block',
-            padding: '1.25rem',
-            background: 'rgba(232,86,10,0.08)',
-            border: '2px solid rgba(232,86,10,0.3)',
-            borderRadius: '20px',
-            marginBottom: '1rem',
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qrDataUrl} alt="Scan to sign up" width={200} height={200} style={{ display: 'block' }} />
-        </div>
+        <QRExpand dataUrl={qrDataUrl} />
         <p style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.1em', color: '#e8560a', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
           Scan to join free
         </p>
