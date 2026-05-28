@@ -97,12 +97,12 @@ export default async function CoachesPage() {
       {/* Social links */}
       <style>{`.social-link { display:flex; align-items:center; gap:8px; text-decoration:none; color:#4a4845; transition:color 0.15s; font-size:0.8rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; } .social-link:hover { color:#e8560a; }`}</style>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-        <a href="https://www.facebook.com/profile.php?id=61574377776230" target="_blank" rel="noopener noreferrer" className="social-link" style={{ flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+        <a href="https://www.facebook.com/18thMan/" target="_blank" rel="noopener noreferrer" className="social-link" style={{ flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
           </svg>
           <span>Facebook</span>
-          <span style={{ fontSize: '0.7rem', color: '#4a4845' }}>18th Man</span>
+          <span style={{ fontSize: '0.7rem', color: '#4a4845' }}>@18thMan</span>
         </a>
 
         <div style={{ width: '1px', height: '32px', background: 'rgba(255,255,255,0.08)' }} />
