@@ -12,6 +12,7 @@ const CATEGORY_COLOUR: Record<string, string> = {
 const TOPIC_CATEGORY: Record<string, string> = {
   'Offloading': 'Attacking', 'Support Play': 'Attacking', 'Line Breaks & Edge Play': 'Attacking', 'Dummy Half Play': 'Attacking',
   'Tackle Technique': 'Defensive', 'Line Speed & Drift Defence': 'Defensive', 'Marker Defence': 'Defensive', 'Goal Line Defence': 'Defensive',
+  'Edge Defence': 'Defensive', 'Rush Defence': 'Defensive', 'Blitz Defence': 'Defensive',
   'Pass Accuracy': 'Ball Handling', 'Handling Under Pressure': 'Ball Handling', 'Catching High Balls': 'Ball Handling',
   'Kick-Off Receipts': 'Set Piece & Kicking', 'Grubber Kicks': 'Set Piece & Kicking', 'Bomb Kicks': 'Set Piece & Kicking', 'Scrum Technique': 'Set Piece & Kicking',
   'Agility & Conditioning': 'Fitness & Game Sense', 'Decision Making': 'Fitness & Game Sense', 'Game Management': 'Fitness & Game Sense',
@@ -40,8 +41,8 @@ export function FocusWidget({
     )
   }
 
-  const category = TOPIC_CATEGORY[focus.topic] ?? 'Attacking'
-  const colour = CATEGORY_COLOUR[category]
+  const category = TOPIC_CATEGORY[focus.topic] ?? null
+  const colour = category ? CATEGORY_COLOUR[category] : null
 
   return (
     <Link
@@ -54,9 +55,11 @@ export function FocusWidget({
             <Target size={12} className="text-indigo-400" />
             <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">Weekly Focus</span>
           </div>
-          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${colour}`}>
-            {category}
-          </span>
+          {colour && (
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${colour}`}>
+              {category}
+            </span>
+          )}
         </div>
         <p className="text-base font-bold text-white">{focus.topic}</p>
         <p className="text-xs text-zinc-500 line-clamp-2">{focus.description}</p>
