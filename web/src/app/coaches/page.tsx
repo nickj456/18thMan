@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import QRCode from 'qrcode'
 import { Barlow_Condensed } from 'next/font/google'
+import { FeatureGrid } from './FeatureGrid'
 
 const barlow = Barlow_Condensed({
   weight: ['400', '600', '700', '800'],
@@ -14,37 +15,6 @@ const barlow = Barlow_Condensed({
 export const metadata = { title: '18th Man — Join Tonight' }
 
 const SIGNUP_URL = 'https://18thman.app/signup'
-
-const features = [
-  {
-    icon: '⚡',
-    title: 'AI Session Planning',
-    body: 'Describe what you need — age group, players, focus area — and get a full timed run sheet in seconds.',
-    accent: 'rgba(232,86,10,0.2)',
-    border: 'rgba(232,86,10,0.35)',
-  },
-  {
-    icon: '🗓️',
-    title: 'Coaching Blocks',
-    body: 'AI plans your whole training block upfront — every session balanced across Attack, Defence, Completions & Skills.',
-    accent: 'rgba(74,222,128,0.1)',
-    border: 'rgba(74,222,128,0.25)',
-  },
-  {
-    icon: '📊',
-    title: 'Game Stats',
-    body: 'Track carries, tackles, and set completions live during a match. Review workload and scoring data instantly after.',
-    accent: 'rgba(99,102,241,0.12)',
-    border: 'rgba(99,102,241,0.3)',
-  },
-  {
-    icon: '✏️',
-    title: 'Drill Designer',
-    body: 'Draw drills on a digital pitch canvas — players, cones, arrows, zones. Build your library and share with the community.',
-    accent: 'rgba(251,191,36,0.08)',
-    border: 'rgba(251,191,36,0.25)',
-  },
-]
 
 export default async function CoachesPage() {
   const qrDataUrl = await QRCode.toDataURL(SIGNUP_URL, {
@@ -107,35 +77,7 @@ export default async function CoachesPage() {
       </div>
 
       {/* Feature grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gap: '1rem',
-          width: '100%',
-          maxWidth: '640px',
-        }}
-      >
-        {features.map(f => (
-          <div
-            key={f.title}
-            style={{
-              background: f.accent,
-              border: `1px solid ${f.border}`,
-              borderRadius: '12px',
-              padding: '1.1rem 1.25rem',
-            }}
-          >
-            <div style={{ fontSize: '1.4rem', marginBottom: '0.4rem' }}>{f.icon}</div>
-            <div style={{ fontWeight: 800, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem', color: '#fff' }}>
-              {f.title}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#7a7875', lineHeight: 1.55, fontWeight: 400, fontFamily: 'system-ui' }}>
-              {f.body}
-            </div>
-          </div>
-        ))}
-      </div>
+      <FeatureGrid />
 
       {/* CTA button */}
       <div style={{ textAlign: 'center' }}>
