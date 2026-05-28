@@ -137,13 +137,13 @@ export function FeatureGrid() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.75)',
-            backdropFilter: 'blur(6px)',
+            background: 'rgba(0,0,0,0.82)',
+            backdropFilter: 'blur(8px)',
             zIndex: 100,
             display: 'flex',
-            alignItems: 'flex-end',
+            alignItems: 'center',
             justifyContent: 'center',
-            padding: '0 0 env(safe-area-inset-bottom, 0)',
+            padding: '2rem',
           }}
         >
           <div
@@ -151,35 +151,32 @@ export function FeatureGrid() {
             style={{
               background: '#0d0f16',
               border: `1px solid ${active.border}`,
-              borderRadius: '20px 20px 0 0',
-              padding: '2rem 1.75rem 2.5rem',
+              borderRadius: '20px',
+              padding: '2.5rem',
               width: '100%',
-              maxWidth: '480px',
-              animation: 'slideUp 0.25s cubic-bezier(.22,.6,.36,1)',
+              maxWidth: '580px',
+              animation: 'popIn 0.2s cubic-bezier(.22,.6,.36,1)',
             }}
           >
             <style>{`
-              @keyframes slideUp {
-                from { transform: translateY(100%); opacity: 0; }
-                to   { transform: translateY(0);    opacity: 1; }
+              @keyframes popIn {
+                from { transform: scale(0.94); opacity: 0; }
+                to   { transform: scale(1);    opacity: 1; }
               }
             `}</style>
 
-            {/* Handle bar */}
-            <div style={{ width: '36px', height: '4px', background: 'rgba(255,255,255,0.12)', borderRadius: '2px', margin: '0 auto 1.5rem' }} />
-
-            <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>{active.icon}</div>
-            <div style={{ fontWeight: 800, fontSize: '1.3rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#fff', marginBottom: '0.4rem', fontFamily: 'var(--font-barlow), system-ui, sans-serif' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>{active.icon}</div>
+            <div style={{ fontWeight: 800, fontSize: '1.7rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#fff', marginBottom: '0.5rem', fontFamily: 'var(--font-barlow), system-ui, sans-serif' }}>
               {active.title}
             </div>
-            <div style={{ fontSize: '0.9rem', color: '#7a7875', marginBottom: '1.5rem', fontFamily: 'system-ui' }}>
+            <div style={{ fontSize: '1.05rem', color: '#7a7875', marginBottom: '1.75rem', fontFamily: 'system-ui' }}>
               {active.detail.headline}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '2rem' }}>
               {active.detail.points.map(pt => (
-                <div key={pt} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: '#c4c0b8', lineHeight: 1.5, fontFamily: 'system-ui' }}>
-                  <span style={{ color: '#e8560a', fontWeight: 700, flexShrink: 0 }}>→</span>
+                <div key={pt} style={{ display: 'flex', gap: '12px', fontSize: '1.05rem', color: '#c4c0b8', lineHeight: 1.55, fontFamily: 'system-ui' }}>
+                  <span style={{ color: '#e8560a', fontWeight: 700, flexShrink: 0, marginTop: '1px' }}>→</span>
                   {pt}
                 </div>
               ))}
@@ -189,12 +186,12 @@ export function FeatureGrid() {
               onClick={() => setActive(null)}
               style={{
                 width: '100%',
-                padding: '13px',
+                padding: '14px',
                 background: 'rgba(255,255,255,0.06)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: '10px',
                 color: '#a0a0a0',
-                fontSize: '0.88rem',
+                fontSize: '1rem',
                 cursor: 'pointer',
                 fontFamily: 'system-ui',
               }}

@@ -14,7 +14,7 @@ const barlow = Barlow_Condensed({
 
 export const metadata = { title: '18th Man — Join Tonight' }
 
-const SIGNUP_URL = 'https://18thman.app/signup'
+const SIGNUP_URL = 'https://18thman.app/join/9b70bf9d-b648-48b7-acfc-2d67141993a2'
 
 export default async function CoachesPage() {
   const qrDataUrl = await QRCode.toDataURL(SIGNUP_URL, {
@@ -72,7 +72,7 @@ export default async function CoachesPage() {
           Scan to join free
         </p>
         <p style={{ fontSize: '0.9rem', color: '#4a4845', letterSpacing: '0.08em' }}>
-          18thman.app/signup
+          18thman.app/join/...
         </p>
       </div>
 
