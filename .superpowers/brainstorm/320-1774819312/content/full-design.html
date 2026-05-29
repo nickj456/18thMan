@@ -1,0 +1,137 @@
+<h2>18th Man — Complete Feature Design</h2>
+<p class="subtitle">All features, data model, and permissions in one view</p>
+
+<div class="section">
+  <h3>Feature Set</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.85em">
+
+    <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:14px">
+      <div class="label">Landing Page</div>
+      <ul style="margin:6px 0 0;padding-left:16px">
+        <li>Hero section — rugby league imagery, app pitch</li>
+        <li>Feature highlights with screenshots</li>
+        <li>Social proof (coach count, drill count)</li>
+        <li>Sign up / Log in CTAs</li>
+      </ul>
+    </div>
+
+    <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:14px">
+      <div class="label">Auth — Supabase</div>
+      <ul style="margin:6px 0 0;padding-left:16px">
+        <li>Email + password sign up / login</li>
+        <li>Social login: Google, Facebook, Apple, GitHub</li>
+        <li>Password reset via email</li>
+        <li>Session managed by Supabase JWT</li>
+      </ul>
+    </div>
+
+    <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:14px">
+      <div class="label">User Profile</div>
+      <ul style="margin:6px 0 0;padding-left:16px">
+        <li>Avatar, display name, bio</li>
+        <li>Club / team affiliation</li>
+        <li>Coaching level / experience</li>
+        <li>Coaching qualifications / certs</li>
+        <li>Social media links (Twitter/X, Facebook, Instagram, YouTube, LinkedIn)</li>
+        <li>Public profile URL: /profile/[username]</li>
+      </ul>
+    </div>
+
+    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:14px">
+      <div class="label">Coach Chat — 3 modes</div>
+      <ul style="margin:6px 0 0;padding-left:16px">
+        <li><strong>AI Assistant</strong> — streaming chat with rugby league AI coach. Each conversation has a title. Conversations saved to history</li>
+        <li><strong>Direct Messages</strong> — 1:1 conversations between coaches. Real-time via Supabase subscriptions</li>
+        <li><strong>Community Discussions</strong> — forum-style threads. Any coach can start a topic, others reply</li>
+      </ul>
+    </div>
+
+    <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:8px;padding:14px">
+      <div class="label">Drill Library</div>
+      <ul style="margin:6px 0 0;padding-left:16px">
+        <li>Browse / search / filter by category</li>
+        <li>Categories editable by Admin</li>
+        <li>Each drill: title, description, category, visual diagram, difficulty, age group, player count</li>
+        <li>Comments + ratings per drill</li>
+        <li>Share / save to personal collection</li>
+      </ul>
+    </div>
+
+    <div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:14px">
+      <div class="label">Drill Designer</div>
+      <ul style="margin:6px 0 0;padding-left:16px">
+        <li>React Konva canvas — rugby pitch backgrounds</li>
+        <li>Players, arrows, equipment, zones, text</li>
+        <li>Undo/redo, save as drill, export PNG/PDF</li>
+        <li>Desktop-first, tablet-accessible</li>
+      </ul>
+    </div>
+
+    <div style="background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.3);border-radius:8px;padding:14px">
+      <div class="label">Session Planner</div>
+      <ul style="margin:6px 0 0;padding-left:16px">
+        <li>Build ordered session from drill library</li>
+        <li>Assign time per drill segment</li>
+        <li>Export session as PDF</li>
+        <li>Share session with other coaches</li>
+      </ul>
+    </div>
+
+    <div style="background:rgba(20,184,166,0.1);border:1px solid rgba(20,184,166,0.3);border-radius:8px;padding:14px">
+      <div class="label">Admin Panel</div>
+      <ul style="margin:6px 0 0;padding-left:16px">
+        <li>Manage users — view, role assignment, suspend</li>
+        <li>Manage drill categories — add / edit / delete / reorder</li>
+        <li>Moderate community discussions</li>
+        <li>Site stats dashboard</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <h3>User Roles & Permissions</h3>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:0.8em">
+      <thead>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.2)">
+          <th style="text-align:left;padding:8px;color:var(--text-muted)">Feature</th>
+          <th style="padding:8px;color:#10b981">Admin</th>
+          <th style="padding:8px;color:#6366f1">Coach</th>
+          <th style="padding:8px;color:#94a3b8">Viewer</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:8px">Browse drills</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">✅</td></tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:8px">Create / share drills</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">❌</td></tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:8px">Use drill designer</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">❌</td></tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:8px">Rate & comment drills</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">❌</td></tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:8px">AI coaching chat</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">❌</td></tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:8px">Direct messages</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">❌</td></tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:8px">Community discussions</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">Read only</td></tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:8px">Session planner</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">❌</td></tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:8px">Edit drill categories</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">❌</td><td style="padding:8px;text-align:center">❌</td></tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05)"><td style="padding:8px">Manage users & roles</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">❌</td><td style="padding:8px;text-align:center">❌</td></tr>
+        <tr><td style="padding:8px">Moderate content</td><td style="padding:8px;text-align:center">✅</td><td style="padding:8px;text-align:center">❌</td><td style="padding:8px;text-align:center">❌</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Core Database Tables (Supabase Postgres)</h3>
+  <div style="font-family:monospace;font-size:0.8em;background:rgba(0,0,0,0.3);border-radius:8px;padding:14px;line-height:1.8">
+    <span style="color:#6366f1">profiles</span> — id, username, display_name, avatar_url, bio, club, coaching_level, role<br>
+    <span style="color:#6366f1">social_links</span> — user_id, platform, url<br>
+    <span style="color:#6366f1">drill_categories</span> — id, name, slug, order, created_by (admin)<br>
+    <span style="color:#6366f1">drills</span> — id, title, description, category_id, canvas_json, preview_image_url, author_id, difficulty, age_group, player_count<br>
+    <span style="color:#6366f1">drill_ratings</span> — drill_id, user_id, rating, comment<br>
+    <span style="color:#6366f1">conversations</span> — id, title, type (ai | dm | community), created_by<br>
+    <span style="color:#6366f1">conversation_participants</span> — conversation_id, user_id<br>
+    <span style="color:#6366f1">messages</span> — id, conversation_id, sender_id, content, created_at<br>
+    <span style="color:#6366f1">session_plans</span> — id, title, coach_id, drills_order (jsonb), total_duration
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:20px">Does this complete feature set and data model look right? Any changes before the spec is written?</p>

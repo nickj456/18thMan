@@ -1,0 +1,184 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* ── 18thMan brand colours ──────────────────────────────── */
+  --bg:        #07080d;
+  --panel:     #12151e;
+  --panel-2:   #0d1017;
+  --border:    #1e2535;
+  --border-2:  #2a3448;
+
+  /* Primary accent — 18thMan orange */
+  --brand:     #e8560a;
+  --brand-dim: #c44608;
+  --brand-glow: rgba(232, 86, 10, 0.18);
+
+  /* Text */
+  --text:      #e8e4dc;
+  --muted:     #7a7875;
+  --muted-2:   #4a5568;
+
+  /* Stat palette (data viz — not brand) */
+  --amber:     #f59e0b;
+  --green:     #3B6D11;
+  --red:       #A32D2D;
+  --blue:      #185FA5;
+  --purple:    #534AB7;
+  --teal:      #0e7490;
+  --orange:    #c2410c;
+  --dark-red:  #7f1d1d;
+
+  /* ── Typography ─────────────────────────────────────────── */
+  /* UI chrome: buttons, labels, tabs, badges, headings */
+  --font-ui:   'Barlow Condensed', 'Arial Narrow', Impact, sans-serif;
+  /* Body / readable text */
+  --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Codes, timestamps, numbers */
+  --font-mono: 'Courier New', Courier, monospace;
+
+  /* Legacy alias so existing inline fontFamily:'var(--font)' stays working */
+  --font: var(--font-ui);
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  /* Prevent text selection — feels like a native app */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Re-enable selection where it makes sense */
+input, textarea, [contenteditable] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Drag region for frameless window — applied to header */
+.drag-region {
+  -webkit-app-region: drag;
+}
+/* Anything interactive inside drag region must opt-out */
+.drag-region button,
+.drag-region input,
+.drag-region select,
+.drag-region a,
+.drag-region [role="button"] {
+  -webkit-app-region: no-drag;
+}
+
+button {
+  font-family: var(--font-ui);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  letter-spacing: 0.4px;
+}
+
+input, select, textarea {
+  font-family: var(--font-mono);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 2px;
+  font-size: 12px;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: 1px solid var(--brand);
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--panel); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-2); }
+
+/* ── Shared component patterns ──────────────────────────── */
+
+/* Section label — e.g. "ACTIVE PLAYER", "HALF" */
+.label-caps {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Stat/status badge */
+.badge {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+/* ── Animations ─────────────────────────────────────────── */
+
+@keyframes flash {
+  0%   { opacity: 1; transform: scale(1); }
+  30%  { opacity: 0.45; transform: scale(0.94); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.btn-flash { animation: flash 0.22s ease-out; }
+
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fadein { animation: fadein 0.18s ease-out; }
+
+/* ── Resize handle ──────────────────────────────────────── */
+
+.resize-handle-h {
+  flex-shrink: 0;
+  width: 4px;
+  background: var(--border);
+  cursor: col-resize;
+  transition: background 0.15s;
+  position: relative;
+}
+.resize-handle-h:hover,
+.resize-handle-h.active { background: var(--brand); }
+
+.resize-handle-v {
+  flex-shrink: 0;
+  height: 5px;
+  background: var(--border);
+  cursor: row-resize;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.resize-handle-v:hover,
+.resize-handle-v.active { background: var(--brand); }
+
+.resize-handle-v::after {
+  content: '';
+  width: 28px;
+  height: 2px;
+  background: var(--muted-2);
+  border-radius: 1px;
+  transition: background 0.15s;
+}
+.resize-handle-v:hover::after { background: var(--brand); }

@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/trial-expiry",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/send-campaigns",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/drip-sequence",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+<h2>Three Approaches for 18th Man</h2>
+<p class="subtitle">Pick the architecture that fits your timeline and goals</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Next.js + Supabase <span style="font-size:0.75em;color:#10b981;font-weight:600">⭐ Recommended</span></h3>
+      <p>Supabase handles auth, Postgres, real-time chat, and file storage in one platform. AI SDK for the coaching assistant. Fastest path to a working app with real-time features.</p>
+      <div class="pros-cons" style="margin-top:12px">
+        <div class="pros"><h4>Pros</h4><ul><li>One platform for auth + DB + real-time + storage</li><li>Built-in Row Level Security for permissions</li><li>Real-time subscriptions = live chat out of the box</li><li>Large community, great docs</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Vendor lock-in on Supabase</li><li>Less fine-grained auth control than Clerk</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Next.js + Neon + Clerk + Pusher</h3>
+      <p>Best-in-class for each concern. Clerk for auth (excellent UX + roles), Neon Postgres for data, Pusher for real-time messaging, Vercel Blob for uploads. More setup, more control.</p>
+      <div class="pros-cons" style="margin-top:12px">
+        <div class="pros"><h4>Pros</h4><ul><li>Clerk has the best auth UX + RBAC out of the box</li><li>Each service is best-in-class</li><li>No single vendor dependency</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More services to manage and bill separately</li><li>More initial configuration</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Next.js + Convex</h3>
+      <p>Convex is a reactive database purpose-built for real-time apps. Handles auth, data, and live subscriptions in one TypeScript-native platform. Excellent for chat-heavy apps.</p>
+      <div class="pros-cons" style="margin-top:12px">
+        <div class="pros"><h4>Pros</h4><ul><li>Real-time is a first-class citizen</li><li>TypeScript throughout — no SQL needed</li><li>Built-in optimistic updates</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Newer, smaller ecosystem</li><li>Less familiar than Postgres</li><li>Can get expensive at scale</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
