@@ -33,6 +33,7 @@ import {
   Target,
   HeartPulse,
   ClipboardCheck,
+  Sparkles,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -71,6 +72,7 @@ const resourceItems = [
   { href: '/positions', label: 'Positions Guide', icon: Shirt },
   { href: '/age-groups', label: 'Age Groups Guide', icon: Users },
   { href: '/skills', label: 'Fundamental Skills', icon: Dumbbell },
+  { href: '/tag-rugby', label: 'Tag Rugby Rules', icon: Tag },
   { href: '/how-to', label: 'How-to & FAQ', icon: BookMarked },
 ]
 
@@ -223,6 +225,15 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                     >
                       <Video className="size-4" />
                       <span>Video Analysis</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith('/admin/content-engine')}
+                      render={<Link href="/admin/content-engine" onClick={closeMobile} />}
+                    >
+                      <Sparkles className="size-4" />
+                      <span>Content Engine</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </>
