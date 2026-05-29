@@ -15,28 +15,37 @@ const QUICK_CHIPS = [
   'Tell me about the GameSense methodology',
 ]
 
-// Splits message text on the admin email and renders each part safely as React nodes,
-// replacing the email with a proper <a> element. No innerHTML — no XSS risk.
+// Parses message text into safe React nodes. Handles:
+// - Markdown links to internal paths only: [label](/path)
+// - The admin email address: hello@18thman.app
+// No innerHTML used — no XSS risk.
 function MessageText({ text }: { text: string }) {
   const EMAIL = 'hello@18thman.app'
-  const parts = text.split(EMAIL)
-  return (
-    <>
-      {parts.map((part, i) => (
-        <span key={i}>
-          {part}
-          {i < parts.length - 1 && (
-            <a
-              href={`mailto:${EMAIL}`}
-              className="text-[#e8560a] underline underline-offset-2 hover:text-[#d14d09]"
-            >
-              {EMAIL}
-            </a>
-          )}
-        </span>
-      ))}
-    </>
-  )
+  // Match internal markdown links [label](/path) or the admin email
+  const TOKEN = /\[([^\]]+)\]\((\/[^)]*)\)|hello@18thman\.app/g
+  const nodes: React.ReactNode[] = []
+  let last = 0
+  let match: RegExpExecArray | null
+  let i = 0
+  while ((match = TOKEN.exec(text)) !== null) {
+    if (match.index > last) nodes.push(<span key={i++}>{text.slice(last, match.index)}</span>)
+    if (match[1] && match[2]) {
+      nodes.push(
+        <a key={i++} href={match[2]} className="text-[#e8560a] underline underline-offset-2 hover:text-[#d14d09]">
+          {match[1]}
+        </a>
+      )
+    } else {
+      nodes.push(
+        <a key={i++} href={`mailto:${EMAIL}`} className="text-[#e8560a] underline underline-offset-2 hover:text-[#d14d09]">
+          {EMAIL}
+        </a>
+      )
+    }
+    last = match.index + match[0].length
+  }
+  if (last < text.length) nodes.push(<span key={i}>{text.slice(last)}</span>)
+  return <>{nodes}</>
 }
 
 export function HelpWidget() {
