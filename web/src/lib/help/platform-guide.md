@@ -76,5 +76,13 @@ Edit your public coaching profile — display name, bio, club, coaching level, a
 - Trial: 48-hour full Club access, triggered automatically after your 3rd drill.
 - To upgrade: visit `/clubs` and ask your club admin, or go to `/settings`.
 
+## Resources
+Static reference pages available to all users from the sidebar:
+- **Positions Guide** (`/positions`) — coaching focus and responsibilities for every position, from Fullback to Middle Forwards.
+- **Age Groups Guide** (`/age-groups`) — skill objectives and development priorities from Under 7s to Under 18s.
+- **Fundamental Skills** (`/skills`) — technique breakdowns for Grip/Catch/Pass, Draw & Pass (2v1), and Front-On Tackle.
+- **Tag Rugby Rules** (`/tag-rugby`) — full rules for Tag Rugby, useful for junior and modified games.
+- **How-to & FAQ** (`/how-to`) — guides and FAQs about using the 18th Man platform.
+
 ## Admin (admin users only)
 Admin panel at `/admin` — manage users, clubs, groups, drill approvals, categories, email campaigns, and content engine.
