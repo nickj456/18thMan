@@ -302,6 +302,7 @@ export default async function LandingPage() {
               <a href="#community" className="nav-link" style={{ textDecoration: 'none' }}>Community</a>
               <a href="#pricing" className="nav-link" style={{ textDecoration: 'none' }}>Pricing</a>
               <a href="#services" className="nav-link" style={{ textDecoration: 'none' }}>Services</a>
+              <Link href="/analyst" className="nav-link" style={{ textDecoration: 'none' }}>Analyst</Link>
             </div>
 
             {/* Auth CTA */}
@@ -896,6 +897,43 @@ export default async function LandingPage() {
                     <span style={{ color: 'rgba(74,222,128,0.7)', fontWeight: 700 }}>→</span> {f}
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Feature 5 — Match Analyst */}
+            <div className="feature-card">
+              <div
+                style={{
+                  width: '48px', height: '48px', borderRadius: '10px',
+                  background: 'rgba(232,86,10,0.12)', border: '1px solid rgba(232,86,10,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.4rem', marginBottom: '1.5rem',
+                }}
+              >
+                🎬
+              </div>
+              <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                Match Analyst
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: 'var(--ember)', fontFamily: 'var(--font-barlow)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                Desktop App · Free Download
+              </p>
+              <p style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--text-muted)', fontWeight: 300 }}>
+                A free companion desktop app for rugby league coaches. Tag player stats against
+                match video, export highlight clips, and generate PDF match reports — all offline,
+                no subscription required.
+              </p>
+              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                {['Tag events in real time with timestamps', 'Export clips with built-in ffmpeg', 'Generate PDF match reports', 'Works offline — no account needed'].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--ember)', fontWeight: 700 }}>→</span> {f}
+                  </div>
+                ))}
+                <div style={{ marginTop: '1rem' }}>
+                  <Link href="/analyst" style={{ fontSize: '0.85rem', color: 'var(--ember)', fontFamily: 'var(--font-barlow)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', textDecoration: 'none' }}>
+                    Download free →
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
