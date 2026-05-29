@@ -16,13 +16,15 @@ const QUICK_CHIPS = [
 ]
 
 // Parses message text into safe React nodes. Handles:
-// - Markdown links to internal paths only: [label](/path)
-// - The admin email address: hello@18thman.app
-// No innerHTML used — no XSS risk.
+// - Markdown links to internal paths: [label](/path)
+// - Bare internal paths: /sessions, /drills/new etc.
+// - The admin email: hello@18thman.app
+// No innerHTML — no XSS risk. Only allows single-slash internal paths.
 function MessageText({ text }: { text: string }) {
   const EMAIL = 'hello@18thman.app'
-  // Match internal markdown links [label](/path) or the admin email
-  const TOKEN = /\[([^\]]+)\]\((\/(?!\/)[^)\s]*)\)|hello@18thman\.app/g
+  const LINK_CLASS = 'text-[#e8560a] underline underline-offset-2 hover:text-[#d14d09]'
+  // Groups: 1+2 = markdown link, 3 = bare path, 4 = email
+  const TOKEN = /\[([^\]]+)\]\((\/(?!\/)[^)\s]*)\)|(\/(?!\/)[a-z][a-z0-9\-/_]*)|hello@18thman\.app/g
   const nodes: React.ReactNode[] = []
   let last = 0
   let match: RegExpExecArray | null
@@ -30,19 +32,19 @@ function MessageText({ text }: { text: string }) {
   while ((match = TOKEN.exec(text)) !== null) {
     if (match.index > last) nodes.push(<span key={i++}>{text.slice(last, match.index)}</span>)
     if (match[1] && match[2]) {
+      // Markdown link [label](/path)
       const href = match[2]
-      const safeHref = href.startsWith('/') && !href.startsWith('//') && !href.startsWith('/\\') ? href : null
-      nodes.push(
-        safeHref
-          ? <a key={i++} href={safeHref} rel="noopener noreferrer" className="text-[#e8560a] underline underline-offset-2 hover:text-[#d14d09]">{match[1]}</a>
-          : <span key={i++}>{match[1]}</span>
+      const safe = href.startsWith('/') && !href.startsWith('//') && !href.startsWith('/\\')
+      nodes.push(safe
+        ? <a key={i++} href={href} rel="noopener noreferrer" className={LINK_CLASS}>{match[1]}</a>
+        : <span key={i++}>{match[1]}</span>
       )
+    } else if (match[3]) {
+      // Bare path e.g. /sessions
+      nodes.push(<a key={i++} href={match[3]} rel="noopener noreferrer" className={LINK_CLASS}>{match[3]}</a>)
     } else {
-      nodes.push(
-        <a key={i++} href={`mailto:${EMAIL}`} className="text-[#e8560a] underline underline-offset-2 hover:text-[#d14d09]">
-          {EMAIL}
-        </a>
-      )
+      // Email
+      nodes.push(<a key={i++} href={`mailto:${EMAIL}`} className={LINK_CLASS}>{EMAIL}</a>)
     }
     last = match.index + match[0].length
   }
