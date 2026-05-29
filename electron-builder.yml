@@ -41,8 +41,7 @@ mac:
   target:
     - target: dmg
       arch:
-        - x64
-        - arm64
+        - universal
   icon: src/assets/logo.png
   category: public.app-category.productivity
   artifactName: 18thMan-Match-Analyst-${version}.dmg
