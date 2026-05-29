@@ -52,15 +52,8 @@ export async function getEffectiveTier(
     if (clubOverride !== null) return clubOverride ? 'club' : 'free'
   }
 
-  // 3. Club subscription
-  if (data.club_id) {
-    const { data: club } = await supabase
-      .from('clubs')
-      .select('subscription_tier')
-      .eq('id', data.club_id)
-      .single()
-    if (club?.subscription_tier === 'club') return 'club'
-  }
+  // 3. Club membership — any club member gets full Club-tier access
+  if (data.club_id) return 'club'
 
   // 4. Active trial
   if (data.trial_ends_at && new Date(data.trial_ends_at) > new Date()) return 'trial'

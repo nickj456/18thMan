@@ -50,15 +50,20 @@ function TierBadge({
   tier,
   trialEndsAt,
   stripeSubscriptionId,
+  clubName,
 }: {
   tier: SubscriptionTier
   trialEndsAt: string | null
   stripeSubscriptionId: string | null
+  clubName: string | null
 }) {
-  const isOnTrial = trialEndsAt && new Date(trialEndsAt) > new Date()
-  const effectiveKey = isOnTrial ? 'trial' : tier
+  const isOnTrial = !clubName && trialEndsAt && new Date(trialEndsAt) > new Date()
+  const effectiveKey = clubName ? 'club' : isOnTrial ? 'trial' : tier
   const colour = tierColour[effectiveKey] ?? tierColour.free
-  const label = tierLabel[effectiveKey] ?? tier
+
+  const label = clubName
+    ? `Club – ${clubName}`
+    : tierLabel[effectiveKey] ?? tier
 
   const trialExpiry = isOnTrial
     ? new Date(trialEndsAt!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
@@ -72,10 +77,10 @@ function TierBadge({
       {isOnTrial && (
         <span className="text-xs text-amber-500/70">Expires {trialExpiry}</span>
       )}
-      {!isOnTrial && stripeSubscriptionId && tier !== 'free' && (
+      {!isOnTrial && !clubName && stripeSubscriptionId && tier !== 'free' && (
         <span className="text-xs text-zinc-500">Stripe active</span>
       )}
-      {!isOnTrial && !stripeSubscriptionId && tier !== 'free' && (
+      {!isOnTrial && !clubName && !stripeSubscriptionId && tier !== 'free' && (
         <span className="text-xs text-red-400/70">No Stripe sub</span>
       )}
     </div>
@@ -248,6 +253,7 @@ export default async function AdminUsersPage({
                             tier={profile.subscription_tier as SubscriptionTier}
                             trialEndsAt={profile.trial_ends_at}
                             stripeSubscriptionId={profile.stripe_subscription_id}
+                            clubName={profile.club_id ? (clubMap[profile.club_id] ?? null) : null}
                           />
                         </td>
                         <td className="px-5 py-3.5 text-zinc-500 text-xs">
