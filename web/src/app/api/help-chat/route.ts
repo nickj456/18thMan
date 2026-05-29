@@ -137,10 +137,14 @@ ${platformGuide}
 --- GAMESENSERL METHODOLOGY ---
 ${gameSenseRL}`
 
-    const history = (messages as { role: string; content: string }[]).map(m => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.content,
-    }))
+    const history = (messages as { role: string; content?: string; parts?: { type: string; text?: string }[] }[])
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .map(m => ({
+        role: m.role as 'user' | 'assistant',
+        content: typeof m.content === 'string'
+          ? m.content
+          : (m.parts ?? []).filter(p => p.type === 'text').map(p => p.text ?? '').join(''),
+      }))
 
     const result = streamText({
       model: gateway('anthropic/claude-sonnet-4-6'),
