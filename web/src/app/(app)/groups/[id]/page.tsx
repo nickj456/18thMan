@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Users2, UserPlus, Clock, XCircle, CalendarDays, Plus, Sparkles, LayoutList, ChevronRight, Users, Activity } from 'lucide-react'
+import { ArrowLeft, Users2, UserPlus, Clock, XCircle, CalendarDays, Plus, Sparkles, LayoutList, ChevronRight, Users, Activity, Shield } from 'lucide-react'
 import { InviteGroupMemberForm } from './InviteGroupMemberForm'
 import { RemoveGroupMemberButton } from './RemoveGroupMemberButton'
 
@@ -32,7 +32,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
   // Accepted members
   const { data: memberInvites } = await supabase
     .from('group_invitations')
-    .select('id, user_id, profiles!group_invitations_user_id_fkey(id, username, display_name, avatar_url, role)')
+    .select('id, user_id, group_role, profiles!group_invitations_user_id_fkey(id, username, display_name, avatar_url, role)')
     .eq('group_id', id)
     .eq('status', 'accepted')
 
@@ -170,17 +170,24 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
                 const p = Array.isArray(inv.profiles) ? inv.profiles[0] : inv.profiles
                 const member = p as { id: string; display_name: string | null; username: string; role: string } | null
                 const isSelf = inv.user_id === user.id
+                const isGroupAdmin = (inv as { group_role?: string | null }).group_role === 'admin'
                 return (
                   <li key={inv.id} className="flex items-center justify-between px-5 py-3.5">
-                    <div>
-                      <p className="text-sm text-zinc-200 font-medium">
-                        {member?.display_name ?? member?.username}
-                        {isSelf && <span className="ml-2 text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full">You</span>}
-                      </p>
-                      <p className="text-xs text-zinc-600">@{member?.username}</p>
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <p className="text-sm text-zinc-200 font-medium">
+                          {member?.display_name ?? member?.username}
+                          {isSelf && <span className="ml-2 text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full">You</span>}
+                        </p>
+                        <p className="text-xs text-zinc-600">@{member?.username}</p>
+                      </div>
+                      {isGroupAdmin && (
+                        <span className="flex items-center gap-1 text-[10px] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
+                          <Shield size={9} /> Group Admin
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-xs text-zinc-600 capitalize">{member?.role}</span>
                       {(canManage || isSelf) && (
                         <RemoveGroupMemberButton
                           groupId={group.id}
