@@ -154,6 +154,78 @@ export async function acceptGroupInvite(invitationId: string) {
   return { success: true }
 }
 
+/** Platform admin only: add a user directly to a group (accepted, no invite flow). */
+export async function addUserToGroupDirect(groupId: string, userId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (me?.role !== 'admin') return { error: 'Not authorised' }
+
+  const { data: group } = await supabase.from('coaching_groups').select('id, name, club_id').eq('id', groupId).single()
+  if (!group) return { error: 'Group not found' }
+
+  const { error } = await supabase
+    .from('group_invitations')
+    .upsert(
+      { group_id: groupId, user_id: userId, invited_by: user.id, status: 'accepted', updated_at: new Date().toISOString() },
+      { onConflict: 'group_id,user_id' }
+    )
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/admin/groups/${groupId}`)
+  return { success: true }
+}
+
+/** Platform admin only: set a group member as group admin. */
+export async function setGroupAdmin(groupId: string, userId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (me?.role !== 'admin') return { error: 'Not authorised' }
+
+  const { createServiceClient } = await import('@/lib/supabase/service')
+  const service = createServiceClient()
+  const { error } = await service
+    .from('group_invitations')
+    .update({ group_role: 'admin' })
+    .eq('group_id', groupId)
+    .eq('user_id', userId)
+    .eq('status', 'accepted')
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/admin/groups/${groupId}`)
+  return { success: true }
+}
+
+/** Platform admin only: remove group admin role from a member. */
+export async function removeGroupAdmin(groupId: string, userId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (me?.role !== 'admin') return { error: 'Not authorised' }
+
+  const { createServiceClient } = await import('@/lib/supabase/service')
+  const service = createServiceClient()
+  const { error } = await service
+    .from('group_invitations')
+    .update({ group_role: null })
+    .eq('group_id', groupId)
+    .eq('user_id', userId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/admin/groups/${groupId}`)
+  return { success: true }
+}
+
 export async function declineGroupInvite(invitationId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

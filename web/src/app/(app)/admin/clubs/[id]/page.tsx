@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { ArrowLeft, Building2, UserPlus, Clock, CheckCircle, XCircle, Shield, Settings } from 'lucide-react'
+import { ArrowLeft, Building2, UserPlus, Clock, CheckCircle, XCircle, Shield, Settings, Users2, ChevronRight } from 'lucide-react'
 import { InviteUserForm } from './InviteUserForm'
 import { ClubSettingsForm } from './ClubSettingsForm'
 import { DeleteClubButton } from './DeleteClubButton'
@@ -58,6 +58,12 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
   }
 
   const { data: availableUsers } = await availableQuery
+
+  const { data: groups } = await supabase
+    .from('coaching_groups')
+    .select('id, name, created_at')
+    .eq('club_id', id)
+    .order('created_at')
 
   const clubAdminId = members?.find(m => m.club_role === 'admin')?.id
 
@@ -183,6 +189,32 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
           </div>
         )}
       </section>
+      {/* Coaching groups */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+          <Users2 size={12} /> Coaching Groups ({groups?.length ?? 0})
+        </h2>
+        {!groups?.length ? (
+          <p className="text-sm text-zinc-600">No groups in this club yet.</p>
+        ) : (
+          <div className="rounded-xl border border-zinc-800 overflow-hidden">
+            <ul className="divide-y divide-zinc-800 bg-zinc-900">
+              {groups.map(g => (
+                <li key={g.id}>
+                  <Link
+                    href={`/admin/groups/${g.id}`}
+                    className="flex items-center justify-between px-5 py-3.5 hover:bg-zinc-800/40 transition-colors"
+                  >
+                    <p className="text-sm text-zinc-200">{g.name}</p>
+                    <ChevronRight size={14} className="text-zinc-600" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
       {/* Danger zone */}
       <section className="space-y-3 pt-4 border-t border-red-500/10">
         <h2 className="text-xs font-semibold text-red-500/60 uppercase tracking-widest">Danger Zone</h2>
