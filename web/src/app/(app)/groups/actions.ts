@@ -6,7 +6,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
 import { getEffectiveTier, hasClubAccess } from '@/lib/subscription'
-import { sendUpgradeNudgeEmail } from '@/lib/email'
+import { sendUpgradeNudgeEmail, sendGroupAddedEmail } from '@/lib/email'
+import { createServiceClient } from '@/lib/supabase/service'
 
 export async function createGroup(formData: FormData) {
   const supabase = await createClient()
@@ -120,6 +121,31 @@ export async function inviteUserToGroup(groupId: string, userId: string) {
       invited_by_display_name: me?.display_name ?? me?.username ?? 'Coach',
     },
   })
+
+  const service = createServiceClient()
+  const [{ data: authUser }, { data: clubData }] = await Promise.all([
+    service.auth.admin.getUserById(userId),
+    supabase.from('clubs').select('name').eq('id', group.club_id).single(),
+  ])
+
+  const userEmail = authUser?.user?.email
+  if (userEmail) {
+    const emailResult = await sendGroupAddedEmail(
+      userEmail,
+      target.display_name ?? target.username ?? '',
+      group.name,
+      clubData?.name ?? '',
+      me?.display_name ?? me?.username ?? 'Coach',
+    )
+    if (emailResult.messageId) {
+      await service.from('email_sends').insert({
+        user_id: userId,
+        category: 'group_added',
+        sent_at: new Date().toISOString(),
+        resend_message_id: emailResult.messageId,
+      })
+    }
+  }
 
   revalidatePath(`/groups/${groupId}`)
   return { success: true }

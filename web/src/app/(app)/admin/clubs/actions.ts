@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { createNotification } from '@/lib/notifications'
+import { sendClubAddedEmail } from '@/lib/email'
 
 function toSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -98,9 +99,10 @@ export async function inviteUserToClub(clubId: string, userId: string) {
 
   if (profErr) return { error: profErr.message }
 
-  const [{ data: club }, { data: inviter }] = await Promise.all([
+  const [{ data: club }, { data: inviter }, { data: authUser }] = await Promise.all([
     supabase.from('clubs').select('name').eq('id', clubId).single(),
     supabase.from('profiles').select('display_name, username').eq('id', user.id).single(),
+    service.auth.admin.getUserById(userId),
   ])
 
   await createNotification(supabase, {
@@ -112,6 +114,26 @@ export async function inviteUserToClub(clubId: string, userId: string) {
       invited_by_display_name: inviter?.display_name ?? inviter?.username ?? 'Admin',
     },
   })
+
+  const userEmail = authUser?.user?.email
+  const addedByName = inviter?.display_name ?? inviter?.username ?? 'Admin'
+  const clubName = club?.name ?? ''
+  if (userEmail) {
+    const emailResult = await sendClubAddedEmail(
+      userEmail,
+      target.display_name ?? target.username ?? '',
+      clubName,
+      addedByName,
+    )
+    if (emailResult.messageId) {
+      await service.from('email_sends').insert({
+        user_id: userId,
+        category: 'club_added',
+        sent_at: new Date().toISOString(),
+        resend_message_id: emailResult.messageId,
+      })
+    }
+  }
 
   revalidatePath(`/admin/clubs/${clubId}`)
   return { success: true }

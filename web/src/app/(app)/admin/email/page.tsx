@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { ArrowLeft, Plus, Send, FileText, AlertCircle, MailOpen, MousePointerClick } from 'lucide-react'
+import { ArrowLeft, Plus, Send, FileText, AlertCircle, MailOpen, MousePointerClick, Zap } from 'lucide-react'
 
 export const metadata = { title: 'Email Campaigns — Admin' }
 
@@ -44,11 +44,12 @@ export default async function AdminEmailPage({
   const scheduled = (campaigns ?? []).filter(c => c.status === 'scheduled')
   const sent = (campaigns ?? []).filter(c => c.status === 'sent')
 
+  const service = createServiceClient()
+
   // Fetch open/click stats for sent campaigns
   const sentIds = sent.map(c => c.id)
   const statsMap = new Map<string, { total: number; opened: number; clicked: number }>()
   if (sentIds.length > 0) {
-    const service = createServiceClient()
     const { data: sends } = await service
       .from('email_sends')
       .select('campaign_id, opened_at, clicked_at')
@@ -63,12 +64,36 @@ export default async function AdminEmailPage({
     }
   }
 
+  // Fetch transactional sends (club_added, group_added)
+  const { data: transactionalSends } = await service
+    .from('email_sends')
+    .select('id, user_id, category, sent_at, opened_at')
+    .in('category', ['club_added', 'group_added'])
+    .order('sent_at', { ascending: false })
+    .limit(200)
+
+  // Fetch display names for transactional send recipients
+  const transUserIds = [...new Set((transactionalSends ?? []).map(s => s.user_id).filter(Boolean))]
+  const transProfileMap = new Map<string, { display_name: string | null; username: string | null }>()
+  if (transUserIds.length > 0) {
+    const { data: transProfiles } = await service
+      .from('profiles')
+      .select('id, display_name, username')
+      .in('id', transUserIds)
+    for (const p of transProfiles ?? []) transProfileMap.set(p.id, p)
+  }
+
+  const TRANSACTIONAL_LABELS: Record<string, string> = {
+    club_added: 'Added to Club',
+    group_added: 'Added to Group',
+  }
+
   const tabs = [
-    { key: 'queue', label: 'Queue', count: queue.length, items: queue },
-    { key: 'scheduled', label: 'Scheduled', count: scheduled.length, items: scheduled },
-    { key: 'sent', label: 'Sent', count: sent.length, items: sent },
+    { key: 'queue', label: 'Queue', count: queue.length },
+    { key: 'scheduled', label: 'Scheduled', count: scheduled.length },
+    { key: 'sent', label: 'Sent', count: sent.length },
+    { key: 'transactional', label: 'Transactional', count: transactionalSends?.length ?? 0 },
   ]
-  const activeTab = tabs.find(t => t.key === tab) ?? tabs[0]
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -111,75 +136,134 @@ export default async function AdminEmailPage({
         ))}
       </div>
 
-      {activeTab.items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Send size={36} className="text-zinc-700 mb-4" />
-          <p className="font-medium text-zinc-400">Nothing here</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {tab === 'queue' ? 'Auto-drafts will appear here when content is published' : `No ${tab} campaigns`}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {activeTab.items.map(campaign => {
-            const badge = STATUS_BADGE[campaign.status] ?? STATUS_BADGE.draft
-            const triggerLabel = campaign.type === 'admin_composed'
-              ? 'Admin composed'
-              : `Auto — ${TRIGGER_LABELS[campaign.trigger_type] ?? campaign.trigger_type}`
-            return (
-              <Link
-                key={campaign.id}
-                href={`/admin/email/${campaign.id}`}
-                className="flex items-start justify-between gap-4 p-4 rounded-xl border border-zinc-800 bg-zinc-900/40 hover:border-zinc-700 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.className}`}>
-                      {badge.label}
-                    </span>
-                    <span className="text-xs text-zinc-600">{triggerLabel}</span>
-                    {campaign.status === 'ready' && !campaign.test_sent_at && (
-                      <span className="flex items-center gap-1 text-xs text-amber-500">
-                        <AlertCircle size={11} /> Test send required
+      {/* Campaign tabs: queue / scheduled / sent */}
+      {tab !== 'transactional' && (() => {
+        const items = { queue, scheduled, sent }[tab as 'queue' | 'scheduled' | 'sent'] ?? []
+        if (!items.length) return (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Send size={36} className="text-zinc-700 mb-4" />
+            <p className="font-medium text-zinc-400">Nothing here</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {tab === 'queue' ? 'Auto-drafts will appear here when content is published' : `No ${tab} campaigns`}
+            </p>
+          </div>
+        )
+        return (
+          <div className="space-y-2">
+            {items.map(campaign => {
+              const badge = STATUS_BADGE[campaign.status] ?? STATUS_BADGE.draft
+              const triggerLabel = campaign.type === 'admin_composed'
+                ? 'Admin composed'
+                : `Auto — ${TRIGGER_LABELS[campaign.trigger_type] ?? campaign.trigger_type}`
+              return (
+                <Link
+                  key={campaign.id}
+                  href={`/admin/email/${campaign.id}`}
+                  className="flex items-start justify-between gap-4 p-4 rounded-xl border border-zinc-800 bg-zinc-900/40 hover:border-zinc-700 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.className}`}>
+                        {badge.label}
                       </span>
-                    )}
-                  </div>
-                  <p className="text-sm font-medium text-zinc-200 truncate">
-                    {campaign.subject || <span className="italic text-zinc-600">No subject yet</span>}
-                  </p>
-                  <p className="text-xs text-zinc-600 mt-0.5">
-                    Segment: {campaign.segment}
-                    {campaign.scheduled_at && ` · Scheduled: ${new Date(campaign.scheduled_at).toLocaleString('en-GB')}`}
-                    {campaign.sent_at && ` · Sent: ${new Date(campaign.sent_at).toLocaleString('en-GB')}`}
-                  </p>
-                  {campaign.status === 'sent' && (() => {
-                    const stats = statsMap.get(campaign.id)
-                    if (!stats || stats.total === 0) return null
-                    const openPct = Math.round((stats.opened / stats.total) * 100)
-                    const clickPct = Math.round((stats.clicked / stats.total) * 100)
-                    return (
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="flex items-center gap-1 text-xs text-zinc-500">
-                          <MailOpen size={11} className="text-emerald-500" />
-                          <span className="text-emerald-400 font-medium">{openPct}%</span> opened
-                          <span className="text-zinc-700 mx-1">·</span>
-                          {stats.opened}/{stats.total}
+                      <span className="text-xs text-zinc-600">{triggerLabel}</span>
+                      {campaign.status === 'ready' && !campaign.test_sent_at && (
+                        <span className="flex items-center gap-1 text-xs text-amber-500">
+                          <AlertCircle size={11} /> Test send required
                         </span>
-                        {stats.clicked > 0 && (
+                      )}
+                    </div>
+                    <p className="text-sm font-medium text-zinc-200 truncate">
+                      {campaign.subject || <span className="italic text-zinc-600">No subject yet</span>}
+                    </p>
+                    <p className="text-xs text-zinc-600 mt-0.5">
+                      Segment: {campaign.segment}
+                      {campaign.scheduled_at && ` · Scheduled: ${new Date(campaign.scheduled_at).toLocaleString('en-GB')}`}
+                      {campaign.sent_at && ` · Sent: ${new Date(campaign.sent_at).toLocaleString('en-GB')}`}
+                    </p>
+                    {campaign.status === 'sent' && (() => {
+                      const stats = statsMap.get(campaign.id)
+                      if (!stats || stats.total === 0) return null
+                      const openPct = Math.round((stats.opened / stats.total) * 100)
+                      const clickPct = Math.round((stats.clicked / stats.total) * 100)
+                      return (
+                        <div className="flex items-center gap-3 mt-1.5">
                           <span className="flex items-center gap-1 text-xs text-zinc-500">
-                            <MousePointerClick size={11} className="text-sky-500" />
-                            <span className="text-sky-400 font-medium">{clickPct}%</span> clicked
+                            <MailOpen size={11} className="text-emerald-500" />
+                            <span className="text-emerald-400 font-medium">{openPct}%</span> opened
+                            <span className="text-zinc-700 mx-1">·</span>
+                            {stats.opened}/{stats.total}
                           </span>
-                        )}
-                      </div>
+                          {stats.clicked > 0 && (
+                            <span className="flex items-center gap-1 text-xs text-zinc-500">
+                              <MousePointerClick size={11} className="text-sky-500" />
+                              <span className="text-sky-400 font-medium">{clickPct}%</span> clicked
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })()}
+                  </div>
+                  <FileText size={16} className="text-zinc-600 flex-shrink-0 mt-1" />
+                </Link>
+              )
+            })}
+          </div>
+        )
+      })()}
+
+      {/* Transactional tab */}
+      {tab === 'transactional' && (
+        <>
+          {!transactionalSends?.length ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Zap size={36} className="text-zinc-700 mb-4" />
+              <p className="font-medium text-zinc-400">No transactional emails yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Club and group add emails will appear here</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-zinc-800 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-800 bg-zinc-900/50">
+                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Recipient</th>
+                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Type</th>
+                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Sent</th>
+                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Opened</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800 bg-zinc-900">
+                  {transactionalSends.map(s => {
+                    const profile = transProfileMap.get(s.user_id)
+                    const name = profile?.display_name ?? profile?.username ?? s.user_id.slice(0, 8)
+                    return (
+                      <tr key={s.id} className="hover:bg-zinc-800/40 transition-colors">
+                        <td className="px-5 py-3.5 font-medium text-zinc-200 text-sm">{name}</td>
+                        <td className="px-5 py-3.5">
+                          <span className="text-xs px-2 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
+                            {TRANSACTIONAL_LABELS[s.category] ?? s.category}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5 text-xs text-zinc-500">
+                          {new Date(s.sent_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {s.opened_at ? (
+                            <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+                              <MailOpen size={12} /> Opened
+                            </span>
+                          ) : (
+                            <span className="text-xs text-zinc-600">Not yet</span>
+                          )}
+                        </td>
+                      </tr>
                     )
-                  })()}
-                </div>
-                <FileText size={16} className="text-zinc-600 flex-shrink-0 mt-1" />
-              </Link>
-            )
-          })}
-        </div>
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

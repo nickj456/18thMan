@@ -565,6 +565,67 @@ export async function sendSubscriptionConfirmationEmail(
   `))
 }
 
+/** Sent when a platform admin or club admin adds a user directly to a club */
+export async function sendClubAddedEmail(
+  to: string,
+  displayName: string,
+  clubName: string,
+  addedByName: string,
+): Promise<EmailResultWithId> {
+  const resend = getResend()
+  if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' }
+  const html = layout(`
+    ${heading(`You're now part of ${clubName}.`)}
+    ${para(`${addedByName} has added you to the club.`)}
+    ${divider()}
+    ${greeting(displayName)}
+    ${para(`You've been added to <strong style="color:#ffffff;">${clubName}</strong> on 18th Man. Here's what club membership gives you access to:`)}
+    ${featureList([
+      'Club drills — exclusive plays and moves shared within your club',
+      'Coaching groups — collaborate with your coaching staff on shared session plans',
+      'AI session guidance (GameSense) — intelligent rotation and drill suggestions',
+      'PDF export — printable session plans to take to training',
+    ])}
+    ${ctaButton('Go to your club', `${SITE_URL}/clubs`)}
+    ${sign()}
+  `)
+  try {
+    const { data, error } = await resend.emails.send({ from: FROM, to, subject: `You've been added to ${clubName} — 18th Man`, html })
+    if (error) return { success: false, error: error.message }
+    return { success: true, messageId: data?.id }
+  } catch (err) {
+    return { success: false, error: String(err) }
+  }
+}
+
+/** Sent when a club or group admin adds a user directly to a coaching group */
+export async function sendGroupAddedEmail(
+  to: string,
+  displayName: string,
+  groupName: string,
+  clubName: string,
+  addedByName: string,
+): Promise<EmailResultWithId> {
+  const resend = getResend()
+  if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' }
+  const html = layout(`
+    ${heading(`You've been added to ${groupName}.`)}
+    ${para(`${addedByName} has added you to this coaching group.`)}
+    ${divider()}
+    ${greeting(displayName)}
+    ${para(`You're now part of the <strong style="color:#ffffff;">${groupName}</strong> coaching group at ${clubName}. Open the app to see shared session plans, drills, and group activity.`)}
+    ${ctaButton('View your group', `${SITE_URL}/groups`)}
+    ${sign()}
+  `)
+  try {
+    const { data, error } = await resend.emails.send({ from: FROM, to, subject: `You've been added to ${groupName} — 18th Man`, html })
+    if (error) return { success: false, error: error.message }
+    return { success: true, messageId: data?.id }
+  } catch (err) {
+    return { success: false, error: String(err) }
+  }
+}
+
 // ── Unsubscribe footer (added to all notification + campaign emails) ────────────
 
 export function unsubscribeFooter(category: string, unsubToken: string): string {
