@@ -25,9 +25,9 @@ export const metadata = {
     'Tag player stats against match video, export highlight clips, and generate PDF match reports. Included with 18th Man Coach Pro and Club memberships.',
 }
 
-const DOWNLOAD_WIN = 'https://github.com/nickj456/18thMan/releases/download/v1.7.7/18thMan-Match-Analyst-Setup.exe'
-const DOWNLOAD_MAC = 'https://github.com/nickj456/18thMan/releases/download/v1.7.7/18thMan-Match-Analyst.dmg'
-const APP_VERSION = '1.7.7'
+const DOWNLOAD_WIN = 'https://github.com/nickj456/18thMan/releases/download/v1.7.8/18thMan-Match-Analyst-Setup.exe'
+const DOWNLOAD_MAC = 'https://github.com/nickj456/18thMan/releases/download/v1.7.8/18thMan-Match-Analyst.dmg'
+const APP_VERSION = '1.7.8'
 
 export default async function AnalystPage() {
   const supabase = await createClient()
