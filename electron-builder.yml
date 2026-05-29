@@ -49,5 +49,11 @@ mac:
 dmg:
   title: 18thMan Match Analyst
 
+publish:
+  provider: github
+  owner: nickj456
+  repo: 18thMan
+  releaseType: release
+
 extraMetadata:
   main: src/main/main.js

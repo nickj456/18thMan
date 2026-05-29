@@ -41,4 +41,8 @@ contextBridge.exposeInMainWorld('electron', {
   loadEmailSettings: () => ipcRenderer.invoke('emailSettings:load'),
   saveEmailSettings: (s) => ipcRenderer.invoke('emailSettings:save', s),
   sendEmail: (args) => ipcRenderer.invoke('email:send', args),
+
+  onUpdateAvailable: (cb) => ipcRenderer.on('update:available', (_, data) => cb(data)),
+  onUpdateReady: (cb) => ipcRenderer.on('update:ready', () => cb()),
+  installUpdate: () => ipcRenderer.send('update:install'),
 })
