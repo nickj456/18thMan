@@ -2,6 +2,16 @@
 
 All notable changes to 18th Man are documented here.
 
+## [0.1.4] - 2026-05-29
+
+### Changed
+- **Drill rejection now deletes**: rejecting a drill in the admin approval queue permanently deletes it instead of setting a rejected status.
+- **Admin drill management**: the drill approval page now lists all drills (up to 100, newest first) with approval status badges and a per-row Delete button.
+- **Delete from drill detail**: admins see a Delete button on any drill's detail page; clicking it removes the drill and redirects to the library.
+
+### Fixed
+- Admin delete server action on the drill detail page now enforces server-side admin check via `requireAdmin()`.
+
 ## [0.1.1] - 2026-04-15
 
 ### Added

@@ -44,7 +44,22 @@ export async function rejectDrill(drillId: string) {
 
   const { error: dbError } = await supabase
     .from('drills')
-    .update({ approval_status: 'rejected' })
+    .delete()
+    .eq('id', drillId)
+
+  if (dbError) return { error: dbError.message }
+  revalidatePath('/admin/drills')
+  revalidatePath('/drills')
+  return { success: true }
+}
+
+export async function deleteDrill(drillId: string) {
+  const { supabase, error } = await requireAdmin()
+  if (error || !supabase) return { error }
+
+  const { error: dbError } = await supabase
+    .from('drills')
+    .delete()
     .eq('id', drillId)
 
   if (dbError) return { error: dbError.message }

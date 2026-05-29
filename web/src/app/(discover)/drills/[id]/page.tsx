@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { deleteDrill } from '@/app/(app)/admin/drills/actions'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
@@ -15,7 +16,7 @@ import { RatingSummary } from '@/components/drills/RatingSummary'
 import { RatingCard } from '@/components/drills/RatingCard'
 import { DrillImage } from '@/components/drills/DrillImage'
 import { extractYouTubeId } from '@/lib/youtube'
-import { Star, Users, ArrowLeft, PenTool, Loader2 } from 'lucide-react'
+import { Star, Users, ArrowLeft, PenTool, Loader2, Trash2 } from 'lucide-react'
 import type { AiGuide } from '@/lib/supabase/types'
 import type { CanvasState } from '@/components/designer/types'
 
@@ -160,6 +161,18 @@ export default async function DrillDetailPage({
                 <PenTool className="size-4 mr-1" />
                 Edit
               </Button>
+            )}
+            {userRole === 'admin' && (
+              <form action={async () => {
+                'use server'
+                await deleteDrill(id)
+                redirect('/drills')
+              }}>
+                <Button type="submit" variant="destructive" size="sm">
+                  <Trash2 className="size-4 mr-1" />
+                  Delete
+                </Button>
+              </form>
             )}
           </div>
         </div>

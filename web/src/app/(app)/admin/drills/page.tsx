@@ -2,8 +2,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
-import { CheckCircle, XCircle, Clock, ArrowLeft } from 'lucide-react'
-import { approveDrill, rejectDrill } from './actions'
+import { CheckCircle, XCircle, Clock, ArrowLeft, Trash2 } from 'lucide-react'
+import { approveDrill, rejectDrill, deleteDrill } from './actions'
 
 export const metadata = { title: 'Drill Approval — Admin' }
 
@@ -15,19 +15,30 @@ export default async function AdminDrillsPage() {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'admin') redirect('/dashboard')
 
-  const { data: pending } = await supabase
-    .from('drills')
-    .select(`
-      id, title, description, difficulty, age_group, player_count,
-      preview_image_url, youtube_url, is_public, created_at, approval_status,
-      category:drill_categories ( name ),
-      author:profiles!drills_author_id_fkey ( id, username, display_name, avatar_url )
-    `)
-    .eq('approval_status', 'pending')
-    .eq('is_public', true)
-    .order('created_at', { ascending: true })
+  const [pendingResult, allDrillsResult] = await Promise.all([
+    supabase
+      .from('drills')
+      .select(`
+        id, title, description, difficulty, age_group, player_count,
+        preview_image_url, youtube_url, is_public, created_at, approval_status,
+        category:drill_categories ( name ),
+        author:profiles!drills_author_id_fkey ( id, username, display_name, avatar_url )
+      `)
+      .eq('approval_status', 'pending')
+      .eq('is_public', true)
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('drills')
+      .select(`
+        id, title, description, is_public, created_at, approval_status,
+        author:profiles!drills_author_id_fkey ( id, username, display_name )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(100),
+  ])
 
-  const drills = pending ?? []
+  const drills = pendingResult.data ?? []
+  const allDrills = allDrillsResult.data ?? []
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -122,7 +133,7 @@ export default async function AdminDrillsPage() {
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition-colors"
                     >
                       <XCircle size={13} />
-                      Reject
+                      Reject &amp; Delete
                     </button>
                   </form>
                 </div>
@@ -137,9 +148,73 @@ export default async function AdminDrillsPage() {
         <Clock size={14} className="text-amber-400 mt-0.5 shrink-0" />
         <p className="text-xs text-zinc-500 leading-relaxed">
           Pending drills are visible to their author in their drill library but do not appear
-          in the public community library until approved. Rejected drills remain accessible only
-          to the author.
+          in the public community library until approved. Rejecting a drill deletes it permanently.
         </p>
+      </div>
+
+      {/* All drills — admin delete */}
+      <div className="space-y-3 pt-4">
+        <div>
+          <h2 className="app-heading text-lg">All Drills</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {allDrills.length} drill{allDrills.length !== 1 ? 's' : ''} total
+          </p>
+        </div>
+        {allDrills.length === 0 ? (
+          <p className="text-sm text-zinc-500 py-4">No drills yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {allDrills.map(drill => {
+              const author = drill.author as unknown as { username: string | null; display_name: string | null } | null
+              return (
+                <div
+                  key={drill.id}
+                  className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 flex items-center gap-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Link
+                        href={`/drills/${drill.id}`}
+                        className="text-sm font-medium hover:text-white transition-colors truncate"
+                        target="_blank"
+                      >
+                        {drill.title}
+                      </Link>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${
+                        drill.approval_status === 'approved'
+                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                          : drill.approval_status === 'pending'
+                          ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                          : 'bg-zinc-700/50 border-zinc-600 text-zinc-400'
+                      }`}>
+                        {drill.approval_status}
+                      </span>
+                      {!drill.is_public && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-500">
+                          private
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-600 mt-0.5">
+                      By {author?.display_name ?? author?.username ?? 'Unknown'}
+                      {' · '}
+                      {new Date(drill.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <form action={async () => { 'use server'; await deleteDrill(drill.id) }}>
+                    <button
+                      type="submit"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition-colors shrink-0"
+                    >
+                      <Trash2 size={13} />
+                      Delete
+                    </button>
+                  </form>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
