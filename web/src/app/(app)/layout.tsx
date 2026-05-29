@@ -4,6 +4,7 @@ import { Bell } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
+import { HelpWidget } from '@/components/help/HelpWidget'
 import type { UserRole } from '@/lib/supabase/types'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -49,6 +50,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </SidebarInset>
+      <HelpWidget />
     </SidebarProvider>
   )
 }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -275,7 +276,31 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
             </button>
           </form>
         </div>
+        <HelpTrigger />
       </SidebarFooter>
     </Sidebar>
+  )
+}
+
+function HelpTrigger() {
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    const check = () => setDismissed(localStorage.getItem('helpWidgetDismissed') === 'true')
+    check()
+    window.addEventListener('show-help-widget', check)
+    return () => window.removeEventListener('show-help-widget', check)
+  }, [])
+
+  if (!dismissed) return null
+
+  return (
+    <button
+      onClick={() => window.dispatchEvent(new Event('show-help-widget'))}
+      className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1"
+    >
+      <HelpCircle className="size-3" />
+      Help
+    </button>
   )
 }
