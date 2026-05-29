@@ -82,6 +82,10 @@ export function HelpWidget() {
         setRateLimitMsg(
           `You've reached the support limit for now. Try again after ${timeStr}, or email hello@18thman.app directly.`
         )
+        const clearDelay = resetAt
+          ? Math.max(0, resetAt.getTime() - Date.now())
+          : 60 * 60 * 1000
+        setTimeout(() => setRateLimitMsg(null), clearDelay)
       }
     },
   })
@@ -216,10 +220,7 @@ export function HelpWidget() {
 
             {rateLimitMsg && (
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
-                {rateLimitMsg}{' '}
-                <a href="mailto:hello@18thman.app" className="underline underline-offset-2 hover:text-amber-200">
-                  hello@18thman.app
-                </a>
+                {rateLimitMsg}
               </div>
             )}
 
