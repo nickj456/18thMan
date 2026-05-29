@@ -26,7 +26,7 @@ win:
       arch:
         - x64
   icon: src/assets/icon.ico
-  artifactName: 18thMan-Match-Analyst-Setup-${version}.exe
+  artifactName: 18thMan-Match-Analyst-Setup.exe
 
 nsis:
   oneClick: false
@@ -44,7 +44,7 @@ mac:
         - arm64
   icon: src/assets/logo.png
   category: public.app-category.productivity
-  artifactName: 18thMan-Match-Analyst-${version}.dmg
+  artifactName: 18thMan-Match-Analyst.dmg
 
 dmg:
   title: 18thMan Match Analyst
