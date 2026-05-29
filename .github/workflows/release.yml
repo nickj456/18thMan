@@ -17,9 +17,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build
-        env:
-          ELECTRON_BUILDER_EXTRA_ARGS: --publish never
+      - run: npm run build:react
+      - run: npx electron-builder --publish never
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*.exe
@@ -37,9 +36,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build
-        env:
-          ELECTRON_BUILDER_EXTRA_ARGS: --publish never
+      - run: npm run build:react
+      - run: npx electron-builder --publish never
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*.dmg
