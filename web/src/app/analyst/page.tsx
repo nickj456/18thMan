@@ -25,9 +25,9 @@ export const metadata = {
     'Tag player stats against match video, export highlight clips, and generate PDF match reports. A free desktop app for rugby league coaches.',
 }
 
-const DOWNLOAD_WIN = 'https://github.com/nickj456/18thMan/releases/latest/download/18thMan-Match-Analyst-Setup-1.7.0.exe'
-const DOWNLOAD_MAC = 'https://github.com/nickj456/18thMan/releases/latest/download/18thMan-Match-Analyst-1.7.0.dmg'
-const APP_VERSION = '1.7.0'
+const DOWNLOAD_WIN = 'https://github.com/nickj456/18thMan/releases/latest/download/18thMan-Match-Analyst-Setup.exe'
+const DOWNLOAD_MAC = 'https://github.com/nickj456/18thMan/releases/latest/download/18thMan-Match-Analyst.dmg'
+const APP_VERSION = '1.7.6'
 
 export default async function AnalystPage() {
   const supabase = await createClient()
