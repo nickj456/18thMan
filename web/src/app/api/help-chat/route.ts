@@ -93,7 +93,7 @@ export async function POST(req: Request) {
     // Load knowledge files
     const [platformGuide, gameSenseRL] = await Promise.all([
       readFile(path.join(process.cwd(), 'src/lib/help/platform-guide.md'), 'utf-8'),
-      readFile(path.join(process.cwd(), '../GameSenseRL.md'), 'utf-8'),
+      readFile(path.join(process.cwd(), 'GameSenseRL.md'), 'utf-8'),
     ])
 
     // Resolve club name
