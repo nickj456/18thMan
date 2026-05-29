@@ -71,6 +71,10 @@ export default function App() {
   const [squadReviews, setSquadReviews]         = useState([])
   const [newResponseAlert, setNewResponseAlert] = useState(null)
 
+  // Auto-update
+  const [updateVersion, setUpdateVersion] = useState(null)
+  const [updateReady, setUpdateReady]     = useState(false)
+
   // Horizontal resize
   const [leftPx, setLeftPx]   = useState(null)
   const [draggingH, setDraggingH] = useState(false)
@@ -258,6 +262,11 @@ export default function App() {
     return () => clearTimeout(saveTimerRef.current)
   }, [videoFile, players, events, clips, outputFolder, half, trackOpposition, matchInfo, sharedReports, squadReviews])
 
+  useEffect(() => {
+    window.electron?.onUpdateAvailable?.(({ version }) => setUpdateVersion(version))
+    window.electron?.onUpdateReady?.(() => setUpdateReady(true))
+  }, [])
+
   const handleLoadSession = useCallback(async (id) => {
     const data = await window.electron?.loadNamedSession(id)
     if (!data) { showNotification('Could not load session', 'error'); return }
@@ -414,6 +423,32 @@ export default function App() {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', background:'var(--bg)' }}>
+      {updateVersion && (
+        <div style={{
+          background: updateReady ? '#16a34a' : '#1d4ed8',
+          color: '#fff', fontSize: '13px', padding: '6px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '12px', flexShrink: 0,
+        }}>
+          <span>
+            {updateReady
+              ? `Update v${updateVersion} downloaded and ready to install.`
+              : `Update v${updateVersion} available — downloading in the background…`}
+          </span>
+          {updateReady && (
+            <button
+              onClick={() => window.electron?.installUpdate()}
+              style={{
+                background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+                color: '#fff', borderRadius: '4px', padding: '2px 12px',
+                cursor: 'pointer', fontSize: '12px', fontWeight: 600,
+              }}
+            >
+              Restart &amp; Install
+            </button>
+          )}
+        </div>
+      )}
       <Header
         videoFile={videoFile} events={events} clips={clips}
         players={effectivePlayers} outputFolder={outputFolder}

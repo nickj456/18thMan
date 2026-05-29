@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const { autoUpdater } = require('electron-updater')
 
 // Portable build: store all data next to the .exe on the USB stick
 if (process.env.PORTABLE_EXECUTABLE_DIR) {
@@ -83,6 +84,22 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  if (!isDev) {
+    autoUpdater.checkForUpdates()
+
+    autoUpdater.on('update-available', (info) => {
+      mainWindow?.webContents.send('update:available', { version: info.version })
+    })
+
+    autoUpdater.on('update-downloaded', () => {
+      mainWindow?.webContents.send('update:ready')
+    })
+  }
+})
+
+ipcMain.on('update:install', () => {
+  autoUpdater.quitAndInstall()
 })
 
 app.on('window-all-closed', () => {

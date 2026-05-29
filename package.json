@@ -1,6 +1,6 @@
 {
   "name": "18thman-match-analyst",
-  "version": "1.7.8",
+  "version": "1.7.9",
   "description": "18thMan Match Analyst — video analysis for rugby league coaches",
   "main": "src/main/main.js",
   "scripts": {
@@ -23,6 +23,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
     "electron-store": "^8.1.0",
+    "electron-updater": "^6.8.3",
     "ffmpeg-static": "4.4.1",
     "fluent-ffmpeg": "^2.1.3",
     "react": "^18.3.1",
