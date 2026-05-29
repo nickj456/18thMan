@@ -124,6 +124,15 @@ function sign(): string {
 
 const PRICING_URL = `${SITE_URL}/pricing`
 
+function esc(s: string | null | undefined): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 // ── Emails ────────────────────────────────────────────────────────────────────
 
 /** Sent immediately after a new user signs up */
@@ -575,11 +584,11 @@ export async function sendClubAddedEmail(
   const resend = getResend()
   if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' }
   const html = layout(`
-    ${heading(`You're now part of ${clubName}.`)}
-    ${para(`${addedByName} has added you to the club.`)}
+    ${heading(`You're now part of ${esc(clubName)}.`)}
+    ${para(`${esc(addedByName)} has added you to the club.`)}
     ${divider()}
-    ${greeting(displayName)}
-    ${para(`You've been added to <strong style="color:#ffffff;">${clubName}</strong> on 18th Man. Here's what club membership gives you access to:`)}
+    ${greeting(esc(displayName))}
+    ${para(`You've been added to <strong style="color:#ffffff;">${esc(clubName)}</strong> on 18th Man. Here's what club membership gives you access to:`)}
     ${featureList([
       'Club drills — exclusive plays and moves shared within your club',
       'Coaching groups — collaborate with your coaching staff on shared session plans',
@@ -609,11 +618,11 @@ export async function sendGroupAddedEmail(
   const resend = getResend()
   if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' }
   const html = layout(`
-    ${heading(`You've been added to ${groupName}.`)}
-    ${para(`${addedByName} has added you to this coaching group.`)}
+    ${heading(`You've been added to ${esc(groupName)}.`)}
+    ${para(`${esc(addedByName)} has added you to this coaching group.`)}
     ${divider()}
-    ${greeting(displayName)}
-    ${para(`You're now part of the <strong style="color:#ffffff;">${groupName}</strong> coaching group at ${clubName}. Open the app to see shared session plans, drills, and group activity.`)}
+    ${greeting(esc(displayName))}
+    ${para(`You're now part of the <strong style="color:#ffffff;">${esc(groupName)}</strong> coaching group at ${esc(clubName)}. Open the app to see shared session plans, drills, and group activity.`)}
     ${ctaButton('View your group', `${SITE_URL}/groups`)}
     ${sign()}
   `)
