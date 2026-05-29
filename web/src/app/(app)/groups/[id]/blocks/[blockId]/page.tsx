@@ -56,7 +56,7 @@ export default async function BlockOverviewPage({
   // Verify membership
   const { data: membership } = await supabase
     .from('group_invitations')
-    .select('id')
+    .select('id, group_role')
     .eq('group_id', groupId)
     .eq('user_id', user.id)
     .eq('status', 'accepted')
@@ -82,7 +82,8 @@ export default async function BlockOverviewPage({
   const blockData = block as CoachingBlock
   const sessionList = (sessions ?? []) as BlockSession[]
 
-  const isClubAdmin = profile.club_role === 'admin' || profile.role === 'admin'
+  const isGroupAdmin = (membership as { group_role?: string | null } | null)?.group_role === 'admin'
+  const isClubAdmin = profile.club_role === 'admin' || profile.role === 'admin' || isGroupAdmin
   const completed = sessionList.filter(s => s.status === 'completed').length
   const progress = sessionList.length > 0 ? Math.round((completed / sessionList.length) * 100) : 0
 

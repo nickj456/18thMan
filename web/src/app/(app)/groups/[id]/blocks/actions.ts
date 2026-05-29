@@ -173,7 +173,17 @@ async function requireClubAdminForGroup(groupId: string) {
 
   if (!group) return { error: 'Group not found' as const, supabase, user: null }
   if (me?.club_id !== group.club_id && me?.role !== 'admin') return { error: 'Not authorised' as const, supabase, user: null }
-  if (me?.club_role !== 'admin' && me?.role !== 'admin') return { error: 'Only club admins can manage coaching blocks' as const, supabase, user: null }
+
+  const { data: groupMembership } = await supabase
+    .from('group_invitations')
+    .select('group_role')
+    .eq('group_id', groupId)
+    .eq('user_id', user.id)
+    .eq('status', 'accepted')
+    .maybeSingle()
+  const isGroupAdmin = (groupMembership as { group_role?: string | null } | null)?.group_role === 'admin'
+
+  if (me?.club_role !== 'admin' && me?.role !== 'admin' && !isGroupAdmin) return { error: 'Only club or group admins can manage coaching blocks' as const, supabase, user: null }
 
   return { error: null, supabase, user }
 }

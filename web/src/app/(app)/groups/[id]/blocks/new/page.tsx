@@ -19,7 +19,6 @@ export default async function NewBlockPage({ params }: { params: Promise<{ id: s
     .single()
 
   if (!profile?.club_id) redirect('/clubs')
-  if (profile.club_role !== 'admin' && profile.role !== 'admin') redirect(`/groups/${id}`)
 
   const { data: group } = await supabase
     .from('coaching_groups')
@@ -28,6 +27,17 @@ export default async function NewBlockPage({ params }: { params: Promise<{ id: s
     .single()
 
   if (!group || group.club_id !== profile.club_id) redirect('/groups')
+
+  const { data: membership } = await supabase
+    .from('group_invitations')
+    .select('group_role')
+    .eq('group_id', id)
+    .eq('user_id', user.id)
+    .eq('status', 'accepted')
+    .maybeSingle()
+  const isGroupAdmin = (membership as { group_role?: string | null } | null)?.group_role === 'admin'
+
+  if (profile.club_role !== 'admin' && profile.role !== 'admin' && !isGroupAdmin) redirect(`/groups/${id}`)
 
   return (
     <div className="max-w-lg space-y-8">

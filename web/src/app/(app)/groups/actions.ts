@@ -70,7 +70,6 @@ export async function inviteUserToGroup(groupId: string, userId: string) {
 
   const isClubAdmin = me?.club_role === 'admin'
   const isPlatformAdmin = me?.role === 'admin'
-  if (!isClubAdmin && !isPlatformAdmin) return { error: 'Only club admins can invite members' }
 
   // Verify group is in the same club
   const { data: group } = await supabase
@@ -81,6 +80,17 @@ export async function inviteUserToGroup(groupId: string, userId: string) {
 
   if (!group) return { error: 'Group not found' }
   if (group.club_id !== me?.club_id && !isPlatformAdmin) return { error: 'Not authorised' }
+
+  const { data: callerMembership } = await supabase
+    .from('group_invitations')
+    .select('group_role')
+    .eq('group_id', groupId)
+    .eq('user_id', user.id)
+    .eq('status', 'accepted')
+    .maybeSingle()
+  const isGroupAdmin = (callerMembership as { group_role?: string | null } | null)?.group_role === 'admin'
+
+  if (!isClubAdmin && !isPlatformAdmin && !isGroupAdmin) return { error: 'Only club or group admins can invite members' }
 
   // Check the user being invited is in the same club (or admin can invite anyone)
   const { data: target } = await supabase
@@ -122,7 +132,17 @@ export async function removeUserFromGroup(groupId: string, userId: string) {
   if (!user) return { error: 'Not authenticated' }
 
   const { data: me } = await supabase.from('profiles').select('role, club_role').eq('id', user.id).single()
-  if (me?.club_role !== 'admin' && me?.role !== 'admin') return { error: 'Not authorised' }
+
+  const { data: callerMembership } = await supabase
+    .from('group_invitations')
+    .select('group_role')
+    .eq('group_id', groupId)
+    .eq('user_id', user.id)
+    .eq('status', 'accepted')
+    .maybeSingle()
+  const isGroupAdmin = (callerMembership as { group_role?: string | null } | null)?.group_role === 'admin'
+
+  if (me?.club_role !== 'admin' && me?.role !== 'admin' && !isGroupAdmin) return { error: 'Not authorised' }
 
   const { error } = await supabase
     .from('group_invitations')

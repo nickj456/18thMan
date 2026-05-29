@@ -54,8 +54,6 @@ export default async function PrepareSessionPage({
 
   if (!profile?.club_id) redirect('/clubs')
 
-  const isClubAdmin = profile.club_role === 'admin' || profile.role === 'admin'
-
   const { data: group } = await supabase
     .from('coaching_groups')
     .select('id, name, club_id')
@@ -64,17 +62,18 @@ export default async function PrepareSessionPage({
 
   if (!group || group.club_id !== profile.club_id) redirect('/groups')
 
-  // Must be a group member or club admin to view
-  if (!isClubAdmin) {
-    const { data: membership } = await supabase
-      .from('group_invitations')
-      .select('id')
-      .eq('group_id', groupId)
-      .eq('user_id', user.id)
-      .eq('status', 'accepted')
-      .maybeSingle()
-    if (!membership) redirect(`/groups/${groupId}`)
-  }
+  const { data: membership } = await supabase
+    .from('group_invitations')
+    .select('id, group_role')
+    .eq('group_id', groupId)
+    .eq('user_id', user.id)
+    .eq('status', 'accepted')
+    .maybeSingle()
+
+  if (!membership && profile.role !== 'admin') redirect(`/groups/${groupId}`)
+
+  const isGroupAdmin = (membership as { group_role?: string | null } | null)?.group_role === 'admin'
+  const isClubAdmin = profile.club_role === 'admin' || profile.role === 'admin' || isGroupAdmin
 
   const { data: block } = await supabase
     .from('coaching_blocks')

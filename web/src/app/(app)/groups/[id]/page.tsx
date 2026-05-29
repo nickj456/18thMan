@@ -51,7 +51,9 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     .order('scheduled_at', { ascending: true, nullsFirst: false })
 
   const isMember = memberInvites?.some(m => m.user_id === user.id) ?? false
-  const canManage = profile.club_role === 'admin' || profile.role === 'admin'
+  const myInvite = memberInvites?.find(m => m.user_id === user.id)
+  const isGroupAdmin = (myInvite as { group_role?: string | null } | undefined)?.group_role === 'admin'
+  const canManage = profile.club_role === 'admin' || profile.role === 'admin' || isGroupAdmin
 
   // Club members not already in this group or pending
   const memberIds = (memberInvites ?? []).map(m => m.user_id)
