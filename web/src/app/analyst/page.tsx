@@ -843,6 +843,23 @@ export default async function AnalystPage() {
                 <p style={{ marginTop: '0.75rem', fontSize: '0.72rem', color: 'var(--text-dim)', textAlign: 'center' }}>
                   {canDownload ? 'Free · No account needed' : user ? 'Club members & Coach Pro subscribers' : 'Sign in required'}
                 </p>
+                <div style={{
+                  marginTop: '1rem',
+                  background: 'rgba(245,158,11,0.07)',
+                  border: '1px solid rgba(245,158,11,0.2)',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  gap: '10px',
+                  alignItems: 'flex-start',
+                }}>
+                  <span style={{ fontSize: '0.85rem', flexShrink: 0 }}>⚠️</span>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
+                    First launch: macOS may block the app as it&apos;s unsigned. Go to{' '}
+                    <strong style={{ color: 'var(--text)' }}>System Settings → Privacy & Security</strong>{' '}
+                    and click <strong style={{ color: 'var(--text)' }}>Open Anyway</strong>. Only needed once.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
