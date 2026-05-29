@@ -574,16 +574,8 @@ export async function sendSubscriptionConfirmationEmail(
   `))
 }
 
-/** Sent when a platform admin or club admin adds a user directly to a club */
-export async function sendClubAddedEmail(
-  to: string,
-  displayName: string,
-  clubName: string,
-  addedByName: string,
-): Promise<EmailResultWithId> {
-  const resend = getResend()
-  if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' }
-  const html = layout(`
+export function buildClubAddedEmailHtml(displayName: string, clubName: string, addedByName: string): string {
+  return layout(`
     ${heading(`You're now part of ${esc(clubName)}.`)}
     ${para(`${esc(addedByName)} has added you to the club.`)}
     ${divider()}
@@ -598,6 +590,18 @@ export async function sendClubAddedEmail(
     ${ctaButton('Go to your club', `${SITE_URL}/clubs`)}
     ${sign()}
   `)
+}
+
+/** Sent when a platform admin or club admin adds a user directly to a club */
+export async function sendClubAddedEmail(
+  to: string,
+  displayName: string,
+  clubName: string,
+  addedByName: string,
+): Promise<EmailResultWithId> {
+  const resend = getResend()
+  if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' }
+  const html = buildClubAddedEmailHtml(displayName, clubName, addedByName)
   try {
     const { data, error } = await resend.emails.send({ from: FROM, to, subject: `You've been added to ${clubName} — 18th Man`, html })
     if (error) return { success: false, error: error.message }
@@ -605,6 +609,18 @@ export async function sendClubAddedEmail(
   } catch (err) {
     return { success: false, error: String(err) }
   }
+}
+
+export function buildGroupAddedEmailHtml(displayName: string, groupName: string, clubName: string, addedByName: string): string {
+  return layout(`
+    ${heading(`You've been added to ${esc(groupName)}.`)}
+    ${para(`${esc(addedByName)} has added you to this coaching group.`)}
+    ${divider()}
+    ${greeting(esc(displayName))}
+    ${para(`You're now part of the <strong style="color:#ffffff;">${esc(groupName)}</strong> coaching group at ${esc(clubName)}. Open the app to see shared session plans, drills, and group activity.`)}
+    ${ctaButton('View your group', `${SITE_URL}/groups`)}
+    ${sign()}
+  `)
 }
 
 /** Sent when a club or group admin adds a user directly to a coaching group */
@@ -617,15 +633,7 @@ export async function sendGroupAddedEmail(
 ): Promise<EmailResultWithId> {
   const resend = getResend()
   if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' }
-  const html = layout(`
-    ${heading(`You've been added to ${esc(groupName)}.`)}
-    ${para(`${esc(addedByName)} has added you to this coaching group.`)}
-    ${divider()}
-    ${greeting(esc(displayName))}
-    ${para(`You're now part of the <strong style="color:#ffffff;">${esc(groupName)}</strong> coaching group at ${esc(clubName)}. Open the app to see shared session plans, drills, and group activity.`)}
-    ${ctaButton('View your group', `${SITE_URL}/groups`)}
-    ${sign()}
-  `)
+  const html = buildGroupAddedEmailHtml(displayName, groupName, clubName, addedByName)
   try {
     const { data, error } = await resend.emails.send({ from: FROM, to, subject: `You've been added to ${groupName} — 18th Man`, html })
     if (error) return { success: false, error: error.message }
