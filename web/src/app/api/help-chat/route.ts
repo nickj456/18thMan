@@ -9,9 +9,8 @@ const HOURLY_LIMIT = 20
 const DAILY_LIMIT = 50
 const ADMIN_EMAIL = 'hello@18thman.app'
 
-const gateway = createOpenAI({
-  baseURL: 'https://ai-gateway.vercel.sh/v1',
-  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_OIDC_TOKEN ?? '',
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY ?? '',
 })
 
 async function checkRateLimit(userId: string): Promise<{ allowed: boolean; resetAt: string | null }> {
@@ -147,7 +146,7 @@ ${gameSenseRL}`
       }))
 
     const result = streamText({
-      model: gateway('anthropic/claude-sonnet-4-6'),
+      model: openai('gpt-4o-mini'),
       system: systemPrompt,
       messages: history,
     })
