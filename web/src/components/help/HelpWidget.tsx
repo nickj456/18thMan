@@ -22,7 +22,7 @@ const QUICK_CHIPS = [
 function MessageText({ text }: { text: string }) {
   const EMAIL = 'hello@18thman.app'
   // Match internal markdown links [label](/path) or the admin email
-  const TOKEN = /\[([^\]]+)\]\((\/[^)]*)\)|hello@18thman\.app/g
+  const TOKEN = /\[([^\]]+)\]\((\/(?!\/)[^)\s]*)\)|hello@18thman\.app/g
   const nodes: React.ReactNode[] = []
   let last = 0
   let match: RegExpExecArray | null
@@ -30,10 +30,12 @@ function MessageText({ text }: { text: string }) {
   while ((match = TOKEN.exec(text)) !== null) {
     if (match.index > last) nodes.push(<span key={i++}>{text.slice(last, match.index)}</span>)
     if (match[1] && match[2]) {
+      const href = match[2]
+      const safeHref = href.startsWith('/') && !href.startsWith('//') && !href.startsWith('/\\') ? href : null
       nodes.push(
-        <a key={i++} href={match[2]} className="text-[#e8560a] underline underline-offset-2 hover:text-[#d14d09]">
-          {match[1]}
-        </a>
+        safeHref
+          ? <a key={i++} href={safeHref} rel="noopener noreferrer" className="text-[#e8560a] underline underline-offset-2 hover:text-[#d14d09]">{match[1]}</a>
+          : <span key={i++}>{match[1]}</span>
       )
     } else {
       nodes.push(
