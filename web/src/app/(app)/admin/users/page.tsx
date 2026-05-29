@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ArrowLeft, Users, Mail } from 'lucide-react'
 import { UserRoleSelect } from './UserRoleSelect'
 import { DeleteUserButton } from './DeleteUserButton'
-import type { UserRole } from '@/lib/supabase/types'
+import type { UserRole, SubscriptionTier } from '@/lib/supabase/types'
 
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return 'Never'
@@ -32,6 +32,56 @@ const roleColour: Record<string, string> = {
   viewer: 'bg-zinc-500/10 text-zinc-400 border-zinc-700',
 }
 
+const tierColour: Record<string, string> = {
+  free: 'bg-zinc-500/10 text-zinc-400 border-zinc-700',
+  trial: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  coach: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+  club: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+}
+
+const tierLabel: Record<string, string> = {
+  free: 'Free',
+  trial: 'Free Trial',
+  coach: 'Coach Pro',
+  club: 'Club',
+}
+
+function TierBadge({
+  tier,
+  trialEndsAt,
+  stripeSubscriptionId,
+}: {
+  tier: SubscriptionTier
+  trialEndsAt: string | null
+  stripeSubscriptionId: string | null
+}) {
+  const isOnTrial = trialEndsAt && new Date(trialEndsAt) > new Date()
+  const effectiveKey = isOnTrial ? 'trial' : tier
+  const colour = tierColour[effectiveKey] ?? tierColour.free
+  const label = tierLabel[effectiveKey] ?? tier
+
+  const trialExpiry = isOnTrial
+    ? new Date(trialEndsAt!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    : null
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border font-medium w-fit ${colour}`}>
+        {label}
+      </span>
+      {isOnTrial && (
+        <span className="text-xs text-amber-500/70">Expires {trialExpiry}</span>
+      )}
+      {!isOnTrial && stripeSubscriptionId && tier !== 'free' && (
+        <span className="text-xs text-zinc-500">Stripe active</span>
+      )}
+      {!isOnTrial && !stripeSubscriptionId && tier !== 'free' && (
+        <span className="text-xs text-red-400/70">No Stripe sub</span>
+      )}
+    </div>
+  )
+}
+
 export default async function AdminUsersPage({
   searchParams,
 }: {
@@ -49,7 +99,7 @@ export default async function AdminUsersPage({
   // ── Users tab data ──────────────────────────────────────────────────────
   let query = supabase
     .from('profiles')
-    .select('id, username, display_name, avatar_url, club, club_id, role, created_at')
+    .select('id, username, display_name, avatar_url, club, club_id, role, subscription_tier, stripe_subscription_id, trial_ends_at, created_at')
     .order('created_at', { ascending: false })
 
   if (roleFilter && ['admin', 'coach', 'viewer'].includes(roleFilter)) {
@@ -161,6 +211,7 @@ export default async function AdminUsersPage({
                   <tr className="border-b border-zinc-800 bg-zinc-900/50">
                     <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">User</th>
                     <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Club</th>
+                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Tier</th>
                     <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Joined</th>
                     <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Last seen</th>
                     <th className="text-right text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Role</th>
@@ -170,7 +221,7 @@ export default async function AdminUsersPage({
                 <tbody className="divide-y divide-zinc-800 bg-zinc-900">
                   {!profiles?.length ? (
                     <tr>
-                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-zinc-600">No users found</td>
+                      <td colSpan={5} className="px-5 py-10 text-center text-sm text-zinc-600">No users found</td>
                     </tr>
                   ) : (
                     profiles.map(profile => (
@@ -191,6 +242,13 @@ export default async function AdminUsersPage({
                         </td>
                         <td className="px-5 py-3.5 text-zinc-500 text-xs">
                           {(profile.club_id ? clubMap[profile.club_id] : null) ?? profile.club ?? '—'}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <TierBadge
+                            tier={profile.subscription_tier as SubscriptionTier}
+                            trialEndsAt={profile.trial_ends_at}
+                            stripeSubscriptionId={profile.stripe_subscription_id}
+                          />
                         </td>
                         <td className="px-5 py-3.5 text-zinc-500 text-xs">
                           {new Date(profile.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
