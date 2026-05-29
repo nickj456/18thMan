@@ -11,7 +11,7 @@ const ADMIN_EMAIL = 'hello@18thman.app'
 
 const gateway = createOpenAI({
   baseURL: 'https://ai-gateway.vercel.sh/v1',
-  apiKey: process.env.VERCEL_OIDC_TOKEN ?? '',
+  apiKey: process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_OIDC_TOKEN ?? '',
 })
 
 async function checkRateLimit(userId: string): Promise<{ allowed: boolean; resetAt: string | null }> {
