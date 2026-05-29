@@ -916,15 +916,14 @@ export default async function LandingPage() {
                 Match Analyst
               </h3>
               <p style={{ fontSize: '0.78rem', color: 'var(--ember)', fontFamily: 'var(--font-barlow)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-                Desktop App · Free Download
+                Desktop App · Members Benefit
               </p>
               <p style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--text-muted)', fontWeight: 300 }}>
-                A free companion desktop app for rugby league coaches. Tag player stats against
-                match video, export highlight clips, and generate PDF match reports — all offline,
-                no subscription required.
+                A companion desktop app included with Coach Pro and Club memberships. Tag player stats against
+                match video, export highlight clips, and generate PDF match reports — runs entirely offline.
               </p>
               <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
-                {['Tag events in real time with timestamps', 'Export clips with built-in ffmpeg', 'Generate PDF match reports', 'Works offline — no account needed'].map(f => (
+                {['Tag events in real time with timestamps', 'Export clips with built-in ffmpeg', 'Generate PDF match reports', 'Runs offline on your computer'].map(f => (
                   <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     <span style={{ color: 'var(--ember)', fontWeight: 700 }}>→</span> {f}
                   </div>

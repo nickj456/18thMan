@@ -22,7 +22,7 @@ const serif = Source_Serif_4({
 export const metadata = {
   title: 'Match Analyst — Desktop Video Analysis for Rugby League Coaches',
   description:
-    'Tag player stats against match video, export highlight clips, and generate PDF match reports. A free desktop app for rugby league coaches.',
+    'Tag player stats against match video, export highlight clips, and generate PDF match reports. Included with 18th Man Coach Pro and Club memberships.',
 }
 
 const DOWNLOAD_WIN = 'https://github.com/nickj456/18thMan/releases/latest/download/18thMan-Match-Analyst-Setup.exe'
