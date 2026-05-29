@@ -103,14 +103,23 @@ export async function clubAdminInviteUser(clubId: string, userId: string) {
     }
   }
 
-  const { error: invErr } = await supabase
+  const service = createServiceClient()
+
+  const { error: invErr } = await service
     .from('club_invitations')
     .upsert(
-      { club_id: clubId, user_id: userId, invited_by: user.id, status: 'pending', updated_at: new Date().toISOString() },
+      { club_id: clubId, user_id: userId, invited_by: user.id, status: 'accepted', updated_at: new Date().toISOString() },
       { onConflict: 'club_id,user_id' }
     )
 
   if (invErr) return { error: invErr.message }
+
+  const { error: profErr } = await service
+    .from('profiles')
+    .update({ club_id: clubId, club_role: 'member' })
+    .eq('id', userId)
+
+  if (profErr) return { error: profErr.message }
 
   const [{ data: club }, { data: inviter }] = await Promise.all([
     supabase.from('clubs').select('name').eq('id', clubId).single(),

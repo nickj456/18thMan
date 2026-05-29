@@ -102,11 +102,10 @@ export async function inviteUserToGroup(groupId: string, userId: string) {
   if (!target) return { error: 'User not found' }
   if (target.club_id !== group.club_id) return { error: 'User must be in the same club' }
 
-  // Upsert — allows re-inviting after decline
   const { error } = await supabase
     .from('group_invitations')
     .upsert(
-      { group_id: groupId, user_id: userId, invited_by: user.id, status: 'pending', updated_at: new Date().toISOString() },
+      { group_id: groupId, user_id: userId, invited_by: user.id, status: 'accepted', updated_at: new Date().toISOString() },
       { onConflict: 'group_id,user_id' }
     )
 
