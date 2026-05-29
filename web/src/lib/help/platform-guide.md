@@ -43,11 +43,12 @@ Each user belongs to one club. Club admins manage membership, invite users, and 
 
 ## My Groups (`/groups`)
 Coaching groups are sub-teams within your club (e.g. Forwards Unit, Attack Group). Requires club membership.
-- Group admins can invite/remove members and manage the group.
-- Groups share session blocks and collaborative editing.
-- Each group has an AI Guidance page that analyses training history and suggests the next session focus (GameSenseRL methodology).
-- Game Stats: track live match statistics per group (`/groups/[id]/game-stats`).
-- Squad management: manage player records and reviews (`/groups/[id]/squad`).
+- Go to [My Groups](/groups) and select a group to open its dashboard.
+- From a group's dashboard you can access: Game Stats, Squad, Blocks (session plans), AI Guidance, and group settings.
+- **Game Stats** — track live match statistics. Navigate there via [My Groups](/groups) → select your group → Game Stats.
+- **Squad** — manage player records and reviews. Navigate via [My Groups](/groups) → select your group → Squad.
+- **AI Guidance** — analyses training history and suggests the next session focus using GameSenseRL methodology. Navigate via [My Groups](/groups) → select your group → AI Guidance.
+- Group admins can invite/remove members and manage the group from the group settings page.
 
 ## Weekly Focus (`/weekly-focus`)
 Set a coaching focus for the week to keep sessions aligned.
