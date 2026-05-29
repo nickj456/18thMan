@@ -290,7 +290,7 @@ export default async function AnalystPage() {
               {/* ── Left: text ── */}
               <div>
                 <div className="reveal-0" style={{ marginBottom: '1.5rem' }}>
-                  <span className="section-label">Desktop App · Free Download</span>
+                  <span className="section-label">Members Only · Desktop App</span>
                   <span className="ember-line" style={{ width: '48px', marginTop: '8px' }} />
                 </div>
 
@@ -318,14 +318,35 @@ export default async function AnalystPage() {
                     color: 'var(--text-muted)',
                     maxWidth: '480px',
                     marginTop: '2rem',
-                    marginBottom: '2.5rem',
+                    marginBottom: '1.25rem',
                     fontWeight: 300,
                   }}
                 >
                   Tag player stats against match video, export highlight clips, and generate
-                  PDF match reports. Built for rugby league coaches — runs entirely on your computer,
-                  no subscription required.
+                  PDF match reports. Built for rugby league coaches — runs entirely on your computer.
                 </p>
+
+                {/* Membership requirement notice — always visible */}
+                <div
+                  className="reveal-2"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: canDownload ? 'rgba(74,222,128,0.08)' : 'rgba(232,86,10,0.08)',
+                    border: `1px solid ${canDownload ? 'rgba(74,222,128,0.2)' : 'rgba(232,86,10,0.25)'}`,
+                    borderRadius: '8px',
+                    padding: '10px 16px',
+                    marginBottom: '1.75rem',
+                  }}
+                >
+                  <span style={{ fontSize: '1rem' }}>{canDownload ? '✓' : '🔒'}</span>
+                  <span style={{ fontSize: '0.85rem', color: canDownload ? 'rgba(74,222,128,0.9)' : 'var(--text-muted)', lineHeight: 1.4 }}>
+                    {canDownload
+                      ? 'Your membership includes Match Analyst.'
+                      : <><strong style={{ color: 'var(--text)' }}>Paid members only.</strong> Requires an active Coach Pro or Club subscription.</>}
+                  </span>
+                </div>
 
                 <div className="reveal-3" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
                   {canDownload ? (
@@ -333,13 +354,20 @@ export default async function AnalystPage() {
                       ↓ Download for Windows
                     </a>
                   ) : (
-                    <Link href={user ? '/pricing' : '/login?next=/analyst'} className="cta-primary">
-                      {user ? '🔒 Upgrade to Download' : '🔒 Sign In to Download'}
+                    <Link href={user ? '/pricing' : '/signup?next=/analyst'} className="cta-primary">
+                      {user ? 'Upgrade to Access' : 'Sign Up to Access'}
                     </Link>
                   )}
-                  <Link href="/" className="cta-ghost">
-                    Back to 18th Man
-                  </Link>
+                  {!canDownload && !user && (
+                    <Link href="/login?next=/analyst" className="cta-ghost">
+                      Already a member? Sign in
+                    </Link>
+                  )}
+                  {canDownload && (
+                    <Link href="/" className="cta-ghost">
+                      Back to 18th Man
+                    </Link>
+                  )}
                 </div>
 
                 <p
@@ -347,10 +375,10 @@ export default async function AnalystPage() {
                   style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-dim)', letterSpacing: '0.04em' }}
                 >
                   {canDownload
-                    ? `Version ${APP_VERSION} · Windows 10 / 11 · 64-bit · Free`
+                    ? `Version ${APP_VERSION} · Windows 10 / 11 · 64-bit`
                     : user
-                      ? 'Available to club members and Coach Pro subscribers'
-                      : 'Sign in to download · Club members & Coach Pro subscribers'}
+                      ? 'Upgrade to Coach Pro or Club to unlock'
+                      : 'Available on Coach Pro (£9.99/mo) and Club (£24.99/mo) plans'}
                 </p>
 
                 <div
@@ -710,7 +738,7 @@ export default async function AnalystPage() {
         >
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 50%, rgba(232,86,10,0.07) 0%, transparent 65%)', pointerEvents: 'none' }} />
           <div style={{ maxWidth: '900px', margin: '0 auto', position: 'relative', textAlign: 'center' }}>
-            <span className="section-label">Download</span>
+            <span className="section-label">Members Download</span>
             <h2
               className="lp-display"
               style={{
@@ -721,12 +749,15 @@ export default async function AnalystPage() {
                 textTransform: 'uppercase',
                 color: 'var(--text)',
                 marginTop: '1rem',
-                marginBottom: '3rem',
+                marginBottom: '1rem',
               }}
             >
               Get Match Analyst<br />
-              <span style={{ color: 'var(--ember)' }}>free.</span>
+              <span style={{ color: 'var(--ember)' }}>with your plan.</span>
             </h2>
+            <p style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, marginBottom: '2.5rem' }}>
+              Included with Coach Pro and Club subscriptions. Sign up or upgrade to download.
+            </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', textAlign: 'left' }}>
 
@@ -752,7 +783,7 @@ export default async function AnalystPage() {
                   </div>
                 </div>
                 <div style={{ marginBottom: '1.5rem' }}>
-                  {['NSIS installer (.exe)', 'Runs on Windows 10 / 11', 'ffmpeg bundled — no extras needed', 'No account or internet required'].map(f => (
+                  {['NSIS installer (.exe)', 'Runs on Windows 10 / 11', 'ffmpeg bundled — no extras needed', 'No internet required after install'].map(f => (
                     <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                       <span style={{ color: 'var(--ember)', fontWeight: 700 }}>✓</span> {f}
                     </div>
@@ -859,7 +890,7 @@ export default async function AnalystPage() {
           }}
         >
           <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-            <span className="section-label">Free Download</span>
+            <span className="section-label">{canDownload ? 'Ready to Download' : 'Members Only'}</span>
             <h2
               className="lp-display"
               style={{
@@ -873,38 +904,47 @@ export default async function AnalystPage() {
                 marginBottom: '1rem',
               }}
             >
-              Start analysing<br />
-              <span style={{ color: 'var(--ember)' }}>today.</span>
+              {canDownload ? (
+                <>Start analysing<br /><span style={{ color: 'var(--ember)' }}>today.</span></>
+              ) : (
+                <>Unlock Match<br /><span style={{ color: 'var(--ember)' }}>Analyst.</span></>
+              )}
             </h2>
             <p style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.7, marginBottom: '2rem' }}>
               {canDownload
-                ? 'Free to download. No subscription, no internet connection required.'
+                ? 'Download below. Runs entirely on your computer — no internet required after install.'
                 : user
-                  ? 'Available to club members and Coach Pro subscribers. Upgrade to unlock.'
-                  : 'Sign in with your 18th Man account to download. Available to club members and Coach Pro subscribers.'}
+                  ? 'Match Analyst is included with Coach Pro (£9.99/mo) and Club (£24.99/mo) plans. Upgrade your account to download.'
+                  : 'Match Analyst is included with paid 18th Man memberships. Sign up or upgrade to Coach Pro or Club to download.'}
             </p>
             {canDownload ? (
               <a href={DOWNLOAD_WIN} className="cta-primary" style={{ fontSize: '1rem', padding: '16px 40px' }}>
                 ↓ Download for Windows
               </a>
             ) : (
-              <Link href={user ? '/pricing' : '/login?next=/analyst'} className="cta-primary" style={{ fontSize: '1rem', padding: '16px 40px' }}>
-                🔒 {user ? 'Upgrade to Download' : 'Sign In to Download'}
+              <Link href={user ? '/pricing' : '/signup?next=/analyst'} className="cta-primary" style={{ fontSize: '1rem', padding: '16px 40px' }}>
+                {user ? 'Upgrade My Account' : 'Sign Up to Get Access'}
               </Link>
             )}
             <p style={{ marginTop: '1.25rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
               {canDownload
                 ? `Version ${APP_VERSION} · Windows 10 / 11 · 64-bit`
                 : user
-                  ? 'Club members & Coach Pro subscribers · Free once unlocked'
-                  : 'Club members & Coach Pro subscribers'}
+                  ? 'Coach Pro from £9.99/mo · Club from £24.99/mo · Cancel anytime'
+                  : 'Already a member? Sign in above · Coach Pro from £9.99/mo'}
             </p>
+            {!canDownload && !user && (
+              <p style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
+                Already have an account?{' '}
+                <Link href="/login?next=/analyst" style={{ color: 'var(--ember)', textDecoration: 'none' }}>Sign in →</Link>
+              </p>
+            )}
             <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border-subtle)' }}>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                Want the full coaching platform?
+                {canDownload ? 'Want the full coaching platform?' : 'See what else is included with membership.'}
               </p>
-              <Link href="/" className="cta-ghost">
-                Explore 18th Man →
+              <Link href={canDownload ? '/' : '/pricing'} className="cta-ghost">
+                {canDownload ? 'Explore 18th Man →' : 'View Plans & Pricing →'}
               </Link>
             </div>
           </div>
