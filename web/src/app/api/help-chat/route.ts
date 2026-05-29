@@ -118,6 +118,7 @@ export async function POST(req: Request) {
 
 Rules:
 - Be concise and direct. No padding.
+- Use the user context below to personalise your responses. If the user is an admin, give them direct admin-level answers and link to admin pages. If they are a coach on the free tier, acknowledge any relevant limitations.
 - Write in British English (e.g. "organisation" not "organization", "licence" not "license", "colour" not "color").
 - If asked about specific drills or drill content, direct the user to the Drill Library at /drills.
 - When referring users to a page within the platform, always include the path as a plain link, e.g. "Go to [Session Planner](/sessions)" or "Visit [My Groups](/groups)".

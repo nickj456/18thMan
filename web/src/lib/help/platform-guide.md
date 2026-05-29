@@ -85,4 +85,13 @@ Static reference pages available to all users from the sidebar:
 - **How-to & FAQ** (`/how-to`) — guides and FAQs about using the 18th Man platform.
 
 ## Admin (admin users only)
-Admin panel at `/admin` — manage users, clubs, groups, drill approvals, categories, email campaigns, and content engine.
+Admin panel at `/admin` — the main admin dashboard.
+- **Users** (`/admin/users`) — view, edit roles, manage subscriptions for all users.
+- **Clubs** (`/admin/clubs`) — create clubs, manage members, set club admins.
+- **Groups** (`/admin/groups`) — manage coaching groups and group admins.
+- **Categories** (`/admin/categories`) — add, edit, and reorder drill categories.
+- **Drill Approval** (`/admin/drills`) — review and approve or reject submitted drills.
+- **Import Playlist** (`/admin/import-playlist`) — bulk-import drills from a YouTube playlist.
+- **Email** (`/admin/email`) — compose and send email campaigns to users.
+- **Wellbeing** (`/admin/wellbeing`) — manage wellbeing resources.
+- **Content Engine** (`/admin/content-engine`) — AI-powered content generation tools.
