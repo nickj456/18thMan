@@ -21,9 +21,14 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
 
   const { data: club } = await supabase
     .from('clubs')
-    .select('id, name, slug, max_members, created_at')
+    .select('id, name, slug, max_members, max_groups, created_at')
     .eq('id', id)
     .single()
+
+  const { count: groupCount } = await supabase
+    .from('coaching_groups')
+    .select('id', { count: 'exact', head: true })
+    .eq('club_id', id)
 
   if (!club) redirect('/admin/clubs')
 
@@ -101,6 +106,8 @@ export default async function AdminClubDetailPage({ params }: { params: Promise<
           clubName={club.name}
           maxMembers={club.max_members}
           memberCount={members?.length ?? 0}
+          maxGroups={club.max_groups ?? null}
+          groupCount={groupCount ?? 0}
         />
       </section>
 
