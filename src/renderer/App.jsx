@@ -85,8 +85,9 @@ export default function App() {
   const effectivePlayers = trackOpposition ? [...players, OPPOSITION_PLAYER] : players
 
   // ── Peer score aggregation ─────────────────────────────────────────────────
-  // When squad review responses update, attach peerScores to each player so
-  // every component can compute the consensus average without extra queries.
+  // Re-run whenever reviews update OR the player roster changes (session load,
+  // player added/removed). Keyed on player IDs so adding a player re-triggers.
+  const playerRosterKey = players.filter(p => !p.isOpposition).map(p => p.id).join(',')
   useEffect(() => {
     if (!squadReviews.length) return
     setPlayers(prev => prev.map(player => {
@@ -99,7 +100,8 @@ export default function App() {
       })
       return { ...player, peerScores }
     }))
-  }, [squadReviews])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [squadReviews, playerRosterKey])
 
   // ── Auth check on startup ─────────────────────────────────────────────────
   useEffect(() => {

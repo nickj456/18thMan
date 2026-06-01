@@ -301,22 +301,27 @@ export default function ScoutTab({
                             const pl = players.find(p => String(p.number) === String(num))
                             return (
                               <div key={num} style={{
-                                display: 'flex', alignItems: 'flex-start', gap: 8,
-                                padding: '5px 0', borderBottom: '1px solid var(--border)',
+                                padding: '6px 0', borderBottom: '1px solid var(--border)',
                               }}>
-                                <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontStyle: 'italic', fontSize: 12, color: 'var(--brand)', minWidth: 32 }}>
-                                  #{num}
-                                </span>
-                                <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, flex: 1, color: 'var(--text)' }}>
-                                  {pl?.name || ''}
-                                </span>
-                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 800, color: 'var(--amber)', whiteSpace: 'nowrap' }}>
-                                  {r.score}/10
-                                </span>
-                                {r.feedback && (
-                                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: 'var(--muted)', fontStyle: 'italic', flex: 2 }}>
-                                    "{r.feedback}"
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontStyle: 'italic', fontSize: 12, color: 'var(--brand)', minWidth: 32 }}>
+                                    #{num}
                                   </span>
+                                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, flex: 1, color: 'var(--text)' }}>
+                                    {pl?.name || ''}
+                                  </span>
+                                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 800, color: 'var(--amber)', whiteSpace: 'nowrap' }}>
+                                    {r.score}/10
+                                  </span>
+                                </div>
+                                {r.feedback && (
+                                  <div style={{
+                                    marginTop: 4, paddingLeft: 40,
+                                    fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--muted)',
+                                    fontStyle: 'italic', lineHeight: 1.55,
+                                  }}>
+                                    "{r.feedback}"
+                                  </div>
                                 )}
                               </div>
                             )
