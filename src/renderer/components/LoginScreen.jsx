@@ -137,7 +137,7 @@ export default function LoginScreen({ onSuccess, initialError = null }) {
               <div style={{ textAlign: 'center', marginTop: 16 }}>
                 <a
                   href="#"
-                  onClick={e => { e.preventDefault(); window.electron?.openExternal('https://18thman.app/auth/forgot-password') }}
+                  onClick={e => { e.preventDefault(); window.electron?.openExternal('https://18thman.app/reset-password') }}
                   style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--muted)', textDecoration: 'underline', cursor: 'pointer' }}
                 >
                   Forgot password?
