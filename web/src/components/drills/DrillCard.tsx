@@ -27,10 +27,11 @@ const difficultyColour: Record<string, string> = {
 interface DrillCardProps {
   drill: DrillWithRelations
   avgRating?: number
+  commentCount?: number
   showClubBadge?: boolean
 }
 
-export function DrillCard({ drill, avgRating, showClubBadge }: DrillCardProps) {
+export function DrillCard({ drill, avgRating, commentCount, showClubBadge }: DrillCardProps) {
   const videoId = drill.youtube_url ? extractYouTubeId(drill.youtube_url) : null
   const animatedCanvas = getAnimatedCanvasJson(drill.canvas_json)
 
@@ -138,10 +139,13 @@ export function DrillCard({ drill, avgRating, showClubBadge }: DrillCardProps) {
               </Link>
             )}
           </div>
-          {avgRating !== undefined && (
+          {(avgRating !== undefined || (commentCount ?? 0) > 0) && (
             <span className="flex items-center gap-1">
               <Star className="size-3 fill-amber-400 text-amber-400" />
-              {avgRating.toFixed(1)}
+              {avgRating !== undefined ? avgRating.toFixed(1) : '—'}
+              {(commentCount ?? 0) > 0 && (
+                <span className="text-muted-foreground">· {commentCount}</span>
+              )}
             </span>
           )}
         </CardFooter>
