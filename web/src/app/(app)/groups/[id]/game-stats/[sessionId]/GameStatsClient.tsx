@@ -15,7 +15,7 @@ interface Props {
   canTap: boolean
 }
 
-type Tab = 'carries' | 'tackles' | 'sets' | 'score'
+type Tab = 'carries' | 'tackles' | 'sets' | 'score' | 'penalties'
 type Mode = 'tap' | 'review'
 
 function workloadColor(pct: number) {
@@ -87,6 +87,8 @@ export function GameStatsClient({
   const conversionEvents  = useMemo(() => events.filter(e => e.stat_type === 'conversion'), [events])
   const oppTryEvents      = useMemo(() => events.filter(e => e.stat_type === 'opposition_try'), [events])
   const oppConvEvents     = useMemo(() => events.filter(e => e.stat_type === 'opposition_conversion'), [events])
+  const penaltyWonEvents      = useMemo(() => events.filter(e => e.stat_type === 'penalty_won'), [events])
+  const penaltyConcededEvents = useMemo(() => events.filter(e => e.stat_type === 'penalty_conceded'), [events])
 
   const ourScore   = tryEvents.length * 4 + conversionEvents.length * 2
   const theirScore = oppTryEvents.length * 4 + oppConvEvents.length * 2
@@ -127,7 +129,7 @@ export function GameStatsClient({
     if (result.error) setEvents(prev => [...prev, target])
   }
 
-  async function handleUndoNoPlayer(statType: 'set_completion' | 'conversion' | 'opposition_try' | 'opposition_conversion') {
+  async function handleUndoNoPlayer(statType: 'set_completion' | 'conversion' | 'opposition_try' | 'opposition_conversion' | 'penalty_won' | 'penalty_conceded') {
     const target = [...events].reverse().find(
       e => e.stat_type === statType && e.half === activeHalf && e.created_by === currentUserId && !e.id.startsWith('temp-'),
     )
@@ -281,7 +283,7 @@ export function GameStatsClient({
         <>
           {/* Tab bar */}
           <div className="flex rounded-lg border border-zinc-800 overflow-hidden">
-            {(['carries', 'tackles', 'sets', 'score'] as Tab[]).map(t => (
+            {(['carries', 'tackles', 'sets', 'score', 'penalties'] as Tab[]).map(t => (
               <button
                 key={t}
                 onClick={() => setActiveTab(t)}
@@ -338,6 +340,16 @@ export function GameStatsClient({
               onUndoOppTry={() => handleUndoNoPlayer('opposition_try')}
               onAddOppConversion={() => handleAdd('opposition_conversion', null, null)}
               onUndoOppConversion={() => handleUndoNoPlayer('opposition_conversion')}
+            />
+          )}
+          {activeTab === 'penalties' && (
+            <PenaltiesTab
+              wonCount={penaltyWonEvents.filter(e => e.half === activeHalf).length}
+              concededCount={penaltyConcededEvents.filter(e => e.half === activeHalf).length}
+              onAddWon={() => handleAdd('penalty_won', null, null)}
+              onUndoWon={() => handleUndoNoPlayer('penalty_won')}
+              onAddConceded={() => handleAdd('penalty_conceded', null, null)}
+              onUndoConceded={() => handleUndoNoPlayer('penalty_conceded')}
             />
           )}
         </>
@@ -574,6 +586,72 @@ function SetsTab({ events, activeHalf, onAdd, onUndoLast }: {
           Undo last set
         </button>
       )}
+    </div>
+  )
+}
+
+// ── PenaltiesTab ──────────────────────────────────────────────────────────────
+
+function PenaltiesTab({
+  wonCount, concededCount, onAddWon, onUndoWon, onAddConceded, onUndoConceded,
+}: {
+  wonCount: number
+  concededCount: number
+  onAddWon: () => void
+  onUndoWon: () => void
+  onAddConceded: () => void
+  onUndoConceded: () => void
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 rounded-xl border border-zinc-800 overflow-hidden text-center">
+        <div className="py-3 border-r border-zinc-800">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Won</p>
+          <p className="text-3xl font-bold text-white mt-0.5">{wonCount}</p>
+        </div>
+        <div className="py-3">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-red-400">Conceded</p>
+          <p className="text-3xl font-bold text-white mt-0.5">{concededCount}</p>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-2">Penalty Won</p>
+        <div className="flex gap-3">
+          <button
+            onClick={onAddWon}
+            className="flex-1 py-4 rounded-xl bg-emerald-900/40 border border-emerald-700/40 text-emerald-400 font-bold text-lg hover:bg-emerald-800/50 active:scale-95 transition-all"
+          >
+            + Won
+          </button>
+          <button
+            onClick={onUndoWon}
+            disabled={wonCount === 0}
+            className="px-5 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-zinc-700 transition-colors text-base"
+          >
+            ↩
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-red-400 mb-2">Penalty Conceded</p>
+        <div className="flex gap-3">
+          <button
+            onClick={onAddConceded}
+            className="flex-1 py-4 rounded-xl bg-red-900/40 border border-red-700/40 text-red-400 font-bold text-lg hover:bg-red-800/50 active:scale-95 transition-all"
+          >
+            + Conceded
+          </button>
+          <button
+            onClick={onUndoConceded}
+            disabled={concededCount === 0}
+            className="px-5 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-zinc-700 transition-colors text-base"
+          >
+            ↩
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
