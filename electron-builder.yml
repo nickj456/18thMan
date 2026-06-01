@@ -22,9 +22,6 @@ win:
     - target: nsis
       arch:
         - x64
-    - target: portable
-      arch:
-        - x64
   icon: src/assets/icon.ico
   artifactName: 18thMan-Match-Analyst-Setup.exe
 

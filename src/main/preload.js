@@ -45,4 +45,8 @@ contextBridge.exposeInMainWorld('electron', {
   onUpdateAvailable: (cb) => ipcRenderer.on('update:available', (_, data) => cb(data)),
   onUpdateReady: (cb) => ipcRenderer.on('update:ready', () => cb()),
   installUpdate: () => ipcRenderer.send('update:install'),
+  removeUpdateListeners: () => {
+    ipcRenderer.removeAllListeners('update:available')
+    ipcRenderer.removeAllListeners('update:ready')
+  },
 })

@@ -10,6 +10,49 @@ if (process.env.PORTABLE_EXECUTABLE_DIR) {
 
 const isDev = process.env.NODE_ENV === 'development'
 
+// ── Portable-to-installer data migration ─────────────────────────────────────
+// Prior releases accidentally shipped a portable .exe instead of the NSIS
+// installer. Portable builds stored data next to the .exe. On first run of
+// the proper installer build (no PORTABLE_EXECUTABLE_DIR), copy any data
+// found next to the .exe into AppData so users don't lose their sessions.
+function migratePortableData() {
+  if (process.env.PORTABLE_EXECUTABLE_DIR) return // still running portable, skip
+  const appDataDir = app.getPath('userData')
+  const migrationFlag = path.join(appDataDir, '.portable-migration-done')
+  if (fs.existsSync(migrationFlag)) return
+
+  const exeDir = path.dirname(process.execPath)
+  const candidates = [
+    path.join(exeDir, 'sessions'),
+    path.join(exeDir, '18thman-session.json'),
+  ]
+  const hasSessions = fs.existsSync(candidates[0])
+  const hasStore    = fs.existsSync(candidates[1])
+  if (!hasSessions && !hasStore) {
+    fs.writeFileSync(migrationFlag, '', 'utf8')
+    return
+  }
+
+  try {
+    if (hasSessions) {
+      const dest = path.join(appDataDir, 'sessions')
+      if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true })
+      for (const f of fs.readdirSync(candidates[0])) {
+        const src = path.join(candidates[0], f)
+        const dst = path.join(dest, f)
+        if (!fs.existsSync(dst)) fs.copyFileSync(src, dst)
+      }
+    }
+    if (hasStore) {
+      const dst = path.join(appDataDir, '18thman-session.json')
+      if (!fs.existsSync(dst)) fs.copyFileSync(candidates[1], dst)
+    }
+    fs.writeFileSync(migrationFlag, '', 'utf8')
+  } catch (e) {
+    // Non-fatal — user just won't get auto-migration this boot
+  }
+}
+
 // ── Session storage helpers ───────────────────────────────────────────────────
 
 function getSessionsDir() {
@@ -80,14 +123,13 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  migratePortableData()
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 
   if (!isDev) {
-    autoUpdater.checkForUpdates()
-
     autoUpdater.on('update-available', (info) => {
       mainWindow?.webContents.send('update:available', { version: info.version })
     })
@@ -95,6 +137,8 @@ app.whenReady().then(() => {
     autoUpdater.on('update-downloaded', () => {
       mainWindow?.webContents.send('update:ready')
     })
+
+    autoUpdater.checkForUpdates()
   }
 })
 

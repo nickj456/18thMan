@@ -267,6 +267,9 @@ export default function App() {
   useEffect(() => {
     window.electron?.onUpdateAvailable?.(({ version }) => setUpdateVersion(version))
     window.electron?.onUpdateReady?.(() => setUpdateReady(true))
+    return () => {
+      window.electron?.removeUpdateListeners?.()
+    }
   }, [])
 
   const handleLoadSession = useCallback(async (id) => {
@@ -437,18 +440,31 @@ export default function App() {
               ? `Update v${updateVersion} downloaded and ready to install.`
               : `Update v${updateVersion} available — downloading in the background…`}
           </span>
-          {updateReady && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {updateReady && (
+              <button
+                onClick={() => window.electron?.installUpdate()}
+                style={{
+                  background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+                  color: '#fff', borderRadius: '4px', padding: '2px 12px',
+                  cursor: 'pointer', fontSize: '12px', fontWeight: 600,
+                }}
+              >
+                Restart &amp; Install
+              </button>
+            )}
             <button
-              onClick={() => window.electron?.installUpdate()}
+              onClick={() => setUpdateVersion(null)}
               style={{
-                background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
-                color: '#fff', borderRadius: '4px', padding: '2px 12px',
-                cursor: 'pointer', fontSize: '12px', fontWeight: 600,
+                background: 'transparent', border: 'none',
+                color: 'rgba(255,255,255,0.7)', cursor: 'pointer',
+                fontSize: '16px', lineHeight: 1, padding: '0 2px',
               }}
+              title="Dismiss"
             >
-              Restart &amp; Install
+              ×
             </button>
-          )}
+          </div>
         </div>
       )}
       <Header
