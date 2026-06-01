@@ -9,6 +9,7 @@ import { DrillFilters } from '@/components/drills/DrillFilters'
 import { DrillGridSkeleton } from '@/components/drills/DrillGridSkeleton'
 import { PenTool } from 'lucide-react'
 import type { DrillFilters as DrillFiltersType, DrillWithRelations } from '@/lib/supabase/types'
+import { drillStats } from '@/lib/drills'
 
 export const metadata: Metadata = {
   title: 'Rugby League Drill Library — 18th Man',
@@ -56,7 +57,8 @@ export default async function DrillsPage({
             facebook_url, is_public, club_id, created_at, canvas_json,
             category_id, author_id, ai_guide, updated_at, approval_status,
             category:drill_categories ( id, name, slug ),
-            author:profiles!drills_author_id_fkey ( id, username, display_name, avatar_url )
+            author:profiles!drills_author_id_fkey ( id, username, display_name, avatar_url ),
+            drill_ratings!drill_ratings_drill_id_fkey ( rating, comment )
           `)
           .eq('club_id', userClubId)
           .order('created_at', { ascending: false })
@@ -128,9 +130,17 @@ export default async function DrillsPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {drills.map(drill => (
-                <DrillCard key={drill.id} drill={drill} />
-              ))}
+              {drills.map(drill => {
+                const { avgRating, commentCount } = drillStats(drill)
+                return (
+                  <DrillCard
+                    key={drill.id}
+                    drill={drill}
+                    avgRating={avgRating}
+                    commentCount={commentCount}
+                  />
+                )
+              })}
             </div>
           )}
         </Suspense>
@@ -157,7 +167,8 @@ async function buildDrillQuery(supabase: Awaited<ReturnType<typeof createClient>
       author_id,
       approval_status,
       category:drill_categories ( id, name, slug ),
-      author:profiles!drills_author_id_fkey ( id, username, display_name, avatar_url )
+      author:profiles!drills_author_id_fkey ( id, username, display_name, avatar_url ),
+      drill_ratings!drill_ratings_drill_id_fkey ( rating, comment )
     `)
     .eq('is_public', true)
     .order('created_at', { ascending: false })
