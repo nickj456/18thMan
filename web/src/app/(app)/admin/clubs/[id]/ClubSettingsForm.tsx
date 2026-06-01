@@ -9,9 +9,11 @@ interface Props {
   clubName: string
   maxMembers: number | null
   memberCount: number
+  maxGroups: number | null
+  groupCount: number
 }
 
-export function ClubSettingsForm({ clubId, clubName, maxMembers, memberCount }: Props) {
+export function ClubSettingsForm({ clubId, clubName, maxMembers, memberCount, maxGroups, groupCount }: Props) {
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
 
@@ -25,7 +27,7 @@ export function ClubSettingsForm({ clubId, clubName, maxMembers, memberCount }: 
 
   return (
     <form action={handleSubmit} className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div className="space-y-1.5">
           <label htmlFor="name" className="block text-xs font-medium text-zinc-400">Club Name</label>
           <input
@@ -50,11 +52,26 @@ export function ClubSettingsForm({ clubId, clubName, maxMembers, memberCount }: 
             className="w-full text-sm bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-amber-500/60"
           />
         </div>
+        <div className="space-y-1.5">
+          <label htmlFor="max_groups" className="block text-xs font-medium text-zinc-400">
+            Max Groups <span className="text-zinc-600 font-normal">(blank = default 5)</span>
+          </label>
+          <input
+            id="max_groups"
+            name="max_groups"
+            type="number"
+            min={1}
+            defaultValue={maxGroups ?? ''}
+            placeholder="5"
+            className="w-full text-sm bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-amber-500/60"
+          />
+        </div>
       </div>
       <div className="flex items-center justify-between">
         <p className="text-xs text-zinc-600">
-          {memberCount} current member{memberCount !== 1 ? 's' : ''}
-          {maxMembers ? ` · limit ${maxMembers}` : ' · no limit'}
+          {memberCount} member{memberCount !== 1 ? 's' : ''}{maxMembers ? ` · limit ${maxMembers}` : ''}
+          {' · '}
+          {groupCount} group{groupCount !== 1 ? 's' : ''} · limit {maxGroups ?? 5}
         </p>
         <div className="flex items-center gap-3">
           {saved && (
