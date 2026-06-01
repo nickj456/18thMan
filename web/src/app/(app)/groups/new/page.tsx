@@ -26,13 +26,21 @@ export default async function NewGroupPage() {
   const tier = await getEffectiveTier(supabase, user.id)
   const isGated = tier === 'free'
 
-  // Check group count
-  const { count } = await supabase
-    .from('coaching_groups')
-    .select('id', { count: 'exact', head: true })
-    .eq('club_id', profile.club_id)
+  // Check group count against club's max_groups (null = platform default of 5)
+  const [{ count }, { data: club }] = await Promise.all([
+    supabase
+      .from('coaching_groups')
+      .select('id', { count: 'exact', head: true })
+      .eq('club_id', profile.club_id),
+    supabase
+      .from('clubs')
+      .select('max_groups')
+      .eq('id', profile.club_id)
+      .single(),
+  ])
 
-  const atLimit = (count ?? 0) >= 5
+  const maxGroups = club?.max_groups ?? 5
+  const atLimit = (count ?? 0) >= maxGroups
 
   return (
     <div className="max-w-lg space-y-6">
@@ -57,7 +65,7 @@ export default async function NewGroupPage() {
         />
       ) : atLimit ? (
         <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-sm text-amber-300">
-          Your club has reached the maximum of 5 groups. Delete an existing group to create a new one.
+          Your club has reached the maximum of {maxGroups} groups. Delete an existing group to create a new one.
         </div>
       ) : (
         <form action={async (fd: FormData) => { 'use server'; await createGroup(fd) }} className="space-y-4">
