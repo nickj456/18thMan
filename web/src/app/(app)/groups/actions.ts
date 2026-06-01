@@ -287,3 +287,22 @@ export async function declineGroupInvite(invitationId: string) {
   revalidatePath('/groups')
   return { success: true }
 }
+
+/** Platform admin only: permanently delete a group and all associated data. */
+export async function deleteGroup(groupId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (me?.role !== 'admin') return { error: 'Not authorised' }
+
+  const { error } = await supabase
+    .from('coaching_groups')
+    .delete()
+    .eq('id', groupId)
+
+  if (error) return { error: error.message }
+
+  return { success: true }
+}
