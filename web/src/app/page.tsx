@@ -1706,15 +1706,15 @@ export default async function LandingPage() {
             >
               {/* Left: copy */}
               <div style={{ flex: '1 1 300px', minWidth: 0 }}>
-                <span className="section-label" style={{ marginBottom: '1rem', display: 'block' }}>Free Download</span>
+                <span className="section-label" style={{ marginBottom: '1rem', display: 'block' }}>Free Training Block</span>
                 <h2
                   className="lp-heading"
                   style={{ fontSize: 'clamp(1.5rem, 4vw, 2.2rem)', marginBottom: '0.75rem', lineHeight: 1.2 }}
                 >
-                  Get a free 4-week rugby league training plan
+                  A full month of ready-to-run coaching sessions, free.
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 0 }}>
-                  Ready-made sessions with drill descriptions and coach notes — yours to print and take to training. No account needed.
+                  Four print-ready sessions covering ball handling, defensive shape, attack structure, and a full run — with drill descriptions, timing, and coach notes built in. No account needed.
                 </p>
               </div>
 

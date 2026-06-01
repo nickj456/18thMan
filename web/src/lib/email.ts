@@ -249,10 +249,10 @@ export async function sendUpgradeNudgeEmail(to: string, displayName: string, fea
 }
 
 const DRIP_WEEK_META = [
-  { title: 'Ball Handling &amp; Passing', detail: 'Passing grids, offloads, quick hands', mins: '70 min' },
-  { title: 'Defensive Shape',             detail: 'Flat line drill, tackle technique, conditioned game', mins: '70 min' },
-  { title: 'Attack Plays &amp; Structure', detail: 'Set pieces, broken-field running, small-sided game', mins: '75 min' },
-  { title: 'Full Run Session',             detail: 'Review weeks 1–3, full training game', mins: '75 min' },
+  { title: 'Ball Handling &amp; Passing', detail: 'Passing grid warm-up, offload progressions, quick hands under pressure, conditioned passing game', mins: '70 min' },
+  { title: 'Defensive Shape',             detail: 'Flat-line walk-through, tackle technique, defensive reads, scramble conditioned game', mins: '70 min' },
+  { title: 'Attack Plays &amp; Structure', detail: 'Set-piece moves, tip-on plays, broken-field running, structure vs scramble small-sided game', mins: '75 min' },
+  { title: 'Full Run Session',             detail: 'Peak-intensity review of all three themes, full contact training game', mins: '75 min' },
 ]
 
 /** Sent to a lead with a single week's session plan PDF */
@@ -267,12 +267,14 @@ export async function sendLeadMagnetEmail(
   const isFirst = weekNumber === 1
 
   const subjectPrefix = isFirst
-    ? 'Your free coaching plan starts here'
-    : `Week ${weekNumber} of your coaching plan is ready`
+    ? `Your coaching plan starts now — Week 1: ${meta.title.replace(/&amp;/g, '&')}`
+    : `Week ${weekNumber} is here — ${meta.title.replace(/&amp;/g, '&')}`
+
+  const nextMeta = weekNumber < 4 ? DRIP_WEEK_META[weekNumber] : null
 
   const intro = isFirst
-    ? `Your 4-week rugby league training plan kicks off with Week 1. You'll get a new session each week — <strong style="color:#18181b;">Week 2 arrives in 7 days.</strong>`
-    : `Week ${weekNumber} of your 4-week plan is attached. ${weekNumber < 4 ? `Week ${weekNumber + 1} is coming next week.` : "This is the final session — make it count."}`
+    ? `Your Week 1 session is attached. Print it, take it to training, and you're good to go. <strong style="color:#18181b;">Week 2 (${DRIP_WEEK_META[1].title}) arrives in 7 days.</strong>`
+    : `Week ${weekNumber} is attached — ${meta.detail.toLowerCase()}. ${nextMeta ? `<strong style="color:#18181b;">Week ${weekNumber + 1} (${nextMeta.title}) arrives next week.</strong>` : 'This is the last one. Make it count.'}`
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -372,7 +374,7 @@ export async function sendDripConversionEmail(
     <!-- Header -->
     <tr><td bgcolor="#0d1117" style="background:#0d1117;border-radius:12px 12px 0 0;padding:24px 32px 20px;">
       <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:#e8560a;letter-spacing:1.8px;text-transform:uppercase;">4-Week Plan Complete${ageNote}</p>
-      <h1 style="margin:0;font-size:22px;font-weight:800;color:#ffffff;line-height:1.2;letter-spacing:-0.3px;">You've finished the plan. What's next?</h1>
+      <h1 style="margin:0;font-size:22px;font-weight:800;color:#ffffff;line-height:1.2;letter-spacing:-0.3px;">Plan done. Now build your own.</h1>
     </td></tr>
 
     <!-- Body -->
@@ -380,11 +382,11 @@ export async function sendDripConversionEmail(
 
       <p style="margin:0 0 6px;font-size:15px;color:#18181b;line-height:1.6;">Hey Coach,</p>
       <p style="margin:0 0 24px;font-size:15px;color:#52525b;line-height:1.6;">
-        You've worked through all four sessions. That's a full month of structured, purposeful coaching — well done.
+        You've worked through four sessions — ball handling, defensive shape, attack structure, and a full run. That's a month of deliberate coaching. Now build on it.
       </p>
 
       <p style="margin:0 0 16px;font-size:15px;color:#52525b;line-height:1.6;">
-        If you want to keep building on it, 18th Man lets you design your own drills, plan sessions with AI, and share what works with your coaching staff — all for free.
+        18th Man gives you the tools to design your own drills, plan every training week with AI, and share your system with your whole coaching staff — free to start, no card needed.
       </p>
 
       <!-- Feature list -->
@@ -435,7 +437,7 @@ export async function sendDripConversionEmail(
 
   return send(
     to,
-    `You've completed the 4-week plan — what's next?${ageNote}`,
+    `Your 4-week plan is done — here's what's next${ageNote}`,
     html,
   )
 }

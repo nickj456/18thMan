@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, Star, MessageSquare, Users, Calendar, User, PlayCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { DeleteReviewButton } from './DeleteReviewButton'
 
 type Player = {
   id: string
@@ -68,13 +69,14 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [reviewResult, responsesResult] = await Promise.all([
+  const [reviewResult, responsesResult, profileResult] = await Promise.all([
     supabase.from('squad_reviews').select('*').eq('id', id).single(),
     supabase
       .from('squad_review_responses')
       .select('*')
       .eq('review_id', id)
       .order('created_at', { ascending: true }),
+    supabase.from('profiles').select('role, club_id, club_role').eq('id', user.id).single(),
   ])
 
   if (!reviewResult.data) {
@@ -101,6 +103,30 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
   const players = (review.players_data ?? []) as Player[]
   const matchInfo = review.match_info as MatchInfo | null
   const veoUrl = review.veo_url as string | null
+  const profile = profileResult.data
+
+  // Determine delete permission
+  let canDelete = profile?.role === 'admin'
+  if (!canDelete && review.group_id) {
+    const [groupResult, inviteResult] = await Promise.all([
+      supabase
+        .from('coaching_groups')
+        .select('created_by, club_id')
+        .eq('id', review.group_id)
+        .single(),
+      supabase
+        .from('group_invitations')
+        .select('group_role')
+        .eq('group_id', review.group_id)
+        .eq('user_id', user.id)
+        .eq('status', 'accepted')
+        .maybeSingle(),
+    ])
+    const group = groupResult.data
+    if (group?.created_by === user.id) canDelete = true
+    if (!canDelete && inviteResult.data?.group_role === 'admin') canDelete = true
+    if (!canDelete && group && profile?.club_role === 'admin' && profile.club_id === group.club_id) canDelete = true
+  }
 
   // Aggregate scores and feedback per player
   const playerStats = players.map(player => {
@@ -180,10 +206,18 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
               </span>
             </div>
           </div>
-          <Badge variant="outline" className="shrink-0 border-zinc-700 text-zinc-400 text-sm py-1">
-            <Users size={13} className="mr-1.5" />
-            {responses.length} response{responses.length !== 1 ? 's' : ''}
-          </Badge>
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge variant="outline" className="border-zinc-700 text-zinc-400 text-sm py-1">
+              <Users size={13} className="mr-1.5" />
+              {responses.length} response{responses.length !== 1 ? 's' : ''}
+            </Badge>
+            {canDelete && (
+              <DeleteReviewButton
+                reviewId={review.id}
+                label={`${review.club} vs ${review.opposition}`}
+              />
+            )}
+          </div>
         </div>
 
         {/* Responders list */}

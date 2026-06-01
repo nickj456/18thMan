@@ -49,7 +49,7 @@ export function DownloadForm() {
         <div>
           <p className="font-semibold text-white">Check your inbox.</p>
           <p className="text-sm text-zinc-400 mt-0.5">
-            Your 4-week session plan is on its way — check your spam folder if it doesn&apos;t arrive within a minute.
+            Week 1 is on its way. Weeks 2, 3, and 4 follow each week — check your spam folder if it doesn&apos;t arrive within a minute.
           </p>
         </div>
       </div>

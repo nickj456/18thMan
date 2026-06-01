@@ -59,6 +59,7 @@ export async function GET(request: Request) {
         const buffer = await render(createElement(LeadMagnetSessionPDF as any, {
           logoSrc: logoDataUri,
           weekNumber: nextWeek,
+          ageGroup: (lead.age_group as string | null) ?? null,
         }))
 
         const result = await sendLeadMagnetEmail(

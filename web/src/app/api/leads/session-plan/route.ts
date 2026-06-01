@@ -2,7 +2,7 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import { createElement } from 'react'
 import { resolve } from 'path'
 import { readFileSync, existsSync } from 'fs'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { LeadMagnetSessionPDF } from '@/components/landing/LeadMagnetSessionPDF'
 import { sendLeadMagnetEmail } from '@/lib/email'
 
@@ -29,11 +29,11 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Invalid email address' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabase = createServiceClient()
     const now = new Date().toISOString()
 
     // Upsert lead — only update age_group if re-submitting; don't reset drip progress
-    await supabase.from('leads').upsert(
+    const { error: upsertError } = await supabase.from('leads').upsert(
       {
         email: email.toLowerCase().trim(),
         age_group: typeof age_group === 'string' && age_group ? age_group : null,
@@ -44,12 +44,13 @@ export async function POST(request: Request) {
       },
       { onConflict: 'email,source', ignoreDuplicates: false },
     )
-    // Ignore upsert errors — don't block delivery over a DB hiccup
+    if (upsertError) console.error('[leads/session-plan] Upsert error:', upsertError)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const render = renderToBuffer as (el: unknown) => Promise<Buffer>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = await render(createElement(LeadMagnetSessionPDF as any, { logoSrc: LOGO_DATA_URI, weekNumber: 1 }))
+    const ageGroupValue = typeof age_group === 'string' && age_group ? age_group : null
+    const buffer = await render(createElement(LeadMagnetSessionPDF as any, { logoSrc: LOGO_DATA_URI, weekNumber: 1, ageGroup: ageGroupValue }))
 
     await sendLeadMagnetEmail(
       email.toLowerCase().trim(),
