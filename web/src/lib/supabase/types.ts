@@ -42,6 +42,7 @@ export interface Club {
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
   max_members: number | null
+  max_groups: number | null
   created_at: string
 }
 
