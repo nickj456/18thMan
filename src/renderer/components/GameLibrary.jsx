@@ -6,27 +6,32 @@ export default function GameLibrary({ onLoad, onNew, onClose, onContinue, crashS
   const [deleting, setDeleting] = useState(null)
   const [importing, setImporting] = useState(false)
   const [importMsg, setImportMsg] = useState(null)
+  const [oldDataLocations, setOldDataLocations] = useState(null) // null=scanning, []=none, [...]=found
 
   useEffect(() => {
     window.electron?.listSessions().then(s => {
       setSessions(s || [])
       setLoading(false)
     })
+    window.electron?.findOldSessionData?.().then(found => {
+      setOldDataLocations(found || [])
+    })
   }, [])
 
-  const handleImport = async () => {
+  const doImport = async (knownPath) => {
     setImporting(true)
     setImportMsg(null)
-    const result = await window.electron?.importSessionsFromFolder()
+    const result = await window.electron?.importSessionsFromFolder(knownPath)
     setImporting(false)
     if (!result) return
     if (result.error) { setImportMsg(`Error: ${result.error}`); return }
     if (result.imported === 0) {
-      setImportMsg('No new sessions found in that folder. Make sure you selected the folder where the old app was saved (e.g. Downloads).')
+      setImportMsg('No new sessions found there.')
     } else {
-      setImportMsg(`Imported ${result.imported} session${result.imported !== 1 ? 's' : ''}!`)
+      setImportMsg(`Restored ${result.imported} session${result.imported !== 1 ? 's' : ''}`)
       const s = await window.electron?.listSessions()
       setSessions(s || [])
+      setOldDataLocations([])
     }
   }
 
@@ -148,28 +153,12 @@ export default function GameLibrary({ onLoad, onNew, onClose, onContinue, crashS
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--muted-2)', lineHeight: 1.7, marginBottom: 20 }}>
                 Analyse a match and click <strong style={{ color: 'var(--text)' }}>SAVE</strong> to store it here permanently.
               </div>
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--muted)', marginBottom: 10 }}>
-                  Updated from an older version? Import your previous sessions:
-                </div>
-                <button
-                  onClick={handleImport}
-                  disabled={importing}
-                  style={{
-                    background: 'transparent', border: '1px solid var(--border)',
-                    color: 'var(--text)', padding: '7px 16px', borderRadius: 3,
-                    fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700,
-                    letterSpacing: 0.5, cursor: importing ? 'default' : 'pointer', opacity: importing ? 0.5 : 1,
-                  }}
-                >
-                  {importing ? 'Selecting folder…' : 'Import sessions from previous install'}
-                </button>
-                {importMsg && (
-                  <div style={{ marginTop: 10, fontFamily: 'var(--font-body)', fontSize: 11, color: importMsg.startsWith('Imported') ? 'var(--green)' : 'var(--muted)', lineHeight: 1.5 }}>
-                    {importMsg}
-                  </div>
-                )}
-              </div>
+              <ImportPanel
+                oldDataLocations={oldDataLocations}
+                importing={importing}
+                importMsg={importMsg}
+                onImport={doImport}
+              />
             </div>
           ) : (
             sessions.map((s) => {
@@ -265,25 +254,45 @@ export default function GameLibrary({ onLoad, onNew, onClose, onContinue, crashS
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
               {importMsg && (
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: importMsg.startsWith('Imported') ? 'var(--green)' : 'var(--muted)' }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: importMsg.startsWith('Restored') ? 'var(--green)' : 'var(--muted)' }}>
                   {importMsg}
                 </span>
               )}
-              <button
-                onClick={handleImport}
-                disabled={importing}
-                style={{
-                  background: 'transparent', color: 'var(--muted)',
-                  border: '1px solid var(--border)', padding: '6px 14px',
-                  borderRadius: 3, fontFamily: 'var(--font-ui)', fontSize: 10,
-                  fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
-                  cursor: importing ? 'default' : 'pointer', opacity: importing ? 0.5 : 1,
-                  whiteSpace: 'nowrap',
-                }}
-                title="Import sessions saved by a previous installation"
-              >
-                {importing ? 'Selecting…' : 'Import old sessions'}
-              </button>
+              {oldDataLocations && oldDataLocations.length > 0 ? (
+                oldDataLocations.map(loc => (
+                  <button
+                    key={loc.dir}
+                    onClick={() => doImport(loc.dir)}
+                    disabled={importing}
+                    style={{
+                      background: 'rgba(232,86,10,0.1)', color: 'var(--brand)',
+                      border: '1px solid rgba(232,86,10,0.3)', padding: '6px 14px',
+                      borderRadius: 3, fontFamily: 'var(--font-ui)', fontSize: 10,
+                      fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+                      cursor: importing ? 'default' : 'pointer', opacity: importing ? 0.5 : 1,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Restore {loc.count} session{loc.count !== 1 ? 's' : ''} from {loc.label}
+                  </button>
+                ))
+              ) : (
+                <button
+                  onClick={() => doImport(null)}
+                  disabled={importing}
+                  style={{
+                    background: 'transparent', color: 'var(--muted)',
+                    border: '1px solid var(--border)', padding: '6px 14px',
+                    borderRadius: 3, fontFamily: 'var(--font-ui)', fontSize: 10,
+                    fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+                    cursor: importing ? 'default' : 'pointer', opacity: importing ? 0.5 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                  title="Browse for the folder where the old app was saved"
+                >
+                  {importing ? 'Selecting…' : 'Import old sessions'}
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -301,5 +310,66 @@ function Pill({ children }) {
     }}>
       {children}
     </span>
+  )
+}
+
+function ImportPanel({ oldDataLocations, importing, importMsg, onImport }) {
+  const scanning = oldDataLocations === null
+  const found    = oldDataLocations && oldDataLocations.length > 0
+
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginTop: 4 }}>
+      {scanning ? (
+        <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--muted)' }}>
+          Checking for previous sessions…
+        </div>
+      ) : found ? (
+        <div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--muted)', marginBottom: 10 }}>
+            Found previous sessions on this computer:
+          </div>
+          {oldDataLocations.map(loc => (
+            <button
+              key={loc.dir}
+              onClick={() => onImport(loc.dir)}
+              disabled={importing}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                background: 'rgba(232,86,10,0.08)', border: '1px solid rgba(232,86,10,0.25)',
+                color: 'var(--text)', padding: '8px 14px', borderRadius: 3, marginBottom: 6,
+                fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700,
+                cursor: importing ? 'default' : 'pointer', opacity: importing ? 0.5 : 1,
+              }}
+            >
+              <span style={{ color: 'var(--brand)' }}>↩ Restore {loc.count} session{loc.count !== 1 ? 's' : ''}</span>
+              <span style={{ color: 'var(--muted)', fontWeight: 400, marginLeft: 8 }}>from {loc.label}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--muted)', marginBottom: 10 }}>
+            Updated from an older version? Browse to the folder where you kept the old app to restore your sessions.
+          </div>
+          <button
+            onClick={() => onImport(null)}
+            disabled={importing}
+            style={{
+              background: 'transparent', border: '1px solid var(--border)',
+              color: 'var(--text)', padding: '7px 16px', borderRadius: 3,
+              fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700,
+              letterSpacing: 0.5, cursor: importing ? 'default' : 'pointer', opacity: importing ? 0.5 : 1,
+            }}
+          >
+            {importing ? 'Selecting folder…' : 'Browse for old sessions…'}
+          </button>
+        </div>
+      )}
+      {importMsg && (
+        <div style={{ marginTop: 10, fontFamily: 'var(--font-body)', fontSize: 11, color: importMsg.startsWith('Restored') ? 'var(--green)' : 'var(--muted)' }}>
+          {importMsg}
+        </div>
+      )}
+    </div>
   )
 }

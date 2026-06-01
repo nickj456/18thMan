@@ -376,51 +376,93 @@ ipcMain.handle('sessions:delete', (_, id) => {
   return true
 })
 
-ipcMain.handle('sessions:importFromFolder', async () => {
-  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-    title: 'Select folder containing your old sessions',
-    properties: ['openDirectory'],
-  })
-  if (canceled || !filePaths[0]) return { imported: 0 }
-
-  const srcFolder = filePaths[0]
+function importSessionsFromDir(srcFolder) {
   let imported = 0
-  try {
-    // Support two layouts: the folder IS the sessions dir, or it contains a sessions/ subdir
-    const directIndex  = path.join(srcFolder, 'index.json')
-    const nestedIndex  = path.join(srcFolder, 'sessions', 'index.json')
-    const sessionsDir  = fs.existsSync(directIndex)  ? srcFolder
-                       : fs.existsSync(nestedIndex)  ? path.join(srcFolder, 'sessions')
-                       : null
+  const directIndex = path.join(srcFolder, 'index.json')
+  const nestedIndex = path.join(srcFolder, 'sessions', 'index.json')
+  const sessionsDir = fs.existsSync(directIndex) ? srcFolder
+                    : fs.existsSync(nestedIndex)  ? path.join(srcFolder, 'sessions')
+                    : null
 
-    if (sessionsDir) {
-      const dest = getSessionsDir()
-      const srcIndex = JSON.parse(fs.readFileSync(path.join(sessionsDir, 'index.json'), 'utf8'))
-      const destIndex = readSessionsIndex()
-      const existingIds = new Set(destIndex.map(s => s.id))
-
-      for (const entry of srcIndex) {
-        if (existingIds.has(entry.id)) continue
-        const srcFile = path.join(sessionsDir, `${entry.id}.json`)
-        if (fs.existsSync(srcFile)) {
-          fs.copyFileSync(srcFile, path.join(dest, `${entry.id}.json`))
-          destIndex.push(entry)
-          imported++
-        }
+  if (sessionsDir) {
+    const dest = getSessionsDir()
+    const srcIndex = JSON.parse(fs.readFileSync(path.join(sessionsDir, 'index.json'), 'utf8'))
+    const destIndex = readSessionsIndex()
+    const existingIds = new Set(destIndex.map(s => s.id))
+    for (const entry of srcIndex) {
+      if (existingIds.has(entry.id)) continue
+      const srcFile = path.join(sessionsDir, `${entry.id}.json`)
+      if (fs.existsSync(srcFile)) {
+        fs.copyFileSync(srcFile, path.join(dest, `${entry.id}.json`))
+        destIndex.push(entry)
+        imported++
       }
-      writeSessionsIndex(destIndex)
     }
-
-    // Also import the quick-save store file if present
-    const storeFile = path.join(srcFolder, '18thman-session.json')
-    if (fs.existsSync(storeFile)) {
-      const dst = path.join(app.getPath('userData'), '18thman-session.json')
-      if (!fs.existsSync(dst)) fs.copyFileSync(storeFile, dst)
-    }
-  } catch (e) {
-    return { imported, error: e.message }
+    writeSessionsIndex(destIndex)
   }
-  return { imported }
+
+  const storeFile = path.join(srcFolder, '18thman-session.json')
+  if (fs.existsSync(storeFile)) {
+    const dst = path.join(app.getPath('userData'), '18thman-session.json')
+    if (!fs.existsSync(dst)) fs.copyFileSync(storeFile, dst)
+  }
+
+  return imported
+}
+
+// Scan common locations for old portable-build session data and return what was found.
+ipcMain.handle('sessions:findOldData', () => {
+  const home = app.getPath('home')
+  const searchDirs = [
+    { path: path.join(home, 'Downloads'), label: 'Downloads' },
+    { path: path.join(home, 'Desktop'),   label: 'Desktop' },
+    { path: path.join(home, 'Documents'), label: 'Documents' },
+    { path: path.join(home, 'OneDrive', 'Downloads'), label: 'OneDrive › Downloads' },
+    { path: path.join(home, 'OneDrive', 'Desktop'),   label: 'OneDrive › Desktop' },
+    { path: path.join(home, 'OneDrive', 'Documents'), label: 'OneDrive › Documents' },
+  ]
+
+  const found = []
+  const existingIds = new Set(readSessionsIndex().map(s => s.id))
+
+  for (const { path: dir, label } of searchDirs) {
+    try {
+      const directIndex = path.join(dir, 'index.json')
+      const nestedIndex = path.join(dir, 'sessions', 'index.json')
+      const indexPath   = fs.existsSync(directIndex) ? directIndex
+                        : fs.existsSync(nestedIndex)  ? nestedIndex
+                        : null
+      if (!indexPath) continue
+
+      const index = JSON.parse(fs.readFileSync(indexPath, 'utf8'))
+      const newSessions = index.filter(s => !existingIds.has(s.id))
+      if (newSessions.length > 0) {
+        found.push({ dir, label, count: newSessions.length })
+      }
+    } catch {}
+  }
+
+  return found
+})
+
+ipcMain.handle('sessions:importFromFolder', async (_, knownPath) => {
+  let srcFolder = knownPath || null
+
+  if (!srcFolder) {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: 'Select the folder where the old app was saved (e.g. Downloads)',
+      properties: ['openDirectory'],
+      defaultPath: app.getPath('downloads'),
+    })
+    if (canceled || !filePaths[0]) return { imported: 0 }
+    srcFolder = filePaths[0]
+  }
+
+  try {
+    return { imported: importSessionsFromDir(srcFolder) }
+  } catch (e) {
+    return { imported: 0, error: e.message }
+  }
 })
 
 // ── IPC: Squad templates ──────────────────────────────────────────────────────
