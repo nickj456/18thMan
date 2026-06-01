@@ -89,8 +89,10 @@ function injectVeo(html: string, veoUrl: string): string {
   return html.slice(0, idx) + banner + html.slice(idx)
 }
 
-// Injects localStorage draft-saving behaviour into the review form.
-// Auto-saves on every input change (debounced 600ms) and restores on load.
+// Injects localStorage draft-saving into the squad-review Edge Function HTML.
+// The form uses id-based inputs (no <form> tag, no name attributes) and stores
+// ratings in a page-level `ratings` JS object updated via rate(num, val).
+// We hook rate() to capture rating changes and serialize by element id.
 function injectSaveDraft(html: string, reviewId: string): string {
   const safeId = reviewId.replace(/[^a-z0-9-]/gi, '')
 
@@ -118,13 +120,9 @@ function injectSaveDraft(html: string, reviewId: string): string {
     font-size: 0.8125rem; padding: 0.25rem 0.75rem; border-radius: 0.375rem;
     cursor: pointer; border: 1px solid; transition: background 0.15s;
   }
-  #draft-restore-bar .btn-restore {
-    background: #065f46; border-color: #059669; color: #6ee7b7;
-  }
+  #draft-restore-bar .btn-restore { background: #065f46; border-color: #059669; color: #6ee7b7; }
   #draft-restore-bar .btn-restore:hover { background: #047857; }
-  #draft-restore-bar .btn-discard {
-    background: transparent; border-color: #3f3f46; color: #71717a;
-  }
+  #draft-restore-bar .btn-discard { background: transparent; border-color: #3f3f46; color: #71717a; }
   #draft-restore-bar .btn-discard:hover { background: #27272a; }
 </style>
 <div id="draft-restore-bar">
@@ -139,6 +137,7 @@ function injectSaveDraft(html: string, reviewId: string): string {
 (function(){
   var KEY = '18thman_review_draft_${safeId}';
   var bannerTimer;
+  var saveTimer;
 
   function showBanner(msg) {
     var b = document.getElementById('draft-banner');
@@ -150,36 +149,38 @@ function injectSaveDraft(html: string, reviewId: string): string {
     bannerTimer = setTimeout(function(){ b.classList.remove('visible'); }, 2500);
   }
 
-  function serializeForm() {
-    var form = document.querySelector('form');
-    if (!form) return null;
-    var data = {};
-    form.querySelectorAll('input,textarea,select').forEach(function(el) {
-      var name = el.getAttribute('name');
-      if (!name) return;
-      if (el.type === 'radio' || el.type === 'checkbox') {
-        if (el.checked) data[name] = el.value;
-      } else {
-        data[name] = el.value;
-      }
+  // Serialize: capture id-based text inputs/textareas + the page-level ratings object
+  function serialize() {
+    var data = { _ratings: {}, _fields: {} };
+    // Capture ratings from the page-level object (set via rate(num, val))
+    if (window.ratings && typeof window.ratings === 'object') {
+      data._ratings = JSON.parse(JSON.stringify(window.ratings));
+    }
+    // Capture all inputs/textareas that have an id
+    document.querySelectorAll('input[id], textarea[id], select[id]').forEach(function(el) {
+      data._fields[el.id] = el.value;
     });
     return data;
   }
 
-  function restoreForm(data) {
-    var form = document.querySelector('form');
-    if (!form) return;
-    Object.keys(data).forEach(function(name) {
-      var val = data[name];
-      form.querySelectorAll('[name="' + CSS.escape(name) + '"]').forEach(function(el) {
-        if (el.type === 'radio' || el.type === 'checkbox') {
-          el.checked = el.value === val;
-        } else {
-          el.value = val;
-        }
-        el.dispatchEvent(new Event('change', { bubbles: true }));
+  // Restore: repopulate fields by id, re-call rate() for each saved rating
+  function restore(data) {
+    // Restore text fields
+    if (data._fields) {
+      Object.keys(data._fields).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.value = data._fields[id];
       });
-    });
+    }
+    // Restore ratings by calling the page's own rate() function
+    if (data._ratings && typeof window.rate === 'function') {
+      Object.keys(data._ratings).forEach(function(num) {
+        var entry = data._ratings[num];
+        if (entry && entry.score) {
+          window.rate(parseInt(num, 10), entry.score);
+        }
+      });
+    }
   }
 
   function loadDraft() {
@@ -187,8 +188,10 @@ function injectSaveDraft(html: string, reviewId: string): string {
   }
 
   function saveDraft() {
-    var data = serializeForm();
-    if (!data) return;
+    var data = serialize();
+    var hasContent = Object.keys(data._ratings).length > 0 ||
+      Object.values(data._fields).some(function(v) { return v && v.trim(); });
+    if (!hasContent) return;
     try {
       localStorage.setItem(KEY, JSON.stringify(data));
       showBanner('Draft saved');
@@ -199,14 +202,35 @@ function injectSaveDraft(html: string, reviewId: string): string {
     try { localStorage.removeItem(KEY); } catch(e) {}
   }
 
+  // Hook the page's rate() function so rating clicks trigger a save
   document.addEventListener('DOMContentLoaded', function() {
+    var origRate = window.rate;
+    if (typeof origRate === 'function') {
+      window.rate = function(num, val) {
+        origRate(num, val);
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveDraft, 600);
+      };
+    }
+
+    // Hook submitAll() to clear the draft on successful submit
+    var origSubmit = window.submitAll;
+    if (typeof origSubmit === 'function') {
+      window.submitAll = function() {
+        clearDraft();
+        return origSubmit.apply(this, arguments);
+      };
+    }
+
+    // Show restore bar if draft exists
     var draft = loadDraft();
-    if (draft && Object.keys(draft).length > 0) {
+    var hasRatings = draft && Object.keys(draft._ratings || {}).length > 0;
+    var hasFields = draft && Object.values(draft._fields || {}).some(function(v) { return v && v.trim(); });
+    if (hasRatings || hasFields) {
       var bar = document.getElementById('draft-restore-bar');
       if (bar) bar.classList.add('visible');
-
       document.getElementById('draft-btn-restore').addEventListener('click', function() {
-        restoreForm(draft);
+        restore(draft);
         bar.classList.remove('visible');
         showBanner('Draft restored');
       });
@@ -217,19 +241,11 @@ function injectSaveDraft(html: string, reviewId: string): string {
     }
   });
 
-  var saveTimer;
+  // Save on text input changes
   document.addEventListener('input', function() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveDraft, 600);
   });
-  document.addEventListener('change', function() {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(saveDraft, 600);
-  });
-
-  document.addEventListener('submit', function() {
-    clearDraft();
-  }, true);
 })();
 </script>`
 
