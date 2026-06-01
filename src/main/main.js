@@ -12,45 +12,60 @@ const isDev = process.env.NODE_ENV === 'development'
 
 // ── Portable-to-installer data migration ─────────────────────────────────────
 // Prior releases accidentally shipped a portable .exe instead of the NSIS
-// installer. Portable builds stored data next to the .exe. On first run of
-// the proper installer build (no PORTABLE_EXECUTABLE_DIR), copy any data
-// found next to the .exe into AppData so users don't lose their sessions.
+// installer. Portable builds store data NEXT TO the .exe (wherever the user
+// kept it — Downloads, Desktop, Documents, etc.). The NSIS installer puts the
+// exe in Program Files, which is completely different. We search all the common
+// locations a user might have kept the old portable exe and import the first
+// match we find.
 function migratePortableData() {
   if (process.env.PORTABLE_EXECUTABLE_DIR) return // still running portable, skip
   const appDataDir = app.getPath('userData')
-  const migrationFlag = path.join(appDataDir, '.portable-migration-done')
+  const migrationFlag = path.join(appDataDir, '.portable-migration-v2-done')
   if (fs.existsSync(migrationFlag)) return
 
-  const exeDir = path.dirname(process.execPath)
-  const candidates = [
-    path.join(exeDir, 'sessions'),
-    path.join(exeDir, '18thman-session.json'),
+  const home = app.getPath('home')
+  const searchDirs = [
+    path.dirname(process.execPath),                    // Program Files (unlikely but safe)
+    path.join(home, 'Downloads'),
+    path.join(home, 'Desktop'),
+    path.join(home, 'Documents'),
+    path.join(home, 'OneDrive', 'Downloads'),
+    path.join(home, 'OneDrive', 'Desktop'),
+    path.join(home, 'OneDrive', 'Documents'),
   ]
-  const hasSessions = fs.existsSync(candidates[0])
-  const hasStore    = fs.existsSync(candidates[1])
-  if (!hasSessions && !hasStore) {
-    fs.writeFileSync(migrationFlag, '', 'utf8')
-    return
+
+  let migratedSessions = false
+  let migratedStore    = false
+
+  for (const dir of searchDirs) {
+    try {
+      const sessionsDir = path.join(dir, 'sessions')
+      const storeFile   = path.join(dir, '18thman-session.json')
+
+      if (!migratedSessions && fs.existsSync(sessionsDir)) {
+        const dest = path.join(appDataDir, 'sessions')
+        if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true })
+        for (const f of fs.readdirSync(sessionsDir)) {
+          const src = path.join(sessionsDir, f)
+          const dst = path.join(dest, f)
+          if (!fs.existsSync(dst)) fs.copyFileSync(src, dst)
+        }
+        migratedSessions = true
+      }
+
+      if (!migratedStore && fs.existsSync(storeFile)) {
+        const dst = path.join(appDataDir, '18thman-session.json')
+        if (!fs.existsSync(dst)) fs.copyFileSync(storeFile, dst)
+        migratedStore = true
+      }
+
+      if (migratedSessions && migratedStore) break
+    } catch (e) {
+      // Keep searching other directories
+    }
   }
 
-  try {
-    if (hasSessions) {
-      const dest = path.join(appDataDir, 'sessions')
-      if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true })
-      for (const f of fs.readdirSync(candidates[0])) {
-        const src = path.join(candidates[0], f)
-        const dst = path.join(dest, f)
-        if (!fs.existsSync(dst)) fs.copyFileSync(src, dst)
-      }
-    }
-    if (hasStore) {
-      const dst = path.join(appDataDir, '18thman-session.json')
-      if (!fs.existsSync(dst)) fs.copyFileSync(candidates[1], dst)
-    }
-    fs.writeFileSync(migrationFlag, '', 'utf8')
-  } catch (e) {
-    // Non-fatal — user just won't get auto-migration this boot
-  }
+  fs.writeFileSync(migrationFlag, '', 'utf8')
 }
 
 // ── Session storage helpers ───────────────────────────────────────────────────
