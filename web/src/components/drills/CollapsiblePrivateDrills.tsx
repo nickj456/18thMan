@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { DrillCard } from '@/components/drills/DrillCard'
+import { drillStats } from '@/lib/drills'
 import type { DrillWithRelations } from '@/lib/supabase/types'
 
 interface CollapsiblePrivateDrillsProps {
@@ -30,9 +31,18 @@ export function CollapsiblePrivateDrills({ drills, clubName }: CollapsiblePrivat
 
       {open && (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {drills.map(drill => (
-            <DrillCard key={drill.id} drill={drill} showClubBadge />
-          ))}
+          {drills.map(drill => {
+            const { avgRating, commentCount } = drillStats(drill)
+            return (
+              <DrillCard
+                key={drill.id}
+                drill={drill}
+                avgRating={avgRating}
+                commentCount={commentCount}
+                showClubBadge
+              />
+            )
+          })}
         </div>
       )}
 
