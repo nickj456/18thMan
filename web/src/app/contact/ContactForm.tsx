@@ -4,7 +4,7 @@ import { useActionState } from 'react'
 import { submitContact } from './actions'
 
 export function ContactForm() {
-  const [state, formAction, isPending] = useActionState(submitContact, {})
+  const [state, formAction, isPending] = useActionState(submitContact, {} as { error?: string; success?: boolean })
 
   if (state.success) {
     return (

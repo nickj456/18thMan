@@ -42,12 +42,14 @@ export function DeleteGroupButton({ groupId, groupName }: Props) {
 
   return (
     <AlertDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setConfirmName(''); setError(null) } }}>
-      <AlertDialogTrigger asChild>
-        <button className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg border border-red-700/40 text-red-400 hover:bg-red-900/20 hover:border-red-700/60 transition-colors">
-          <Trash2 size={14} />
-          Delete Group
-        </button>
-      </AlertDialogTrigger>
+      <AlertDialogTrigger
+        render={
+          <button className="flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg border border-red-700/40 text-red-400 hover:bg-red-900/20 hover:border-red-700/60 transition-colors">
+            <Trash2 size={14} />
+            Delete Group
+          </button>
+        }
+      />
       <AlertDialogContent className="bg-zinc-900 border-zinc-700">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-zinc-100">Delete &quot;{groupName}&quot;?</AlertDialogTitle>
