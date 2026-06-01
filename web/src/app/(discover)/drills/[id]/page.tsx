@@ -80,7 +80,7 @@ export default async function DrillDetailPage({
       .single(),
     supabase
       .from('drill_ratings')
-      .select(`*, author:profiles!drills_author_id_fkey(id, username, display_name, avatar_url)`)
+      .select(`*, rater:profiles!drill_ratings_user_id_fkey(id, username, display_name, avatar_url)`)
       .eq('drill_id', id)
       .order('created_at', { ascending: false }),
     user
@@ -352,9 +352,9 @@ export default async function DrillDetailPage({
               {ratings.map(r => (
                 <RatingCard
                   key={r.id}
-                  displayName={r.author?.display_name ?? null}
-                  username={r.author?.username ?? null}
-                  avatarUrl={r.author?.avatar_url ?? null}
+                  displayName={(r.rater as { display_name?: string } | null)?.display_name ?? null}
+                  username={(r.rater as { username?: string } | null)?.username ?? null}
+                  avatarUrl={(r.rater as { avatar_url?: string } | null)?.avatar_url ?? null}
                   rating={r.rating ?? null}
                   comment={r.comment ?? null}
                 />
