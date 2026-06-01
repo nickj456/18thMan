@@ -13,7 +13,7 @@ export interface EmailResult {
   error?: string
 }
 
-async function send(
+export async function send(
   to: string,
   subject: string,
   html: string,
