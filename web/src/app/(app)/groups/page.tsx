@@ -62,13 +62,22 @@ export default async function GroupsPage() {
 
   // Club admin: fetch all groups in the club for the management view
   let allClubGroups: { id: string; name: string; created_at: string }[] = []
+  let clubGroupLimit = 5
   if (canCreate) {
-    const { data: clubGroups } = await supabase
-      .from('coaching_groups')
-      .select('id, name, created_at')
-      .eq('club_id', profile.club_id)
-      .order('created_at', { ascending: true })
+    const [{ data: clubGroups }, { data: clubData }] = await Promise.all([
+      supabase
+        .from('coaching_groups')
+        .select('id, name, created_at')
+        .eq('club_id', profile.club_id)
+        .order('created_at', { ascending: true }),
+      supabase
+        .from('clubs')
+        .select('max_groups')
+        .eq('id', profile.club_id)
+        .single(),
+    ])
     allClubGroups = clubGroups ?? []
+    clubGroupLimit = clubData?.max_groups ?? 5
   }
 
   return (
@@ -97,7 +106,7 @@ export default async function GroupsPage() {
       {canCreate && allClubGroups.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-            <Shield size={12} className="text-amber-400" /> All Club Groups ({allClubGroups.length} / 5)
+            <Shield size={12} className="text-amber-400" /> All Club Groups ({allClubGroups.length} / {clubGroupLimit})
           </h2>
           <div className="rounded-xl border border-zinc-800 overflow-hidden">
             <table className="w-full text-sm">

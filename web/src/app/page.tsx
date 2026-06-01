@@ -1816,6 +1816,7 @@ export default async function LandingPage() {
               {[
                 { label: 'Drill Library', href: '/drills' },
                 { label: 'Community', href: '/chat/community' },
+                { label: 'Contact', href: '/contact' },
                 { label: 'Sign In', href: '/login' },
                 { label: 'Get Started', href: '/signup' },
               ].map(({ label, href }) => (
