@@ -190,10 +190,13 @@ export async function updateClubSettings(clubId: string, formData: FormData) {
   const maxRaw = formData.get('max_members') as string
   const max_members = maxRaw && maxRaw.trim() !== '' ? parseInt(maxRaw, 10) : null
 
+  const maxGroupsRaw = formData.get('max_groups') as string
+  const max_groups = maxGroupsRaw && maxGroupsRaw.trim() !== '' ? parseInt(maxGroupsRaw, 10) : null
+
   const supabase = await createClient()
   const { error: dbErr } = await supabase
     .from('clubs')
-    .update({ name, slug: toSlug(name), max_members })
+    .update({ name, slug: toSlug(name), max_members, max_groups })
     .eq('id', clubId)
 
   if (dbErr) return { error: dbErr.message }
