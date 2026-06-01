@@ -311,5 +311,8 @@ export async function deleteGroup(groupId: string) {
 
   if (error) return { error: error.message }
 
+  revalidatePath(`/admin/groups/${groupId}`)
+  revalidatePath('/admin/clubs')
+  revalidatePath('/admin')
   return { success: true }
 }

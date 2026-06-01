@@ -191,7 +191,11 @@ export async function updateClubSettings(clubId: string, formData: FormData) {
   const max_members = maxRaw && maxRaw.trim() !== '' ? parseInt(maxRaw, 10) : null
 
   const maxGroupsRaw = formData.get('max_groups') as string
-  const max_groups = maxGroupsRaw && maxGroupsRaw.trim() !== '' ? parseInt(maxGroupsRaw, 10) : null
+  const maxGroupsParsed = maxGroupsRaw && maxGroupsRaw.trim() !== '' ? parseInt(maxGroupsRaw, 10) : null
+  if (maxGroupsParsed !== null && (isNaN(maxGroupsParsed) || maxGroupsParsed < 1)) {
+    return { error: 'Max groups must be a positive number.' }
+  }
+  const max_groups = maxGroupsParsed
 
   const supabase = await createClient()
   const { error: dbErr } = await supabase
