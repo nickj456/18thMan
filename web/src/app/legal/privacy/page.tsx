@@ -157,6 +157,7 @@ export default function PrivacyPage() {
         {/* Footer nav */}
         <div className="mt-12 pt-8 border-t border-white/5 flex gap-6 text-xs text-[#5a5855]">
           <Link href="/legal/terms" className="hover:text-[#e8e4dc] transition-colors">Terms of Service</Link>
+          <Link href="/contact" className="hover:text-[#e8e4dc] transition-colors">Contact</Link>
           <Link href="/login" className="hover:text-[#e8e4dc] transition-colors">Sign in</Link>
           <Link href="/signup" className="hover:text-[#e8e4dc] transition-colors">Create account</Link>
         </div>

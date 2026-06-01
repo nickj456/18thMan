@@ -22,6 +22,7 @@ import {
   Building2,
   Users2,
   HelpCircle,
+  Mail,
   Scale,
   Settings,
   Shirt,
@@ -277,6 +278,13 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
           </form>
         </div>
         <HelpTrigger />
+        <Link
+          href="/contact"
+          className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1"
+        >
+          <Mail className="size-3" />
+          Contact
+        </Link>
       </SidebarFooter>
     </Sidebar>
   )
