@@ -5,6 +5,7 @@ import { ArrowLeft, Users2, UserPlus, Shield, CheckCircle } from 'lucide-react'
 import { AddGroupMemberForm } from './AddGroupMemberForm'
 import { SetGroupAdminButton } from './SetGroupAdminButton'
 import { RemoveGroupMemberButton } from '@/app/(app)/groups/[id]/RemoveGroupMemberButton'
+import { DeleteGroupButton } from './DeleteGroupButton'
 
 export const metadata = { title: 'Manage Group — Admin' }
 
@@ -52,14 +53,17 @@ export default async function AdminGroupDetailPage({ params }: { params: Promise
         <ArrowLeft size={12} /> Club
       </Link>
 
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
-          <Users2 size={18} className="text-indigo-400" />
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+            <Users2 size={18} className="text-indigo-400" />
+          </div>
+          <div>
+            <h1 className="app-heading text-2xl">{group.name}</h1>
+            <p className="text-xs text-zinc-600 mt-0.5">{members?.length ?? 0} members</p>
+          </div>
         </div>
-        <div>
-          <h1 className="app-heading text-2xl">{group.name}</h1>
-          <p className="text-xs text-zinc-600 mt-0.5">{members?.length ?? 0} members</p>
-        </div>
+        <DeleteGroupButton groupId={group.id} groupName={group.name} />
       </div>
 
       {/* Add member */}
