@@ -62,25 +62,25 @@ drill_ratings!drill_ratings_drill_id_fkey ( rating, comment )
 
 Apply the same addition to the club drills query (the second item in `Promise.all`).
 
-### 4. Page aggregation — compute avgRating and commentCount
+### 4. Shared helper — drillStats
 
-**File:** `web/src/app/(discover)/drills/page.tsx`
+**File:** `web/src/lib/drills.ts` (new file)
 
-After fetching drills, compute per-drill stats before rendering:
+A pure function usable in both server and client components:
 
 ```ts
-function drillStats(drill: DrillWithRelations) {
-  const ratingRows = drill.drill_ratings ?? []
-  const scored = ratingRows.filter(r => r.rating != null)
+export function drillStats(drill: { drill_ratings?: { rating: number | null; comment: string | null }[] }) {
+  const rows = drill.drill_ratings ?? []
+  const scored = rows.filter(r => r.rating != null)
   const avgRating = scored.length
     ? scored.reduce((s, r) => s + r.rating!, 0) / scored.length
     : undefined
-  const commentCount = ratingRows.filter(r => r.comment?.trim()).length
+  const commentCount = rows.filter(r => r.comment?.trim()).length
   return { avgRating, commentCount }
 }
 ```
 
-Pass the result into each `DrillCard` call.
+The library page imports this and calls it per drill before rendering `DrillCard`. `CollapsiblePrivateDrills` also imports and calls it — it already receives `DrillWithRelations[]` which will include `drill_ratings` after the query change.
 
 ### 5. DrillCard — add commentCount prop
 
