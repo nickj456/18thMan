@@ -35,16 +35,23 @@ export async function createGroup(formData: FormData) {
   const name = (formData.get('name') as string)?.trim()
   if (!name) return { error: 'Group name is required' }
 
+  // Check per-club group limit (replaces the dropped DB trigger)
+  const [{ data: clubData }, { count: currentGroupCount }] = await Promise.all([
+    supabase.from('clubs').select('max_groups').eq('id', me.club_id).single(),
+    supabase.from('coaching_groups').select('id', { count: 'exact', head: true }).eq('club_id', me.club_id),
+  ])
+  const limit = clubData?.max_groups ?? 5
+  if ((currentGroupCount ?? 0) >= limit) {
+    return { error: 'Your club has reached its group limit. Contact your administrator to increase it.' }
+  }
+
   const { data: group, error } = await supabase
     .from('coaching_groups')
     .insert({ name, club_id: me.club_id, created_by: user.id })
     .select('id')
     .single()
 
-  if (error) {
-    if (error.message.includes('maximum of 5')) return { error: 'This club already has 5 groups (the maximum)' }
-    return { error: error.message }
-  }
+  if (error) return { error: error.message }
 
   // Auto-accept the creator as a member
   await supabase.from('group_invitations').insert({
