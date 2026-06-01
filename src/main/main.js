@@ -68,10 +68,26 @@ function migratePortableData() {
   fs.writeFileSync(migrationFlag, '', 'utf8')
 }
 
+// ── App settings ─────────────────────────────────────────────────────────────
+
+function getSettingsPath() {
+  return path.join(app.getPath('userData'), 'app-settings.json')
+}
+
+function readSettings() {
+  try { return JSON.parse(fs.readFileSync(getSettingsPath(), 'utf8')) }
+  catch { return {} }
+}
+
+function writeSettings(settings) {
+  fs.writeFileSync(getSettingsPath(), JSON.stringify(settings, null, 2), 'utf8')
+}
+
 // ── Session storage helpers ───────────────────────────────────────────────────
 
 function getSessionsDir() {
-  const dir = path.join(app.getPath('userData'), 'sessions')
+  const settings = readSettings()
+  const dir = settings.sessionsFolder || path.join(app.getPath('userData'), 'sessions')
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
   return dir
 }
@@ -470,6 +486,33 @@ ipcMain.handle('sessions:importFromFolder', async (_, knownPath) => {
 function getSquadTemplatesPath() {
   return path.join(app.getPath('userData'), 'squad-templates.json')
 }
+
+// ── IPC: App settings ────────────────────────────────────────────────────────
+
+ipcMain.handle('settings:get', () => readSettings())
+
+ipcMain.handle('settings:setSessionsFolder', async () => {
+  const current = readSettings().sessionsFolder || path.join(app.getPath('userData'), 'sessions')
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Choose where to save your sessions',
+    defaultPath: current,
+    properties: ['openDirectory', 'createDirectory'],
+  })
+  if (canceled || !filePaths[0]) return null
+  const settings = readSettings()
+  settings.sessionsFolder = filePaths[0]
+  writeSettings(settings)
+  return filePaths[0]
+})
+
+ipcMain.handle('settings:clearSessionsFolder', () => {
+  const settings = readSettings()
+  delete settings.sessionsFolder
+  writeSettings(settings)
+  return true
+})
+
+// ── IPC: Squad templates ──────────────────────────────────────────────────────
 
 ipcMain.handle('squads:list', () => {
   try { return JSON.parse(fs.readFileSync(getSquadTemplatesPath(), 'utf8')) }

@@ -55,6 +55,8 @@ export default function App() {
   const [sessionName, setSessionName]               = useState(null)
   const [showLibrary, setShowLibrary]               = useState(true)
   const [crashRecoverySession, setCrashRecoverySession] = useState(null)
+  const [isDirty, setIsDirty]                       = useState(false)
+  const loadingRef = useRef(false)
 
   // Presentation mode
   const [isPresenting, setIsPresenting] = useState(false)
@@ -205,6 +207,7 @@ export default function App() {
 
   const applySession = useCallback(async (data) => {
     if (!data) return
+    loadingRef.current = true
 
     // Video path check — prompt to locate if missing
     let vf = data.videoFile
@@ -242,6 +245,8 @@ export default function App() {
     }
 
     // Squad reviews are always loaded at startup — no session scoping needed here.
+    // Allow one render cycle before re-enabling dirty tracking
+    setTimeout(() => { loadingRef.current = false; setIsDirty(false) }, 0)
   }, [showNotification])
 
   // Declared after applySession so the deps array can reference it safely
@@ -272,6 +277,12 @@ export default function App() {
     }
   }, [])
 
+  // Mark dirty whenever meaningful state changes, but not during session loads
+  useEffect(() => {
+    if (loadingRef.current) return
+    setIsDirty(true)
+  }, [events, clips, matchInfo])
+
   const handleLoadSession = useCallback(async (id) => {
     const data = await window.electron?.loadNamedSession(id)
     if (!data) { showNotification('Could not load session', 'error'); return }
@@ -294,6 +305,7 @@ export default function App() {
     await window.electron?.saveNamedSession({ id, name, data })
     setCurrentSessionId(id)
     setSessionName(name)
+    setIsDirty(false)
     showNotification(`Saved: ${name}`)
   }, [currentSessionId, sessionName, buildSessionData, showNotification])
 
@@ -474,6 +486,7 @@ export default function App() {
         matchInfo={matchInfo} setMatchInfo={setMatchInfo}
         sharedReports={sharedReports}
         onSaveSession={handleSaveSession}
+        isDirty={isDirty}
         onOpenLibrary={() => setShowLibrary(true)}
         onPresent={() => setIsPresenting(true)}
         sessionName={sessionName}

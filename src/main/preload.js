@@ -30,6 +30,10 @@ contextBridge.exposeInMainWorld('electron', {
   findOldSessionData: () => ipcRenderer.invoke('sessions:findOldData'),
   importSessionsFromFolder: (knownPath) => ipcRenderer.invoke('sessions:importFromFolder', knownPath),
 
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  chooseSessionsFolder: () => ipcRenderer.invoke('settings:setSessionsFolder'),
+  clearSessionsFolder: () => ipcRenderer.invoke('settings:clearSessionsFolder'),
+
   fileExists: (p) => ipcRenderer.invoke('file:exists', p),
 
   listSquads:      ()     => ipcRenderer.invoke('squads:list'),

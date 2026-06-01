@@ -7,9 +7,11 @@ export default function Header({
   matchInfo, setMatchInfo, sharedReports,
   onSaveSession, onOpenLibrary, onPresent, sessionName,
   authProfile, isTrial, trialDaysLeft, onSignOut,
+  isDirty,
 }) {
-  const [showInfo, setShowInfo]               = useState(false)
+  const [showInfo, setShowInfo]                 = useState(false)
   const [showEmailSettings, setShowEmailSettings] = useState(false)
+  const [showExport, setShowExport]             = useState(false)
 
   const set = (k, v) => setMatchInfo(p => ({ ...p, [k]: v }))
 
@@ -19,12 +21,14 @@ export default function Header({
     : null
 
   const handleExportCsv = () => {
+    setShowExport(false)
     if (events.length === 0) { showNotification('No events to export', 'error'); return }
     exportCsv(events, players, matchInfo)
     showNotification('CSV exported')
   }
 
   const handleExportPdf = async () => {
+    setShowExport(false)
     if (!outputFolder) { showNotification('Choose an output folder first', 'error'); return }
     const html = generatePdfHtml({ events, players, clips, matchInfo, sharedReports })
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
@@ -107,21 +111,78 @@ export default function Header({
 
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-        {sessionName && (
-          <span style={{
-            fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted-2)',
-            whiteSpace: 'nowrap', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {sessionName}
-          </span>
-        )}
-        <Btn onClick={onSaveSession}>💾 SAVE</Btn>
-        <Btn onClick={onOpenLibrary}>📂 GAMES</Btn>
+
+        {/* Session name + save status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 4 }}>
+          {sessionName && (
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted-2)',
+              whiteSpace: 'nowrap', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {sessionName}
+            </span>
+          )}
+          {isDirty ? (
+            <span style={{
+              fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 700,
+              color: 'var(--amber)', letterSpacing: 0.3, whiteSpace: 'nowrap',
+            }}>
+              ● Unsaved
+            </span>
+          ) : sessionName ? (
+            <span style={{
+              fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 700,
+              color: 'var(--green)', letterSpacing: 0.3, whiteSpace: 'nowrap',
+            }}>
+              ✓ Saved
+            </span>
+          ) : null}
+        </div>
+
+        {/* Primary: Save */}
+        <SaveBtn onClick={onSaveSession} isDirty={isDirty}>
+          Save
+        </SaveBtn>
+
+        {/* Session Library */}
+        <Btn onClick={onOpenLibrary}>Session Library</Btn>
+
         <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
-        <Btn onClick={() => setShowInfo(s => !s)} active={showInfo}>MATCH INFO</Btn>
-        <Btn onClick={handleExportCsv}>EXPORT CSV</Btn>
-        <Btn onClick={handleExportPdf} accent>EXPORT PDF</Btn>
-        <Btn onClick={onPresent} style={{ background: 'rgba(83,74,183,0.2)', borderColor: 'var(--purple)', color: 'var(--purple)' }}>▶ PRESENT</Btn>
+
+        {/* Match Info */}
+        <Btn onClick={() => setShowInfo(s => !s)} active={showInfo}>Match Info</Btn>
+
+        {/* Export dropdown */}
+        <div style={{ position: 'relative' }}>
+          <Btn onClick={() => setShowExport(s => !s)} active={showExport}>
+            Export ▾
+          </Btn>
+          {showExport && (
+            <div style={{
+              position: 'absolute', top: '110%', right: 0, zIndex: 300,
+              background: 'var(--panel)', border: '1px solid var(--border)',
+              borderRadius: 3, overflow: 'hidden',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+              minWidth: 140,
+            }}>
+              <DropItem onClick={handleExportCsv}>
+                <span>Export CSV</span>
+                <span style={{ fontSize: 9, color: 'var(--muted-2)' }}>Spreadsheet</span>
+              </DropItem>
+              <DropItem onClick={handleExportPdf}>
+                <span>Export PDF</span>
+                <span style={{ fontSize: 9, color: 'var(--muted-2)' }}>Match report</span>
+              </DropItem>
+            </div>
+          )}
+        </div>
+
+        {/* Present */}
+        <Btn onClick={onPresent} style={{ background: 'rgba(83,74,183,0.15)', borderColor: 'var(--purple)', color: 'var(--purple)' }}>
+          ▶ Present
+        </Btn>
+
+        {/* Settings */}
         <button
           onClick={() => setShowEmailSettings(s => !s)}
           title="Email settings"
@@ -133,6 +194,8 @@ export default function Header({
         >
           ⚙
         </button>
+
+        {/* User */}
         {authProfile && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted-2)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -147,7 +210,7 @@ export default function Header({
                 fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
               }}
             >
-              SIGN OUT
+              Sign out
             </button>
           </div>
         )}
@@ -221,7 +284,7 @@ export default function Header({
             </div>
           </div>
 
-          <Btn onClick={() => setShowInfo(false)} style={{ marginTop: 4 }}>DONE</Btn>
+          <Btn onClick={() => setShowInfo(false)} style={{ marginTop: 4 }}>Done</Btn>
         </div>
       )}
 
@@ -243,6 +306,28 @@ export default function Header({
   )
 }
 
+function SaveBtn({ onClick, children, isDirty }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background: isDirty ? (hov ? '#c45a08' : 'var(--brand)') : (hov ? 'rgba(232,86,10,0.1)' : 'transparent'),
+        color: isDirty ? '#fff' : (hov ? 'var(--brand)' : 'var(--muted)'),
+        border: `1px solid ${isDirty ? 'var(--brand)' : (hov ? 'var(--brand)' : 'var(--border)')}`,
+        padding: '5px 14px', borderRadius: 2,
+        fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700,
+        letterSpacing: 0.8, textTransform: 'uppercase',
+        cursor: 'pointer', transition: 'all 0.12s',
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
 function Btn({ onClick, children, accent, active, style }) {
   const [hov, setHov] = useState(false)
   const highlighted = hov || active
@@ -260,6 +345,29 @@ function Btn({ onClick, children, accent, active, style }) {
         letterSpacing: 0.8, textTransform: 'uppercase',
         cursor: 'pointer', transition: 'all 0.12s',
         ...style,
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function DropItem({ onClick, children }) {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 12, width: '100%', textAlign: 'left',
+        background: hov ? 'rgba(232,86,10,0.08)' : 'transparent',
+        border: 'none', borderBottom: '1px solid var(--border)',
+        color: hov ? 'var(--brand)' : 'var(--text)',
+        padding: '9px 14px', cursor: 'pointer',
+        fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700,
+        letterSpacing: 0.5,
       }}
     >
       {children}

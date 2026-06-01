@@ -7,6 +7,7 @@ export default function GameLibrary({ onLoad, onNew, onClose, onContinue, crashS
   const [importing, setImporting] = useState(false)
   const [importMsg, setImportMsg] = useState(null)
   const [oldDataLocations, setOldDataLocations] = useState(null) // null=scanning, []=none, [...]=found
+  const [sessionsFolder, setSessionsFolder] = useState(null)
 
   useEffect(() => {
     window.electron?.listSessions().then(s => {
@@ -16,7 +17,26 @@ export default function GameLibrary({ onLoad, onNew, onClose, onContinue, crashS
     window.electron?.findOldSessionData?.().then(found => {
       setOldDataLocations(found || [])
     })
+    window.electron?.getSettings?.().then(s => {
+      setSessionsFolder(s?.sessionsFolder || null)
+    })
   }, [])
+
+  const handleChooseFolder = async () => {
+    const chosen = await window.electron?.chooseSessionsFolder()
+    if (chosen) {
+      setSessionsFolder(chosen)
+      const s = await window.electron?.listSessions()
+      setSessions(s || [])
+    }
+  }
+
+  const handleResetFolder = async () => {
+    await window.electron?.clearSessionsFolder()
+    setSessionsFolder(null)
+    const s = await window.electron?.listSessions()
+    setSessions(s || [])
+  }
 
   const doImport = async (knownPath) => {
     setImporting(true)
@@ -231,6 +251,49 @@ export default function GameLibrary({ onLoad, onNew, onClose, onContinue, crashS
                 </div>
               )
             })
+          )}
+        </div>
+
+        {/* Storage location row */}
+        <div style={{
+          padding: '8px 18px', borderTop: '1px solid var(--border)', flexShrink: 0,
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(255,255,255,0.02)',
+        }}>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 700, letterSpacing: 1, color: 'var(--muted)', textTransform: 'uppercase', flexShrink: 0 }}>
+            Saved to
+          </span>
+          <span style={{
+            fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--muted-2)',
+            flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }} title={sessionsFolder || 'Default (AppData)'}>
+            {sessionsFolder || 'Default location (AppData)'}
+          </span>
+          <button
+            onClick={handleChooseFolder}
+            style={{
+              background: 'transparent', border: '1px solid var(--border)',
+              color: 'var(--muted)', padding: '3px 8px', borderRadius: 2,
+              fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 700,
+              letterSpacing: 0.5, textTransform: 'uppercase', cursor: 'pointer',
+              flexShrink: 0, whiteSpace: 'nowrap',
+            }}
+          >
+            Change
+          </button>
+          {sessionsFolder && (
+            <button
+              onClick={handleResetFolder}
+              style={{
+                background: 'transparent', border: 'none',
+                color: 'var(--muted-2)', padding: '3px 4px',
+                fontFamily: 'var(--font-ui)', fontSize: 11,
+                cursor: 'pointer', flexShrink: 0,
+              }}
+              title="Reset to default location"
+            >
+              ×
+            </button>
           )}
         </div>
 
