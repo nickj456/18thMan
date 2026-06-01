@@ -1,6 +1,6 @@
 {
   "name": "18thman-match-analyst",
-  "version": "1.7.12",
+  "version": "1.7.13",
   "description": "18thMan Match Analyst — video analysis for rugby league coaches",
   "main": "src/main/main.js",
   "scripts": {

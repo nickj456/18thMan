@@ -376,6 +376,53 @@ ipcMain.handle('sessions:delete', (_, id) => {
   return true
 })
 
+ipcMain.handle('sessions:importFromFolder', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Select folder containing your old sessions',
+    properties: ['openDirectory'],
+  })
+  if (canceled || !filePaths[0]) return { imported: 0 }
+
+  const srcFolder = filePaths[0]
+  let imported = 0
+  try {
+    // Support two layouts: the folder IS the sessions dir, or it contains a sessions/ subdir
+    const directIndex  = path.join(srcFolder, 'index.json')
+    const nestedIndex  = path.join(srcFolder, 'sessions', 'index.json')
+    const sessionsDir  = fs.existsSync(directIndex)  ? srcFolder
+                       : fs.existsSync(nestedIndex)  ? path.join(srcFolder, 'sessions')
+                       : null
+
+    if (sessionsDir) {
+      const dest = getSessionsDir()
+      const srcIndex = JSON.parse(fs.readFileSync(path.join(sessionsDir, 'index.json'), 'utf8'))
+      const destIndex = readSessionsIndex()
+      const existingIds = new Set(destIndex.map(s => s.id))
+
+      for (const entry of srcIndex) {
+        if (existingIds.has(entry.id)) continue
+        const srcFile = path.join(sessionsDir, `${entry.id}.json`)
+        if (fs.existsSync(srcFile)) {
+          fs.copyFileSync(srcFile, path.join(dest, `${entry.id}.json`))
+          destIndex.push(entry)
+          imported++
+        }
+      }
+      writeSessionsIndex(destIndex)
+    }
+
+    // Also import the quick-save store file if present
+    const storeFile = path.join(srcFolder, '18thman-session.json')
+    if (fs.existsSync(storeFile)) {
+      const dst = path.join(app.getPath('userData'), '18thman-session.json')
+      if (!fs.existsSync(dst)) fs.copyFileSync(storeFile, dst)
+    }
+  } catch (e) {
+    return { imported, error: e.message }
+  }
+  return { imported }
+})
+
 // ── IPC: Squad templates ──────────────────────────────────────────────────────
 
 function getSquadTemplatesPath() {

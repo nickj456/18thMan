@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('electron', {
   saveNamedSession: (args)  => ipcRenderer.invoke('sessions:save', args),
   loadNamedSession: (id)    => ipcRenderer.invoke('sessions:load', id),
   deleteSession:  (id)      => ipcRenderer.invoke('sessions:delete', id),
+  importSessionsFromFolder: () => ipcRenderer.invoke('sessions:importFromFolder'),
 
   fileExists: (p) => ipcRenderer.invoke('file:exists', p),
 

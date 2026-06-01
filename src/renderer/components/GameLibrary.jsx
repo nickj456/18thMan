@@ -4,6 +4,8 @@ export default function GameLibrary({ onLoad, onNew, onClose, onContinue, crashS
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
+  const [importing, setImporting] = useState(false)
+  const [importMsg, setImportMsg] = useState(null)
 
   useEffect(() => {
     window.electron?.listSessions().then(s => {
@@ -11,6 +13,22 @@ export default function GameLibrary({ onLoad, onNew, onClose, onContinue, crashS
       setLoading(false)
     })
   }, [])
+
+  const handleImport = async () => {
+    setImporting(true)
+    setImportMsg(null)
+    const result = await window.electron?.importSessionsFromFolder()
+    setImporting(false)
+    if (!result) return
+    if (result.error) { setImportMsg(`Error: ${result.error}`); return }
+    if (result.imported === 0) {
+      setImportMsg('No new sessions found in that folder. Make sure you selected the folder where the old app was saved (e.g. Downloads).')
+    } else {
+      setImportMsg(`Imported ${result.imported} session${result.imported !== 1 ? 's' : ''}!`)
+      const s = await window.electron?.listSessions()
+      setSessions(s || [])
+    }
+  }
 
   const handleDelete = async (e, id) => {
     e.stopPropagation()
@@ -127,8 +145,30 @@ export default function GameLibrary({ onLoad, onNew, onClose, onContinue, crashS
               <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontSize: 13, color: 'var(--muted)', marginBottom: 10 }}>
                 No saved sessions yet
               </div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--muted-2)', lineHeight: 1.7 }}>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--muted-2)', lineHeight: 1.7, marginBottom: 20 }}>
                 Analyse a match and click <strong style={{ color: 'var(--text)' }}>SAVE</strong> to store it here permanently.
+              </div>
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20 }}>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--muted)', marginBottom: 10 }}>
+                  Updated from an older version? Import your previous sessions:
+                </div>
+                <button
+                  onClick={handleImport}
+                  disabled={importing}
+                  style={{
+                    background: 'transparent', border: '1px solid var(--border)',
+                    color: 'var(--text)', padding: '7px 16px', borderRadius: 3,
+                    fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700,
+                    letterSpacing: 0.5, cursor: importing ? 'default' : 'pointer', opacity: importing ? 0.5 : 1,
+                  }}
+                >
+                  {importing ? 'Selecting folder…' : 'Import sessions from previous install'}
+                </button>
+                {importMsg && (
+                  <div style={{ marginTop: 10, fontFamily: 'var(--font-body)', fontSize: 11, color: importMsg.startsWith('Imported') ? 'var(--green)' : 'var(--muted)', lineHeight: 1.5 }}>
+                    {importMsg}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -207,7 +247,10 @@ export default function GameLibrary({ onLoad, onNew, onClose, onContinue, crashS
 
         {/* Footer */}
         {onClose && (
-          <div style={{ padding: '10px 18px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          <div style={{
+            padding: '10px 18px', borderTop: '1px solid var(--border)', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          }}>
             <button
               onClick={onClose}
               style={{
@@ -220,6 +263,28 @@ export default function GameLibrary({ onLoad, onNew, onClose, onContinue, crashS
             >
               Continue without loading
             </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              {importMsg && (
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: importMsg.startsWith('Imported') ? 'var(--green)' : 'var(--muted)' }}>
+                  {importMsg}
+                </span>
+              )}
+              <button
+                onClick={handleImport}
+                disabled={importing}
+                style={{
+                  background: 'transparent', color: 'var(--muted)',
+                  border: '1px solid var(--border)', padding: '6px 14px',
+                  borderRadius: 3, fontFamily: 'var(--font-ui)', fontSize: 10,
+                  fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
+                  cursor: importing ? 'default' : 'pointer', opacity: importing ? 0.5 : 1,
+                  whiteSpace: 'nowrap',
+                }}
+                title="Import sessions saved by a previous installation"
+              >
+                {importing ? 'Selecting…' : 'Import old sessions'}
+              </button>
+            </div>
           </div>
         )}
       </div>
