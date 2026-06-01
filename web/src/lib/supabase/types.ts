@@ -324,6 +324,7 @@ export interface PlayerWithRatings extends Player {
 export interface DrillWithRelations extends Drill {
   category: DrillCategory | null
   author: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>
+  drill_ratings?: { rating: number | null; comment: string | null }[]
 }
 
 export interface DrillRatingWithAuthor extends DrillRating {
