@@ -29,7 +29,7 @@ export default async function ClubPage({
     const [{ data: club }, { data: members }] = await Promise.all([
       supabase
         .from('clubs')
-        .select('id, name, slug, created_at, invite_token')
+        .select('id, name, slug, created_at, invite_token, max_groups')
         .eq('id', profile.club_id)
         .single(),
       supabase
@@ -42,6 +42,7 @@ export default async function ClubPage({
     // Club admin needs the list of users not yet in a club to invite
     let availableUsers: { id: string; username: string; display_name: string | null }[] = []
     let pendingInvites: { invitationId: string; userId: string; createdAt: string; displayName: string | null; username: string }[] = []
+    let groupCount = 0
     if (profile.club_role === 'admin') {
       const memberIds = (members ?? []).map(m => m.id)
       let q = supabase
@@ -73,6 +74,12 @@ export default async function ClubPage({
 
       const { data } = await q
       availableUsers = data ?? []
+
+      const { count: groupCountResult } = await supabase
+        .from('coaching_groups')
+        .select('id', { count: 'exact', head: true })
+        .eq('club_id', profile.club_id)
+      groupCount = groupCountResult ?? 0
     }
 
     return (
@@ -136,6 +143,8 @@ export default async function ClubPage({
             availableUsers={availableUsers}
             pendingInvites={pendingInvites}
             currentUserId={user.id}
+            groupCount={groupCount}
+            maxGroups={club?.max_groups ?? null}
           />
         )}
       </div>

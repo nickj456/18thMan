@@ -35,9 +35,11 @@ interface Props {
   availableUsers: AvailableUser[]
   pendingInvites: PendingInvite[]
   currentUserId: string
+  groupCount: number
+  maxGroups: number | null
 }
 
-export function ClubAdminPanel({ clubId, inviteToken, members, availableUsers, pendingInvites, currentUserId }: Props) {
+export function ClubAdminPanel({ clubId, inviteToken, members, availableUsers, pendingInvites, currentUserId, groupCount, maxGroups }: Props) {
   const router = useRouter()
   const [inviteId, setInviteId] = useState('')
   const [invitePending, startInvite] = useTransition()
@@ -100,7 +102,12 @@ export function ClubAdminPanel({ clubId, inviteToken, members, availableUsers, p
 
   return (
     <div className="space-y-6 border-t border-zinc-800 pt-6 mt-6">
-      <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Club Admin</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Club Admin</h2>
+        <span className="text-xs text-zinc-500">
+          {groupCount} / {maxGroups ?? 5} groups
+        </span>
+      </div>
 
       {/* Invite link */}
       <div className="space-y-2">
