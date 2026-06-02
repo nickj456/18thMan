@@ -161,15 +161,35 @@ app.whenReady().then(() => {
   })
 
   if (!isDev) {
+    // Cache update state so we can replay it if the renderer asks after the fact
+    let pendingUpdate = null
+    let updateReady   = false
+
+    autoUpdater.on('error', (err) => {
+      console.error('[updater] error:', err?.message || err)
+    })
+
     autoUpdater.on('update-available', (info) => {
+      pendingUpdate = info.version
       mainWindow?.webContents.send('update:available', { version: info.version })
     })
 
     autoUpdater.on('update-downloaded', () => {
+      updateReady = true
       mainWindow?.webContents.send('update:ready')
     })
 
-    autoUpdater.checkForUpdates()
+    // Re-send cached update state when renderer finishes loading
+    mainWindow.webContents.on('did-finish-load', () => {
+      if (pendingUpdate) mainWindow.webContents.send('update:available', { version: pendingUpdate })
+      if (updateReady)   mainWindow.webContents.send('update:ready')
+    })
+
+    // Wait until the renderer is fully loaded before checking, so the
+    // update-available IPC message isn't sent before the listener is ready
+    mainWindow.webContents.once('did-finish-load', () => {
+      setTimeout(() => autoUpdater.checkForUpdates(), 3000)
+    })
   }
 })
 
