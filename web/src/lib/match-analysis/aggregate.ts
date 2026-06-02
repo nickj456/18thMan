@@ -210,6 +210,13 @@ export function computeHeatmap(
 
 // ── CSV export ─────────────────────────────────────────────────────────────────
 
+// Sanitize a CSV cell: prefix formula-injection triggers with a single quote,
+// and wrap cells containing special chars in double quotes (OWASP guidance).
+function escapeCsvCell(v: string): string {
+  const safe = /^[=+\-@\t\r]/.test(v) ? `'${v}` : v
+  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe
+}
+
 export function buildTeamReportCsv(
   sessions: MatchSessionWithAnalyst[],
   includedIds: string[],
@@ -228,7 +235,7 @@ export function buildTeamReportCsv(
     )
     return [statType, ...cells]
   })
-  return [header, ...rows].map(r => r.join(',')).join('\n')
+  return [header, ...rows].map(r => r.map(escapeCsvCell).join(',')).join('\n')
 }
 
 export function buildReportCardsCsv(
@@ -254,5 +261,5 @@ export function buildReportCardsCsv(
       ])
     }
   }
-  return [header, ...rows].map(r => r.join(',')).join('\n')
+  return [header, ...rows].map(r => r.map(escapeCsvCell).join(',')).join('\n')
 }
