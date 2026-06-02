@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { resolve } from 'path'
 import { readFileSync, existsSync } from 'fs'
 import { renderToBuffer } from '@react-pdf/renderer'
-import { streamText } from 'ai'
+import { generateText } from 'ai'
 import { gateway } from '@ai-sdk/gateway'
 import { createClient } from '@/lib/supabase/server'
 import {
@@ -106,28 +106,17 @@ ${tackleLeader ? `Top tackler: ${tackleLeader.p.name} (${tackleLeader.total} tot
 ${carryLeader ? `Top carrier: ${carryLeader.p.name} (${carryLeader.total} total)` : ''}
 ${concernStats.length ? `Concerns: ${concernStats.map(s => s.replace(/_/g, ' ')).join(', ')} — high in 2+ matches` : ''}`
 
-  const clubId = profile.club_id
-
-  const readableStream = new ReadableStream<string>({
-    async start(controller) {
-      let fullText = ''
-      const { textStream } = streamText({
-        model: gateway('anthropic/claude-haiku-4-5'),
-        prompt,
-      })
-      for await (const delta of textStream) {
-        fullText += delta
-        controller.enqueue(delta)
-      }
-      controller.close()
-      await supabase.from('progression_insights').upsert(
-        { club_id: clubId, scope: 'team', session_ids_hash: hash, content: fullText },
-        { onConflict: 'club_id,scope,session_ids_hash' },
-      )
-    },
+  const { text } = await generateText({
+    model: gateway('anthropic/claude-haiku-4-5'),
+    prompt,
   })
 
-  return { stream: readableStream, hash }
+  await supabase.from('progression_insights').upsert(
+    { club_id: profile.club_id, scope: 'team', session_ids_hash: hash, content: text },
+    { onConflict: 'club_id,scope,session_ids_hash' },
+  )
+
+  return { text, hash }
 }
 
 // ── Player insight ─────────────────────────────────────────────────────────────
@@ -178,29 +167,17 @@ Matches tracked: ${input.sessionIds.length}
 Stats:
 ${statLines}`
 
-  const clubId = profile.club_id
-  const playerKey = input.playerKey
-
-  const readableStream = new ReadableStream<string>({
-    async start(controller) {
-      let fullText = ''
-      const { textStream } = streamText({
-        model: gateway('anthropic/claude-haiku-4-5'),
-        prompt,
-      })
-      for await (const delta of textStream) {
-        fullText += delta
-        controller.enqueue(delta)
-      }
-      controller.close()
-      await supabase.from('progression_insights').upsert(
-        { club_id: clubId, scope: playerKey, session_ids_hash: hash, content: fullText },
-        { onConflict: 'club_id,scope,session_ids_hash' },
-      )
-    },
+  const { text } = await generateText({
+    model: gateway('anthropic/claude-haiku-4-5'),
+    prompt,
   })
 
-  return { stream: readableStream, hash }
+  await supabase.from('progression_insights').upsert(
+    { club_id: profile.club_id, scope: input.playerKey, session_ids_hash: hash, content: text },
+    { onConflict: 'club_id,scope,session_ids_hash' },
+  )
+
+  return { text, hash }
 }
 
 // ── PDF export (unchanged) ────────────────────────────────────────────────────
