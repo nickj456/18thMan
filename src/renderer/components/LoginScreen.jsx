@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { signIn } from '../utils/authClient'
-import logoUrl from '../../assets/logo.png'
 
 export default function LoginScreen({ onSuccess, initialError = null }) {
   const [email, setEmail]       = useState('')
@@ -49,7 +48,7 @@ export default function LoginScreen({ onSuccess, initialError = null }) {
         {/* Logo + title */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <img
-            src={logoUrl}
+            src="src/assets/logo.png"
             alt="18th Man"
             style={{ height: 64, objectFit: 'contain', display: 'block', margin: '0 auto 16px' }}
             onError={e => e.target.style.display = 'none'}

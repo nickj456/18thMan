@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react'
 import { exportCsv, generatePdfHtml } from '../utils/export'
 import EmailSettings from './EmailSettings'
 import ExportModal from './ExportModal'
-import logoUrl from '../../assets/logo.png'
 
 export default function Header({
   videoFile, events, clips, players, outputFolder, showNotification,
@@ -61,7 +60,7 @@ export default function Header({
       {/* Logo + wordmark */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
         <img
-          src={logoUrl} alt="18thMan"
+          src="src/assets/logo.png" alt="18thMan"
           style={{ height: 32, objectFit: 'contain', display: 'block' }}
           onError={(e) => { e.target.style.display = 'none' }}
         />
