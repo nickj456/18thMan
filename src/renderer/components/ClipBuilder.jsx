@@ -47,9 +47,9 @@ export default function ClipBuilder({ players, events, addClip, videoRef, showNo
     setUncheckedEventIds(new Set())
   }
 
-  const allStatsSelected = ALL_STAT_TYPES.every(s => selectedStatKeys.has(s.key))
+  const allStatsSelected = ALL_STATS.every(s => selectedStatKeys.has(s.key))
   const toggleAllStats = () => {
-    setSelectedStatKeys(allStatsSelected ? new Set() : new Set(ALL_STAT_TYPES.map(s => s.key)))
+    setSelectedStatKeys(allStatsSelected ? new Set() : new Set(ALL_STATS.map(s => s.key)))
     setUncheckedEventIds(new Set())
   }
 
