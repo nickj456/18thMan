@@ -78,8 +78,10 @@ export default function App() {
   const [newResponseAlert, setNewResponseAlert] = useState(null)
 
   // Auto-update
-  const [updateVersion, setUpdateVersion] = useState(null)
-  const [updateReady, setUpdateReady]     = useState(false)
+  const [updateVersion, setUpdateVersion]   = useState(null)
+  const [updateReady, setUpdateReady]       = useState(false)
+  const [updateInstalling, setUpdateInstalling] = useState(false)
+  const [updateError, setUpdateError]       = useState(null)
 
   // Horizontal resize
   const [leftPx, setLeftPx]   = useState(null)
@@ -283,6 +285,7 @@ export default function App() {
   useEffect(() => {
     window.electron?.onUpdateAvailable?.(({ version }) => setUpdateVersion(version))
     window.electron?.onUpdateReady?.(() => setUpdateReady(true))
+    window.electron?.onUpdateInstallError?.((msg) => { setUpdateInstalling(false); setUpdateError(msg) })
     return () => {
       window.electron?.removeUpdateListeners?.()
     }
@@ -453,20 +456,24 @@ export default function App() {
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', background:'var(--bg)' }}>
       {updateVersion && (
         <div style={{
-          background: updateReady ? '#16a34a' : '#1d4ed8',
+          background: updateError ? '#7f1d1d' : updateReady ? '#16a34a' : '#1d4ed8',
           color: '#fff', fontSize: '13px', padding: '6px 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           gap: '12px', flexShrink: 0,
         }}>
           <span>
-            {updateReady
-              ? `Update v${updateVersion} downloaded and ready to install.`
-              : `Update v${updateVersion} available — downloading in the background…`}
+            {updateError
+              ? `Update failed: ${updateError}. Try restarting the app manually.`
+              : updateInstalling
+              ? `Installing v${updateVersion} — the app will restart shortly…`
+              : updateReady
+              ? `v${updateVersion} downloaded and ready to install.`
+              : `v${updateVersion} available — downloading…`}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {updateReady && (
+            {updateReady && !updateInstalling && !updateError && (
               <button
-                onClick={() => window.electron?.installUpdate()}
+                onClick={() => { setUpdateInstalling(true); window.electron?.installUpdate() }}
                 style={{
                   background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
                   color: '#fff', borderRadius: '4px', padding: '2px 12px',
@@ -477,7 +484,7 @@ export default function App() {
               </button>
             )}
             <button
-              onClick={() => setUpdateVersion(null)}
+              onClick={() => { setUpdateVersion(null); setUpdateError(null); setUpdateInstalling(false) }}
               style={{
                 background: 'transparent', border: 'none',
                 color: 'rgba(255,255,255,0.7)', cursor: 'pointer',

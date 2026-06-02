@@ -194,7 +194,14 @@ app.whenReady().then(() => {
 })
 
 ipcMain.on('update:install', () => {
-  autoUpdater.quitAndInstall()
+  // isSilent=true: run installer in background without showing NSIS wizard UI
+  // isForceRunAfter=true: relaunch the app automatically after install completes
+  try {
+    autoUpdater.quitAndInstall(true, true)
+  } catch (err) {
+    console.error('[updater] quitAndInstall failed:', err?.message || err)
+    mainWindow?.webContents.send('update:install-error', err?.message || 'Install failed')
+  }
 })
 
 app.on('window-all-closed', () => {
