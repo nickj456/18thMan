@@ -174,6 +174,10 @@ app.whenReady().then(() => {
       mainWindow?.webContents.send('update:available', { version: info.version })
     })
 
+    autoUpdater.on('update-not-available', () => {
+      mainWindow?.webContents.send('update:not-available')
+    })
+
     autoUpdater.on('update-downloaded', () => {
       updateReady = true
       mainWindow?.webContents.send('update:ready')
@@ -190,6 +194,16 @@ app.whenReady().then(() => {
     mainWindow.webContents.once('did-finish-load', () => {
       setTimeout(() => autoUpdater.checkForUpdates(), 3000)
     })
+  }
+})
+
+ipcMain.handle('update:check-now', async () => {
+  if (isDev) return { status: 'dev' }
+  try {
+    await autoUpdater.checkForUpdates()
+    return { status: 'ok' }
+  } catch (err) {
+    return { status: 'error', message: err?.message || String(err) }
   }
 })
 

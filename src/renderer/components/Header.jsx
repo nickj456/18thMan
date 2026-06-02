@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { exportCsv, generatePdfHtml } from '../utils/export'
 import EmailSettings from './EmailSettings'
 import ExportModal from './ExportModal'
@@ -10,10 +10,20 @@ export default function Header({
   onSaveSession, onOpenLibrary, onPresent, sessionName,
   authProfile, isTrial, trialDaysLeft, onSignOut,
   isDirty,
+  onCheckForUpdates, updateChecking, upToDate,
 }) {
   const [showInfo, setShowInfo]                   = useState(false)
   const [showEmailSettings, setShowEmailSettings] = useState(false)
   const [showExportModal, setShowExportModal]     = useState(false)
+  const [showSettings, setShowSettings]           = useState(false)
+  const settingsRef = useRef(null)
+
+  useEffect(() => {
+    if (!showSettings) return
+    const handler = (e) => { if (settingsRef.current && !settingsRef.current.contains(e.target)) setShowSettings(false) }
+    const t = setTimeout(() => document.addEventListener('mousedown', handler), 80)
+    return () => { clearTimeout(t); document.removeEventListener('mousedown', handler) }
+  }, [showSettings])
 
   const set = (k, v) => setMatchInfo(p => ({ ...p, [k]: v }))
 
@@ -160,18 +170,61 @@ export default function Header({
           ▶ Present
         </Btn>
 
-        {/* Settings */}
-        <button
-          onClick={() => setShowEmailSettings(s => !s)}
-          title="Email settings"
-          style={{
-            background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)',
-            borderRadius: 2, width: 28, height: 28, cursor: 'pointer', fontSize: 14,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          ⚙
-        </button>
+        {/* Settings dropdown */}
+        <div ref={settingsRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowSettings(s => !s)}
+            title="Settings"
+            style={{
+              background: showSettings ? 'rgba(232,86,10,0.1)' : 'transparent',
+              color: showSettings ? 'var(--brand)' : 'var(--muted)',
+              border: `1px solid ${showSettings ? 'var(--brand)' : 'var(--border)'}`,
+              borderRadius: 2, width: 28, height: 28, cursor: 'pointer', fontSize: 14,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            ⚙
+          </button>
+          {showSettings && (
+            <div style={{
+              position: 'absolute', top: '110%', right: 0, zIndex: 300,
+              background: 'var(--panel)', border: '1px solid var(--border)',
+              borderRadius: 3, overflow: 'hidden',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)', minWidth: 170,
+            }}>
+              <button
+                onClick={() => { setShowEmailSettings(true); setShowSettings(false) }}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  background: 'transparent', border: 'none',
+                  borderBottom: '1px solid var(--border)',
+                  color: 'var(--text)', padding: '9px 14px', cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(232,86,10,0.08)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                Email Settings
+              </button>
+              <button
+                onClick={() => { onCheckForUpdates?.(); setShowSettings(false) }}
+                disabled={updateChecking}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  background: 'transparent', border: 'none',
+                  color: upToDate ? 'var(--green)' : 'var(--text)',
+                  padding: '9px 14px', cursor: updateChecking ? 'default' : 'pointer',
+                  fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+                  opacity: updateChecking ? 0.6 : 1,
+                }}
+                onMouseEnter={e => { if (!updateChecking) e.currentTarget.style.background = 'rgba(232,86,10,0.08)' }}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                {updateChecking ? 'Checking…' : upToDate ? '✓ Up to date' : 'Check for Updates'}
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* User */}
         {authProfile && (

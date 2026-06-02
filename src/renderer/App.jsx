@@ -78,10 +78,12 @@ export default function App() {
   const [newResponseAlert, setNewResponseAlert] = useState(null)
 
   // Auto-update
-  const [updateVersion, setUpdateVersion]   = useState(null)
-  const [updateReady, setUpdateReady]       = useState(false)
+  const [updateVersion, setUpdateVersion]       = useState(null)
+  const [updateReady, setUpdateReady]           = useState(false)
   const [updateInstalling, setUpdateInstalling] = useState(false)
-  const [updateError, setUpdateError]       = useState(null)
+  const [updateError, setUpdateError]           = useState(null)
+  const [updateChecking, setUpdateChecking]     = useState(false)
+  const [upToDate, setUpToDate]                 = useState(false)
 
   // Horizontal resize
   const [leftPx, setLeftPx]   = useState(null)
@@ -283,9 +285,10 @@ export default function App() {
   }, [videoFile, players, events, clips, outputFolder, half, trackOpposition, matchInfo, sharedReports, squadReviews])
 
   useEffect(() => {
-    window.electron?.onUpdateAvailable?.(({ version }) => setUpdateVersion(version))
+    window.electron?.onUpdateAvailable?.(({ version }) => { setUpdateVersion(version); setUpdateChecking(false); setUpToDate(false) })
     window.electron?.onUpdateReady?.(() => setUpdateReady(true))
     window.electron?.onUpdateInstallError?.((msg) => { setUpdateInstalling(false); setUpdateError(msg) })
+    window.electron?.onUpdateNotAvailable?.(() => { setUpdateChecking(false); setUpToDate(true); setTimeout(() => setUpToDate(false), 4000) })
     return () => {
       window.electron?.removeUpdateListeners?.()
     }
@@ -505,6 +508,9 @@ export default function App() {
         sharedReports={sharedReports}
         onSaveSession={handleSaveSession}
         isDirty={isDirty}
+        onCheckForUpdates={async () => { setUpdateChecking(true); setUpToDate(false); await window.electron?.checkForUpdates() }}
+        updateChecking={updateChecking}
+        upToDate={upToDate}
         onOpenLibrary={() => setShowLibrary(true)}
         onPresent={() => setIsPresenting(true)}
         sessionName={sessionName}
