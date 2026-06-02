@@ -52,7 +52,7 @@ export default async function MatchProgressionPage() {
           </p>
         </div>
       ) : (
-        <Suspense>
+        <Suspense fallback={<div className="py-20 text-center text-sm text-zinc-600">Loading…</div>}>
           <ProgressionClient sessions={sessions} />
         </Suspense>
       )}
