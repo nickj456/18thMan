@@ -57,9 +57,19 @@ export function PlayerReportCard({
   const hasAnyDecline = stats.some(s => s.hasDecline)
   const hasAnyActivity = stats.some(s => s.avg > 0)
 
+  function sessionLabel(session: MatchSessionWithAnalyst, idx: number): string {
+    const date = session.match_date
+      ? new Date(`${session.match_date}T12:00:00`).toLocaleDateString('en-GB', {
+          day: 'numeric', month: 'short',
+        })
+      : `Match ${idx + 1}`
+    const opp = session.opposition ?? ''
+    return opp ? `${opp} · ${date}` : date
+  }
+
   const chartData = includedSessions.map((session, idx) => {
     const point: Record<string, number | string> = {
-      match: session.opposition ?? `Match ${idx + 1}`,
+      match: sessionLabel(session, idx),
     }
     for (const stat of stats) {
       point[stat.statType] = stat.values[idx] ?? 0
@@ -71,7 +81,8 @@ export function PlayerReportCard({
 
   function findBestMatch(stat: (typeof stats)[0]) {
     const idx = stat.values.indexOf(stat.best)
-    return includedSessions[idx]?.opposition ?? '—'
+    const s = includedSessions[idx]
+    return s ? sessionLabel(s, idx) : '—'
   }
 
   function findWorstMatch(stat: (typeof stats)[0]) {
@@ -79,7 +90,8 @@ export function PlayerReportCard({
     if (!nonZeroValues.length) return '—'
     const worstVal = Math.min(...nonZeroValues)
     const idx = stat.values.indexOf(worstVal)
-    return includedSessions[idx]?.opposition ?? '—'
+    const s = includedSessions[idx]
+    return s ? sessionLabel(s, idx) : '—'
   }
 
   return (

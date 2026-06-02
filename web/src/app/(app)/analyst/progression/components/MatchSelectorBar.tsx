@@ -90,7 +90,7 @@ export function MatchSelectorBar({
               key={session.id}
               onClick={() => handleCardClick(session.id)}
               className={cn(
-                'flex-shrink-0 min-w-[128px] text-left px-3 py-2.5 rounded-lg border transition-all',
+                'flex-shrink-0 min-w-[140px] text-left px-3 py-2.5 rounded-lg border transition-all',
                 !compareMode && !isIncluded && 'opacity-40 border-zinc-800 bg-zinc-900/40',
                 !compareMode && isIncluded && 'border-zinc-700 bg-zinc-900 hover:border-zinc-500',
                 compareMode && isA && 'border-[#e8560a]/60 bg-[#e8560a]/10',
@@ -98,7 +98,7 @@ export function MatchSelectorBar({
                 compareMode && !isA && !isB && 'border-zinc-800 bg-zinc-900 hover:border-zinc-600',
               )}
             >
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-1.5">
                 {compareMode && isA && (
                   <span className="text-[9px] font-bold text-[#e8560a] tracking-wider">A</span>
                 )}
@@ -111,15 +111,20 @@ export function MatchSelectorBar({
                 {!compareMode && !isIncluded && (
                   <span className="text-[9px] text-zinc-600">✕</span>
                 )}
-                <span className="text-[9px] text-zinc-600 ml-auto">{date}</span>
               </div>
               <p className="text-[11px] font-semibold text-zinc-200 truncate">
                 vs {session.opposition ?? 'Unknown'}
               </p>
+              <p className={cn(
+                'text-[11px] font-semibold mt-0.5',
+                compareMode && isA ? 'text-[#e8560a]' : compareMode && isB ? 'text-green-400' : 'text-zinc-400',
+              )}>
+                {date}
+              </p>
               {score && (
                 <p className="text-[10px] text-zinc-500 mt-0.5">{score}</p>
               )}
-              <p className="text-[9px] text-zinc-700 mt-0.5 truncate">
+              <p className="text-[9px] text-zinc-700 mt-1 truncate">
                 {session.events.length} events
                 {session.analyst?.display_name ? ` · ${session.analyst.display_name}` : ''}
               </p>
