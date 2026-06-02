@@ -5,7 +5,7 @@ const KEY_MAP = {
   '7': 7, '8': 8, '9': 9, '0': 10, '-': 11, '=': 12, 'Backspace': 13,
 }
 
-export default function PlayerSelector({ players, setPlayers, updatePlayer, selectedPlayer, setSelectedPlayer, onPlayerCardClick }) {
+export default function PlayerSelector({ players, setPlayers, updatePlayer, selectedPlayer, setSelectedPlayer, onPlayerCardClick, onNotesClick }) {
   const [editing, setEditing]         = useState(null)
   const [editName, setEditName]       = useState('')
   const [newNum, setNewNum]           = useState('')
@@ -122,6 +122,21 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
                 }}>
                   {player.name}
                 </span>
+              )}
+              {/* Notes icon — only show for non-opposition players */}
+              {!player.isOpposition && onNotesClick && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onNotesClick(player) }}
+                  title="Player notes & score"
+                  style={{
+                    background: (player.coachScore != null || player.comments) ? 'rgba(232,86,10,0.2)' : 'transparent',
+                    border: 'none', borderRadius: 2, padding: '1px 4px',
+                    cursor: 'pointer', fontSize: 9, color: 'var(--muted-2)',
+                    marginTop: 1, lineHeight: 1,
+                  }}
+                >
+                  {player.coachScore != null ? `★ ${player.coachScore}` : '✎'}
+                </button>
               )}
             </div>
           )

@@ -15,60 +15,77 @@ const POSITIVE_STAT_LABELS = {
 
 // ── CSV ────────────────────────────────────────────────────────────────────────
 
-export function exportCsv(events, players, matchInfo = {}) {
+// Default export sections — all on
+export const DEFAULT_EXPORT_SECTIONS = {
+  matchInfo:      true,
+  playerStats:    true,
+  coachNotes:     true,
+  eventsTimeline: true,
+}
+
+export function exportCsv(events, players, matchInfo = {}, sections = DEFAULT_EXPORT_SECTIONS) {
   const myPlayers = players?.filter(p => !p.isOpposition) || []
+  const parts = []
 
   // Match info header block
-  const hasScore = matchInfo.ourScore !== '' || matchInfo.oppScore !== ''
-  const scoreStr = hasScore ? `${matchInfo.ourScore || 0} - ${matchInfo.oppScore || 0}` : ''
-  const metaRows = [
-    ['Match Report'],
-    matchInfo.club        ? ['Club',        matchInfo.club]        : null,
-    matchInfo.opposition  ? ['Opposition',  matchInfo.opposition]  : null,
-    hasScore              ? ['Score',       scoreStr]              : null,
-    matchInfo.date        ? ['Date',        matchInfo.date]        : null,
-    [''],
-  ].filter(Boolean).map(r => r.join(',')).join('\n')
+  if (sections.matchInfo) {
+    const hasScore = matchInfo.ourScore !== '' || matchInfo.oppScore !== ''
+    const scoreStr = hasScore ? `${matchInfo.ourScore || 0} - ${matchInfo.oppScore || 0}` : ''
+    const metaRows = [
+      ['Match Report'],
+      matchInfo.club        ? ['Club',        matchInfo.club]        : null,
+      matchInfo.opposition  ? ['Opposition',  matchInfo.opposition]  : null,
+      hasScore              ? ['Score',       scoreStr]              : null,
+      matchInfo.date        ? ['Date',        matchInfo.date]        : null,
+      [''],
+    ].filter(Boolean).map(r => r.join(',')).join('\n')
+    parts.push(metaRows)
+  }
 
-  const header = ['Half', 'Time', 'Player #', 'Player Name', 'Stat', 'Class', 'Meterage',
-    'Coach Score', 'Involvement %', 'Tackle Success %'].join(',')
+  // Player stats summary
+  if (sections.playerStats) {
+    const statKeys = [...new Set(events.map(e => e.statKey))]
+    const summaryHeader = ['Player #', 'Player Name', ...statKeys, sections.coachNotes ? 'Coach Score' : null, sections.coachNotes ? 'Comments' : null].filter(Boolean).join(',')
+    const summaryRows = myPlayers.map(p => {
+      const counts = statKeys.map(k => events.filter(e => e.playerId === p.id && e.statKey === k).length)
+      const extra = sections.coachNotes ? [p.coachScore ?? '', `"${(p.comments || '').replace(/"/g, '""')}"`] : []
+      return [p.number, `"${p.name}"`, ...counts, ...extra].join(',')
+    })
+    parts.push(['Player Statistics', summaryHeader, ...summaryRows, ''].join('\n'))
+  }
 
-  // Pre-compute team totals for involvement
-  const totalActions = events.filter(e => !myPlayers.find(p => p.isOpposition) || e.playerId !== 'opp').length
+  // Events timeline
+  if (sections.eventsTimeline) {
+    const totalActions = events.length
+    const playerTotals = {}
+    events.forEach(ev => { playerTotals[ev.playerId] = (playerTotals[ev.playerId] || 0) + 1 })
+    const tackleTotals = {}
+    events.forEach(ev => {
+      if (!tackleTotals[ev.playerId]) tackleTotals[ev.playerId] = { t: 0, m: 0 }
+      if (ev.statKey === 'tackle') tackleTotals[ev.playerId].t++
+      if (ev.statKey === 'missed_tackle') tackleTotals[ev.playerId].m++
+    })
 
-  const playerTotals = {}
-  events.forEach(ev => {
-    if (!playerTotals[ev.playerId]) playerTotals[ev.playerId] = 0
-    playerTotals[ev.playerId]++
-  })
-  const tackleTotals = {}
-  events.forEach(ev => {
-    if (!tackleTotals[ev.playerId]) tackleTotals[ev.playerId] = { t: 0, m: 0 }
-    if (ev.statKey === 'tackle') tackleTotals[ev.playerId].t++
-    if (ev.statKey === 'missed_tackle') tackleTotals[ev.playerId].m++
-  })
+    const timelineHeader = ['Half', 'Time', 'Player #', 'Player Name', 'Stat', 'Class', 'Meterage',
+      sections.coachNotes ? 'Coach Score' : null, 'Involvement %', 'Tackle Success %'].filter(Boolean).join(',')
 
-  const rows = events.map((ev) => {
-    const player = myPlayers.find(p => p.id === ev.playerId)
-    const cls    = STAT_CLASSIFICATION[ev.statKey] || 'neutral'
-    const involve = totalActions > 0 ? Math.round((playerTotals[ev.playerId] / totalActions) * 100) : 0
-    const tt = tackleTotals[ev.playerId] || { t: 0, m: 0 }
-    const tackleRate = tt.t + tt.m > 0 ? Math.round((tt.t / (tt.t + tt.m)) * 100) : ''
-    return [
-      ev.half,
-      fmtTime(ev.timestamp),
-      ev.playerNumber,
-      `"${ev.playerName}"`,
-      `"${ev.statLabel}"`,
-      cls,
-      ev.meterage ?? '',
-      player?.coachScore ?? '',
-      involve + '%',
-      tackleRate ? tackleRate + '%' : '',
-    ].join(',')
-  })
+    const rows = events.map((ev) => {
+      const player = myPlayers.find(p => p.id === ev.playerId)
+      const cls    = STAT_CLASSIFICATION[ev.statKey] || 'neutral'
+      const involve = totalActions > 0 ? Math.round(((playerTotals[ev.playerId] || 0) / totalActions) * 100) : 0
+      const tt = tackleTotals[ev.playerId] || { t: 0, m: 0 }
+      const tackleRate = tt.t + tt.m > 0 ? Math.round((tt.t / (tt.t + tt.m)) * 100) : ''
+      const scoreCol = sections.coachNotes ? [player?.coachScore ?? ''] : []
+      return [
+        ev.half, fmtTime(ev.timestamp), ev.playerNumber, `"${ev.playerName}"`,
+        `"${ev.statLabel}"`, cls, ev.meterage ?? '',
+        ...scoreCol, involve + '%', tackleRate ? tackleRate + '%' : '',
+      ].join(',')
+    })
+    parts.push(['Events Timeline', timelineHeader, ...rows].join('\n'))
+  }
 
-  const csv = [metaRows, header, ...rows].join('\n')
+  const csv = parts.join('\n\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
@@ -309,7 +326,7 @@ function scoreDotsHtml(score) {
 
 // ── Coach PDF ──────────────────────────────────────────────────────────────────
 
-export function generatePdfHtml({ events, players, clips, matchInfo, sharedReports = [] }) {
+export function generatePdfHtml({ events, players, clips, matchInfo, sharedReports = [], sections = DEFAULT_EXPORT_SECTIONS }) {
   const ORANGE = '#e8560a'
   const myPlayers  = players.filter(p => !p.isOpposition)
   const oppPlayer  = players.find(p => p.isOpposition)
@@ -487,12 +504,12 @@ export function generatePdfHtml({ events, players, clips, matchInfo, sharedRepor
       </div>
 
       <!-- Coach notes -->
-      <div style="border:1pt solid #e0e0e0;border-radius:3pt;padding:10pt 12pt;${scoutFeedback.length ? '' : 'min-height:60pt;'}">
+      ${sections.coachNotes ? `<div style="border:1pt solid #e0e0e0;border-radius:3pt;padding:10pt 12pt;${scoutFeedback.length ? '' : 'min-height:60pt;'}">
         <div class="section-head" style="margin-bottom:6pt;">Coach Notes</div>
         <div style="font-size:9pt;color:${player?.comments?.trim() ? '#333' : '#bbb'};font-style:${player?.comments?.trim() ? 'normal' : 'italic'};line-height:1.6;">
           ${player?.comments?.trim() || 'No notes added for this player.'}
         </div>
-      </div>
+      </div>` : ''}
 
       <!-- Scout feedback from other coaches -->
       ${scoutFeedback.length > 0 ? `
@@ -650,10 +667,10 @@ ${oppEvents.length > 0 ? `
 </div>` : ''}
 
 <!-- ── Per-player pages ─────────────────────────── -->
-${playerPagesHtml}
+${sections.playerStats ? playerPagesHtml : ''}
 
 <!-- ── Events log page ─────────────────────────── -->
-${myEvents.length > 0 ? `
+${sections.eventsTimeline && myEvents.length > 0 ? `
 <div style="page-break-before:always;padding-top:6pt;">
   <div class="section-head">Events Log</div>
   <table>

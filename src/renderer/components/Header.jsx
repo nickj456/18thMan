@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { exportCsv, generatePdfHtml } from '../utils/export'
 import EmailSettings from './EmailSettings'
+import ExportModal from './ExportModal'
 
 export default function Header({
   videoFile, events, clips, players, outputFolder, showNotification,
@@ -9,9 +10,9 @@ export default function Header({
   authProfile, isTrial, trialDaysLeft, onSignOut,
   isDirty,
 }) {
-  const [showInfo, setShowInfo]                 = useState(false)
+  const [showInfo, setShowInfo]                   = useState(false)
   const [showEmailSettings, setShowEmailSettings] = useState(false)
-  const [showExport, setShowExport]             = useState(false)
+  const [showExportModal, setShowExportModal]     = useState(false)
 
   const set = (k, v) => setMatchInfo(p => ({ ...p, [k]: v }))
 
@@ -20,17 +21,15 @@ export default function Header({
     ? `${matchInfo.ourScore || '0'} – ${matchInfo.oppScore || '0'}`
     : null
 
-  const handleExportCsv = () => {
-    setShowExport(false)
+  const handleExportCsv = (sections) => {
     if (events.length === 0) { showNotification('No events to export', 'error'); return }
-    exportCsv(events, players, matchInfo)
+    exportCsv(events, players, matchInfo, sections)
     showNotification('CSV exported')
   }
 
-  const handleExportPdf = async () => {
-    setShowExport(false)
+  const handleExportPdf = async (sections) => {
     if (!outputFolder) { showNotification('Choose an output folder first', 'error'); return }
-    const html = generatePdfHtml({ events, players, clips, matchInfo, sharedReports })
+    const html = generatePdfHtml({ events, players, clips, matchInfo, sharedReports, sections })
     const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
     const outputPath = `${outputFolder}\\match-report-${ts}.pdf`
     try {
@@ -152,30 +151,8 @@ export default function Header({
         {/* Match Info */}
         <Btn onClick={() => setShowInfo(s => !s)} active={showInfo}>Match Info</Btn>
 
-        {/* Export dropdown */}
-        <div style={{ position: 'relative' }}>
-          <Btn onClick={() => setShowExport(s => !s)} active={showExport}>
-            Export ▾
-          </Btn>
-          {showExport && (
-            <div style={{
-              position: 'absolute', top: '110%', right: 0, zIndex: 300,
-              background: 'var(--panel)', border: '1px solid var(--border)',
-              borderRadius: 3, overflow: 'hidden',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-              minWidth: 140,
-            }}>
-              <DropItem onClick={handleExportCsv}>
-                <span>Export CSV</span>
-                <span style={{ fontSize: 9, color: 'var(--muted-2)' }}>Spreadsheet</span>
-              </DropItem>
-              <DropItem onClick={handleExportPdf}>
-                <span>Export PDF</span>
-                <span style={{ fontSize: 9, color: 'var(--muted-2)' }}>Match report</span>
-              </DropItem>
-            </div>
-          )}
-        </div>
+        {/* Export — opens configurable modal */}
+        <Btn onClick={() => setShowExportModal(true)}>Export</Btn>
 
         {/* Present */}
         <Btn onClick={onPresent} style={{ background: 'rgba(83,74,183,0.15)', borderColor: 'var(--purple)', color: 'var(--purple)' }}>
@@ -302,6 +279,14 @@ export default function Header({
       )}
 
       {showEmailSettings && <EmailSettings onClose={() => setShowEmailSettings(false)} />}
+
+      {showExportModal && (
+        <ExportModal
+          onExportCsv={handleExportCsv}
+          onExportPdf={handleExportPdf}
+          onClose={() => setShowExportModal(false)}
+        />
+      )}
     </div>
   )
 }
@@ -352,28 +337,6 @@ function Btn({ onClick, children, accent, active, style }) {
   )
 }
 
-function DropItem({ onClick, children }) {
-  const [hov, setHov] = useState(false)
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 12, width: '100%', textAlign: 'left',
-        background: hov ? 'rgba(232,86,10,0.08)' : 'transparent',
-        border: 'none', borderBottom: '1px solid var(--border)',
-        color: hov ? 'var(--brand)' : 'var(--text)',
-        padding: '9px 14px', cursor: 'pointer',
-        fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700,
-        letterSpacing: 0.5,
-      }}
-    >
-      {children}
-    </button>
-  )
-}
 
 function WinBtn({ onClick, children, title, danger }) {
   const [hov, setHov] = useState(false)

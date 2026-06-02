@@ -6,9 +6,11 @@ import GameLibrary from './components/GameLibrary'
 import PresentationMode from './components/PresentationMode'
 import CarryMeterageModal from './components/CarryMeterageModal'
 import FloatingStatPopup from './components/FloatingStatPopup'
+import PlayerNotesModal from './components/PlayerNotesModal'
 import { initSupabase } from './utils/supabase'
 import { authClient, checkAuth, signOut, trialDaysLeft } from './utils/authClient'
 import { STAT_CLASSIFICATION } from './utils/stats'
+import { generateParentEmail } from './utils/export'
 import LoginScreen from './components/LoginScreen'
 
 
@@ -56,6 +58,7 @@ export default function App() {
   const [showLibrary, setShowLibrary]               = useState(true)
   const [crashRecoverySession, setCrashRecoverySession] = useState(null)
   const [isDirty, setIsDirty]                       = useState(false)
+  const [notesPlayer, setNotesPlayer]               = useState(null)
   const loadingRef = useRef(false)
 
   // Presentation mode
@@ -158,7 +161,8 @@ export default function App() {
       })
 
     // Real-time: individual player responses
-    authClient.channel('coach_responses_live')
+    const coachResponsesCh = authClient.channel('coach_responses_live')
+    coachResponsesCh
       .on('postgres_changes', { event:'INSERT', schema:'public', table:'coach_responses' }, (payload) => {
         const resp = payload.new
         setSharedReports(prev => prev.map(r =>
@@ -170,7 +174,8 @@ export default function App() {
       .subscribe()
 
     // Real-time: squad review responses
-    authClient.channel('squad_review_responses_live')
+    const squadReviewsCh = authClient.channel('squad_review_responses_live')
+    squadReviewsCh
       .on('postgres_changes', { event:'INSERT', schema:'public', table:'squad_review_responses' }, (payload) => {
         const resp = payload.new
         setSquadReviews(prev => prev.map(r =>
@@ -180,6 +185,11 @@ export default function App() {
         setTimeout(() => setNewResponseAlert(null), 6000)
       })
       .subscribe()
+
+    return () => {
+      authClient.removeChannel(coachResponsesCh)
+      authClient.removeChannel(squadReviewsCh)
+    }
   }, [])
 
   // ── Load crash-recovery session on startup ────────────────────────────────
@@ -506,6 +516,7 @@ export default function App() {
           players={effectivePlayers} setPlayers={setPlayers} updatePlayer={updatePlayer}
           selectedPlayer={selectedPlayer} setSelectedPlayer={setSelectedPlayer}
           onPlayerCardClick={handlePlayerCardClick}
+          onNotesClick={(player) => setNotesPlayer(player)}
           half={half} setHalf={setHalf}
           clips={clips} addClip={addClip} updateClipStatus={updateClipStatus}
           deleteClip={deleteClip} outputFolder={outputFolder} setOutputFolder={setOutputFolder}
@@ -557,6 +568,20 @@ export default function App() {
         <FloatingStatPopup
           player={selectedPlayer} anchor={statPopupAnchor}
           addEvent={addEvent} onClose={() => setStatPopupAnchor(null)}
+        />
+      )}
+
+      {/* Player notes modal */}
+      {notesPlayer && (
+        <PlayerNotesModal
+          player={players.find(p => p.id === notesPlayer.id) || notesPlayer}
+          updatePlayer={updatePlayer}
+          onEmailParent={async (player) => {
+            const { subject, html, text } = generateParentEmail({ player, events, matchInfo, sharedReports, squadReviews })
+            const result = await window.electron?.sendEmail({ to: player.parentEmail, subject, html, text })
+            showNotification(result?.success ? `Email sent to ${player.parentEmail}` : (result?.error || 'Email failed'), result?.success ? 'success' : 'error')
+          }}
+          onClose={() => setNotesPlayer(null)}
         />
       )}
 

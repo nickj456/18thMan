@@ -1,6 +1,5 @@
 import React, { useEffect, useCallback } from 'react'
-import StatButtons from './StatButtons'
-import PlayerNotes from './PlayerNotes'
+import { ALL_STATS } from './StatButtons'
 import EventsTab from './EventsTab'
 import StatsTab from './StatsTab'
 import ClipsTab from './ClipsTab'
@@ -10,20 +9,10 @@ import ClipBuilder from './ClipBuilder'
 
 const TABS = ['EVENTS', 'STATS', 'CLIPS', 'BUILDER', 'SCOUT']
 
-const STAT_KEYS = {
-  t: { key: 'try',          label: 'Try',          color: 'var(--green)' },
-  a: { key: 'tackle',       label: 'Tackle',        color: 'var(--blue)' },
-  m: { key: 'missed_tackle',label: 'Missed tackle', color: 'var(--red)' },
-  c: { key: 'carry',        label: 'Carry',         color: 'var(--amber)' },
-  l: { key: 'line_break',   label: 'Line break',    color: 'var(--purple)' },
-  s: { key: 'support',      label: 'Support',       color: 'var(--teal)' },
-  o: { key: 'offload',      label: 'Offload',       color: 'var(--teal)' },
-  k: { key: 'kick',         label: 'Kick',          color: 'var(--dark-red)' },
-  p: { key: 'penalty_won',  label: 'Penalty won',   color: 'var(--green)' },
-  n: { key: 'penalty_con',  label: 'Penalty con',   color: 'var(--orange)' },
-  e: { key: 'error',        label: 'Error',         color: 'var(--red)' },
-  i: { key: 'intercept',    label: 'Intercept',     color: 'var(--purple)' },
-}
+// Build shortcut map from the single source-of-truth STATS list
+const STAT_KEY_MAP = Object.fromEntries(
+  ALL_STATS.map(s => [s.shortcut.toLowerCase(), s])
+)
 
 export default function RightPanel({
   selectedPlayer, addEvent, events, deleteEvent, players, videoRef,
@@ -36,7 +25,7 @@ export default function RightPanel({
 }) {
   const handleKeyDown = useCallback((ev) => {
     if (['INPUT', 'TEXTAREA'].includes(ev.target.tagName)) return
-    const stat = STAT_KEYS[ev.key.toLowerCase()]
+    const stat = STAT_KEY_MAP[ev.key.toLowerCase()]
     if (!stat) return
     addEvent(stat.key, stat.label, stat.color)
   }, [addEvent])
@@ -63,17 +52,6 @@ export default function RightPanel({
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-      <StatButtons selectedPlayer={selectedPlayer} addEvent={addEvent} />
-
-      {/* Player notes — shown when a player is selected */}
-      {selectedPlayer && (
-        <PlayerNotes
-          player={selectedPlayer}
-          updatePlayer={updatePlayer}
-          onEmailParent={handleEmailParent}
-        />
-      )}
-
       {/* Tab bar */}
       <div style={{
         display: 'flex', borderBottom: '1px solid var(--border)',

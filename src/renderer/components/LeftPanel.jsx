@@ -6,7 +6,7 @@ import PlayerSelector from './PlayerSelector'
 export default function LeftPanel({
   style,
   videoRef, videoFile, setVideoFile,
-  players, setPlayers, updatePlayer, selectedPlayer, setSelectedPlayer, onPlayerCardClick,
+  players, setPlayers, updatePlayer, selectedPlayer, setSelectedPlayer, onPlayerCardClick, onNotesClick,
   half, setHalf, clips, addClip, updateClipStatus, deleteClip,
   outputFolder, setOutputFolder, showNotification, events,
 }) {
@@ -74,6 +74,7 @@ export default function LeftPanel({
         selectedPlayer={selectedPlayer}
         setSelectedPlayer={setSelectedPlayer}
         onPlayerCardClick={onPlayerCardClick}
+        onNotesClick={onNotesClick}
       />
     </div>
   )
