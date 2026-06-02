@@ -11,6 +11,7 @@ import { initSupabase } from './utils/supabase'
 import { authClient, checkAuth, signOut, trialDaysLeft } from './utils/authClient'
 import { STAT_CLASSIFICATION } from './utils/stats'
 import { generateParentEmail } from './utils/export'
+import logoUrl from '../assets/logo.png'
 import LoginScreen from './components/LoginScreen'
 
 
@@ -437,7 +438,7 @@ export default function App() {
         display:'flex', alignItems:'center', justifyContent:'center',
         flexDirection:'column', gap:16, WebkitAppRegion:'drag',
       }}>
-        <img src="src/assets/logo.png" alt="18th Man" style={{ height:60, opacity:0.8 }} onError={e => e.target.style.display='none'} />
+        <img src={logoUrl} alt="18th Man" style={{ height:60, opacity:0.8 }} />
         <div style={{ fontFamily:'var(--font-ui)', fontWeight:800, fontStyle:'italic', fontSize:20, color:'var(--brand)' }}>18th Man</div>
         <div style={{ fontFamily:'var(--font-mono)', fontSize:11, color:'var(--muted)' }}>Loading…</div>
       </div>

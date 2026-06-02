@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { fmtTime as fmt } from '../utils/format'
+import { ALL_STATS } from './StatButtons'
 
 export default function EventsTab({ events, deleteEvent, seekTo, videoDuration, addClip, showNotification, onUndo, canUndo }) {
   const [autoClipOpen, setAutoClipOpen] = useState(false)
@@ -14,11 +15,8 @@ export default function EventsTab({ events, deleteEvent, seekTo, videoDuration, 
     return [...seen.entries()].map(([id, name]) => ({ id, name }))
   }, [events])
 
-  const statOptions = useMemo(() => {
-    const seen = new Map()
-    events.forEach(ev => { if (!seen.has(ev.statKey)) seen.set(ev.statKey, ev.statLabel) })
-    return [...seen.entries()].map(([key, label]) => ({ key, label }))
-  }, [events])
+  const usedStatKeys = useMemo(() => new Set(events.map(ev => ev.statKey)), [events])
+  const statOptions = ALL_STATS.filter(s => usedStatKeys.has(s.key))
 
   const filteredEvents = useMemo(() => events.filter(ev => {
     if (filterPlayer !== 'all' && String(ev.playerId) !== filterPlayer) return false

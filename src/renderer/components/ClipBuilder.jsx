@@ -1,24 +1,10 @@
 import React, { useState, useMemo } from 'react'
 import { fmtTime as fmt } from '../utils/format'
-
-const ALL_STAT_TYPES = [
-  { key: 'try',           label: 'Try',          color: 'var(--green)' },
-  { key: 'tackle',        label: 'Tackle',        color: 'var(--blue)' },
-  { key: 'missed_tackle', label: 'Missed tackle', color: 'var(--red)' },
-  { key: 'carry',         label: 'Carry',         color: 'var(--amber)' },
-  { key: 'line_break',    label: 'Line break',    color: 'var(--purple)' },
-  { key: 'support',       label: 'Support',       color: 'var(--teal)' },
-  { key: 'offload',       label: 'Offload',       color: 'var(--teal)' },
-  { key: 'kick',          label: 'Kick',          color: 'var(--dark-red)' },
-  { key: 'penalty_won',   label: 'Penalty won',   color: 'var(--green)' },
-  { key: 'penalty_con',   label: 'Penalty con',   color: 'var(--orange)' },
-  { key: 'error',         label: 'Error',         color: 'var(--red)' },
-  { key: 'intercept',     label: 'Intercept',     color: 'var(--purple)' },
-]
+import { ALL_STATS } from './StatButtons'
 
 export default function ClipBuilder({ players, events, addClip, videoRef, showNotification, outputFolder, videoFile, updateClipStatus }) {
   const [selectedPlayerIds, setSelectedPlayerIds] = useState(() => new Set((players ?? []).filter(p => !p.isOpposition).map(p => p.id)))
-  const [selectedStatKeys, setSelectedStatKeys]   = useState(() => new Set(ALL_STAT_TYPES.map(s => s.key)))
+  const [selectedStatKeys, setSelectedStatKeys]   = useState(() => new Set(ALL_STATS.map(s => s.key)))
   const [bufferBefore, setBufferBefore]           = useState(5)
   const [bufferAfter, setBufferAfter]             = useState(8)
   const [uncheckedEventIds, setUncheckedEventIds] = useState(() => new Set())
@@ -213,7 +199,7 @@ export default function ClipBuilder({ players, events, addClip, videoRef, showNo
               {allStatsSelected ? 'None' : 'All'}
             </button>
           </div>
-          {ALL_STAT_TYPES.map(s => {
+          {ALL_STATS.map(s => {
             const hasEvents = usedStatKeys.has(s.key)
             return (
               <label key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, cursor: hasEvents ? 'pointer' : 'default', opacity: hasEvents ? 1 : 0.4 }}>
