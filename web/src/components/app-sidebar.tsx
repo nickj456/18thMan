@@ -36,6 +36,7 @@ import {
   HeartPulse,
   ClipboardCheck,
   Sparkles,
+  TrendingUp,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -126,6 +127,17 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {(role === 'coach' || role === 'admin') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={pathname.startsWith('/analyst')}
+                    render={<Link href="/analyst/progression" onClick={closeMobile} />}
+                  >
+                    <TrendingUp className="size-4" />
+                    <span>Match Analysis</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
