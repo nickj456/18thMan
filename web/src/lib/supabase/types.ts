@@ -592,3 +592,12 @@ export interface PlayerStatSummary {
   trend: TrendDirection
   hasDecline: boolean        // 3+ consecutive drops
 }
+
+export interface ProgressionInsight {
+  id: string
+  club_id: string
+  scope: string             // 'team' or player key e.g. 'stan martin::8'
+  session_ids_hash: string  // btoa(sortedIds.join(','))
+  content: string
+  generated_at: string
+}
