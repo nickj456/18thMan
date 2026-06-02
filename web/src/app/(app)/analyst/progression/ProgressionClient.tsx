@@ -1,23 +1,30 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { KeyNumbers } from './components/KeyNumbers'
+import { AiInsightCard } from './components/AiInsightCard'
+import { ConcernsPanel } from './components/ConcernsPanel'
+import { PlayerTable } from './components/PlayerTable'
+import { PlayerDossier } from './components/PlayerDossier'
+import { Sidebar } from './components/Sidebar'
 import { MatchSelectorBar } from './components/MatchSelectorBar'
-import { TeamReportTab } from './components/TeamReportTab'
-import { ReportCardsTab } from './components/ReportCardsTab'
+import { ComparisonTable } from './components/ComparisonTable'
 import { resolvePlayers, getAllStatTypes } from '@/lib/match-analysis/aggregate'
-import type { MatchSessionWithAnalyst } from '@/lib/supabase/types'
+import type { MatchSessionWithAnalyst, ProgressionInsight, ResolvedPlayer } from '@/lib/supabase/types'
 
 interface Props {
   sessions: MatchSessionWithAnalyst[]
+  savedInsights: ProgressionInsight[]
+  clubName: string
 }
 
-export function ProgressionClient({ sessions }: Props) {
+export function ProgressionClient({ sessions, savedInsights, clubName }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  // ── URL state ──────────────────────────────────────────────────────────────
   const includedIds = useMemo(() => {
     const raw = searchParams.get('included')
     if (!raw) return sessions.map(s => s.id)
@@ -27,7 +34,6 @@ export function ProgressionClient({ sessions }: Props) {
   const matchAId = searchParams.get('a') ?? null
   const matchBId = searchParams.get('b') ?? null
   const compareMode = searchParams.get('compare') === '1'
-  const activeTab = searchParams.get('tab') ?? 'team'
 
   const setParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -59,16 +65,13 @@ export function ProgressionClient({ sessions }: Props) {
     })
   }, [compareMode, matchAId, matchBId, setParams])
 
-  const selectMatchA = useCallback(
-    (id: string) => setParams({ a: id }),
-    [setParams],
-  )
+  const selectMatchA = useCallback((id: string) => setParams({ a: id }), [setParams])
+  const selectMatchB = useCallback((id: string) => setParams({ b: id }), [setParams])
 
-  const selectMatchB = useCallback(
-    (id: string) => setParams({ b: id }),
-    [setParams],
-  )
+  // ── Local state ────────────────────────────────────────────────────────────
+  const [openPlayer, setOpenPlayer] = useState<ResolvedPlayer | null>(null)
 
+  // ── Derived data ───────────────────────────────────────────────────────────
   const resolvedPlayers = useMemo(
     () => resolvePlayers(sessions.filter(s => includedIds.includes(s.id))),
     [sessions, includedIds],
@@ -79,53 +82,129 @@ export function ProgressionClient({ sessions }: Props) {
     [sessions, includedIds],
   )
 
+  // ── Insight helpers ────────────────────────────────────────────────────────
+  const currentHash = useMemo(
+    () => btoa([...includedIds].sort().join(',')),
+    [includedIds],
+  )
+
+  const teamInsight = useMemo(
+    () => savedInsights.find(i => i.scope === 'team' && i.session_ids_hash === currentHash) ?? null,
+    [savedInsights, currentHash],
+  )
+
+  const playerInsights = useMemo(
+    () => Object.fromEntries(
+      savedInsights
+        .filter(i => i.scope !== 'team')
+        .map(i => [i.scope, { content: i.content, hash: i.session_ids_hash }]),
+    ),
+    [savedInsights],
+  )
+
+  const sessionA = sessions.find(s => s.id === matchAId) ?? null
+  const sessionB = sessions.find(s => s.id === matchBId) ?? null
+
+  // Split club name: last word highlighted in orange
+  const nameParts = clubName.split(' ')
+  const nameMain = nameParts.slice(0, -1).join(' ')
+  const nameLast = nameParts.slice(-1)[0] ?? ''
+
   return (
-    <div className="space-y-0 -mx-6">
-      <MatchSelectorBar
-        sessions={sessions}
-        includedIds={includedIds}
-        matchAId={matchAId}
-        matchBId={matchBId}
-        compareMode={compareMode}
-        onToggleIncluded={toggleIncluded}
-        onToggleCompareMode={toggleCompareMode}
-        onSelectA={selectMatchA}
-        onSelectB={selectMatchB}
-      />
-
-      <div className="px-6 pt-6">
-        <Tabs
-          value={activeTab}
-          onValueChange={v => setParams({ tab: v })}
-          className="w-full"
-        >
-          <TabsList className="mb-6">
-            <TabsTrigger value="team">Team Report</TabsTrigger>
-            <TabsTrigger value="cards">Report Cards</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="team">
-            <TeamReportTab
-              sessions={sessions}
-              includedIds={includedIds}
-              matchAId={matchAId}
-              matchBId={matchBId}
-              compareMode={compareMode}
-              statTypes={statTypes}
-              resolvedPlayers={resolvedPlayers}
-            />
-          </TabsContent>
-
-          <TabsContent value="cards">
-            <ReportCardsTab
-              sessions={sessions}
-              includedIds={includedIds}
-              resolvedPlayers={resolvedPlayers}
-              statTypes={statTypes}
-            />
-          </TabsContent>
-        </Tabs>
+    <>
+      {/* Hero */}
+      <div className="mb-6">
+        <p className="text-[10px] font-bold tracking-[0.12em] uppercase text-[#e8560a] mb-2 flex items-center gap-2">
+          <span className="inline-block w-5 h-0.5 bg-[#e8560a] rounded" />
+          Match Analysis
+        </p>
+        <h1 className="text-[28px] font-black tracking-[-0.6px] text-white leading-none mb-1">
+          {nameMain}{nameMain ? ' ' : ''}<span className="text-[#e8560a]">{nameLast}</span>
+        </h1>
+        <p className="text-[13px] text-zinc-600">
+          {sessions.length} match{sessions.length !== 1 ? 'es' : ''} · {resolvedPlayers.length} players tracked
+        </p>
       </div>
-    </div>
+
+      {/* Match selector — sticky, full bleed */}
+      <div className="-mx-6">
+        <MatchSelectorBar
+          sessions={sessions}
+          includedIds={includedIds}
+          matchAId={matchAId}
+          matchBId={matchBId}
+          compareMode={compareMode}
+          onToggleIncluded={toggleIncluded}
+          onToggleCompareMode={toggleCompareMode}
+          onSelectA={selectMatchA}
+          onSelectB={selectMatchB}
+        />
+      </div>
+
+      {/* Key numbers */}
+      <div className="mt-6 mb-6">
+        <KeyNumbers sessions={sessions} includedIds={includedIds} />
+      </div>
+
+      {/* Comparison table — only when compare mode active with both selected */}
+      {compareMode && sessionA && sessionB && (
+        <div className="mb-6">
+          <ComparisonTable
+            sessionA={sessionA}
+            sessionB={sessionB}
+            statTypes={statTypes}
+            resolvedPlayers={resolvedPlayers}
+          />
+        </div>
+      )}
+
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
+        {/* Left column */}
+        <div className="flex flex-col gap-5">
+          <AiInsightCard
+            savedContent={teamInsight?.content ?? null}
+            savedHash={teamInsight?.session_ids_hash ?? null}
+            currentHash={currentHash}
+            sessionIds={includedIds}
+            clubName={clubName}
+          />
+          <ConcernsPanel
+            sessions={sessions}
+            includedIds={includedIds}
+            statTypes={statTypes}
+          />
+          <PlayerTable
+            sessions={sessions}
+            includedIds={includedIds}
+            resolvedPlayers={resolvedPlayers}
+            statTypes={statTypes}
+            onSelectPlayer={setOpenPlayer}
+          />
+        </div>
+
+        {/* Right sidebar */}
+        <div className="lg:sticky lg:top-[200px]">
+          <Sidebar
+            sessions={sessions}
+            includedIds={includedIds}
+            resolvedPlayers={resolvedPlayers}
+          />
+        </div>
+      </div>
+
+      {/* Player dossier slide-over */}
+      {openPlayer && (
+        <PlayerDossier
+          player={openPlayer}
+          sessions={sessions}
+          includedIds={includedIds}
+          statTypes={statTypes}
+          savedInsights={playerInsights}
+          currentHash={currentHash}
+          onClose={() => setOpenPlayer(null)}
+        />
+      )}
+    </>
   )
 }
