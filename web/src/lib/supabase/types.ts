@@ -536,3 +536,59 @@ export interface WellbeingResource {
   created_at: string
   updated_at: string
 }
+
+// ── Match Analysis ─────────────────────────────────────────────────────────────
+
+export interface SessionPlayer {
+  name: string
+  number: number
+  isOpposition: boolean
+}
+
+export interface SessionEvent {
+  type: string
+  playerName: string
+  playerNumber: number
+  timestamp: number
+  half: 1 | 2
+}
+
+export interface MatchSession {
+  id: string
+  analyst_id: string
+  club_id: string
+  opposition: string | null
+  match_date: string | null
+  our_score: number | null
+  opp_score: number | null
+  session_name: string | null
+  players: SessionPlayer[]
+  events: SessionEvent[]
+  uploaded_at: string
+  local_session_id: string | null
+}
+
+export interface MatchSessionWithAnalyst extends MatchSession {
+  analyst: { display_name: string | null } | null
+}
+
+export interface ResolvedPlayer {
+  key: string             // `${name.toLowerCase()}::${primaryNumber}`
+  name: string
+  primaryNumber: number
+  allNumbers: number[]
+  numberMismatch: boolean
+  sessionCount: number
+}
+
+export type TrendDirection = 'up-strong' | 'up' | 'flat' | 'down' | 'down-strong'
+
+export interface PlayerStatSummary {
+  statType: string
+  values: number[]           // one per included session (in date order)
+  avg: number
+  best: number
+  worst: number
+  trend: TrendDirection
+  hasDecline: boolean        // 3+ consecutive drops
+}
