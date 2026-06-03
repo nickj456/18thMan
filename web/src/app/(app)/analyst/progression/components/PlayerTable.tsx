@@ -91,9 +91,14 @@ export function PlayerTable({
   return (
     <div className="bg-[#0d0d10] border border-zinc-900 rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-900">
-        <span className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600">
-          Players — click to open dossier
-        </span>
+        <div>
+          <span className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600">
+            Players
+          </span>
+          <p className="text-[9px] text-zinc-700 mt-0.5">
+            Avg per match · {sessions.filter(s => includedIds.includes(s.id)).length} match{sessions.filter(s => includedIds.includes(s.id)).length !== 1 ? 'es' : ''} included · click to open dossier
+          </p>
+        </div>
         <button
           onClick={() => setExportOpen(true)}
           className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg bg-[#e8560a]/8 border border-[#e8560a]/20 text-[#e8560a] hover:bg-[#e8560a]/15 transition-colors"

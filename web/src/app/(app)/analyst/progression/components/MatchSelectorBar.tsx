@@ -56,20 +56,20 @@ export function MatchSelectorBar({
           className={cn(
             'flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border transition-all',
             compareMode
-              ? 'bg-[#e8560a]/10 border-[#e8560a]/40 text-[#e8560a]'
-              : 'bg-zinc-900/60 border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600',
+              ? 'bg-[#e8560a]/15 border-[#e8560a]/50 text-[#e8560a]'
+              : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600',
           )}
         >
           <span className={cn(
-            'w-6 h-3.5 rounded-full relative transition-colors flex-shrink-0',
+            'w-8 h-4 rounded-full relative transition-colors flex-shrink-0',
             compareMode ? 'bg-[#e8560a]' : 'bg-zinc-700',
           )}>
             <span className={cn(
-              'absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white transition-transform',
-              compareMode ? 'translate-x-3' : 'translate-x-0.5',
+              'absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform duration-200',
+              compareMode ? 'translate-x-4' : 'translate-x-0.5',
             )} />
           </span>
-          Compare
+          <span>Compare {compareMode ? '· ON' : 'A/B'}</span>
         </button>
       </div>
 
@@ -91,18 +91,30 @@ export function MatchSelectorBar({
               key={session.id}
               onClick={() => handleCardClick(session.id)}
               className={cn(
-                'flex-shrink-0 w-[168px] text-left rounded-xl border p-3.5 transition-all relative overflow-hidden',
-                !compareMode && !isIncluded && 'opacity-35 border-zinc-900 bg-zinc-950',
-                !compareMode && isIncluded && result === 'win' && 'border-emerald-900/60 bg-[#0d120d] hover:border-emerald-800/60',
-                !compareMode && isIncluded && result !== 'win' && 'border-zinc-800/80 bg-[#0d0d10] hover:border-zinc-700',
-                compareMode && isA && 'border-[#e8560a]/50 bg-[#120c08]',
-                compareMode && isB && 'border-emerald-700/40 bg-[#081209]',
-                compareMode && !isA && !isB && 'border-zinc-800/60 bg-[#0d0d10] hover:border-zinc-700',
+                'flex-shrink-0 w-[172px] text-left rounded-xl border p-3.5 transition-all relative overflow-hidden',
+                !compareMode && !isIncluded && 'opacity-40 border-zinc-900 bg-zinc-950 cursor-pointer',
+                !compareMode && isIncluded && result === 'win' && 'border-emerald-700/60 bg-[#0d120d] ring-1 ring-emerald-900/30',
+                !compareMode && isIncluded && result !== 'win' && 'border-zinc-600 bg-[#0d0d10] hover:border-zinc-500',
+                compareMode && isA && 'border-[#e8560a] bg-[#120c08] ring-1 ring-[#e8560a]/20',
+                compareMode && isB && 'border-emerald-500 bg-[#081209] ring-1 ring-emerald-900/30',
+                compareMode && !isA && !isB && 'border-zinc-800/60 bg-[#0d0d10] hover:border-zinc-600',
               )}
             >
+              {/* Include/exclude indicator — top-left */}
+              {!compareMode && (
+                <span className={cn(
+                  'absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded',
+                  isIncluded
+                    ? 'bg-emerald-900/50 text-emerald-400'
+                    : 'bg-zinc-800 text-zinc-600',
+                )}>
+                  {isIncluded ? '✓ IN' : '✕ OUT'}
+                </span>
+              )}
+
               {result && (
                 <span className={cn(
-                  'absolute top-2.5 right-2.5 text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded-md',
+                  'absolute top-2 right-2 text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded-md',
                   result === 'win' && 'bg-emerald-900/50 text-emerald-400',
                   result === 'loss' && 'bg-red-900/50 text-red-400',
                   result === 'draw' && 'bg-yellow-900/50 text-yellow-400',
@@ -112,12 +124,12 @@ export function MatchSelectorBar({
               )}
 
               {compareMode && (isA || isB) && (
-                <div className={cn('text-[9px] font-bold tracking-wider mb-1.5', isA ? 'text-[#e8560a]' : 'text-emerald-400')}>
-                  {isA ? 'A' : 'B'}
+                <div className={cn('text-[10px] font-black tracking-wider mb-1.5', isA ? 'text-[#e8560a]' : 'text-emerald-400')}>
+                  MATCH {isA ? 'A' : 'B'}
                 </div>
               )}
 
-              <p className="text-[12px] font-semibold text-zinc-200 truncate pr-8 mb-0.5 leading-tight">
+              <p className="text-[12px] font-semibold text-zinc-200 truncate pr-8 mb-0.5 leading-tight mt-5">
                 vs {session.opposition ?? 'Unknown'}
               </p>
               <p className={cn(

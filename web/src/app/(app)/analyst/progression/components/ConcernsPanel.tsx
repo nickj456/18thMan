@@ -68,13 +68,24 @@ export function ConcernsPanel({ sessions, includedIds, statTypes }: Props) {
       .slice(0, 6)
   }, [sessions, includedIds, statTypes])
 
+  const includedSessions = sessions.filter(s => includedIds.includes(s.id))
+
+  const matchSummary = includedSessions
+    .map(s => s.opposition ?? 'Unknown')
+    .join(', ')
+
   if (!rows.length) return null
 
   return (
     <div className="bg-[#0d0d10] border border-zinc-900 rounded-xl p-5">
-      <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-4">
-        Team concerns — all included matches
-      </p>
+      <div className="flex items-baseline justify-between mb-4">
+        <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600">
+          Team concerns
+        </p>
+        <p className="text-[9px] text-zinc-700 truncate max-w-[200px]" title={matchSummary}>
+          {includedSessions.length} match{includedSessions.length !== 1 ? 'es' : ''}: {matchSummary}
+        </p>
+      </div>
       <div className="space-y-4">
         {rows.map(row => {
           const isConcern = row.isNegative && row.badMatchCount >= Math.ceil(row.includedCount * 0.6)
