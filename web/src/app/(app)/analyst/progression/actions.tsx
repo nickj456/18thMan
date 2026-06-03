@@ -112,8 +112,8 @@ ${concernStats.length ? `Concerns: ${concernStats.map(s => s.replace(/_/g, ' '))
   })
 
   await supabase.from('progression_insights').upsert(
-    { club_id: profile.club_id, scope: 'team', session_ids_hash: hash, content: text },
-    { onConflict: 'club_id,scope,session_ids_hash' },
+    { club_id: profile.club_id, created_by: user.id, scope: 'team', session_ids_hash: hash, content: text },
+    { onConflict: 'club_id,created_by,scope,session_ids_hash' },
   )
 
   return { text, hash }
@@ -173,8 +173,8 @@ ${statLines}`
   })
 
   await supabase.from('progression_insights').upsert(
-    { club_id: profile.club_id, scope: input.playerKey, session_ids_hash: hash, content: text },
-    { onConflict: 'club_id,scope,session_ids_hash' },
+    { club_id: profile.club_id, created_by: user.id, scope: input.playerKey, session_ids_hash: hash, content: text },
+    { onConflict: 'club_id,created_by,scope,session_ids_hash' },
   )
 
   return { text, hash }

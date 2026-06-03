@@ -596,6 +596,7 @@ export interface PlayerStatSummary {
 export interface ProgressionInsight {
   id: string
   club_id: string
+  created_by: string        // analyst who generated it — only they can read it
   scope: string             // 'team' or player key e.g. 'stan martin::8'
   session_ids_hash: string  // btoa(sortedIds.join(','))
   content: string
