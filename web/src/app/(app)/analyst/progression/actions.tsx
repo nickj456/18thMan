@@ -38,6 +38,7 @@ function getLogoDataUri(): string | undefined {
 interface TeamInsightInput {
   sessionIds: string[]
   clubName: string
+  groupId: string
 }
 
 export async function generateTeamInsight(input: TeamInsightInput) {
@@ -112,8 +113,8 @@ ${concernStats.length ? `Concerns: ${concernStats.map(s => s.replace(/_/g, ' '))
   })
 
   await supabase.from('progression_insights').upsert(
-    { club_id: profile.club_id, created_by: user.id, scope: 'team', session_ids_hash: hash, content: text },
-    { onConflict: 'club_id,created_by,scope,session_ids_hash' },
+    { club_id: profile.club_id, group_id: input.groupId, scope: 'team', session_ids_hash: hash, content: text },
+    { onConflict: 'group_id,scope,session_ids_hash' },
   )
 
   return { text, hash }
@@ -126,6 +127,7 @@ interface PlayerInsightInput {
   playerName: string
   playerNumber: number
   sessionIds: string[]
+  groupId: string
 }
 
 export async function generatePlayerInsight(input: PlayerInsightInput) {
@@ -173,8 +175,8 @@ ${statLines}`
   })
 
   await supabase.from('progression_insights').upsert(
-    { club_id: profile.club_id, created_by: user.id, scope: input.playerKey, session_ids_hash: hash, content: text },
-    { onConflict: 'club_id,created_by,scope,session_ids_hash' },
+    { club_id: profile.club_id, group_id: input.groupId, scope: input.playerKey, session_ids_hash: hash, content: text },
+    { onConflict: 'group_id,scope,session_ids_hash' },
   )
 
   return { text, hash }

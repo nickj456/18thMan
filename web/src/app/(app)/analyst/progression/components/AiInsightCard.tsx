@@ -10,9 +10,10 @@ interface Props {
   currentHash: string
   sessionIds: string[]
   clubName: string
+  groupId: string
 }
 
-export function AiInsightCard({ savedContent, savedHash, currentHash, sessionIds, clubName }: Props) {
+export function AiInsightCard({ savedContent, savedHash, currentHash, sessionIds, clubName, groupId }: Props) {
   const [content, setContent] = useState(savedContent ?? '')
   const [activeHash, setActiveHash] = useState(savedHash)
   const [isPending, startTransition] = useTransition()
@@ -25,7 +26,7 @@ export function AiInsightCard({ savedContent, savedHash, currentHash, sessionIds
     setError(null)
     startTransition(async () => {
       try {
-        const result = await generateTeamInsight({ sessionIds, clubName })
+        const result = await generateTeamInsight({ sessionIds, clubName, groupId })
         setContent(result.text)
         setActiveHash(result.hash)
       } catch (err) {

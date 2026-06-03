@@ -17,9 +17,12 @@ interface Props {
   sessions: MatchSessionWithAnalyst[]
   savedInsights: ProgressionInsight[]
   clubName: string
+  groupId: string
+  groupName: string
+  allGroups: { id: string; name: string }[]
 }
 
-export function ProgressionClient({ sessions, savedInsights, clubName }: Props) {
+export function ProgressionClient({ sessions, savedInsights, clubName, groupId, groupName, allGroups }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -118,12 +121,32 @@ export function ProgressionClient({ sessions, savedInsights, clubName }: Props) 
           <span className="inline-block w-5 h-0.5 bg-[#e8560a] rounded" />
           Match Analysis
         </p>
-        <h1 className="text-[28px] font-black tracking-[-0.6px] text-white leading-none mb-1">
-          {nameMain}{nameMain ? ' ' : ''}<span className="text-[#e8560a]">{nameLast}</span>
-        </h1>
-        <p className="text-[13px] text-zinc-600">
-          {sessions.length} match{sessions.length !== 1 ? 'es' : ''} · {resolvedPlayers.length} players tracked
-        </p>
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-[28px] font-black tracking-[-0.6px] text-white leading-none mb-1">
+              {nameMain}{nameMain ? ' ' : ''}<span className="text-[#e8560a]">{nameLast}</span>
+            </h1>
+            <p className="text-[13px] text-zinc-600">
+              {sessions.length} match{sessions.length !== 1 ? 'es' : ''} · {resolvedPlayers.length} players tracked
+            </p>
+          </div>
+          {/* Group selector */}
+          {allGroups.length > 1 ? (
+            <select
+              value={groupId}
+              onChange={e => router.push(`${pathname}?group=${e.target.value}`)}
+              className="text-sm bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-[#e8560a] mb-1"
+            >
+              {allGroups.map(g => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          ) : (
+            <span className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 mb-1">
+              {groupName}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Match selector — sticky, full bleed */}
@@ -168,6 +191,7 @@ export function ProgressionClient({ sessions, savedInsights, clubName }: Props) 
             currentHash={currentHash}
             sessionIds={includedIds}
             clubName={clubName}
+            groupId={groupId}
           />
           <ConcernsPanel
             sessions={sessions}
@@ -202,6 +226,7 @@ export function ProgressionClient({ sessions, savedInsights, clubName }: Props) 
           statTypes={statTypes}
           savedInsights={playerInsights}
           currentHash={currentHash}
+          groupId={groupId}
           onClose={() => setOpenPlayer(null)}
         />
       )}

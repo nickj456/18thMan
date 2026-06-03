@@ -23,6 +23,7 @@ interface Props {
   statTypes: string[]
   savedInsights: Record<string, { content: string; hash: string }>
   currentHash: string
+  groupId: string
   onClose: () => void
 }
 
@@ -36,7 +37,7 @@ const TREND_DISPLAY: Record<string, { symbol: string; color: string }> = {
   'down-strong': { symbol: '↓↓', color: 'text-red-400' },
 }
 
-export function PlayerDossier({ player, sessions, includedIds, statTypes, savedInsights, currentHash, onClose }: Props) {
+export function PlayerDossier({ player, sessions, includedIds, statTypes, savedInsights, currentHash, groupId, onClose }: Props) {
   const [aiContent, setAiContent] = useState<string | null>(null)
   const [aiHash, setAiHash] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -84,6 +85,7 @@ export function PlayerDossier({ player, sessions, includedIds, statTypes, savedI
           playerName: player.name,
           playerNumber: player.primaryNumber,
           sessionIds: includedIds,
+          groupId,
         })
         setAiContent(result.text)
         setAiHash(result.hash)

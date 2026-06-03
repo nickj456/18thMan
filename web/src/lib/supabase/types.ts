@@ -557,6 +557,7 @@ export interface MatchSession {
   id: string
   analyst_id: string
   club_id: string
+  group_id: string | null
   opposition: string | null
   match_date: string | null
   our_score: number | null
@@ -596,7 +597,7 @@ export interface PlayerStatSummary {
 export interface ProgressionInsight {
   id: string
   club_id: string
-  created_by: string        // analyst who generated it — only they can read it
+  group_id: string          // coaching group — all group members can read
   scope: string             // 'team' or player key e.g. 'stan martin::8'
   session_ids_hash: string  // btoa(sortedIds.join(','))
   content: string
