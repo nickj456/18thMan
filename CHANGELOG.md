@@ -2,6 +2,24 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.8.0.0] - 2026-06-04
+
+### Added
+- **5 new equipment icons in the drill designer**: Tackle Bag, Tackle Shield, Flag/Pole, Marker Disc, and Agility Ladder — all selectable from the toolbar and placeable on the canvas.
+- **Agility Ladder is resizable**: drag any corner handle to stretch the ladder to match your real equipment layout. Rungs recount automatically as you resize.
+- **Fullscreen mode**: a Fullscreen button in the timeline bar expands the canvas to fill the entire browser window, hiding the form sidebar. Save is still accessible via a floating button in fullscreen.
+- **Persistent player icon size**: set icon size (S/M/L) once — all subsequent player placements use that size. Changing size also resizes the currently selected player.
+- **Admin user notes**: admins can attach a private text note to any user from the Users admin page.
+
+### Changed
+- **Removed 3D perspective mode** from the drill designer — the effect was not useful in practice. The toolbar is cleaner as a result.
+- Player size controls are now always visible in the toolbar (not only when a player is selected), making it easier to set your preferred size before placing any icons.
+
+### Fixed
+- Agility ladder resize handles no longer drift progressively — Konva node positions are reset after each drag.
+- Flag/pole icon now has a larger hit area (12px stroke width) making it reliably clickable.
+- Landing page redesigned with hex geometry, brand cohesion, and updated feature sections.
+
 ## [0.1.4] - 2026-05-29
 
 ### Changed
