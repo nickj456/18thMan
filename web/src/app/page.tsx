@@ -20,6 +20,72 @@ const serif = Source_Serif_4({
   display: 'swap',
 })
 
+function HexGridBg({ opacity = 0.08 }: { opacity?: number }) {
+  const R = 45
+  const W = R * Math.sqrt(3)
+  const vstep = R * 1.5
+  const cols = Math.ceil(1440 / W) + 3
+  const rows = Math.ceil(900 / vstep) + 3
+
+  const pts = (cx: number, cy: number) =>
+    Array.from({ length: 6 }, (_, i) => {
+      const a = -Math.PI / 2 + (Math.PI / 3) * i
+      return `${Math.round(cx + R * Math.cos(a))},${Math.round(cy + R * Math.sin(a))}`
+    }).join(' ')
+
+  return (
+    <svg
+      aria-hidden="true"
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity }}
+      viewBox="0 0 1440 900"
+      preserveAspectRatio="xMidYMid slice"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {Array.from({ length: rows }, (_, row) => {
+        const y = (row - 1) * vstep
+        const offsetX = row % 2 !== 0 ? W / 2 : 0
+        return Array.from({ length: cols }, (_, col) => {
+          const x = (col - 1) * W + offsetX
+          return (
+            <polygon
+              key={`${row}-${col}`}
+              points={pts(x, y)}
+              fill="none"
+              stroke="#e8560a"
+              strokeWidth="0.8"
+            />
+          )
+        })
+      })}
+    </svg>
+  )
+}
+
+function HexIcon({ d, filled = false }: { d: string; filled?: boolean }) {
+  return (
+    <div style={{ width: 48, height: 48, marginBottom: '1.5rem', flexShrink: 0 }}>
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
+        <path
+          d="M12 2L36 2L48 24L36 46L12 46L0 24Z"
+          fill="rgba(232,86,10,0.15)"
+          stroke="rgba(232,86,10,0.4)"
+          strokeWidth="1.5"
+        />
+        <g
+          transform="translate(12, 12)"
+          stroke={filled ? 'none' : 'rgba(232,86,10,0.95)'}
+          fill={filled ? 'rgba(232,86,10,0.95)' : 'none'}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d={d} />
+        </g>
+      </svg>
+    </div>
+  )
+}
+
 export const metadata = {
   title: '18th Man — The Coaching Platform for Rugby League',
   description:
@@ -88,7 +154,7 @@ export default async function LandingPage() {
         .hero-pitch {
           position: absolute;
           inset: 0;
-          opacity: 0.055;
+          opacity: 0.12;
           pointer-events: none;
         }
 
@@ -381,6 +447,8 @@ export default async function LandingPage() {
             <line x1="310" y1="952" x2="370" y2="952" stroke="white" strokeWidth="2" />
           </svg>
 
+          <HexGridBg opacity={0.09} />
+
           {/* Ember glow top-right */}
           <div
             style={{
@@ -653,15 +721,17 @@ export default async function LandingPage() {
             {[...Array(2)].map((_, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
                 {[
-                  '🏉 Design drills on a digital canvas',
-                  '⚡ AI-planned coaching blocks, every session covered',
-                  '📋 Build and share session plans',
-                  '👥 Club groups with private content',
-                  '🎯 Game Sense session structure built in',
-                  '📊 Track drills, sessions, and progress',
+                  'Design drills on a digital canvas',
+                  'AI-planned coaching blocks, every session covered',
+                  'Weekly coaching focus with community discussion',
+                  'Club groups with private content',
+                  'Game Sense session structure built in',
+                  'S&C and AI coaching assistant',
+                  'Player wellbeing tracking',
+                  'Match Analyst desktop app',
                 ].map(item => (
                   <span key={item} className="stat-pill">
-                    <span>·</span> {item}
+                    <span>◆</span> {item}
                   </span>
                 ))}
               </div>
@@ -766,9 +836,9 @@ export default async function LandingPage() {
                 maxWidth: '600px',
               }}
             >
-              Every tool a<br />
-              <span style={{ color: 'var(--ember)' }}>serious coach</span><br />
-              needs.
+              Built for<br />
+              <span style={{ color: 'var(--ember)' }}>serious coaches.</span><br />
+              All of it.
             </h2>
           </div>
 
@@ -781,16 +851,7 @@ export default async function LandingPage() {
           >
             {/* Feature 1 — Coaching Blocks */}
             <div className="feature-card" style={{ borderColor: 'rgba(232,86,10,0.2)', background: 'linear-gradient(135deg, var(--surface2) 0%, rgba(232,86,10,0.05) 100%)' }}>
-              <div
-                style={{
-                  width: '48px', height: '48px', borderRadius: '10px',
-                  background: 'rgba(232,86,10,0.15)', border: '1px solid rgba(232,86,10,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.4rem', marginBottom: '1.5rem',
-                }}
-              >
-                🗓️
-              </div>
+              <HexIcon d="M8 6V4m8 2V4M3 9h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
               <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
                 Coaching Blocks
               </h3>
@@ -809,22 +870,14 @@ export default async function LandingPage() {
 
             {/* Feature 2 — AI Coach */}
             <div className="feature-card">
-              <div
-                style={{
-                  width: '48px', height: '48px', borderRadius: '10px',
-                  background: 'rgba(232,86,10,0.12)', border: '1px solid rgba(232,86,10,0.2)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.4rem', marginBottom: '1.5rem',
-                }}
-              >
-                ⚡
-              </div>
+              <HexIcon d="M13 2L4.5 13.5H11L9.5 22L19.5 10.5H13L13 2Z" filled />
               <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-                AI Coaching Assistant
+                AI Coaching Suite
               </h3>
               <p style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--text-muted)', fontWeight: 300 }}>
-                Ask anything. Get instant, structured advice on drills, tactics, player development,
-                and session planning from an AI that understands rugby league coaching.
+                Three specialist AI coaches in one platform. The Coaching Assistant handles drills, tactics,
+                and session planning. The S&C Coach covers conditioning and gym programs. GameSense builds
+                your entire season structure. All trained on rugby league.
               </p>
               <div
                 style={{
@@ -846,16 +899,7 @@ export default async function LandingPage() {
 
             {/* Feature 3 — Drill Designer */}
             <div className="feature-card">
-              <div
-                style={{
-                  width: '48px', height: '48px', borderRadius: '10px',
-                  background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.4rem', marginBottom: '1.5rem',
-                }}
-              >
-                ✏️
-              </div>
+              <HexIcon d="M15.232 5.232l3.536 3.536M16.5 3.5a2.121 2.121 0 113 3L7.5 18.5H4v-3.5L16.5 3.5z" />
               <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
                 Drill Designer
               </h3>
@@ -866,7 +910,7 @@ export default async function LandingPage() {
               <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
                 {['Player markers & formations', 'Movement arrows & zones', 'Video links & preview images', 'AI coaching guide per drill'].map(f => (
                   <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    <span style={{ color: 'rgba(99,102,241,0.8)', fontWeight: 700 }}>→</span> {f}
+                    <span style={{ color: 'var(--ember)', fontWeight: 700 }}>→</span> {f}
                   </div>
                 ))}
               </div>
@@ -874,16 +918,7 @@ export default async function LandingPage() {
 
             {/* Feature 4 — Club Groups */}
             <div className="feature-card">
-              <div
-                style={{
-                  width: '48px', height: '48px', borderRadius: '10px',
-                  background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.4rem', marginBottom: '1.5rem',
-                }}
-              >
-                👥
-              </div>
+              <HexIcon d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.74" />
               <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
                 Club & Groups
               </h3>
@@ -894,24 +929,55 @@ export default async function LandingPage() {
               <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
                 {['Private club drill libraries', 'Coaching groups for your staff', 'Shared session planning', 'AI guidance per group'].map(f => (
                   <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    <span style={{ color: 'rgba(74,222,128,0.7)', fontWeight: 700 }}>→</span> {f}
+                    <span style={{ color: 'var(--ember)', fontWeight: 700 }}>→</span> {f}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Feature 5 — Match Analyst */}
+            {/* Feature 5 — Weekly Focus */}
             <div className="feature-card">
-              <div
-                style={{
-                  width: '48px', height: '48px', borderRadius: '10px',
-                  background: 'rgba(232,86,10,0.12)', border: '1px solid rgba(232,86,10,0.2)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.4rem', marginBottom: '1.5rem',
-                }}
-              >
-                🎬
+              <HexIcon d="M12 2a10 10 0 100 20A10 10 0 0012 2zM2 12h4M18 12h4M12 2v4M12 18v4M6.34 6.34l2.83 2.83M14.83 14.83l2.83 2.83M6.34 17.66l2.83-2.83M14.83 9.17l2.83-2.83" />
+              <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                Weekly Focus
+              </h3>
+              <p style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--text-muted)', fontWeight: 300 }}>
+                Every week, a coaching topic takes centre stage — Edge Defence, Line Speed, Completion Rate.
+                Drill breakdowns, session ideas, and community discussion, all in one place.
+                Your club can set its own focus, or follow the platform-wide topic.
+              </p>
+              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                {['Platform-wide weekly coaching topic', 'Club-specific focus for your squad', 'Drills and sessions tied to the theme', 'Community discussion thread per topic'].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--ember)', fontWeight: 700 }}>→</span> {f}
+                  </div>
+                ))}
               </div>
+            </div>
+
+            {/* Feature 6 — Wellbeing */}
+            <div className="feature-card">
+              <HexIcon d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+              <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                Player Wellbeing
+              </h3>
+              <p style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--text-muted)', fontWeight: 300 }}>
+                Track how your squad is travelling off the field. Check-ins, load monitoring, and
+                mood tracking give you the picture before the session starts — so you can adjust
+                your training plan to what the group actually needs.
+              </p>
+              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                {['Player check-in and load tracking', 'Session readiness at a glance', 'Adjust training to squad condition', 'Coach-only visibility'].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--ember)', fontWeight: 700 }}>→</span> {f}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Feature 7 — Match Analyst */}
+            <div className="feature-card">
+              <HexIcon d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
               <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
                 Match Analyst
               </h3>
@@ -1083,9 +1149,10 @@ export default async function LandingPage() {
                 <span style={{ color: 'var(--ember)' }}>amplified.</span>
               </h2>
               <p style={{ fontSize: '1rem', lineHeight: 1.75, color: 'var(--text-muted)', fontWeight: 300, marginBottom: '1.5rem' }}>
-                The AI Coaching Assistant isn't a generic chatbot. It's built around the language
-                of rugby league — drills, sets, tackles, defensive structures, positional play,
-                and player development. Ask a coaching question, get a coaching answer.
+                Three specialist AI coaches, one platform. The Coaching Assistant speaks rugby league —
+                drills, sets, tackles, defensive structures, positional play. The S&C Coach handles
+                conditioning, gym programs, and recovery. GameSense structures your entire season.
+                Ask a coaching question, get a coaching answer.
               </p>
               <p style={{ fontSize: '1rem', lineHeight: 1.75, color: 'var(--text-muted)', fontWeight: 300 }}>
                 Every drill you create automatically receives an AI-generated coaching guide —
@@ -1312,6 +1379,7 @@ export default async function LandingPage() {
         >
           {/* Ember radial */}
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 50%, rgba(232,86,10,0.07) 0%, transparent 65%)', pointerEvents: 'none' }} />
+          <HexGridBg opacity={0.07} />
 
           <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
             <div style={{ marginBottom: '4rem', textAlign: 'center' }}>
@@ -1373,8 +1441,8 @@ export default async function LandingPage() {
                 className="feature-card"
                 style={{
                   position: 'relative',
-                  borderColor: 'rgba(99,102,241,0.4)',
-                  background: 'linear-gradient(135deg, var(--surface2) 0%, rgba(99,102,241,0.06) 100%)',
+                  borderColor: 'rgba(232,86,10,0.55)',
+                  background: 'linear-gradient(135deg, var(--surface2) 0%, rgba(232,86,10,0.08) 100%)',
                   transform: 'scale(1.02)',
                 }}
               >
@@ -1384,7 +1452,7 @@ export default async function LandingPage() {
                     top: '-12px',
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    background: 'rgba(99,102,241,1)',
+                    background: 'var(--ember)',
                     color: '#fff',
                     fontFamily: 'var(--font-barlow)',
                     fontWeight: 700,
@@ -1399,7 +1467,7 @@ export default async function LandingPage() {
                   Most Popular
                 </div>
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(99,102,241,0.9)', marginBottom: '0.5rem' }}>Coach Pro</p>
+                  <p className="lp-display" style={{ fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--ember)', marginBottom: '0.5rem' }}>Coach Pro</p>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
                     <span className="lp-display" style={{ fontWeight: 800, fontStyle: 'italic', fontSize: '3rem', color: 'var(--text)', lineHeight: 1 }}>£9.99</span>
                     <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/month</span>
@@ -1414,11 +1482,11 @@ export default async function LandingPage() {
                   'All free features included',
                 ].map(f => (
                   <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-                    <span style={{ color: 'rgba(99,102,241,0.9)', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                    <span style={{ color: 'var(--ember)', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
                   </div>
                 ))}
                 <div style={{ marginTop: '2rem' }}>
-                  <Link href="/signup" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px', background: 'rgba(99,102,241,1)' }}>
+                  <Link href="/signup" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
                     Start Coach Pro →
                   </Link>
                 </div>
@@ -1743,6 +1811,7 @@ export default async function LandingPage() {
               pointerEvents: 'none',
             }}
           />
+          <HexGridBg opacity={0.11} />
           <div style={{ maxWidth: '700px', margin: '0 auto', position: 'relative' }}>
             <span className="section-label">Join the Platform</span>
             <h2
