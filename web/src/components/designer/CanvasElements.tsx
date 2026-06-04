@@ -355,6 +355,8 @@ function AgilityLadderEl({ el, selected, onSelect, onChange }: ElementProps) {
               draggable
               onDragMove={(e: Konva.KonvaEventObject<DragEvent>) =>
                 resizeCorner(e.target.x(), e.target.y(), corner)}
+              onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) =>
+                e.target.position({ x: hx, y: hy })}
             />
           ))}
         </>
