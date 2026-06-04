@@ -268,7 +268,7 @@ function FlagEl({ el, selected, onSelect, onChange }: ElementProps) {
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
       <Line points={[0, -20, 0, 18]}
         stroke={selected ? '#fff' : 'rgba(255,255,255,0.7)'}
-        strokeWidth={selected ? 2.5 : 2} strokeLinecap="round" />
+        strokeWidth={selected ? 2.5 : 2} strokeLinecap="round" hitStrokeWidth={12} />
       <Shape
         sceneFunc={(ctx, shape) => {
           ctx.beginPath()
@@ -306,61 +306,48 @@ function DiscEl({ el, selected, onSelect, onChange }: ElementProps) {
 
 // ── Agility ladder (resizable) ────────────────────────────────────────────────
 function AgilityLadderEl({ el, selected, onSelect, onChange }: ElementProps) {
-  const x = el.x
-  const y = el.y
   const w = el.width ?? 40
   const h = el.height ?? 160
   const rungCount = Math.max(3, Math.floor(h / 24))
-  const rungs = Array.from({ length: rungCount }, (_, i) => {
-    const spacing = h / (rungCount + 1)
-    return y + spacing * (i + 1)
-  })
+  const spacing = h / (rungCount + 1)
 
-  function resizeCorner(cornerX: number, cornerY: number, corner: 'nw' | 'ne' | 'sw' | 'se') {
-    const origRight = x + w
-    const origBottom = y + h
+  // Handle coords are relative to the Group (origin = top-left of ladder)
+  function resizeCorner(hx: number, hy: number, corner: 'nw' | 'ne' | 'sw' | 'se') {
     switch (corner) {
-      case 'nw': return onChange({ ...el, x: cornerX, y: cornerY, width: Math.max(20, origRight - cornerX), height: Math.max(60, origBottom - cornerY) })
-      case 'ne': return onChange({ ...el, y: cornerY, width: Math.max(20, cornerX - x), height: Math.max(60, origBottom - cornerY) })
-      case 'sw': return onChange({ ...el, x: cornerX, width: Math.max(20, origRight - cornerX), height: Math.max(60, cornerY - y) })
-      case 'se': return onChange({ ...el, width: Math.max(20, cornerX - x), height: Math.max(60, cornerY - y) })
+      case 'nw': return onChange({ ...el, x: el.x + hx, y: el.y + hy, width: Math.max(20, w - hx), height: Math.max(60, h - hy) })
+      case 'ne': return onChange({ ...el, y: el.y + hy, width: Math.max(20, hx), height: Math.max(60, h - hy) })
+      case 'sw': return onChange({ ...el, x: el.x + hx, width: Math.max(20, w - hx), height: Math.max(60, hy) })
+      case 'se': return onChange({ ...el, width: Math.max(20, hx), height: Math.max(60, hy) })
     }
   }
 
   return (
-    <Group onClick={onSelect} onTap={onSelect}>
-      {/* Rails */}
-      <Line points={[x, y, x, y + h]}
-        stroke="rgba(255,255,255,0.6)" strokeWidth={selected ? 3 : 2} hitStrokeWidth={12} />
-      <Line points={[x + w, y, x + w, y + h]}
-        stroke="rgba(255,255,255,0.6)" strokeWidth={selected ? 3 : 2} hitStrokeWidth={12} />
+    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+      onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
+      {/* Rails — relative to Group origin */}
+      <Line points={[0, 0, 0, h]} stroke="rgba(255,255,255,0.6)" strokeWidth={selected ? 3 : 2} hitStrokeWidth={12} />
+      <Line points={[w, 0, w, h]} stroke="rgba(255,255,255,0.6)" strokeWidth={selected ? 3 : 2} hitStrokeWidth={12} />
       {/* Rungs */}
-      {rungs.map((ry, i) => (
-        <Line key={i} points={[x, ry, x + w, ry]}
+      {Array.from({ length: rungCount }, (_, i) => (
+        <Line key={i} points={[0, spacing * (i + 1), w, spacing * (i + 1)]}
           stroke={el.color ?? '#6366f1'} strokeWidth={2} listening={false} />
       ))}
-      {/* Transparent draggable hit area */}
-      <Rect
-        x={x} y={y} width={w} height={h}
-        fill="transparent"
+      {/* Transparent hit area */}
+      <Rect x={0} y={0} width={w} height={h} fill="transparent"
         stroke={selected ? 'rgba(255,255,255,0.15)' : 'transparent'}
-        strokeWidth={1}
-        dash={selected ? [4, 4] : undefined}
-        draggable
-        onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
-      />
+        strokeWidth={1} dash={selected ? [4, 4] : undefined} />
       {/* Corner resize handles */}
       {selected && (
         <>
           {([
-            { cx: x,     cy: y,     corner: 'nw' as const },
-            { cx: x + w, cy: y,     corner: 'ne' as const },
-            { cx: x,     cy: y + h, corner: 'sw' as const },
-            { cx: x + w, cy: y + h, corner: 'se' as const },
-          ] as const).map(({ cx, cy, corner }) => (
+            { hx: 0, hy: 0, corner: 'nw' as const },
+            { hx: w, hy: 0, corner: 'ne' as const },
+            { hx: 0, hy: h, corner: 'sw' as const },
+            { hx: w, hy: h, corner: 'se' as const },
+          ] as const).map(({ hx, hy, corner }) => (
             <Circle
               key={corner}
-              x={cx} y={cy}
+              x={hx} y={hy}
               radius={HANDLE_RADIUS}
               fill={HANDLE_FILL}
               stroke={HANDLE_STROKE}
