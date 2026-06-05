@@ -2,6 +2,12 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.8.0.1] - 2026-06-05
+
+### Fixed
+- **Group Admin can now invite and remove members from their group.** Added RLS policies (via a `security definer` helper to avoid self-referential recursion) so users with `group_role = 'admin'` on `group_invitations` can insert, update, delete, and read invitations for groups they administer — without requiring `club_role = 'admin'`.
+- **Session page no longer throws if `drills_order` is unexpectedly non-array.** Added a defensive `Array.isArray` guard before calling `.filter()` on the session's drills list.
+
 ## [1.8.0.0] - 2026-06-04
 
 ### Added
