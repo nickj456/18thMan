@@ -42,6 +42,10 @@ Rugby league coaching platform for coaches to design drills, plan sessions, and 
 ### Drill Designer
 - React Konva canvas — rugby pitch backgrounds
 - Players, arrows, equipment, zones, text
+- Equipment icons: Tackle Bag, Tackle Shield, Flag/Pole, Marker Disc, Agility Ladder
+- Agility Ladder is resizable — drag a corner handle to stretch it; rungs recount automatically
+- Fullscreen mode — expands canvas to fill the browser window; floating Save button stays accessible
+- Persistent player icon size — set S/M/L once; all subsequent placements use that size; changing size also resizes the currently selected player
 - Undo/redo, save as drill, export PNG/PDF
 - Desktop-first, tablet-accessible
 
@@ -53,6 +57,7 @@ Rugby league coaching platform for coaches to design drills, plan sessions, and 
 
 ### Admin Panel
 - Manage users — view, role assignment, suspend
+- Admin user notes — private per-user notes visible only to admins (stored in `admin_user_notes` table)
 - Manage drill categories — add / edit / delete / reorder
 - Moderate community discussions
 - Site stats dashboard
@@ -89,6 +94,7 @@ conversations         — id, title, type (ai | dm | community), created_by
 conversation_participants — conversation_id, user_id
 messages              — id, conversation_id, sender_id, content, created_at
 session_plans         — id, title, coach_id, drills_order (jsonb), total_duration
+admin_user_notes      — user_id, note, updated_at (admin-only; separate from profiles to keep out of user-readable RLS)
 ```
 
 ---

@@ -19,10 +19,27 @@ const serif = Source_Serif_4({
   display: 'swap',
 })
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
+
 export const metadata = {
   title: 'Match Analyst — Desktop Video Analysis for Rugby League Coaches',
   description:
     'Tag player stats against match video, export highlight clips, and generate PDF match reports. Included with 18th Man Coach Pro and Club memberships.',
+  keywords: ['rugby league video analysis', 'match analyst software', 'rugby league stats app', 'coaching video tagging', 'match report generator'],
+  alternates: { canonical: `${siteUrl}/analyst` },
+  openGraph: {
+    type: 'website' as const,
+    url: `${siteUrl}/analyst`,
+    title: 'Match Analyst — Desktop Video Analysis for Rugby League Coaches',
+    description: 'Tag player stats against match video, export clips, and generate PDF match reports. Runs offline. Included with Coach Pro and Club memberships.',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: '18th Man Match Analyst' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Match Analyst — Desktop Video Analysis for Rugby League Coaches',
+    description: 'Tag player stats against match video, export clips, and generate PDF match reports.',
+    images: ['/opengraph-image'],
+  },
 }
 
 const DOWNLOAD_WIN = 'https://github.com/nickj456/18thMan/releases/download/v1.7.9/18thMan-Match-Analyst-Setup.exe'

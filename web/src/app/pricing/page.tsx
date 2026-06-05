@@ -5,7 +5,26 @@ import { Check, Lock } from 'lucide-react'
 import { CheckoutButton } from '@/components/pricing/CheckoutButton'
 import { ClubCheckoutButton } from '@/components/pricing/ClubCheckoutButton'
 
-export const metadata = { title: 'Pricing — 18th Man' }
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
+
+export const metadata = {
+  title: 'Pricing — 18th Man',
+  description: 'Start free forever, upgrade to Coach Pro for unlimited drills and AI sessions, or get Club for your entire coaching staff. No credit card required.',
+  alternates: { canonical: `${siteUrl}/pricing` },
+  openGraph: {
+    type: 'website' as const,
+    url: `${siteUrl}/pricing`,
+    title: 'Pricing — 18th Man',
+    description: 'Start free forever, upgrade to Coach Pro for unlimited drills and AI sessions, or get Club for your entire coaching staff.',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: '18th Man Pricing' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: 'Pricing — 18th Man',
+    description: 'Start free forever, upgrade to Coach Pro for unlimited drills and AI sessions, or get Club for your entire coaching staff.',
+    images: ['/opengraph-image'],
+  },
+}
 
 const FREE_FEATURES = [
   'Up to 20 drills',

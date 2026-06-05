@@ -15,7 +15,8 @@ import type { DrillCategory, DrillVisibility } from '@/lib/supabase/types'
 import { saveDrillDesign, updateDrillDesign } from '@/app/(discover)/drills/designer-actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, Monitor, Timer, Video, ImageDown } from 'lucide-react'
+import { Loader2, Save, Monitor, Timer, Video, ImageDown, Maximize2, Minimize2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { UpgradePrompt, useUpgradePrompt } from '@/components/ui/UpgradePrompt'
 
 const AGE_GROUPS = [
@@ -100,6 +101,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   const [visibility, setVisibility] = useState<DrillVisibility>(initialVisibility)
 
   const [isPending, startTransition] = useTransition()
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Timeline state
   const [showTimeline, setShowTimeline] = useState(false)
@@ -476,7 +478,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         onDismiss={dismissUpgrade}
       />
     )}
-    <div className="flex h-full overflow-hidden">
+    <div className={cn("flex h-full overflow-hidden", isFullscreen && "fixed inset-0 z-50 bg-zinc-950")}>
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Canvas area */}
         <div className="flex flex-1 min-h-0 overflow-hidden relative">
@@ -510,6 +512,17 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
               : 'No keyframes'}
           </span>
           <div className="flex items-center gap-2">
+            {isFullscreen && (
+              <button
+                onClick={handleSave}
+                disabled={isPending}
+                className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-500 transition-colors border border-indigo-500 disabled:opacity-50"
+                title="Save drill"
+              >
+                {isPending ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
+                Save
+              </button>
+            )}
             <button
               onClick={handleDownloadPng}
               disabled={canvasState.elements.length === 0}
@@ -539,6 +552,14 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
               <Timer size={11} />
               {showTimeline ? 'Hide Timeline' : 'Animate'}
             </button>
+            <button
+              onClick={() => setIsFullscreen(v => !v)}
+              className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded transition-colors border bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white hover:bg-zinc-700"
+              title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            >
+              {isFullscreen ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
+              {isFullscreen ? 'Exit' : 'Fullscreen'}
+            </button>
           </div>
         </div>
 
@@ -557,7 +578,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         )}
       </div>
 
-      <aside className="w-72 border-l border-zinc-800 bg-zinc-900 flex flex-col shrink-0">
+      {!isFullscreen && <aside className="w-72 border-l border-zinc-800 bg-zinc-900 flex flex-col shrink-0">
         <div className="p-4 border-b border-zinc-800 shrink-0">
           <h2 className="font-semibold text-sm text-white">Drill Details</h2>
           <p className="text-xs text-zinc-500 mt-0.5">Fill in before saving</p>
@@ -566,7 +587,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
           {formFields}
         </div>
         {saveButton}
-      </aside>
+      </aside>}
 
       {showPreview && (
         <AnimationPreview

@@ -2,6 +2,38 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.8.0.2] - 2026-06-05
+
+### Changed
+- **SEO improvements across the site.** Every public page now has full Open Graph and Twitter Card metadata (title, description, image, og:type, og:url), canonical URLs, and expanded keyword lists — so links shared on social media and in messaging apps show rich previews instead of bare URLs.
+- **Structured data (JSON-LD) added for better search visibility.** The site now emits `WebSite` + `Organization` schema on every page, `Person` schema on coach profile pages, and `BreadcrumbList` + `HowTo` schema on drill detail pages — giving Google the context it needs to generate rich results.
+- **Fixed broken social preview image.** The OG/Twitter image reference was pointing to a missing static file; it now correctly uses the dynamic Open Graph image generator already in place.
+- **Hardened JSON-LD output against injection.** User-generated content in structured data (coach bios, drill titles, club names) is now fully escaped before rendering.
+
+## [1.8.0.1] - 2026-06-05
+
+### Fixed
+- **Group Admin can now invite and remove members from their group.** Added RLS policies (via a `security definer` helper to avoid self-referential recursion) so users with `group_role = 'admin'` on `group_invitations` can insert, update, delete, and read invitations for groups they administer — without requiring `club_role = 'admin'`.
+- **Session page no longer throws if `drills_order` is unexpectedly non-array.** Added a defensive `Array.isArray` guard before calling `.filter()` on the session's drills list.
+
+## [1.8.0.0] - 2026-06-04
+
+### Added
+- **5 new equipment icons in the drill designer**: Tackle Bag, Tackle Shield, Flag/Pole, Marker Disc, and Agility Ladder — all selectable from the toolbar and placeable on the canvas.
+- **Agility Ladder is resizable**: drag any corner handle to stretch the ladder to match your real equipment layout. Rungs recount automatically as you resize.
+- **Fullscreen mode**: a Fullscreen button in the timeline bar expands the canvas to fill the entire browser window, hiding the form sidebar. Save is still accessible via a floating button in fullscreen.
+- **Persistent player icon size**: set icon size (S/M/L) once — all subsequent player placements use that size. Changing size also resizes the currently selected player.
+- **Admin user notes**: admins can attach a private text note to any user from the Users admin page.
+
+### Changed
+- **Removed 3D perspective mode** from the drill designer — the effect was not useful in practice. The toolbar is cleaner as a result.
+- Player size controls are now always visible in the toolbar (not only when a player is selected), making it easier to set your preferred size before placing any icons.
+
+### Fixed
+- Agility ladder resize handles no longer drift progressively — Konva node positions are reset after each drag.
+- Flag/pole icon now has a larger hit area (12px stroke width) making it reliably clickable.
+- Landing page redesigned with hex geometry, brand cohesion, and updated feature sections.
+
 ## [0.1.4] - 2026-05-29
 
 ### Changed
