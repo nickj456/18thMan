@@ -94,6 +94,7 @@ conversations         — id, title, type (ai | dm | community), created_by
 conversation_participants — conversation_id, user_id
 messages              — id, conversation_id, sender_id, content, created_at
 session_plans         — id, title, coach_id, drills_order (jsonb), total_duration
+admin_user_notes      — user_id, note, updated_at (admin-only; separate from profiles to keep out of user-readable RLS)
 ```
 
 ---
