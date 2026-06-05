@@ -86,10 +86,38 @@ function HexIcon({ d, filled = false }: { d: string; filled?: boolean }) {
   )
 }
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
+
 export const metadata = {
   title: '18th Man — The Coaching Platform for Rugby League',
   description:
-    'Design drills on a digital canvas, plan training sessions, get instant AI coaching advice, and share knowledge with a community of rugby league coaches.',
+    'Design drills on a digital canvas, plan training sessions, get instant AI coaching advice, and share knowledge with a community of rugby league coaches. Free to join.',
+  keywords: [
+    'rugby league coaching platform',
+    'rugby league drill designer',
+    'rugby league session planner',
+    'AI rugby league coach',
+    'free rugby league tools',
+    'rugby league training drills',
+    'GameSense coaching',
+    'rugby league coaching app',
+  ],
+  alternates: { canonical: siteUrl },
+  openGraph: {
+    type: 'website' as const,
+    url: siteUrl,
+    title: '18th Man — The Coaching Platform for Rugby League',
+    description:
+      'Design drills on a digital canvas, plan training sessions, get instant AI coaching advice, and share knowledge with a community of rugby league coaches.',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: '18th Man — Rugby League Coaching Platform' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: '18th Man — The Coaching Platform for Rugby League',
+    description:
+      'Design drills on a digital canvas, plan training sessions, get instant AI coaching advice, and share knowledge with a community of rugby league coaches.',
+    images: ['/opengraph-image'],
+  },
 }
 
 export default async function LandingPage() {

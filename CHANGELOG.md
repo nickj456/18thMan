@@ -2,6 +2,14 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.8.0.2] - 2026-06-05
+
+### Changed
+- **SEO improvements across the site.** Every public page now has full Open Graph and Twitter Card metadata (title, description, image, og:type, og:url), canonical URLs, and expanded keyword lists — so links shared on social media and in messaging apps show rich previews instead of bare URLs.
+- **Structured data (JSON-LD) added for better search visibility.** The site now emits `WebSite` + `Organization` schema on every page, `Person` schema on coach profile pages, and `BreadcrumbList` + `HowTo` schema on drill detail pages — giving Google the context it needs to generate rich results.
+- **Fixed broken social preview image.** The OG/Twitter image reference was pointing to a missing static file; it now correctly uses the dynamic Open Graph image generator already in place.
+- **Hardened JSON-LD output against injection.** User-generated content in structured data (coach bios, drill titles, club names) is now fully escaped before rendering.
+
 ## [1.8.0.1] - 2026-06-05
 
 ### Fixed

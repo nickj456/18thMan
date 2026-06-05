@@ -13,7 +13,26 @@ const barlow = Barlow_Condensed({
   display: 'swap',
 })
 
-export const metadata = { title: '18th Man — Join Tonight' }
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
+
+export const metadata = {
+  title: '18th Man — Join Tonight',
+  description: 'Join 18th Man tonight — free rugby league coaching tools including a drill designer, AI session planner, and coaching community. Scan the QR code or sign up in 2 minutes.',
+  alternates: { canonical: `${siteUrl}/coaches` },
+  openGraph: {
+    type: 'website' as const,
+    url: `${siteUrl}/coaches`,
+    title: '18th Man — Join Tonight',
+    description: 'Free rugby league coaching tools. Sign up in 2 minutes.',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: '18th Man — Join Tonight' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: '18th Man — Join Tonight',
+    description: 'Free rugby league coaching tools. Sign up in 2 minutes.',
+    images: ['/opengraph-image'],
+  },
+}
 
 const SIGNUP_URL = 'https://18thman.app/join/9b70bf9d-b648-48b7-acfc-2d67141993a2'
 
