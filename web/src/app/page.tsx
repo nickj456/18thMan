@@ -286,6 +286,7 @@ export default async function LandingPage() {
           text-transform: uppercase;
           color: var(--text-muted);
           transition: color 0.15s;
+          padding: 12px 2px;
         }
         .nav-link:hover { color: var(--text); }
 
@@ -1075,7 +1076,7 @@ export default async function LandingPage() {
                   </div>
                 ))}
                 <div style={{ marginTop: '1rem' }}>
-                  <Link href="/analyst" style={{ fontSize: '0.85rem', color: 'var(--ember)', fontFamily: 'var(--font-barlow)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', textDecoration: 'none' }}>
+                  <Link href="/analyst" style={{ fontSize: '0.85rem', color: 'var(--ember)', fontFamily: 'var(--font-barlow)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', textDecoration: 'none', display: 'inline-block', padding: '12px 0' }}>
                     Download free →
                   </Link>
                 </div>
@@ -1981,6 +1982,8 @@ export default async function LandingPage() {
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
                     transition: 'color 0.15s',
+                    display: 'inline-block',
+                    padding: '12px 4px',
                   }}
                 >
                   {label}
