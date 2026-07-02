@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Barlow_Condensed, Source_Serif_4 } from 'next/font/google'
 import { DownloadForm } from '@/components/landing/DownloadForm'
 import { ExitIntentPopup } from '@/components/landing/ExitIntentPopup'
+import { MobileMenu } from '@/components/landing/MobileMenu'
 
 const barlow = Barlow_Condensed({
   weight: ['400', '600', '700', '800'],
@@ -290,6 +291,48 @@ export default async function LandingPage() {
           .nav-links { display: none; }
         }
 
+        .mobile-nav-toggle {
+          display: none;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          background: transparent;
+          border: none;
+          color: var(--text);
+          cursor: pointer;
+        }
+        @media (max-width: 639px) {
+          .mobile-nav-toggle { display: flex; }
+        }
+        .mobile-nav-panel {
+          position: absolute;
+          top: 64px;
+          left: 0;
+          right: 0;
+          background: var(--bg);
+          border-bottom: 1px solid var(--border-subtle);
+          display: flex;
+          flex-direction: column;
+          padding: 0.5rem 1rem 1rem;
+        }
+        @media (max-width: 639px) {
+          .nav-inner { padding: 0 1rem !important; }
+        }
+        .mobile-nav-item {
+          font-family: var(--font-barlow), system-ui, sans-serif;
+          font-weight: 600;
+          font-size: 1rem;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: var(--text);
+          text-decoration: none;
+          padding: 14px 8px;
+          border-bottom: 1px solid var(--border-subtle);
+        }
+        .mobile-nav-item:last-child { border-bottom: none; }
+        .mobile-nav-item-accent { color: var(--ember); }
+
         .section-label {
           font-family: var(--font-barlow), system-ui, sans-serif;
           font-weight: 700;
@@ -368,6 +411,7 @@ export default async function LandingPage() {
           }}
         >
           <div
+            className="nav-inner"
             style={{
               maxWidth: '1200px',
               margin: '0 auto',
@@ -383,7 +427,7 @@ export default async function LandingPage() {
               <Image src="/logo.png" alt="18th Man" width={36} height={36} style={{ flexShrink: 0 }} />
               <span
                 className="lp-display"
-                style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '0.04em', color: 'var(--text)' }}
+                style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '0.04em', color: 'var(--text)', whiteSpace: 'nowrap' }}
               >
                 18TH MAN
               </span>
@@ -415,6 +459,7 @@ export default async function LandingPage() {
                   </Link>
                 </>
               )}
+              <MobileMenu signedIn={!!user} />
             </div>
           </div>
         </nav>
