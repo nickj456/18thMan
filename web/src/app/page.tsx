@@ -1623,7 +1623,7 @@ export default async function LandingPage() {
                   </div>
                 ))}
                 <div style={{ marginTop: '2rem' }}>
-                  <Link href="/signup" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                  <Link href="/signup" className="cta-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px', borderColor: 'rgba(232,86,10,0.4)' }}>
                     Get Club Plan →
                   </Link>
                 </div>
