@@ -930,7 +930,7 @@ export default async function LandingPage() {
             }}
           >
             {/* Feature 1 — Coaching Blocks */}
-            <div className="feature-card" style={{ borderColor: 'rgba(232,86,10,0.2)', background: 'linear-gradient(135deg, var(--surface2) 0%, rgba(232,86,10,0.05) 100%)' }}>
+            <div className="feature-card">
               <HexIcon d="M8 6V4m8 2V4M3 9h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
               <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
                 Coaching Blocks
