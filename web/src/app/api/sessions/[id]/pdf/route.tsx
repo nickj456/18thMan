@@ -105,7 +105,7 @@ export async function GET(
     return new Response(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${slug}-session-plan.pdf"`,
+        'Content-Disposition': `inline; filename="${slug}-session-plan.pdf"`,
       },
     })
   } catch (err) {

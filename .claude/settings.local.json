@@ -51,7 +51,8 @@
       "Skill(ship:*)",
       "Bash(wc -l \"c:/Users/nickj/18th Man/web/src/components/designer\"/*.tsx)",
       "Skill(design-review)",
-      "Skill(design-review:*)"
+      "Skill(design-review:*)",
+      "mcp__claude_ai_Supabase__list_projects"
     ]
   }
 }

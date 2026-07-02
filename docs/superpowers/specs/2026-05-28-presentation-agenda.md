@@ -2,16 +2,18 @@
 
 ---
 
-## Agenda (20–25 min)
+## Agenda (25–30 min)
 
 | # | Topic | Time |
 |---|-------|------|
 | 1 | Intro — the problem with coaching tools | 2 min |
 | 2 | The AI coaching assistant (live demo) | 5 min |
-| 3 | Coaching Blocks — plan your whole season | 6 min |
-| 4 | Game Stats — live match tracking | 5 min |
-| 5 | Everything else (quick tour) | 3 min |
-| 6 | Sign up — scan the QR | 2 min |
+| 3 | YouTube → AI drill guide | 3 min |
+| 4 | Coaching Blocks — plan your whole season | 6 min |
+| 5 | Game Stats — live match tracking | 5 min |
+| 6 | Weekly Focus — whole club, same page | 2 min |
+| 7 | Everything else (quick tour) | 2 min |
+| 8 | Sign up — scan the QR | 2 min |
 
 ---
 
@@ -50,7 +52,21 @@
 
 ---
 
-### 3. Coaching Blocks (6 min)
+### 3. YouTube → AI Drill Guide (3 min)
+
+*Navigate to: Drills → any drill with a YouTube link, or Admin → Import Playlist*
+
+> "Here's one that saves real time. You know when you find a drill on YouTube — someone's running something that looks good, and you think 'I want to use that at training' but then you have to figure out all the coaching points yourself?
+
+> Paste the YouTube link into 18th Man. It pulls the transcript from the video, sends it to the AI, and generates a full coaching guide for that drill — key points, common errors, progressions, warm-up suggestions."
+
+*Show a drill with the AI guide already generated — scroll through the guide.*
+
+> "So instead of watching a 10-minute video three times to pull out the coaching cues, you've got them structured and ready in seconds. The drill goes straight into your library."
+
+---
+
+### 4. Coaching Blocks (6 min)
 
 *Navigate to: Groups → [your group] → Coaching Blocks*
 
@@ -88,7 +104,19 @@
 
 ---
 
-### 5. Quick Tour (3 min)
+### 6. Weekly Focus (2 min)
+
+*Navigate to: Dashboard — show the Weekly Focus widget if one is set, or Admin → Weekly Focus*
+
+> "This one's for when you've got multiple coaches working with different age groups at the same club. Weekly Focus lets the head coach set a theme for the week — say 'defensive line speed' — and it gets pushed to every coach's dashboard.
+
+> Everyone's training towards the same thing that week. The U12s coach, the U16s coach, the first grade staff — all aligned without having to send a WhatsApp message and hope everyone reads it.
+
+> Small feature, but it's the difference between a club and a collection of teams."
+
+---
+
+### 7. Quick Tour (2 min)
 
 > "There's more in here — let me quickly show you a couple of things."
 
@@ -100,11 +128,11 @@
 
 > "Community board — coaches sharing what's working at training. You can post questions, share session ideas, discuss tactics. Early days but it'll grow."
 
-> "There's also session planning, player wellbeing check-ins, game plans, weekly focus topics you can push to the whole squad. It's all in here."
+> "There's also session planning, player wellbeing check-ins, and game plans. It's all in here."
 
 ---
 
-### 6. Sign Up (2 min)
+### 8. Sign Up (2 min)
 
 *Navigate to: 18thman.app/coaches — leave it on screen*
 
@@ -133,3 +161,5 @@
 | App | `18thman.app` |
 | Sign-up page for tonight | `18thman.app/coaches` |
 | AI chat | `18thman.app/chat/ai` |
+| Drill library | `18thman.app/drills` |
+| Weekly Focus (admin) | `18thman.app/weekly-focus/new` |
