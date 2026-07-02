@@ -144,6 +144,7 @@ export default async function LandingPage() {
         }
         .lp { font-family: var(--font-serif), Georgia, serif; color-scheme: dark; }
         .lp-display { font-family: var(--font-barlow), system-ui, sans-serif; }
+        .lp-heading { font-family: var(--font-serif), Georgia, serif; font-weight: 600; }
 
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(32px); }
@@ -1857,10 +1858,18 @@ export default async function LandingPage() {
               <div style={{ flex: '1 1 300px', minWidth: 0 }}>
                 <span className="section-label" style={{ marginBottom: '1rem', display: 'block' }}>Free Training Block</span>
                 <h2
-                  className="lp-heading"
-                  style={{ fontSize: 'clamp(1.5rem, 4vw, 2.2rem)', marginBottom: '0.75rem', lineHeight: 1.2 }}
+                  className="lp-display"
+                  style={{
+                    fontWeight: 800,
+                    fontStyle: 'italic',
+                    fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
+                    lineHeight: 0.95,
+                    textTransform: 'uppercase',
+                    color: 'var(--text)',
+                    marginBottom: '0.75rem',
+                  }}
                 >
-                  A full month of ready-to-run coaching sessions, free.
+                  A full month of ready-to-run coaching sessions, <span style={{ color: 'var(--ember)' }}>free.</span>
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 0 }}>
                   Four print-ready sessions covering ball handling, defensive shape, attack structure, and a full run — with drill descriptions, timing, and coach notes built in. No account needed.
