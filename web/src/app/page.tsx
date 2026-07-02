@@ -173,6 +173,13 @@ export default async function LandingPage() {
         .reveal-4 { animation: fadeUp 0.8s cubic-bezier(.22,.6,.36,1) 0.7s both; }
         .reveal-fade { animation: fadeIn 1.2s ease 0.2s both; }
 
+        @media (prefers-reduced-motion: reduce) {
+          .reveal-0, .reveal-1, .reveal-2, .reveal-3, .reveal-4, .reveal-fade,
+          .ember-line, .cta-primary, .marquee-track {
+            animation: none;
+          }
+        }
+
         .marquee-track {
           display: flex;
           animation: marquee 28s linear infinite;
