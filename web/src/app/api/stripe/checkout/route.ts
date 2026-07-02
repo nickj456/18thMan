@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getStripe, getPriceId, type CheckoutPlan } from '@/lib/stripe'
+import { isClubAdmin } from '@/lib/clubs'
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,6 +20,11 @@ export async function POST(req: NextRequest) {
     // Club plans require a club
     if (isClubPlan && !clubId) {
       return NextResponse.json({ error: 'Club ID required for club plans' }, { status: 400 })
+    }
+
+    // Only a club's admin/creator may start a subscription against it.
+    if (isClubPlan && clubId && !(await isClubAdmin(user.id, clubId))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const stripe = getStripe()

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getStripe } from '@/lib/stripe'
+import { isClubAdmin } from '@/lib/clubs'
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +17,11 @@ export async function POST(req: NextRequest) {
     let customerId: string | null = null
 
     if (clubId) {
-      const { data: club } = await supabase
+      // Only a club's admin/creator may open its billing portal.
+      if (!(await isClubAdmin(user.id, clubId))) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      const { data: club } = await createServiceClient()
         .from('clubs')
         .select('stripe_customer_id')
         .eq('id', clubId)
