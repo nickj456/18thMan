@@ -432,7 +432,7 @@ export default async function LandingPage() {
           >
             {/* Logo */}
             <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-              <Image src="/logo.png" alt="18th Man" width={36} height={36} style={{ flexShrink: 0 }} />
+              <Image src="/logo.png" alt="18th Man" width={513} height={537} style={{ height: 36, width: 'auto', flexShrink: 0 }} />
               <span
                 className="lp-display"
                 style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '0.04em', color: 'var(--text)', whiteSpace: 'nowrap' }}
@@ -1952,7 +1952,7 @@ export default async function LandingPage() {
           >
             {/* Logo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Image src="/logo.png" alt="18th Man" width={30} height={30} style={{ flexShrink: 0 }} />
+              <Image src="/logo.png" alt="18th Man" width={513} height={537} style={{ height: 30, width: 'auto', flexShrink: 0 }} />
               <span
                 className="lp-display"
                 style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '0.06em', color: 'var(--text-muted)' }}
