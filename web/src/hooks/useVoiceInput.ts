@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 interface SpeechRecognitionResult {
   isFinal: boolean
@@ -38,15 +38,21 @@ function getSpeechRecognition(): ISpeechRecognitionConstructor | null {
   return (win.SpeechRecognition ?? win.webkitSpeechRecognition) as ISpeechRecognitionConstructor | undefined ?? null
 }
 
+// Browser speech-recognition support never changes at runtime, so subscribe is a
+// no-op. useSyncExternalStore keeps this SSR-safe (getServerSnapshot returns
+// false) with no effect and no cascading re-render.
+const subscribeSupport = () => () => {}
+
 export function useVoiceInput(onResult: (text: string) => void) {
   const [isListening, setIsListening] = useState(false)
-  const [isSupported, setIsSupported] = useState(false)
   const [interim, setInterim] = useState('')
   const recognitionRef = useRef<ISpeechRecognition | null>(null)
 
-  useEffect(() => {
-    setIsSupported(!!getSpeechRecognition())
-  }, [])
+  const isSupported = useSyncExternalStore(
+    subscribeSupport,
+    () => !!getSpeechRecognition(),
+    () => false,
+  )
 
   function start() {
     const SpeechRecognitionAPI = getSpeechRecognition()

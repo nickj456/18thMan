@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -90,9 +90,13 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
         return [{ ...item, drill, _key: `${item.drill_id}-${i}` }]
       }
       // Custom block — no drill lookup needed
-      return [{ ...item, _key: `custom-${i}-${Date.now()}` }]
+      return [{ ...item, _key: `custom-${i}` }]
     })
   })
+  // Monotonic counter for unique item keys. Runtime-added keys use a `-new-` /
+  // `-copy-` namespace so they can never collide with the index-based keys built
+  // from the initial session above.
+  const keySeq = useRef(0)
   const [customTitle, setCustomTitle] = useState('')
   const [customType, setCustomType] = useState('')
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
@@ -116,7 +120,7 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
   }
 
   function addDrill(drill: Drill) {
-    const key = `${drill.id}-${Date.now()}`
+    const key = `${drill.id}-new-${keySeq.current++}`
     setItems(prev => [...prev, { drill_id: drill.id, duration_minutes: 10, notes: '', drill, _key: key }])
   }
 
@@ -125,7 +129,7 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
       const idx = prev.findIndex(i => i._key === key)
       if (idx === -1) return prev
       const original = prev[idx]
-      const copy = { ...original, _key: `${original._key}-copy-${Date.now()}` }
+      const copy = { ...original, _key: `${original._key}-copy-${keySeq.current++}` }
       const next = [...prev]
       next.splice(idx + 1, 0, copy)
       return next
@@ -134,7 +138,7 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
 
   function addCustomBlock() {
     if (!customTitle.trim()) return
-    const key = `custom-${Date.now()}`
+    const key = `custom-new-${keySeq.current++}`
     setItems(prev => [...prev, {
       custom_title: customTitle.trim(),
       custom_type: customType || undefined,
