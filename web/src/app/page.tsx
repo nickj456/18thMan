@@ -142,7 +142,7 @@ export default async function LandingPage() {
           --text-muted: #7a7875;
           --text-dim: #4a4845;
         }
-        .lp { font-family: var(--font-serif), Georgia, serif; }
+        .lp { font-family: var(--font-serif), Georgia, serif; color-scheme: dark; }
         .lp-display { font-family: var(--font-barlow), system-ui, sans-serif; }
 
         @keyframes fadeUp {
