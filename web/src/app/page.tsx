@@ -1424,13 +1424,13 @@ export default async function LandingPage() {
                 </p>
                 <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {[
-                    '📌 Pinned discussions on key coaching topics',
-                    '💬 Rate and review drills with real coaching feedback',
-                    '🔍 Discover what other coaches are running this week',
-                    '🏆 Build a reputation as a knowledge-sharing leader',
+                    'Pinned discussions on key coaching topics',
+                    'Rate and review drills with real coaching feedback',
+                    'Discover what other coaches are running this week',
+                    'Build a reputation as a knowledge-sharing leader',
                   ].map(item => (
-                    <div key={item} style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                      {item}
+                    <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      <span style={{ color: 'var(--ember)', fontWeight: 700, flexShrink: 0 }}>→</span> {item}
                     </div>
                   ))}
                 </div>
