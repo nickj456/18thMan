@@ -139,8 +139,8 @@ export default async function LandingPage() {
           --surface2: #12151e;
           --border-subtle: rgba(255,255,255,0.06);
           --text: #e8e4dc;
-          --text-muted: #7a7875;
-          --text-dim: #4a4845;
+          --text-muted: #918d88;
+          --text-dim: #7a7773;
         }
         .lp { font-family: var(--font-serif), Georgia, serif; color-scheme: dark; }
         .lp-display { font-family: var(--font-barlow), system-ui, sans-serif; }
