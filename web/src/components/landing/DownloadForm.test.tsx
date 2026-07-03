@@ -43,4 +43,27 @@ describe('DownloadForm', () => {
 
     expect(await screen.findByText('That email looks invalid.')).toBeInTheDocument()
   })
+
+  it('shows the fallback error when the network request throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+    const user = userEvent.setup()
+    render(<DownloadForm />)
+
+    await user.type(screen.getByPlaceholderText('you@club.com'), 'coach@club.com')
+    await user.click(screen.getByRole('button', { name: /send me the plan/i }))
+
+    expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument()
+  })
+
+  it('does not submit with an empty email (native required is the only guard)', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+    render(<DownloadForm />)
+
+    await user.click(screen.getByRole('button', { name: /send me the plan/i }))
+
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(screen.getByPlaceholderText('you@club.com')).toBeInvalid()
+  })
 })
