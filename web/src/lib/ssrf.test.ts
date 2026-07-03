@@ -48,6 +48,25 @@ describe('isPrivateIp', () => {
     expect(isPrivateIp('2606:4700::1111')).toBe(false) // public (Cloudflare)
   })
 
+  it('blocks HEX-form IPv4-mapped and NAT64 embeddings (URL normalisation bypass)', () => {
+    // new URL('http://[::ffff:127.0.0.1]/') normalises the host to ::ffff:7f00:1 —
+    // a dotted-form regex misses it entirely.
+    expect(isPrivateIp('::ffff:7f00:1')).toBe(true) // 127.0.0.1
+    expect(isPrivateIp('::ffff:a9fe:a9fe')).toBe(true) // 169.254.169.254 metadata
+    expect(isPrivateIp('::ffff:c0a8:1')).toBe(true) // 192.168.0.1
+    expect(isPrivateIp('::7f00:1')).toBe(true) // IPv4-compatible loopback
+    expect(isPrivateIp('64:ff9b::7f00:1')).toBe(true) // NAT64 → 127.0.0.1
+    expect(isPrivateIp('64:ff9b::a9fe:a9fe')).toBe(true) // NAT64 → metadata
+    expect(isPrivateIp('::ffff:808:808')).toBe(false) // mapped 8.8.8.8 public
+    expect(isPrivateIp('64:ff9b::808:808')).toBe(false) // NAT64 → 8.8.8.8 public
+  })
+
+  it('rejects mapped-private literals at the URL layer end to end', async () => {
+    await expect(assertPublicUrl('http://[::ffff:169.254.169.254]/latest/meta-data/')).rejects.toThrow('Blocked address')
+    await expect(assertPublicUrl('http://[::ffff:127.0.0.1]:8080/')).rejects.toThrow('Blocked address')
+    await expect(assertPublicUrl('http://[64:ff9b::7f00:1]/')).rejects.toThrow('Blocked address')
+  })
+
   it('treats unparseable input as unsafe', () => {
     expect(isPrivateIp('not-an-ip')).toBe(true)
     expect(isPrivateIp('')).toBe(true)

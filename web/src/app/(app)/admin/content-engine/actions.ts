@@ -69,7 +69,12 @@ Respond with ONLY a valid JSON object. No markdown fences, no explanation, no pr
     const start = text.indexOf('{')
     const end = text.lastIndexOf('}')
     if (start === -1 || end === -1) throw new Error('Unexpected response format')
-    const posts = JSON.parse(text.slice(start, end + 1)) as Record<string, string>
+    const parsed = JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>
+    // Model output is untrusted: keep only string values so a nested object or
+    // number can't reach the client and crash the render.
+    const posts = Object.fromEntries(
+      Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+    )
 
     return { posts }
   } catch (err) {

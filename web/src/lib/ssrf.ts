@@ -35,15 +35,69 @@ function isPrivateIpv4(ip: string): boolean {
   return false
 }
 
+/**
+ * Expand an IPv6 literal to its eight 16-bit groups. Handles `::` compression
+ * and a trailing dotted IPv4 (converted to two groups). Returns null if the
+ * address cannot be parsed. This matters because URL/DNS normalise
+ * IPv4-mapped addresses to HEX form (`::ffff:127.0.0.1` → `::ffff:7f00:1`),
+ * which a dotted-form regex silently misses.
+ */
+function expandIpv6(input: string): number[] | null {
+  let addr = input
+  const zoneIdx = addr.indexOf('%')
+  if (zoneIdx !== -1) addr = addr.slice(0, zoneIdx)
+
+  // Convert a trailing dotted IPv4 into two 16-bit hex groups
+  if (addr.includes('.')) {
+    const lastColon = addr.lastIndexOf(':')
+    const parts = addr.slice(lastColon + 1).split('.').map(Number)
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n) || n < 0 || n > 255)) return null
+    addr =
+      addr.slice(0, lastColon + 1) +
+      (((parts[0] << 8) | parts[1]).toString(16)) + ':' +
+      (((parts[2] << 8) | parts[3]).toString(16))
+  }
+
+  const halves = addr.split('::')
+  if (halves.length > 2) return null
+  const head = halves[0] ? halves[0].split(':') : []
+  const tail = halves.length === 2 && halves[1] ? halves[1].split(':') : []
+  const groupsStr =
+    halves.length === 2
+      ? [...head, ...Array(Math.max(0, 8 - head.length - tail.length)).fill('0'), ...tail]
+      : head
+  if (groupsStr.length !== 8) return null
+
+  const groups: number[] = []
+  for (const g of groupsStr) {
+    if (!/^[0-9a-f]{1,4}$/i.test(g)) return null
+    groups.push(parseInt(g, 16))
+  }
+  return groups
+}
+
+function embeddedIpv4(g6: number, g7: number): string {
+  return `${g6 >> 8}.${g6 & 0xff}.${g7 >> 8}.${g7 & 0xff}`
+}
+
 function isPrivateIpv6(ip: string): boolean {
-  const addr = ip.toLowerCase()
-  if (addr === '::1' || addr === '::') return true      // loopback / unspecified
-  // IPv4-mapped (::ffff:a.b.c.d) — validate the embedded v4
-  const mapped = addr.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/)
-  if (mapped) return isPrivateIpv4(mapped[1])
-  if (addr.startsWith('fe8') || addr.startsWith('fe9') ||
-      addr.startsWith('fea') || addr.startsWith('feb')) return true // fe80::/10 link-local
-  if (addr.startsWith('fc') || addr.startsWith('fd')) return true   // fc00::/7 unique-local
+  const groups = expandIpv6(ip.toLowerCase())
+  if (!groups) return true // unparseable — treat as unsafe
+  const [g0, g1, g2, g3, g4, g5, g6, g7] = groups
+
+  const leading5Zero = g0 === 0 && g1 === 0 && g2 === 0 && g3 === 0 && g4 === 0
+
+  // ::  (unspecified) and ::1 (loopback)
+  if (leading5Zero && g5 === 0 && g6 === 0 && (g7 === 0 || g7 === 1)) return true
+  // IPv4-mapped ::ffff:0:0/96 and IPv4-compatible ::/96 — validate embedded v4
+  // (covers both hex and dotted spellings after expansion)
+  if (leading5Zero && (g5 === 0xffff || g5 === 0)) return isPrivateIpv4(embeddedIpv4(g6, g7))
+  // NAT64 64:ff9b::/96 — translator prefix embedding an IPv4
+  if (g0 === 0x64 && g1 === 0xff9b && g2 === 0 && g3 === 0 && g4 === 0 && g5 === 0) {
+    return isPrivateIpv4(embeddedIpv4(g6, g7))
+  }
+  if ((g0 & 0xffc0) === 0xfe80) return true // fe80::/10 link-local
+  if ((g0 & 0xfe00) === 0xfc00) return true // fc00::/7 unique-local
   return false
 }
 
