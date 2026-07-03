@@ -10,10 +10,10 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { plan, clubId } = await req.json() as { plan: CheckoutPlan; clubId?: string }
+    const { plan, clubId } = await req.json().catch(() => ({})) as { plan?: CheckoutPlan; clubId?: string }
 
     const priceId = getPriceId(plan)
-    if (!priceId) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
+    if (!priceId || !plan) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
 
     const isClubPlan = plan.startsWith('club')
 

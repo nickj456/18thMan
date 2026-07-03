@@ -4,14 +4,30 @@
 -- policies cannot hide individual columns, so every reader could also read
 -- stripe_customer_id / stripe_subscription_id.
 --
--- Column-level privileges are enforced independently of RLS. Revoke SELECT on the
--- two Stripe identifier columns from the anon and authenticated roles. The
--- service_role (used by all server-side billing code: checkout, portal,
--- club-checkout, the Stripe webhook) bypasses these grants and is unaffected.
+-- IMPORTANT: a column-level REVOKE alone is a no-op while the role still holds a
+-- table-level SELECT grant (PostgreSQL evaluates privileges additively). Supabase
+-- grants table-level SELECT on public tables to anon/authenticated by default, so
+-- we must revoke the table-level privilege and re-grant an explicit column list.
 --
--- subscription_tier is intentionally left readable — the app uses it for feature
--- gating in the client.
+-- Consequences:
+--   * `select('*')` on clubs from anon/authenticated now fails with 42501 — all
+--     app queries use explicit column lists (verified at ship time).
+--   * Future `alter table clubs add column` migrations MUST extend this grant.
+--
+-- service_role keeps its own table-level grant and is unaffected; all billing
+-- code (checkout, portal, webhook) reads Stripe columns through it.
+-- subscription_tier stays readable — the app uses it for client feature gating.
 
-revoke select (stripe_customer_id, stripe_subscription_id)
-  on public.clubs
-  from anon, authenticated;
+revoke select on public.clubs from anon, authenticated;
+
+grant select (
+  id,
+  name,
+  slug,
+  created_by,
+  created_at,
+  subscription_tier,
+  max_members,
+  invite_token,
+  max_groups
+) on public.clubs to anon, authenticated;

@@ -325,8 +325,9 @@ export default async function LandingPage() {
           flex-direction: column;
           padding: 0.5rem 1rem 1rem;
         }
+        .nav-inner { padding: 0 2rem; }
         @media (max-width: 639px) {
-          .nav-inner { padding: 0 1rem !important; }
+          .nav-inner { padding: 0 1rem; }
         }
         .mobile-nav-item {
           font-family: var(--font-barlow), system-ui, sans-serif;
@@ -399,7 +400,7 @@ export default async function LandingPage() {
           .service-desc-text { display: none; }
           .services-intro-text { display: none; }
           .services-intro-header { margin-bottom: 2rem; }
-          .service-cta { font-size: 1.05rem !important; padding: 16px 20px !important; }
+          .service-cta { font-size: 1.05rem; padding: 16px 20px; }
         }
       `}</style>
 
@@ -424,7 +425,6 @@ export default async function LandingPage() {
             style={{
               maxWidth: '1200px',
               margin: '0 auto',
-              padding: '0 2rem',
               height: '64px',
               display: 'flex',
               alignItems: 'center',
@@ -1716,7 +1716,7 @@ export default async function LandingPage() {
                     ★ Coach Pro &amp; Club members save £10 on every request
                   </div>
                   <div style={{ marginTop: '1.25rem' }}>
-                    <Link href="/analysis" className="cta-primary service-cta" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                    <Link href="/analysis" className="cta-primary service-cta" style={{ width: '100%', justifyContent: 'center' }}>
                       {user ? 'Request Analysis →' : 'Get Started →'}
                     </Link>
                   </div>
@@ -1797,7 +1797,7 @@ export default async function LandingPage() {
                   </div>
 
                   <div style={{ marginTop: '1.25rem' }}>
-                    <Link href="/analysis" className="cta-primary service-cta" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                    <Link href="/analysis" className="cta-primary service-cta" style={{ width: '100%', justifyContent: 'center' }}>
                       {user ? 'Request Scouting →' : 'Get Started →'}
                     </Link>
                   </div>

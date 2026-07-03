@@ -164,7 +164,7 @@ function NoteCell({ userId, initialNote }: { userId: string; initialNote: string
         title="Click to edit note"
       >
         <span className="line-clamp-2">{saved}</span>
-        <Pencil size={10} className="inline ml-1 opacity-0 group-hover:opacity-50 transition-opacity" />
+        <Pencil size={10} className="inline ml-1 opacity-0 group-hover:opacity-50 group-focus-visible:opacity-50 transition-opacity" />
       </button>
     )
   }
@@ -270,7 +270,7 @@ export function UsersTable({ users, currentUserId }: { users: UserRow[]; current
           <tbody className="divide-y divide-zinc-800 bg-zinc-900">
             {!sorted.length ? (
               <tr>
-                <td colSpan={9} className="px-5 py-10 text-center text-sm text-zinc-600">No users found</td>
+                <td colSpan={cols.length + 3} className="px-5 py-10 text-center text-sm text-zinc-600">No users found</td>
               </tr>
             ) : (
               sorted.map(profile => (

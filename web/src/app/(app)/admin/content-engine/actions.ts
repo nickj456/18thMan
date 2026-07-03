@@ -27,13 +27,17 @@ export async function generatePosts(
   type: string,
   platforms: string[]
 ): Promise<{ posts?: Record<string, string>; error?: string }> {
+  // Outside the try/catch: redirect() throws a control-flow error that must
+  // propagate — catching it would return { error: 'NEXT_REDIRECT' } instead
+  // of redirecting non-admins.
+  await requireAdmin()
+
   try {
-    await requireAdmin()
-
+    const knownPlatforms = platforms.filter(id => id in PLATFORM_HINTS)
     if (!input.trim()) return { error: 'Add some content first.' }
-    if (platforms.length === 0) return { error: 'Select at least one platform.' }
+    if (knownPlatforms.length === 0) return { error: 'Select at least one platform.' }
 
-    const platformInstructions = platforms
+    const platformInstructions = knownPlatforms
       .map(id => `- ${id}: ${PLATFORM_HINTS[id]}`)
       .join('\n')
 
@@ -69,6 +73,7 @@ Respond with ONLY a valid JSON object. No markdown fences, no explanation, no pr
 
     return { posts }
   } catch (err) {
-    return { error: err instanceof Error ? err.message : 'Something went wrong' }
+    console.error('[content-engine]', err)
+    return { error: 'Generation failed. Please try again.' }
   }
 }

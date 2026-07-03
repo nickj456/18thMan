@@ -121,7 +121,7 @@ function SocialPostsTab() {
             onChange={e => setInput(e.target.value)}
             placeholder="Paste your drill, coaching thought, tip, or announcement here. A sentence or a full paragraph — either works."
             rows={5}
-            className="w-full bg-zinc-900 border border-zinc-800 border-l-2 border-l-[#e8560a] text-zinc-200 text-sm leading-relaxed px-4 py-3 rounded-r-xl outline-none placeholder:text-zinc-600 resize-y focus:border-zinc-700 transition-colors"
+            className="w-full bg-zinc-900 border border-zinc-800 border-l-2 border-l-[#e8560a] text-zinc-200 text-sm leading-relaxed px-4 py-3 rounded-r-xl outline-none placeholder:text-zinc-600 resize-y focus:border-[#e8560a] focus:ring-1 focus:ring-[#e8560a]/40 transition-colors"
           />
           <span className="absolute bottom-3 right-3 text-xs text-zinc-600 pointer-events-none">
             {input.length} chars
@@ -180,7 +180,6 @@ function SocialPostsTab() {
               <div
                 key={p.id}
                 className="rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-hidden"
-                style={{ animationDelay: `${i * 80}ms` }}
               >
                 <div className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
                   <div className="flex items-center gap-3">
@@ -351,7 +350,7 @@ function ImageGeneratorTab() {
           onChange={e => setSubject(e.target.value)}
           placeholder="e.g. U14s tackle practice, coach on the sideline, team huddle before a game…"
           rows={3}
-          className="w-full bg-zinc-900 border border-zinc-800 border-l-2 border-l-[#e8560a] text-zinc-200 text-sm leading-relaxed px-4 py-3 rounded-r-xl outline-none placeholder:text-zinc-600 resize-none focus:border-zinc-700 transition-colors"
+          className="w-full bg-zinc-900 border border-zinc-800 border-l-2 border-l-[#e8560a] text-zinc-200 text-sm leading-relaxed px-4 py-3 rounded-r-xl outline-none placeholder:text-zinc-600 resize-none focus:border-[#e8560a] focus:ring-1 focus:ring-[#e8560a]/40 transition-colors"
         />
       </div>
 
@@ -375,6 +374,7 @@ function ImageGeneratorTab() {
             <button
               key={s.id}
               onClick={() => setSize(s.id)}
+              aria-pressed={size === s.id}
               className={`px-3 py-2.5 text-left rounded-xl border transition-colors ${
                 size === s.id
                   ? 'border-[#e8560a] bg-[#e8560a]/10'
@@ -397,6 +397,7 @@ function ImageGeneratorTab() {
         {/* Logo toggle */}
         <button
           onClick={() => setIncludeLogo(v => !v)}
+          aria-pressed={includeLogo}
           className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl border text-left transition-colors ${
             includeLogo
               ? 'border-[#e8560a] bg-[#e8560a]/10'

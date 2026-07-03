@@ -5,6 +5,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // tests bypass lookup entirely (ssrf.ts checks net.isIP first).
 const dnsTable: Record<string, { address: string; family: number }[]> = {}
 
+beforeEach(() => {
+  for (const key of Object.keys(dnsTable)) delete dnsTable[key]
+})
+
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async (host: string) => {
     if (host in dnsTable) return dnsTable[host]

@@ -37,7 +37,7 @@ vi.mock('@/lib/stripe', () => ({
     customers: { create: customersCreate },
   }),
   getPriceId: (plan: string) =>
-    ['coach_monthly', 'coach_yearly', 'club_monthly', 'club_yearly'].includes(plan) ? `price_${plan}` : null,
+    ['coach_monthly', 'coach_annual', 'club_monthly', 'club_annual'].includes(plan) ? `price_${plan}` : null,
 }))
 vi.mock('@/lib/clubs', () => ({
   isClubAdmin: (...args: unknown[]) => isClubAdminMock(...(args as [])),
@@ -107,5 +107,28 @@ describe('POST /api/stripe/checkout', () => {
     expect(checkoutCreate).toHaveBeenCalledWith(
       expect.objectContaining({ customer: 'cus_personal' }),
     )
+  })
+
+  it('returns 404 when the club row is missing for an admin', async () => {
+    state.isAdmin = true
+    state.club = null
+    const res = await POST(request({ plan: 'club_monthly', clubId: 'club-1' }))
+    expect(res.status).toBe(404)
+  })
+
+  it('returns 500 when Stripe throws', async () => {
+    state.profile = { display_name: 'Nick', stripe_customer_id: 'cus_personal' }
+    checkoutCreate.mockRejectedValueOnce(new Error('stripe down'))
+    const res = await POST(request({ plan: 'coach_monthly' }))
+    expect(res.status).toBe(500)
+  })
+
+  it('returns 400 for a malformed (non-JSON) body instead of 500', async () => {
+    const badReq = {
+      json: async () => { throw new SyntaxError('bad json') },
+      headers: new Headers(),
+    } as unknown as NextRequest
+    const res = await POST(badReq)
+    expect(res.status).toBe(400)
   })
 })
