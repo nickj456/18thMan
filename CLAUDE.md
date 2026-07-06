@@ -59,6 +59,12 @@ Rugby league coaching platform. Full spec in [SPEC.md](SPEC.md).
 - Desktop-first layout; ensure tablet usability
 - Canvas state stored as `canvas_json` (JSONB) in the `drills` table
 
+### Security
+- **Never fetch a user-supplied URL directly.** Any server-side fetch of a URL a user gave us (link previews, etc.) must go through `web/src/lib/ssrf.ts`, which validates the resolved IP — and every redirect hop — against private/internal ranges (including IPv4-mapped IPv6). See [TESTING.md](TESTING.md) for the guard's test coverage.
+- **Club billing routes require `isClubAdmin()`.** Stripe checkout and portal routes (`web/src/app/api/stripe/`) must verify the caller administers the club before starting or managing a subscription — never trust a `clubId` from the request body alone.
+- Global security headers (HSTS, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`) are set once in `web/next.config.ts` — don't duplicate them per-route.
+- **`clubs` table has no wildcard SELECT.** `stripe_customer_id`/`stripe_subscription_id` are revoked from the table-level grant, so `select('*')` on `clubs` fails with 42501 for anon/authenticated — always use an explicit column list. Any migration adding a column to `clubs` must extend the grant in `web/supabase/migrations/075_clubs_hide_stripe_columns.sql`.
+
 ---
 
 ## Roles & Permissions

@@ -58,6 +58,7 @@ Rugby league coaching platform for coaches to design drills, plan sessions, and 
 ### Admin Panel
 - Manage users — view, role assignment, suspend
 - Admin user notes — private per-user notes visible only to admins (stored in `admin_user_notes` table)
+- Content Engine — AI-generated social media posts (tip / drill / thought / announcement) tailored per platform (X, Facebook, Instagram, LinkedIn), admin-only
 - Manage drill categories — add / edit / delete / reorder
 - Moderate community discussions
 - Site stats dashboard
