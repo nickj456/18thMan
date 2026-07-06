@@ -109,6 +109,15 @@ export default async function DrillDetailPage({
     : null
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: 'Drill Library', item: `${siteUrl}/drills` },
+      { '@type': 'ListItem', position: 3, name: drill.title, item: `${siteUrl}/drills/${id}` },
+    ],
+  }
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'HowTo',
@@ -116,7 +125,6 @@ export default async function DrillDetailPage({
     description: drill.description ?? `Rugby league drill: ${drill.title}`,
     url: `${siteUrl}/drills/${id}`,
     ...(drill.preview_image_url ? { image: drill.preview_image_url } : {}),
-    ...(drill.difficulty ? { difficulty: drill.difficulty } : {}),
     author: drill.author ? {
       '@type': 'Person',
       name: (drill.author as { display_name?: string; username?: string }).display_name
@@ -137,7 +145,11 @@ export default async function DrillDetailPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026') }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026') }}
       />
       <div className="max-w-4xl space-y-6">
         {/* Back + actions */}

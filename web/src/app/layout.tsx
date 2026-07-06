@@ -44,13 +44,13 @@ export const metadata: Metadata = {
     siteName: '18th Man',
     title: '18th Man — Rugby League Coaching Platform',
     description: 'Free rugby league coaching tools — drill designer, session planner, AI coaching assistant, and a community of coaches.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '18th Man — Rugby League Coaching' }],
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: '18th Man — Rugby League Coaching' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: '18th Man — Rugby League Coaching Platform',
     description: 'Free rugby league coaching tools — drill designer, session planner, AI coaching assistant, and a community of coaches.',
-    images: ['/og-image.png'],
+    images: ['/opengraph-image'],
   },
   manifest: '/manifest.webmanifest',
   icons: {
@@ -76,12 +76,38 @@ export default async function RootLayout({
   const themeCookie = cookieStore.get('theme')?.value
   const defaultTheme = themeCookie === 'light' ? 'light' : 'dark'
 
+  const jsonLd = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: '18th Man',
+      url: siteUrl,
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: { '@type': 'EntryPoint', urlTemplate: `${siteUrl}/drills?q={search_term_string}` },
+        'query-input': 'required name=search_term_string',
+      },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: '18th Man',
+      url: siteUrl,
+      logo: `${siteUrl}/icons/icon-192.png`,
+      description: 'Free rugby league coaching tools — drill designer, session planner, AI coaching assistant, and a community of coaches.',
+    },
+  ]
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable} h-full antialiased ${defaultTheme === 'dark' ? 'dark' : ''}`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026') }}
+        />
         <ThemeProvider defaultTheme={defaultTheme}>
           <TooltipProvider>
             {children}

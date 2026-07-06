@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Barlow_Condensed, Source_Serif_4 } from 'next/font/google'
 import { DownloadForm } from '@/components/landing/DownloadForm'
 import { ExitIntentPopup } from '@/components/landing/ExitIntentPopup'
+import { MobileMenu } from '@/components/landing/MobileMenu'
 
 const barlow = Barlow_Condensed({
   weight: ['400', '600', '700', '800'],
@@ -86,10 +87,38 @@ function HexIcon({ d, filled = false }: { d: string; filled?: boolean }) {
   )
 }
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
+
 export const metadata = {
   title: '18th Man — The Coaching Platform for Rugby League',
   description:
-    'Design drills on a digital canvas, plan training sessions, get instant AI coaching advice, and share knowledge with a community of rugby league coaches.',
+    'Design drills on a digital canvas, plan training sessions, get instant AI coaching advice, and share knowledge with a community of rugby league coaches. Free to join.',
+  keywords: [
+    'rugby league coaching platform',
+    'rugby league drill designer',
+    'rugby league session planner',
+    'AI rugby league coach',
+    'free rugby league tools',
+    'rugby league training drills',
+    'GameSense coaching',
+    'rugby league coaching app',
+  ],
+  alternates: { canonical: siteUrl },
+  openGraph: {
+    type: 'website' as const,
+    url: siteUrl,
+    title: '18th Man — The Coaching Platform for Rugby League',
+    description:
+      'Design drills on a digital canvas, plan training sessions, get instant AI coaching advice, and share knowledge with a community of rugby league coaches.',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: '18th Man — Rugby League Coaching Platform' }],
+  },
+  twitter: {
+    card: 'summary_large_image' as const,
+    title: '18th Man — The Coaching Platform for Rugby League',
+    description:
+      'Design drills on a digital canvas, plan training sessions, get instant AI coaching advice, and share knowledge with a community of rugby league coaches.',
+    images: ['/opengraph-image'],
+  },
 }
 
 export default async function LandingPage() {
@@ -110,11 +139,12 @@ export default async function LandingPage() {
           --surface2: #12151e;
           --border-subtle: rgba(255,255,255,0.06);
           --text: #e8e4dc;
-          --text-muted: #7a7875;
-          --text-dim: #4a4845;
+          --text-muted: #918d88;
+          --text-dim: #7a7773;
         }
-        .lp { font-family: var(--font-serif), Georgia, serif; }
+        .lp { font-family: var(--font-serif), Georgia, serif; color-scheme: dark; }
         .lp-display { font-family: var(--font-barlow), system-ui, sans-serif; }
+        .lp-heading { font-family: var(--font-serif), Georgia, serif; font-weight: 600; }
 
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(32px); }
@@ -143,6 +173,13 @@ export default async function LandingPage() {
         .reveal-3 { animation: fadeUp 0.8s cubic-bezier(.22,.6,.36,1) 0.55s both; }
         .reveal-4 { animation: fadeUp 0.8s cubic-bezier(.22,.6,.36,1) 0.7s both; }
         .reveal-fade { animation: fadeIn 1.2s ease 0.2s both; }
+
+        @media (prefers-reduced-motion: reduce) {
+          .reveal-0, .reveal-1, .reveal-2, .reveal-3, .reveal-4, .reveal-fade,
+          .ember-line, .cta-primary, .marquee-track {
+            animation: none;
+          }
+        }
 
         .marquee-track {
           display: flex;
@@ -250,6 +287,7 @@ export default async function LandingPage() {
           text-transform: uppercase;
           color: var(--text-muted);
           transition: color 0.15s;
+          padding: 12px 2px;
         }
         .nav-link:hover { color: var(--text); }
 
@@ -261,6 +299,49 @@ export default async function LandingPage() {
         @media (max-width: 639px) {
           .nav-links { display: none; }
         }
+
+        .mobile-nav-toggle {
+          display: none;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          background: transparent;
+          border: none;
+          color: var(--text);
+          cursor: pointer;
+        }
+        @media (max-width: 639px) {
+          .mobile-nav-toggle { display: flex; }
+        }
+        .mobile-nav-panel {
+          position: absolute;
+          top: 64px;
+          left: 0;
+          right: 0;
+          background: var(--bg);
+          border-bottom: 1px solid var(--border-subtle);
+          display: flex;
+          flex-direction: column;
+          padding: 0.5rem 1rem 1rem;
+        }
+        .nav-inner { padding: 0 2rem; }
+        @media (max-width: 639px) {
+          .nav-inner { padding: 0 1rem; }
+        }
+        .mobile-nav-item {
+          font-family: var(--font-barlow), system-ui, sans-serif;
+          font-weight: 600;
+          font-size: 1rem;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: var(--text);
+          text-decoration: none;
+          padding: 14px 8px;
+          border-bottom: 1px solid var(--border-subtle);
+        }
+        .mobile-nav-item:last-child { border-bottom: none; }
+        .mobile-nav-item-accent { color: var(--ember); }
 
         .section-label {
           font-family: var(--font-barlow), system-ui, sans-serif;
@@ -319,7 +400,7 @@ export default async function LandingPage() {
           .service-desc-text { display: none; }
           .services-intro-text { display: none; }
           .services-intro-header { margin-bottom: 2rem; }
-          .service-cta { font-size: 1.05rem !important; padding: 16px 20px !important; }
+          .service-cta { font-size: 1.05rem; padding: 16px 20px; }
         }
       `}</style>
 
@@ -340,10 +421,10 @@ export default async function LandingPage() {
           }}
         >
           <div
+            className="nav-inner"
             style={{
               maxWidth: '1200px',
               margin: '0 auto',
-              padding: '0 2rem',
               height: '64px',
               display: 'flex',
               alignItems: 'center',
@@ -352,10 +433,10 @@ export default async function LandingPage() {
           >
             {/* Logo */}
             <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-              <Image src="/logo.png" alt="18th Man" width={36} height={36} style={{ flexShrink: 0 }} />
+              <Image src="/logo.png" alt="18th Man" width={513} height={537} style={{ height: 36, width: 'auto', flexShrink: 0 }} />
               <span
                 className="lp-display"
-                style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '0.04em', color: 'var(--text)' }}
+                style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '0.04em', color: 'var(--text)', whiteSpace: 'nowrap' }}
               >
                 18TH MAN
               </span>
@@ -387,6 +468,7 @@ export default async function LandingPage() {
                   </Link>
                 </>
               )}
+              <MobileMenu signedIn={!!user} />
             </div>
           </div>
         </nav>
@@ -850,7 +932,7 @@ export default async function LandingPage() {
             }}
           >
             {/* Feature 1 — Coaching Blocks */}
-            <div className="feature-card" style={{ borderColor: 'rgba(232,86,10,0.2)', background: 'linear-gradient(135deg, var(--surface2) 0%, rgba(232,86,10,0.05) 100%)' }}>
+            <div className="feature-card">
               <HexIcon d="M8 6V4m8 2V4M3 9h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
               <h3 className="lp-display" style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
                 Coaching Blocks
@@ -995,7 +1077,7 @@ export default async function LandingPage() {
                   </div>
                 ))}
                 <div style={{ marginTop: '1rem' }}>
-                  <Link href="/analyst" style={{ fontSize: '0.85rem', color: 'var(--ember)', fontFamily: 'var(--font-barlow)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', textDecoration: 'none' }}>
+                  <Link href="/analyst" style={{ fontSize: '0.85rem', color: 'var(--ember)', fontFamily: 'var(--font-barlow)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', textDecoration: 'none', display: 'inline-block', padding: '12px 0' }}>
                     Download free →
                   </Link>
                 </div>
@@ -1351,13 +1433,13 @@ export default async function LandingPage() {
                 </p>
                 <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {[
-                    '📌 Pinned discussions on key coaching topics',
-                    '💬 Rate and review drills with real coaching feedback',
-                    '🔍 Discover what other coaches are running this week',
-                    '🏆 Build a reputation as a knowledge-sharing leader',
+                    'Pinned discussions on key coaching topics',
+                    'Rate and review drills with real coaching feedback',
+                    'Discover what other coaches are running this week',
+                    'Build a reputation as a knowledge-sharing leader',
                   ].map(item => (
-                    <div key={item} style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                      {item}
+                    <div key={item} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      <span style={{ color: 'var(--ember)', fontWeight: 700, flexShrink: 0 }}>→</span> {item}
                     </div>
                   ))}
                 </div>
@@ -1543,7 +1625,7 @@ export default async function LandingPage() {
                   </div>
                 ))}
                 <div style={{ marginTop: '2rem' }}>
-                  <Link href="/signup" className="cta-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                  <Link href="/signup" className="cta-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px', borderColor: 'rgba(232,86,10,0.4)' }}>
                     Get Club Plan →
                   </Link>
                 </div>
@@ -1634,7 +1716,7 @@ export default async function LandingPage() {
                     ★ Coach Pro &amp; Club members save £10 on every request
                   </div>
                   <div style={{ marginTop: '1.25rem' }}>
-                    <Link href="/analysis" className="cta-primary service-cta" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                    <Link href="/analysis" className="cta-primary service-cta" style={{ width: '100%', justifyContent: 'center' }}>
                       {user ? 'Request Analysis →' : 'Get Started →'}
                     </Link>
                   </div>
@@ -1715,7 +1797,7 @@ export default async function LandingPage() {
                   </div>
 
                   <div style={{ marginTop: '1.25rem' }}>
-                    <Link href="/analysis" className="cta-primary service-cta" style={{ width: '100%', justifyContent: 'center', fontSize: '0.9rem', padding: '12px 20px' }}>
+                    <Link href="/analysis" className="cta-primary service-cta" style={{ width: '100%', justifyContent: 'center' }}>
                       {user ? 'Request Scouting →' : 'Get Started →'}
                     </Link>
                   </div>
@@ -1776,10 +1858,18 @@ export default async function LandingPage() {
               <div style={{ flex: '1 1 300px', minWidth: 0 }}>
                 <span className="section-label" style={{ marginBottom: '1rem', display: 'block' }}>Free Training Block</span>
                 <h2
-                  className="lp-heading"
-                  style={{ fontSize: 'clamp(1.5rem, 4vw, 2.2rem)', marginBottom: '0.75rem', lineHeight: 1.2 }}
+                  className="lp-display"
+                  style={{
+                    fontWeight: 800,
+                    fontStyle: 'italic',
+                    fontSize: 'clamp(1.8rem, 4vw, 2.6rem)',
+                    lineHeight: 0.95,
+                    textTransform: 'uppercase',
+                    color: 'var(--text)',
+                    marginBottom: '0.75rem',
+                  }}
                 >
-                  A full month of ready-to-run coaching sessions, free.
+                  A full month of ready-to-run coaching sessions, <span style={{ color: 'var(--ember)' }}>free.</span>
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 0 }}>
                   Four print-ready sessions covering ball handling, defensive shape, attack structure, and a full run — with drill descriptions, timing, and coach notes built in. No account needed.
@@ -1871,7 +1961,7 @@ export default async function LandingPage() {
           >
             {/* Logo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Image src="/logo.png" alt="18th Man" width={30} height={30} style={{ flexShrink: 0 }} />
+              <Image src="/logo.png" alt="18th Man" width={513} height={537} style={{ height: 30, width: 'auto', flexShrink: 0 }} />
               <span
                 className="lp-display"
                 style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '0.06em', color: 'var(--text-muted)' }}
@@ -1901,6 +1991,8 @@ export default async function LandingPage() {
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
                     transition: 'color 0.15s',
+                    display: 'inline-block',
+                    padding: '12px 4px',
                   }}
                 >
                   {label}

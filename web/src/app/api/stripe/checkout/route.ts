@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getStripe, getPriceId, type CheckoutPlan } from '@/lib/stripe'
+import { isClubAdmin } from '@/lib/clubs'
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,16 +10,21 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { plan, clubId } = await req.json() as { plan: CheckoutPlan; clubId?: string }
+    const { plan, clubId } = await req.json().catch(() => ({})) as { plan?: CheckoutPlan; clubId?: string }
 
     const priceId = getPriceId(plan)
-    if (!priceId) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
+    if (!priceId || !plan) return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
 
     const isClubPlan = plan.startsWith('club')
 
     // Club plans require a club
     if (isClubPlan && !clubId) {
       return NextResponse.json({ error: 'Club ID required for club plans' }, { status: 400 })
+    }
+
+    // Only a club's admin/creator may start a subscription against it.
+    if (isClubPlan && clubId && !(await isClubAdmin(user.id, clubId))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const stripe = getStripe()

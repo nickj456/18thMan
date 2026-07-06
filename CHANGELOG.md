@@ -2,6 +2,55 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.8.0.3] - 2026-07-06
+
+### Changed
+- **Landing page redesign polish.** Mobile visitors now get a real navigation menu (hamburger with all section links and Sign In) — previously the nav collapsed to just the logo and Get Started button on phones. The free training-block signup form has visible field labels, a dark-themed dropdown instead of the browser's default light one, and an always-active submit button. Pricing cards now highlight a single "Most Popular" plan instead of two competing filled buttons. Animations respect "reduce motion" system settings, and body text contrast was raised to meet accessibility guidelines.
+- **Stripe billing routes now enforce club-admin authorization**, closing a gap where any signed-in user could start or manage a subscription for a club they don't administer.
+- **Session-plan link previews are protected against server-side request forgery (SSRF).** Fetching a linked URL for a preview now validates the target — and every redirect it follows — against private and internal IP ranges, including IPv4-mapped IPv6 and NAT64 address forms that could otherwise reach cloud metadata endpoints.
+- Session builder assigns each new drill a stable unique key instead of a timestamp, preventing duplicate-key glitches when drills are added in quick succession.
+- Voice input availability is now detected in a way that's safe during server-side rendering.
+
+### Added
+- **Automated test suite** (Vitest + Testing Library) covering the SSRF guard, Stripe authorization checks, admin note-taking, the new mobile menu, and the lead-magnet form — with tests running automatically on every push and pull request.
+
+### Fixed
+- Clubs' Stripe billing identifiers are no longer readable by any signed-in user or the public — only club admins and the server can see them.
+- The admin content tool's AI-generation flow correctly redirects non-admins instead of silently failing, and rejects malformed AI responses instead of crashing.
+- Subscription checkout no longer 500s on an unrecognized or missing plan — it now returns a clear error.
+
+## [1.8.0.2] - 2026-06-05
+
+### Changed
+- **SEO improvements across the site.** Every public page now has full Open Graph and Twitter Card metadata (title, description, image, og:type, og:url), canonical URLs, and expanded keyword lists — so links shared on social media and in messaging apps show rich previews instead of bare URLs.
+- **Structured data (JSON-LD) added for better search visibility.** The site now emits `WebSite` + `Organization` schema on every page, `Person` schema on coach profile pages, and `BreadcrumbList` + `HowTo` schema on drill detail pages — giving Google the context it needs to generate rich results.
+- **Fixed broken social preview image.** The OG/Twitter image reference was pointing to a missing static file; it now correctly uses the dynamic Open Graph image generator already in place.
+- **Hardened JSON-LD output against injection.** User-generated content in structured data (coach bios, drill titles, club names) is now fully escaped before rendering.
+
+## [1.8.0.1] - 2026-06-05
+
+### Fixed
+- **Group Admin can now invite and remove members from their group.** Added RLS policies (via a `security definer` helper to avoid self-referential recursion) so users with `group_role = 'admin'` on `group_invitations` can insert, update, delete, and read invitations for groups they administer — without requiring `club_role = 'admin'`.
+- **Session page no longer throws if `drills_order` is unexpectedly non-array.** Added a defensive `Array.isArray` guard before calling `.filter()` on the session's drills list.
+
+## [1.8.0.0] - 2026-06-04
+
+### Added
+- **5 new equipment icons in the drill designer**: Tackle Bag, Tackle Shield, Flag/Pole, Marker Disc, and Agility Ladder — all selectable from the toolbar and placeable on the canvas.
+- **Agility Ladder is resizable**: drag any corner handle to stretch the ladder to match your real equipment layout. Rungs recount automatically as you resize.
+- **Fullscreen mode**: a Fullscreen button in the timeline bar expands the canvas to fill the entire browser window, hiding the form sidebar. Save is still accessible via a floating button in fullscreen.
+- **Persistent player icon size**: set icon size (S/M/L) once — all subsequent player placements use that size. Changing size also resizes the currently selected player.
+- **Admin user notes**: admins can attach a private text note to any user from the Users admin page.
+
+### Changed
+- **Removed 3D perspective mode** from the drill designer — the effect was not useful in practice. The toolbar is cleaner as a result.
+- Player size controls are now always visible in the toolbar (not only when a player is selected), making it easier to set your preferred size before placing any icons.
+
+### Fixed
+- Agility ladder resize handles no longer drift progressively — Konva node positions are reset after each drag.
+- Flag/pole icon now has a larger hit area (12px stroke width) making it reliably clickable.
+- Landing page redesigned with hex geometry, brand cohesion, and updated feature sections.
+
 ## [0.1.4] - 2026-05-29
 
 ### Changed

@@ -18,7 +18,10 @@ export const STRIPE_PRICES = {
 
 export type CheckoutPlan = 'coach_monthly' | 'coach_annual' | 'club_monthly' | 'club_annual'
 
-export function getPriceId(plan: CheckoutPlan): string {
-  const [product, billing] = plan.split('_') as ['coach' | 'club', 'monthly' | 'annual']
-  return STRIPE_PRICES[product][billing]
+export function getPriceId(plan: string | undefined): string | null {
+  // Defensive: `plan` arrives from an unvalidated request body. Unknown plans
+  // (or unset env price IDs) must return null → 400, not throw → 500.
+  const [product, billing] = (typeof plan === 'string' ? plan : '').split('_')
+  const prices = STRIPE_PRICES as Record<string, Record<string, string> | undefined>
+  return prices[product]?.[billing] || null
 }

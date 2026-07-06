@@ -1,27 +1,13 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Stage, Layer, Arrow, Line, Shape, Group } from 'react-konva'
+import { Stage, Layer, Arrow, Line, Shape } from 'react-konva'
 import type Konva from 'konva'
 import { PitchBackgroundLayer } from './PitchBackground'
 import { CanvasElements } from './CanvasElements'
 import { Toolbar } from './Toolbar'
 import { CANVAS_WIDTH, CANVAS_HEIGHT, DRAW_TOOLS, type CanvasElement, type CanvasState, type ToolType } from './types'
 import { nanoid } from 'nanoid'
-
-// ── 3-D Konva Group transform ────────────────────────────────────────────────
-// Moving the 3D effect inside Konva (not CSS) keeps pointer-event coordinates
-// accurate: Konva maps clicks/drags through the Group's inverse transform so
-// elements remain fully interactive in 3D mode.
-const GROUP_3D_Y = CANVAS_HEIGHT * 0.12   // ≈ 72 px top inset
-const GROUP_3D_SCALE_Y = 0.70             // 30 % Y compression for pitch tilt
-
-function ThreeDWrapper({ active, children }: { active: boolean; children: React.ReactNode }) {
-  if (active) {
-    return <Group y={GROUP_3D_Y} scaleY={GROUP_3D_SCALE_Y}>{children}</Group>
-  }
-  return <>{children}</>
-}
 
 // ── Kick arc preview — shown while dragging to draw ──────────────────────────
 function KickPreview({ x1, y1, x2, y2, color }: { x1: number; y1: number; x2: number; y2: number; color: string }) {
@@ -74,13 +60,19 @@ function KickPreview({ x1, y1, x2, y2, color }: { x1: number; y1: number; x2: nu
   )
 }
 
-function makeElement(tool: ToolType, x: number, y: number, count: number): CanvasElement {
+function makeElement(tool: ToolType, x: number, y: number, count: number, size: 'sm' | 'md' | 'lg' = 'md'): CanvasElement {
   const base = { id: nanoid(), type: tool, x, y }
   switch (tool) {
-    case 'attacker': return { ...base, color: '#ef4444', label: String(count) }
-    case 'defender': return { ...base, color: '#3b82f6', label: String(count) }
+    case 'attacker': return { ...base, color: '#ef4444', label: String(count), size }
+    case 'defender': return { ...base, color: '#3b82f6', label: String(count), size }
     case 'cone':     return { ...base, color: '#f59e0b' }
     case 'ball':     return { ...base, color: '#92400e' }
+    case 'tackle-bag':    return { ...base, color: '#ef4444' }
+    case 'tackle-shield': return { ...base, color: '#3b82f6' }
+    case 'flag':          return { ...base, color: '#22c55e' }
+    case 'disc':          return { ...base, color: '#f59e0b' }
+    case 'agility-ladder':
+      return { ...base, color: '#6366f1', width: 40, height: 160 }
     case 'zone':     return { ...base, x, y, color: 'rgba(239,68,68,0.15)', width: 120, height: 80 }
     case 'text':     return { ...base, label: 'Label', color: '#ffffff' }
     default:         return base
@@ -138,7 +130,7 @@ export function DrillCanvas({
 }: DrillCanvasProps) {
   const attackerCount = useRef(0)
   const defenderCount = useRef(0)
-  const [is3D, setIs3D] = useState(false)
+  const [defaultPlayerSize, setDefaultPlayerSize] = useState<'sm' | 'md' | 'lg'>('md')
   const [drawingEl, setDrawingEl] = useState<DrawingState | null>(null)
   // Store all editing data directly — don't look up from state.elements (timing issues)
   const [editingText, setEditingText] = useState<EditingText | null>(null)
@@ -198,12 +190,7 @@ export function DrillCanvas({
   function getPos(e: Konva.KonvaEventObject<any>) {
     const pos = e.target.getStage()?.getPointerPosition() ?? null
     if (!pos) return null
-    const sx = pos.x / scale
-    const sy = pos.y / scale
-    if (is3D) {
-      return { x: sx, y: (sy - GROUP_3D_Y) / GROUP_3D_SCALE_Y }
-    }
-    return { x: sx, y: sy }
+    return { x: pos.x / scale, y: pos.y / scale }
   }
 
   // ── Click/Tap-to-place (non-draw tools) ──────────────────────────────────
@@ -222,7 +209,7 @@ export function DrillCanvas({
     const count = activeTool === 'attacker' ? attackerCount.current
                 : activeTool === 'defender' ? defenderCount.current : 0
 
-    const el = makeElement(activeTool, pos.x, pos.y, count)
+    const el = makeElement(activeTool, pos.x, pos.y, count, defaultPlayerSize)
     onStateChange({ ...state, elements: [...state.elements, el] })
     onSelectId(el.id)
 
@@ -305,6 +292,16 @@ export function DrillCanvas({
     })
   }
 
+  function handlePlayerSizeChange(size: 'sm' | 'md' | 'lg') {
+    setDefaultPlayerSize(size)
+    if (selectedId) {
+      const el = state.elements.find(e => e.id === selectedId)
+      if (el && (el.type === 'attacker' || el.type === 'defender')) {
+        handleElementChange({ ...el, size })
+      }
+    }
+  }
+
   function handleDelete() {
     if (!selectedId) return
     onStateChange({ ...state, elements: state.elements.filter((el) => el.id !== selectedId) })
@@ -351,16 +348,14 @@ export function DrillCanvas({
         onBackgroundChange={(bg) => onStateChange({ ...state, background: bg })}
         pitchFlipped={state.pitchFlipped ?? false}
         onFlipPitch={() => onStateChange({ ...state, pitchFlipped: !state.pitchFlipped })}
-        is3D={is3D}
-        onToggle3D={() => setIs3D(v => !v)}
+        playerSize={defaultPlayerSize}
+        onPlayerSizeChange={handlePlayerSizeChange}
         hasSelection={!!selectedId}
         onDelete={handleDelete}
         onUndo={onUndo}
         onClear={onClear}
         canUndo={canUndo}
         hasElements={state.elements.length > 0}
-        selectedElement={state.elements.find(e => e.id === selectedId) ?? null}
-        onElementChange={handleElementChange}
       />
 
       <div ref={containerRef} className="flex-1 overflow-auto bg-zinc-950 flex items-center justify-center p-4">
@@ -431,12 +426,9 @@ export function DrillCanvas({
             onTouchEnd={handleMouseUp}
           >
             <Layer>
-              <ThreeDWrapper active={is3D}>
-                <PitchBackgroundLayer type={state.background} flipped={state.pitchFlipped} />
-              </ThreeDWrapper>
+              <PitchBackgroundLayer type={state.background} flipped={state.pitchFlipped} />
             </Layer>
             <Layer>
-              <ThreeDWrapper active={is3D}>
                 <CanvasElements
                   elements={state.elements}
                   selectedId={selectedId}
@@ -444,7 +436,6 @@ export function DrillCanvas({
                   onSelect={onSelectId}
                   onChange={handleElementChange}
                   onEditText={startTextEdit}
-                  is3D={is3D}
                 />
                 {/* Live preview while drawing */}
                 {drawingEl && drawingEl.type === 'arrow' && (
@@ -476,7 +467,6 @@ export function DrillCanvas({
                     color={drawingEl.color}
                   />
                 )}
-              </ThreeDWrapper>
             </Layer>
           </Stage>
         </div>
@@ -485,7 +475,6 @@ export function DrillCanvas({
       {/* Status bar */}
       <div className="absolute bottom-2 left-16 flex gap-3 text-[11px] text-zinc-500 pointer-events-none select-none">
         <span>{attackers} att · {defenders} def · {state.elements.length} total</span>
-        {is3D && <span className="text-indigo-400">3D</span>}
         {activeTool !== 'select' && isDraw && (
           <span className="text-zinc-400">{isTouch ? 'Drag to draw · Apple Pencil supported' : 'Click and drag to draw · Esc to cancel'}</span>
         )}

@@ -86,7 +86,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   if (!isOwner && isGroupSession && !isGroupMember) notFound()
   if (!isOwner && !isGroupSession) notFound()
 
-  const allItems = sessionPlan.drills_order as SessionDrillItem[]
+  const allItems = (Array.isArray(sessionPlan.drills_order) ? sessionPlan.drills_order : []) as SessionDrillItem[]
   const drillIds = allItems.filter(d => d.drill_id).map(d => d.drill_id!)
   const drillsMap = new Map<string, Drill>()
 

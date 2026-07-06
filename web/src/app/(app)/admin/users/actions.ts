@@ -21,6 +21,17 @@ export async function updateUserRole(userId: string, role: UserRole) {
   revalidatePath('/admin/users')
 }
 
+export async function updateAdminNote(targetUserId: string, note: string): Promise<{ error?: string }> {
+  const { supabase } = await requireAdmin()
+  if (note.length > 2000) return { error: 'Note too long (max 2000 characters)' }
+  const { error } = await supabase
+    .from('admin_user_notes')
+    .upsert({ user_id: targetUserId, note: note.trim(), updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+  if (error) return { error: error.message }
+  revalidatePath('/admin/users')
+  return {}
+}
+
 export async function deleteUser(targetUserId: string): Promise<{ error?: string }> {
   const { user } = await requireAdmin()
   if (targetUserId === user.id) return { error: 'You cannot delete your own account' }

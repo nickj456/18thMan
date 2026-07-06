@@ -46,6 +46,12 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
       description,
       ...(profile?.avatar_url ? { images: [{ url: profile.avatar_url, width: 400, height: 400, alt: displayName }] } : {}),
     },
+    twitter: {
+      card: 'summary' as const,
+      title: `${displayName} — Rugby League Coach`,
+      description,
+      ...(profile?.avatar_url ? { images: [profile.avatar_url] } : {}),
+    },
   }
 }
 
@@ -122,8 +128,25 @@ export default async function PublicProfilePage({
     year: 'numeric',
   })
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: profile.display_name ?? profile.username,
+    url: `${siteUrl}/profile/${profile.username}`,
+    ...(profile.avatar_url ? { image: profile.avatar_url } : {}),
+    ...(profile.bio ? { description: profile.bio } : {}),
+    ...(profile.club ? { affiliation: { '@type': 'Organization', name: profile.club } } : {}),
+    jobTitle: profile.coaching_level ? `${profile.coaching_level} Rugby League Coach` : 'Rugby League Coach',
+  }
+
   return (
-    <div className="space-y-8 max-w-3xl">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026') }}
+      />
+      <div className="space-y-8 max-w-3xl">
       <Link
         href="/drills"
         className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors"
@@ -307,5 +330,6 @@ export default async function PublicProfilePage({
         )}
       </section>
     </div>
+    </>
   )
 }

@@ -14,13 +14,8 @@ const HANDLE_STROKE_WIDTH = 2
 const PLAYER_RADIUS: Record<'sm' | 'md' | 'lg', number> = { sm: 13, md: 18, lg: 24 }
 const PLAYER_FONT:   Record<'sm' | 'md' | 'lg', number> = { sm: 10, md: 13, lg: 16 }
 
-// Counteracts the outer ThreeDWrapper Group's scaleY (0.70) so player icons,
-// the ball, cones, and text render as proper shapes rather than squished ellipses.
-// Lines and zones are intentionally left compressed — they follow pitch perspective.
-const INV_3D_SCALE_Y = 1 / 0.70
-
 // ── Rugby league ball (Steeden-style) ────────────────────────────────────────
-function RugbyBall({ el, selected, onSelect, onChange, is3D }: ElementProps) {
+function RugbyBall({ el, selected, onSelect, onChange }: ElementProps) {
   const rx = 26
   const ry = 17
 
@@ -28,23 +23,11 @@ function RugbyBall({ el, selected, onSelect, onChange, is3D }: ElementProps) {
     <Group
       x={el.x}
       y={el.y}
-      scaleY={is3D ? INV_3D_SCALE_Y : 1}
       draggable
       onClick={onSelect}
       onTap={onSelect}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
     >
-
-      {/* Ground shadow in 3D mode */}
-      {is3D && (
-        <Ellipse
-          x={4} y={ry + 6}
-          radiusX={rx * 0.85} radiusY={ry * 0.28}
-          fill="rgba(0,0,0,0.35)"
-          listening={false}
-        />
-      )}
-
       {/* Main body */}
       <Shape
         sceneFunc={(ctx, shape) => {
@@ -55,15 +38,12 @@ function RugbyBall({ el, selected, onSelect, onChange, is3D }: ElementProps) {
           ctx.closePath()
           ctx.fillStrokeShape(shape)
         }}
-        fill={is3D ? undefined : '#f5f5f0'}
-        fillLinearGradientStartPoint={is3D ? { x: -rx, y: -ry } : undefined}
-        fillLinearGradientEndPoint={is3D ? { x: rx * 0.3, y: ry } : undefined}
-        fillLinearGradientColorStops={is3D ? [0, '#ffffff', 0.4, '#f5f5f0', 1, '#d4d4c8'] : undefined}
+        fill='#f5f5f0'
         stroke={selected ? '#6366f1' : '#1a1a1a'}
         strokeWidth={selected ? 2 : 1.5}
       />
 
-      {/* Left red chevrons */}
+      {/* Chevrons */}
       <Shape
         sceneFunc={(ctx) => {
           ctx.save()
@@ -181,57 +161,23 @@ function RugbyBall({ el, selected, onSelect, onChange, is3D }: ElementProps) {
         />
       ))}
       <Line points={[-10, 0, 10, 0]} stroke="#374151" strokeWidth={0.5} listening={false} />
-
-      {/* Specular highlight in 3D mode */}
-      {is3D && (
-        <Shape
-          sceneFunc={(ctx) => {
-            ctx.save()
-            ctx.beginPath()
-            ctx.moveTo(-rx, 0)
-            ctx.bezierCurveTo(-rx * 0.6, -ry, rx * 0.6, -ry, rx, 0)
-            ctx.bezierCurveTo(rx * 0.6, ry, -rx * 0.6, ry, -rx, 0)
-            ctx.clip()
-            ctx.beginPath()
-            ctx.ellipse(-rx * 0.3, -ry * 0.45, rx * 0.22, ry * 0.18, -0.4, 0, Math.PI * 2)
-            ctx.fillStyle = 'rgba(255,255,255,0.45)'
-            ctx.fill()
-            ctx.restore()
-          }}
-          listening={false}
-        />
-      )}
     </Group>
   )
 }
 
 // ── Attacker ─────────────────────────────────────────────────────────────────
-function AttackerEl({ el, selected, onSelect, onChange, onDblClick, is3D }: ElementProps) {
+function AttackerEl({ el, selected, onSelect, onChange, onDblClick }: ElementProps) {
   const r  = PLAYER_RADIUS[el.size ?? 'md']
   const fs = PLAYER_FONT[el.size ?? 'md']
   const baseColor = el.color ?? '#ef4444'
 
   return (
-    <Group x={el.x} y={el.y} scaleY={is3D ? INV_3D_SCALE_Y : 1} draggable onClick={onSelect} onTap={onSelect}
+    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
       onDblClick={onDblClick} onDblTap={onDblClick}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
-      {/* Drop shadow in 3D mode */}
-      {is3D && (
-        <Ellipse
-          x={3} y={r + 5}
-          radiusX={r * 1.1} radiusY={r * 0.28}
-          fill="rgba(0,0,0,0.38)"
-          listening={false}
-        />
-      )}
       <Circle
         radius={r}
-        fill={is3D ? undefined : baseColor}
-        fillRadialGradientStartPoint={is3D ? { x: -r * 0.35, y: -r * 0.38 } : undefined}
-        fillRadialGradientStartRadius={is3D ? 0 : undefined}
-        fillRadialGradientEndPoint={is3D ? { x: r * 0.1, y: r * 0.1 } : undefined}
-        fillRadialGradientEndRadius={is3D ? r * 1.35 : undefined}
-        fillRadialGradientColorStops={is3D ? [0, '#ff9090', 0.45, baseColor, 1, '#7f1d1d'] : undefined}
+        fill={baseColor}
         stroke={selected ? '#fff' : 'rgba(255,255,255,0.4)'}
         strokeWidth={selected ? 2.5 : 1.5}
       />
@@ -242,31 +188,18 @@ function AttackerEl({ el, selected, onSelect, onChange, onDblClick, is3D }: Elem
 }
 
 // ── Defender ─────────────────────────────────────────────────────────────────
-function DefenderEl({ el, selected, onSelect, onChange, onDblClick, is3D }: ElementProps) {
+function DefenderEl({ el, selected, onSelect, onChange, onDblClick }: ElementProps) {
   const r  = PLAYER_RADIUS[el.size ?? 'md']
   const fs = PLAYER_FONT[el.size ?? 'md']
   const baseColor = el.color ?? '#3b82f6'
 
   return (
-    <Group x={el.x} y={el.y} scaleY={is3D ? INV_3D_SCALE_Y : 1} draggable onClick={onSelect} onTap={onSelect}
+    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
       onDblClick={onDblClick} onDblTap={onDblClick}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
-      {is3D && (
-        <Ellipse
-          x={3} y={r + 5}
-          radiusX={r * 1.1} radiusY={r * 0.28}
-          fill="rgba(0,0,0,0.38)"
-          listening={false}
-        />
-      )}
       <Circle
         radius={r}
-        fill={is3D ? undefined : baseColor}
-        fillRadialGradientStartPoint={is3D ? { x: -r * 0.35, y: -r * 0.38 } : undefined}
-        fillRadialGradientStartRadius={is3D ? 0 : undefined}
-        fillRadialGradientEndPoint={is3D ? { x: r * 0.1, y: r * 0.1 } : undefined}
-        fillRadialGradientEndRadius={is3D ? r * 1.35 : undefined}
-        fillRadialGradientColorStops={is3D ? [0, '#93c5fd', 0.45, baseColor, 1, '#1e3a8a'] : undefined}
+        fill={baseColor}
         stroke={selected ? '#fff' : 'rgba(255,255,255,0.4)'}
         strokeWidth={selected ? 2.5 : 1.5}
       />
@@ -277,55 +210,157 @@ function DefenderEl({ el, selected, onSelect, onChange, onDblClick, is3D }: Elem
 }
 
 // ── Cone ─────────────────────────────────────────────────────────────────────
-function ConeEl({ el, selected, onSelect, onChange, is3D }: ElementProps) {
+function ConeEl({ el, selected, onSelect, onChange }: ElementProps) {
   const size = 16
 
-  if (is3D) {
-    return (
-      <Group x={el.x} y={el.y} scaleY={INV_3D_SCALE_Y} draggable onClick={onSelect} onTap={onSelect}
-        onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
-        {/* Ground shadow */}
-        <Ellipse
-          x={2} y={size * 0.72}
-          radiusX={size * 1.05} radiusY={size * 0.22}
-          fill="rgba(0,0,0,0.35)"
-          listening={false}
-        />
-        {/* Cone body with gradient shading */}
-        <Shape
-          sceneFunc={(ctx, shape) => {
-            ctx.beginPath()
-            ctx.moveTo(0, -size * 1.1)
-            ctx.lineTo(-size * 0.85, size * 0.45)
-            ctx.lineTo(size * 0.85, size * 0.45)
-            ctx.closePath()
-            ctx.fillStrokeShape(shape)
-          }}
-          fillLinearGradientStartPoint={{ x: -size, y: 0 }}
-          fillLinearGradientEndPoint={{ x: size, y: 0 }}
-          fillLinearGradientColorStops={[0, '#78350f', 0.3, '#f59e0b', 0.55, '#fde68a', 1, '#78350f']}
-          stroke={selected ? '#fff' : 'rgba(255,255,255,0.3)'}
-          strokeWidth={selected ? 2 : 1}
-        />
-        {/* Base ellipse for 3D depth */}
-        <Ellipse
-          x={0} y={size * 0.45}
-          radiusX={size * 0.85} radiusY={size * 0.27}
-          fill="#92400e"
-          stroke={selected ? '#fff' : 'transparent'}
-          strokeWidth={0.5}
-          listening={false}
-        />
-      </Group>
-    )
-  }
-
   return (
-    <Group x={el.x} y={el.y} scaleY={1} draggable onClick={onSelect} onTap={onSelect}
+    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
       onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
       <Line points={[0, -size, size * 0.75, size * 0.5, -size * 0.75, size * 0.5]} closed
         fill={el.color ?? '#f59e0b'}
         stroke={selected ? '#fff' : 'rgba(255,255,255,0.4)'} strokeWidth={selected ? 2 : 1} />
+    </Group>
+  )
+}
+
+// ── Tackle bag ────────────────────────────────────────────────────────────────
+function TackleBagEl({ el, selected, onSelect, onChange }: ElementProps) {
+  const w = 18, h = 36
+  return (
+    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+      onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
+      <Rect x={-w / 2} y={-h / 2} width={w} height={h} cornerRadius={5}
+        fill={el.color ?? '#ef4444'}
+        stroke={selected ? '#fff' : 'rgba(255,255,255,0.3)'}
+        strokeWidth={selected ? 2 : 1} />
+      <Rect x={-w / 2} y={-5} width={w} height={4} cornerRadius={1}
+        fill="rgba(0,0,0,0.3)" listening={false} />
+      <Rect x={-w / 2} y={2} width={w} height={4} cornerRadius={1}
+        fill="rgba(0,0,0,0.3)" listening={false} />
+      <Ellipse x={0} y={h / 2 + 3} radiusX={w / 2} radiusY={3}
+        fill="rgba(0,0,0,0.3)" listening={false} />
+    </Group>
+  )
+}
+
+// ── Tackle shield ─────────────────────────────────────────────────────────────
+function TackleShieldEl({ el, selected, onSelect, onChange }: ElementProps) {
+  const w = 36, h = 22
+  return (
+    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+      onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
+      <Rect x={-w / 2} y={-h / 2} width={w} height={h} cornerRadius={8}
+        fill={el.color ?? '#3b82f6'}
+        stroke={selected ? '#fff' : 'rgba(255,255,255,0.3)'}
+        strokeWidth={selected ? 2 : 1} />
+      <Rect x={-5} y={-5} width={10} height={10} cornerRadius={3}
+        fill="rgba(0,0,0,0.35)" listening={false} />
+      <Line points={[-w / 2 + 4, 0, w / 2 - 4, 0]}
+        stroke="rgba(255,255,255,0.2)" strokeWidth={1} listening={false} />
+    </Group>
+  )
+}
+
+// ── Flag / pole ───────────────────────────────────────────────────────────────
+function FlagEl({ el, selected, onSelect, onChange }: ElementProps) {
+  return (
+    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+      onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
+      <Line points={[0, -20, 0, 18]}
+        stroke={selected ? '#fff' : 'rgba(255,255,255,0.7)'}
+        strokeWidth={selected ? 2.5 : 2} strokeLinecap="round" hitStrokeWidth={12} />
+      <Shape
+        sceneFunc={(ctx, shape) => {
+          ctx.beginPath()
+          ctx.moveTo(0, -20)
+          ctx.lineTo(18, -13)
+          ctx.lineTo(0, -6)
+          ctx.closePath()
+          ctx.fillStrokeShape(shape)
+        }}
+        fill={el.color ?? '#22c55e'}
+        stroke="rgba(0,0,0,0.2)"
+        strokeWidth={1}
+        listening={false}
+      />
+      <Ellipse x={0} y={20} radiusX={5} radiusY={2.5}
+        fill="rgba(255,255,255,0.25)" listening={false} />
+    </Group>
+  )
+}
+
+// ── Marker disc ───────────────────────────────────────────────────────────────
+function DiscEl({ el, selected, onSelect, onChange }: ElementProps) {
+  return (
+    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+      onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
+      <Ellipse radiusX={18} radiusY={7}
+        fill={el.color ?? '#f59e0b'}
+        stroke={selected ? '#fff' : 'rgba(255,255,255,0.3)'}
+        strokeWidth={selected ? 2 : 1} />
+      <Ellipse radiusX={10} radiusY={3.5}
+        fill="rgba(255,255,255,0.18)" listening={false} />
+    </Group>
+  )
+}
+
+// ── Agility ladder (resizable) ────────────────────────────────────────────────
+function AgilityLadderEl({ el, selected, onSelect, onChange }: ElementProps) {
+  const w = el.width ?? 40
+  const h = el.height ?? 160
+  const rungCount = Math.max(3, Math.floor(h / 24))
+  const spacing = h / (rungCount + 1)
+
+  // Handle coords are relative to the Group (origin = top-left of ladder)
+  function resizeCorner(hx: number, hy: number, corner: 'nw' | 'ne' | 'sw' | 'se') {
+    switch (corner) {
+      case 'nw': return onChange({ ...el, x: el.x + hx, y: el.y + hy, width: Math.max(20, w - hx), height: Math.max(60, h - hy) })
+      case 'ne': return onChange({ ...el, y: el.y + hy, width: Math.max(20, hx), height: Math.max(60, h - hy) })
+      case 'sw': return onChange({ ...el, x: el.x + hx, width: Math.max(20, w - hx), height: Math.max(60, hy) })
+      case 'se': return onChange({ ...el, width: Math.max(20, hx), height: Math.max(60, hy) })
+    }
+  }
+
+  return (
+    <Group x={el.x} y={el.y} draggable onClick={onSelect} onTap={onSelect}
+      onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}>
+      {/* Rails — relative to Group origin */}
+      <Line points={[0, 0, 0, h]} stroke="rgba(255,255,255,0.6)" strokeWidth={selected ? 3 : 2} hitStrokeWidth={12} />
+      <Line points={[w, 0, w, h]} stroke="rgba(255,255,255,0.6)" strokeWidth={selected ? 3 : 2} hitStrokeWidth={12} />
+      {/* Rungs */}
+      {Array.from({ length: rungCount }, (_, i) => (
+        <Line key={i} points={[0, spacing * (i + 1), w, spacing * (i + 1)]}
+          stroke={el.color ?? '#6366f1'} strokeWidth={2} listening={false} />
+      ))}
+      {/* Transparent hit area */}
+      <Rect x={0} y={0} width={w} height={h} fill="transparent"
+        stroke={selected ? 'rgba(255,255,255,0.15)' : 'transparent'}
+        strokeWidth={1} dash={selected ? [4, 4] : undefined} />
+      {/* Corner resize handles */}
+      {selected && (
+        <>
+          {([
+            { hx: 0, hy: 0, corner: 'nw' as const },
+            { hx: w, hy: 0, corner: 'ne' as const },
+            { hx: 0, hy: h, corner: 'sw' as const },
+            { hx: w, hy: h, corner: 'se' as const },
+          ] as const).map(({ hx, hy, corner }) => (
+            <Circle
+              key={corner}
+              x={hx} y={hy}
+              radius={HANDLE_RADIUS}
+              fill={HANDLE_FILL}
+              stroke={HANDLE_STROKE}
+              strokeWidth={HANDLE_STROKE_WIDTH}
+              draggable
+              onDragMove={(e: Konva.KonvaEventObject<DragEvent>) =>
+                resizeCorner(e.target.x(), e.target.y(), corner)}
+              onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) =>
+                e.target.position({ x: hx, y: hy })}
+            />
+          ))}
+        </>
+      )}
     </Group>
   )
 }
@@ -424,13 +459,11 @@ function KickEl({ el, selected, onSelect, onChange }: ElementProps) {
   const arcLift = Math.max(45, dist * 0.46)
   const cpy = (y1 + y2) / 2 - arcLift
 
-  // Tangent direction at landing for arrowhead angle
   const angle = Math.atan2(y2 - cpy, x2 - cpx)
   const arrowLen = 13
 
   return (
     <Group onClick={onSelect} onTap={onSelect}>
-      {/* Dashed arc trajectory — strokeShape handles Konva hit testing */}
       <Shape
         sceneFunc={(ctx, shape) => {
           ctx.save()
@@ -440,7 +473,6 @@ function KickEl({ el, selected, onSelect, onChange }: ElementProps) {
           ctx.strokeShape(shape)
           ctx.restore()
 
-          // Filled arrowhead at landing (solid, no dash)
           ctx.beginPath()
           ctx.moveTo(x2, y2)
           ctx.lineTo(
@@ -455,7 +487,6 @@ function KickEl({ el, selected, onSelect, onChange }: ElementProps) {
           ctx.fillStyle = color
           ctx.fill()
 
-          // Mini rugby ball at apex
           ctx.save()
           ctx.translate(cpx, cpy)
           ctx.beginPath()
@@ -469,7 +500,6 @@ function KickEl({ el, selected, onSelect, onChange }: ElementProps) {
           ctx.strokeStyle = color
           ctx.lineWidth = 1.5
           ctx.stroke()
-          // Centre seam
           ctx.beginPath()
           ctx.moveTo(-9, 0)
           ctx.bezierCurveTo(-4.5, -2.5, 4.5, -2.5, 9, 0)
@@ -559,11 +589,10 @@ function ZoneEl({ el, selected, onSelect, onChange }: ElementProps) {
 }
 
 // ── Text label ────────────────────────────────────────────────────────────────
-function TextEl({ el, selected, onSelect, onChange, onDblClick, is3D }: ElementProps) {
+function TextEl({ el, selected, onSelect, onChange, onDblClick }: ElementProps) {
   return (
     <Group
       x={el.x} y={el.y}
-      scaleY={is3D ? INV_3D_SCALE_Y : 1}
       draggable
       onClick={onSelect} onTap={onSelect}
       onDblClick={onDblClick} onDblTap={onDblClick}
@@ -589,7 +618,6 @@ interface ElementProps {
   onSelect: () => void
   onChange: (updated: CanvasElement) => void
   onDblClick?: () => void
-  is3D?: boolean
 }
 
 interface CanvasElementsProps {
@@ -599,10 +627,9 @@ interface CanvasElementsProps {
   onSelect: (id: string) => void
   onChange: (updated: CanvasElement) => void
   onEditText: (id: string) => void
-  is3D?: boolean
 }
 
-export function CanvasElements({ elements, selectedId, editingTextId: _editingTextId, onSelect, onChange, onEditText, is3D }: CanvasElementsProps) {
+export function CanvasElements({ elements, selectedId, editingTextId: _editingTextId, onSelect, onChange, onEditText }: CanvasElementsProps) {
   return (
     <>
       {elements.map((el) => {
@@ -611,23 +638,27 @@ export function CanvasElements({ elements, selectedId, editingTextId: _editingTe
           selected: el.id === selectedId,
           onSelect: () => onSelect(el.id),
           onChange,
-          is3D,
           onDblClick: (el.type === 'text' || el.type === 'attacker' || el.type === 'defender')
-          ? () => onEditText(el.id)
-          : undefined,
+            ? () => onEditText(el.id)
+            : undefined,
         }
         switch (el.type) {
-          case 'attacker': return <AttackerEl key={el.id} {...props} />
-          case 'defender': return <DefenderEl key={el.id} {...props} />
-          case 'cone':     return <ConeEl key={el.id} {...props} />
-          case 'ball':     return <RugbyBall key={el.id} {...props} />
-          case 'arrow':    return <ArrowEl key={el.id} {...props} />
-          case 'line':     return <LineEl key={el.id} {...props} />
-          case 'dotted':   return <LineEl key={el.id} {...props} />
-          case 'kick':     return <KickEl key={el.id} {...props} />
-          case 'zone':     return <ZoneEl key={el.id} {...props} />
-          case 'text':     return <TextEl key={el.id} {...props} />
-          default:         return null
+          case 'attacker':       return <AttackerEl key={el.id} {...props} />
+          case 'defender':       return <DefenderEl key={el.id} {...props} />
+          case 'cone':           return <ConeEl key={el.id} {...props} />
+          case 'ball':           return <RugbyBall key={el.id} {...props} />
+          case 'tackle-bag':     return <TackleBagEl key={el.id} {...props} />
+          case 'tackle-shield':  return <TackleShieldEl key={el.id} {...props} />
+          case 'flag':           return <FlagEl key={el.id} {...props} />
+          case 'disc':           return <DiscEl key={el.id} {...props} />
+          case 'agility-ladder': return <AgilityLadderEl key={el.id} {...props} />
+          case 'arrow':          return <ArrowEl key={el.id} {...props} />
+          case 'line':           return <LineEl key={el.id} {...props} />
+          case 'dotted':         return <LineEl key={el.id} {...props} />
+          case 'kick':           return <KickEl key={el.id} {...props} />
+          case 'zone':           return <ZoneEl key={el.id} {...props} />
+          case 'text':           return <TextEl key={el.id} {...props} />
+          default:               return null
         }
       })}
     </>

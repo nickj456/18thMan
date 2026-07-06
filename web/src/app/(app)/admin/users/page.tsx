@@ -2,90 +2,11 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ArrowLeft, Users, Mail } from 'lucide-react'
-import { UserRoleSelect } from './UserRoleSelect'
-import { DeleteUserButton } from './DeleteUserButton'
-import type { UserRole, SubscriptionTier } from '@/lib/supabase/types'
-
-function timeAgo(dateStr: string | null): string {
-  if (!dateStr) return 'Never'
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 2) return 'Just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  const days = Math.floor(hrs / 24)
-  if (days === 1) return 'Yesterday'
-  if (days < 30) return `${days}d ago`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months}mo ago`
-  return `${Math.floor(months / 12)}y ago`
-}
+import { UsersTable } from './UsersTable'
+import type { UserRow } from './UsersTable'
 
 export const metadata = { title: 'User Management — Admin' }
-
-const roleColour: Record<string, string> = {
-  admin: 'bg-red-500/10 text-red-400 border-red-500/20',
-  coach: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-  viewer: 'bg-zinc-500/10 text-zinc-400 border-zinc-700',
-}
-
-const tierColour: Record<string, string> = {
-  free: 'bg-zinc-500/10 text-zinc-400 border-zinc-700',
-  trial: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  coach: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-  club: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-}
-
-const tierLabel: Record<string, string> = {
-  free: 'Free',
-  trial: 'Free Trial',
-  coach: 'Coach Pro',
-  club: 'Club',
-}
-
-function TierBadge({
-  tier,
-  trialEndsAt,
-  stripeSubscriptionId,
-  clubName,
-}: {
-  tier: SubscriptionTier
-  trialEndsAt: string | null
-  stripeSubscriptionId: string | null
-  clubName: string | null
-}) {
-  const isOnTrial = !clubName && trialEndsAt && new Date(trialEndsAt) > new Date()
-  const effectiveKey = clubName ? 'club' : isOnTrial ? 'trial' : tier
-  const colour = tierColour[effectiveKey] ?? tierColour.free
-
-  const label = clubName
-    ? `Club – ${clubName}`
-    : tierLabel[effectiveKey] ?? tier
-
-  const trialExpiry = isOnTrial
-    ? new Date(trialEndsAt!).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-    : null
-
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full border font-medium w-fit ${colour}`}>
-        {label}
-      </span>
-      {isOnTrial && (
-        <span className="text-xs text-amber-500/70">Expires {trialExpiry}</span>
-      )}
-      {!isOnTrial && !clubName && stripeSubscriptionId && tier !== 'free' && (
-        <span className="text-xs text-zinc-500">Stripe active</span>
-      )}
-      {!isOnTrial && !clubName && !stripeSubscriptionId && tier !== 'free' && (
-        <span className="text-xs text-red-400/70">No Stripe sub</span>
-      )}
-    </div>
-  )
-}
 
 export default async function AdminUsersPage({
   searchParams,
@@ -132,11 +53,33 @@ export default async function AdminUsersPage({
     : { data: [] }
   const clubMap = Object.fromEntries((clubsData ?? []).map(c => [c.id, c.name]))
 
+  // Fetch admin notes
+  const profileIds = (profiles ?? []).map(p => p.id)
+  const { data: notesData } = profileIds.length > 0
+    ? await supabase.from('admin_user_notes').select('user_id, note').in('user_id', profileIds)
+    : { data: [] }
+  const notesMap = Object.fromEntries((notesData ?? []).map(n => [n.user_id, n.note]))
+
+  const userRows: UserRow[] = (profiles ?? []).map(p => ({
+    id: p.id,
+    username: p.username,
+    display_name: p.display_name,
+    avatar_url: p.avatar_url,
+    role: p.role,
+    subscription_tier: p.subscription_tier,
+    stripe_subscription_id: p.stripe_subscription_id,
+    trial_ends_at: p.trial_ends_at,
+    created_at: p.created_at,
+    club_name: (p.club_id ? clubMap[p.club_id] : null) ?? p.club ?? null,
+    last_seen: lastSeenMap.get(p.id) ?? null,
+    admin_note: notesMap[p.id] ?? '',
+  }))
+
   const counts = {
-    all: profiles?.length ?? 0,
-    admin: profiles?.filter(p => p.role === 'admin').length ?? 0,
-    coach: profiles?.filter(p => p.role === 'coach').length ?? 0,
-    viewer: profiles?.filter(p => p.role === 'viewer').length ?? 0,
+    all: userRows.length,
+    admin: userRows.filter(p => p.role === 'admin').length,
+    coach: userRows.filter(p => p.role === 'coach').length,
+    viewer: userRows.filter(p => p.role === 'viewer').length,
   }
 
   // ── Leads tab data ──────────────────────────────────────────────────────
@@ -209,89 +152,7 @@ export default async function AdminUsersPage({
             </div>
           </form>
 
-          <div className="rounded-xl border border-zinc-800 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">User</th>
-                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Club</th>
-                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Tier</th>
-                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Joined</th>
-                    <th className="text-left text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Last seen</th>
-                    <th className="text-right text-xs font-medium text-zinc-500 uppercase tracking-wider px-5 py-3">Role</th>
-                    <th className="px-5 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800 bg-zinc-900">
-                  {!profiles?.length ? (
-                    <tr>
-                      <td colSpan={5} className="px-5 py-10 text-center text-sm text-zinc-600">No users found</td>
-                    </tr>
-                  ) : (
-                    profiles.map(profile => (
-                      <tr key={profile.id} className="hover:bg-zinc-800/40 transition-colors">
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="size-8 shrink-0">
-                              <AvatarImage src={profile.avatar_url ?? ''} />
-                              <AvatarFallback className="text-xs bg-zinc-800">
-                                {profile.display_name?.[0]?.toUpperCase() ?? profile.username?.[0]?.toUpperCase() ?? '?'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-zinc-200">{profile.display_name ?? profile.username}</p>
-                              <p className="text-xs text-zinc-600">@{profile.username}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5 text-zinc-500 text-xs">
-                          {(profile.club_id ? clubMap[profile.club_id] : null) ?? profile.club ?? '—'}
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <TierBadge
-                            tier={profile.subscription_tier as SubscriptionTier}
-                            trialEndsAt={profile.trial_ends_at}
-                            stripeSubscriptionId={profile.stripe_subscription_id}
-                            clubName={profile.club_id ? (clubMap[profile.club_id] ?? null) : null}
-                          />
-                        </td>
-                        <td className="px-5 py-3.5 text-zinc-500 text-xs">
-                          {new Date(profile.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </td>
-                        <td className="px-5 py-3.5 text-xs">
-                          {(() => {
-                            const t = timeAgo(lastSeenMap.get(profile.id) ?? null)
-                            const isRecent = t === 'Just now' || t.endsWith('m ago') || t.endsWith('h ago')
-                            return (
-                              <span className={isRecent ? 'text-emerald-400' : 'text-zinc-600'}>
-                                {t}
-                              </span>
-                            )
-                          })()}
-                        </td>
-                        <td className="px-5 py-3.5 text-right">
-                          <UserRoleSelect
-                            userId={profile.id}
-                            currentRole={profile.role as UserRole}
-                            isSelf={profile.id === user.id}
-                          />
-                        </td>
-                        <td className="px-3 py-3.5">
-                          {profile.id !== user.id && (
-                            <DeleteUserButton
-                              userId={profile.id}
-                              displayName={profile.display_name ?? profile.username ?? 'User'}
-                            />
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <UsersTable users={userRows} currentUserId={user.id} />
         </>
       )}
 

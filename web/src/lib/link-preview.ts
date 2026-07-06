@@ -1,3 +1,5 @@
+import { safeFetch } from '@/lib/ssrf'
+
 export interface LinkPreview {
   url: string
   title: string | null
@@ -50,10 +52,11 @@ export async function fetchLinkPreview(url: string): Promise<LinkPreview | null>
     const youtubeId = extractYouTubeId(url)
     if (youtubeId) return fetchYouTubePreview(url, youtubeId)
 
-    const res = await fetch(url, {
+    // safeFetch validates the target and every redirect hop against private
+    // IP ranges (SSRF guard).
+    const res = await safeFetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; 18thManBot/1.0)' },
       signal: AbortSignal.timeout(5000),
-      redirect: 'follow',
     })
 
     if (!res.ok) return null
