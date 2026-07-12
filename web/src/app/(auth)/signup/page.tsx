@@ -208,7 +208,7 @@ export default async function SignupPage({
             name="username"
             type="text"
             placeholder="coachsmith"
-            pattern="[a-z0-9_-]+"
+            pattern="[a-z0-9_\-]+"
             title="Lowercase letters, numbers, hyphens and underscores only"
             required
             className="auth-input"
