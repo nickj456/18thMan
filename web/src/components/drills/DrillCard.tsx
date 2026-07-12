@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Users, Star, PlayCircle } from 'lucide-react'
@@ -32,6 +33,7 @@ interface DrillCardProps {
 }
 
 export function DrillCard({ drill, avgRating, commentCount, showClubBadge }: DrillCardProps) {
+  const router = useRouter()
   const videoId = drill.youtube_url ? extractYouTubeId(drill.youtube_url) : null
   const animatedCanvas = getAnimatedCanvasJson(drill.canvas_json)
 
@@ -110,16 +112,26 @@ export function DrillCard({ drill, avgRating, commentCount, showClubBadge }: Dri
 
         {drill.youtube_channel_title && (
           <div className="px-4 pb-2 pt-0">
-            <a
-              href={`https://www.youtube.com/channel/${drill.youtube_channel_id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors w-fit"
+            {/* span, not <a>: this sits inside the card's outer Link and nested <a> tags are invalid HTML */}
+            <span
+              role="link"
+              tabIndex={0}
+              onClick={e => {
+                e.stopPropagation()
+                e.preventDefault()
+                window.open(`https://www.youtube.com/channel/${drill.youtube_channel_id}`, '_blank', 'noopener,noreferrer')
+              }}
+              onKeyDown={e => {
+                if (e.key !== 'Enter' && e.key !== ' ') return
+                e.stopPropagation()
+                e.preventDefault()
+                window.open(`https://www.youtube.com/channel/${drill.youtube_channel_id}`, '_blank', 'noopener,noreferrer')
+              }}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors w-fit cursor-pointer"
             >
               <PlayCircle className="size-3 text-red-500 shrink-0" />
               <span className="truncate max-w-[160px]">{drill.youtube_channel_title}</span>
-            </a>
+            </span>
           </div>
         )}
 
@@ -130,13 +142,25 @@ export function DrillCard({ drill, avgRating, commentCount, showClubBadge }: Dri
               {drill.player_count ?? 'Any'}
             </span>
             {drill.author?.username && (
-              <Link
-                href={`/profile/${drill.author.username}`}
-                onClick={e => e.stopPropagation()}
-                className="hover:text-white transition-colors truncate max-w-[120px]"
+              // span, not <Link>: this sits inside the card's outer Link and nested <a> tags are invalid HTML
+              <span
+                role="link"
+                tabIndex={0}
+                onClick={e => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  router.push(`/profile/${drill.author!.username}`)
+                }}
+                onKeyDown={e => {
+                  if (e.key !== 'Enter' && e.key !== ' ') return
+                  e.stopPropagation()
+                  e.preventDefault()
+                  router.push(`/profile/${drill.author!.username}`)
+                }}
+                className="hover:text-white transition-colors truncate max-w-[120px] cursor-pointer"
               >
                 {drill.author.display_name ?? drill.author.username}
-              </Link>
+              </span>
             )}
           </div>
           {(avgRating !== undefined || (commentCount ?? 0) > 0) && (
