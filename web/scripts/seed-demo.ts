@@ -162,11 +162,15 @@ function buildDemoCanvas(seed: number): { background: string; elements: CanvasEl
 
 async function main() {
   // ── Idempotency guard ──────────────────────────────────────────────
-  const { data: existingClub } = await supabase
+  const { data: existingClub, error: existingClubError } = await supabase
     .from('clubs')
     .select('id')
     .eq('slug', CLUB_SLUG)
     .maybeSingle()
+  if (existingClubError) {
+    console.error('Failed to check for existing demo club:', existingClubError.message)
+    process.exit(1)
+  }
   if (existingClub) {
     console.error(`Demo club "${CLUB_NAME}" already exists. Run "supabase db reset" first, then re-run this script.`)
     process.exit(1)
