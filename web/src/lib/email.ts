@@ -645,6 +645,33 @@ export async function sendGroupAddedEmail(
   }
 }
 
+/** Sent when an admin composes a one-off email to a specific user */
+export async function sendDirectEmailHtml(
+  to: string,
+  displayName: string,
+  subject: string,
+  bodyHtml: string,
+): Promise<EmailResultWithId> {
+  const resendClient = getResend()
+  if (!resendClient) return { success: false, error: 'RESEND_API_KEY not configured' }
+
+  const html = layout(`
+    ${heading(esc(subject))}
+    ${divider()}
+    ${greeting(esc(displayName))}
+    <div style="color:#a1a1aa;font-size:15px;line-height:1.6;">${bodyHtml}</div>
+    ${sign()}
+  `)
+
+  try {
+    const { data, error } = await resendClient.emails.send({ from: FROM, to, subject, html })
+    if (error) return { success: false, error: error.message }
+    return { success: true, messageId: data?.id }
+  } catch (err) {
+    return { success: false, error: String(err) }
+  }
+}
+
 // ── Unsubscribe footer (added to all notification + campaign emails) ────────────
 
 export function unsubscribeFooter(category: string, unsubToken: string): string {
