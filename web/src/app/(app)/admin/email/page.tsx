@@ -68,7 +68,7 @@ export default async function AdminEmailPage({
   const { data: transactionalSends } = await service
     .from('email_sends')
     .select('id, user_id, category, sent_at, opened_at')
-    .in('category', ['club_added', 'group_added'])
+    .in('category', ['club_added', 'group_added', 'direct_admin'])
     .order('sent_at', { ascending: false })
     .limit(200)
 
@@ -86,6 +86,7 @@ export default async function AdminEmailPage({
   const TRANSACTIONAL_LABELS: Record<string, string> = {
     club_added: 'Added to Club',
     group_added: 'Added to Group',
+    direct_admin: 'Direct Email',
   }
 
   const tabs = [
