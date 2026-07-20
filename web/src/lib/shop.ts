@@ -36,3 +36,22 @@ export async function canAccessProduct(
 
   return !!data
 }
+
+/**
+ * Batch-fetches the set of product IDs a user has purchased. Use this on
+ * listing pages (catalog, library) instead of calling canAccessProduct per
+ * product, which would issue one purchases query per card.
+ */
+export async function getPurchasedProductIds(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: SupabaseClient<any>,
+  userId: string
+): Promise<Set<string>> {
+  const { data } = await supabase
+    .from('purchases')
+    .select('product_id')
+    .eq('user_id', userId)
+    .eq('status', 'completed')
+
+  return new Set((data ?? []).map((row: { product_id: string }) => row.product_id))
+}

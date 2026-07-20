@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { tierMeetsRequirement, canAccessProduct } from './shop'
+import { tierMeetsRequirement, canAccessProduct, getPurchasedProductIds } from './shop'
 
 describe('tierMeetsRequirement', () => {
   it('returns false when the product has no tier requirement', () => {
@@ -60,5 +60,39 @@ describe('canAccessProduct', () => {
     const supabase = mockSupabase(false)
     const result = await canAccessProduct(supabase, 'user-1', product, 'free')
     expect(result).toBe(false)
+  })
+})
+
+describe('getPurchasedProductIds', () => {
+  it('returns a set of purchased product ids for the user', async () => {
+    const supabase = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            eq: async () => ({ data: [{ product_id: 'prod-1' }, { product_id: 'prod-2' }] }),
+          }),
+        }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+
+    const result = await getPurchasedProductIds(supabase, 'user-1')
+    expect(result).toEqual(new Set(['prod-1', 'prod-2']))
+  })
+
+  it('returns an empty set when the user has no purchases', async () => {
+    const supabase = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            eq: async () => ({ data: null }),
+          }),
+        }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+
+    const result = await getPurchasedProductIds(supabase, 'user-1')
+    expect(result).toEqual(new Set())
   })
 })
