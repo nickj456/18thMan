@@ -38,7 +38,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const price = formatPrice(p.price_cents)
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <Link href="/shop" className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
         <ArrowLeft size={14} />
         Back to shop
