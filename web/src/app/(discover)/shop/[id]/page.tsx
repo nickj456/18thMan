@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, FileText, Video, Package } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, FileText, Video, Package } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getEffectiveTier } from '@/lib/subscription'
 import { canAccessProduct, tierMeetsRequirement } from '@/lib/shop'
@@ -17,8 +17,17 @@ function formatPrice(cents: number | null) {
   return `£${(cents / 100).toFixed(2)}`
 }
 
-export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProductPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ purchased?: string }>
+}) {
   const { id } = await params
+  const { purchased } = await searchParams
+  const justPurchased = purchased === '1'
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -43,6 +52,22 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         <ArrowLeft size={14} />
         Back to shop
       </Link>
+
+      {justPurchased && (
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex gap-3 items-start">
+          <CheckCircle2 size={16} className="text-emerald-400 mt-0.5 shrink-0" />
+          <div className="space-y-0.5">
+            <p className="text-sm font-medium text-emerald-300">Thanks for your purchase!</p>
+            <p className="text-xs text-zinc-400">
+              {entitled
+                ? user
+                  ? "It's ready below — you can also find it any time in your library."
+                  : "We've emailed your download link to the address you used at checkout."
+                : "Payment received — we're finalising your order. This usually takes a few seconds; refresh if it's not ready yet."}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
         <div className="aspect-video bg-zinc-800 relative">
@@ -73,7 +98,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
           {p.description && <p className="text-sm text-zinc-400 leading-relaxed">{p.description}</p>}
 
-          <div className="pt-2 max-w-xs">
+          <div className="pt-2 max-w-xs space-y-1.5">
             {entitled ? (
               <DownloadButton
                 productId={p.id}
@@ -81,8 +106,17 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
               />
             ) : includedInTier ? (
               <p className="text-sm text-emerald-400">Included in your subscription — refresh to unlock.</p>
+            ) : price && justPurchased ? (
+              <p className="text-sm text-zinc-500">Waiting for payment confirmation…</p>
             ) : price ? (
-              <BuyButton productId={p.id} priceLabel={price} />
+              <>
+                <BuyButton productId={p.id} priceLabel={price} />
+                <p className="text-xs text-zinc-600 text-center">
+                  {user
+                    ? "You'll be able to download it instantly from your library."
+                    : "We'll email you a download link once payment goes through."}
+                </p>
+              </>
             ) : user ? (
               <p className="text-sm text-zinc-500">
                 This content is included with a subscription. Visit{' '}
