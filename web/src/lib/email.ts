@@ -576,6 +576,19 @@ export async function sendSubscriptionConfirmationEmail(
   `))
 }
 
+export async function sendPurchaseConfirmationEmail(
+  to: string,
+  params: { productTitle: string; downloadUrl: string },
+): Promise<EmailResult> {
+  return send(to, `Your purchase is ready: ${params.productTitle}`, layout(`
+    ${heading('Thanks for your purchase.')}
+    ${para(`<strong style="color:#ffffff;">${esc(params.productTitle)}</strong> is ready for you.`)}
+    ${ctaButton('Download now', params.downloadUrl)}
+    ${para('This link is valid for 7 days. If it expires, reply to this email and we’ll send you a fresh one.')}
+    ${sign()}
+  `))
+}
+
 export function buildClubAddedEmailHtml(displayName: string, clubName: string, addedByName: string): string {
   return layout(`
     ${heading(`You're now part of ${esc(clubName)}.`)}

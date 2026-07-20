@@ -1,0 +1,95 @@
+import Link from 'next/link'
+import Image from 'next/image'
+import { notFound } from 'next/navigation'
+import { ArrowLeft, FileText, Video, Package } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import { getEffectiveTier } from '@/lib/subscription'
+import { canAccessProduct, tierMeetsRequirement } from '@/lib/shop'
+import { BuyButton } from '@/components/shop/BuyButton'
+import { DownloadButton } from '@/components/shop/DownloadButton'
+import type { Product } from '@/lib/supabase/types'
+
+const CONTENT_ICON = { pdf: FileText, video: Video, bundle: Package } as const
+const CONTENT_LABEL = { pdf: 'PDF download', video: 'Video', bundle: 'Bundle' } as const
+
+function formatPrice(cents: number | null) {
+  if (cents === null) return null
+  return `£${(cents / 100).toFixed(2)}`
+}
+
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data: product } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (!product) notFound()
+  const p = product as Product
+
+  const tier = user ? await getEffectiveTier(supabase, user.id) : null
+  const entitled = user && tier ? await canAccessProduct(supabase, user.id, p, tier) : false
+  const includedInTier = tier ? tierMeetsRequirement(tier, p.min_subscription_tier) : false
+  const Icon = CONTENT_ICON[p.content_type]
+  const price = formatPrice(p.price_cents)
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      <Link href="/shop" className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
+        <ArrowLeft size={14} />
+        Back to shop
+      </Link>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
+        <div className="aspect-video bg-zinc-800 relative">
+          {p.preview_image_url ? (
+            <Image src={p.preview_image_url} alt={p.title} fill className="object-cover" />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center opacity-30">
+              <Icon size={48} />
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-zinc-500 flex items-center gap-1.5">
+              <Icon size={12} />
+              {CONTENT_LABEL[p.content_type]}
+            </p>
+            <h1 className="app-heading text-2xl mt-1">{p.title}</h1>
+          </div>
+
+          {p.description && <p className="text-sm text-zinc-400 leading-relaxed">{p.description}</p>}
+
+          <div className="pt-2 max-w-xs">
+            {entitled ? (
+              <DownloadButton
+                productId={p.id}
+                label={p.content_type === 'video' ? 'Watch now' : 'Download'}
+              />
+            ) : includedInTier ? (
+              <p className="text-sm text-emerald-400">Included in your subscription — refresh to unlock.</p>
+            ) : price ? (
+              <BuyButton productId={p.id} priceLabel={price} />
+            ) : user ? (
+              <p className="text-sm text-zinc-500">
+                This content is included with a subscription. Visit{' '}
+                <Link href="/settings" className="text-indigo-400 hover:underline">Settings</Link> to upgrade.
+              </p>
+            ) : (
+              <p className="text-sm text-zinc-500">
+                This content is included with a subscription.{' '}
+                <Link href="/signup" className="text-indigo-400 hover:underline">Sign up</Link> to unlock it.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

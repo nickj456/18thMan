@@ -12,6 +12,35 @@ export type ClubInviteStatus = 'pending' | 'accepted' | 'declined'
 export type GroupInviteStatus = 'pending' | 'accepted' | 'declined'
 export type SubscriptionTier = 'free' | 'coach' | 'club'
 export type EffectiveTier = 'free' | 'trial' | 'coach' | 'club'
+export type ProductContentType = 'pdf' | 'video' | 'bundle'
+export type PurchaseStatus = 'completed' | 'refunded'
+
+export interface Product {
+  id: string
+  title: string
+  description: string | null
+  content_type: ProductContentType
+  price_cents: number | null
+  stripe_price_id: string | null
+  min_subscription_tier: SubscriptionTier | null
+  storage_path: string
+  preview_image_url: string | null
+  is_published: boolean
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Purchase {
+  id: string
+  user_id: string
+  product_id: string
+  stripe_checkout_session_id: string
+  stripe_payment_intent_id: string | null
+  status: PurchaseStatus
+  amount_paid_cents: number
+  created_at: string
+}
 
 export interface Profile {
   id: string

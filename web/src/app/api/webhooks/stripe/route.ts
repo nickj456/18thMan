@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getStripe } from '@/lib/stripe'
-import { sendSubscriptionConfirmationEmail, sendVideoAnalysisRequestEmail } from '@/lib/email'
+import { sendSubscriptionConfirmationEmail, sendVideoAnalysisRequestEmail, sendPurchaseConfirmationEmail } from '@/lib/email'
 import type Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
@@ -116,6 +116,59 @@ export async function POST(req: NextRequest) {
 
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
+
+        if (session.metadata?.type === 'product') {
+          const productId = session.metadata.product_id
+          const userId = session.metadata.user_id || null
+          const guestEmail = !userId ? session.customer_details?.email ?? null : null
+
+          if (productId && (userId || guestEmail)) {
+            // Idempotent — Stripe may redeliver the same event.
+            await supabase.from('purchases').upsert(
+              {
+                user_id: userId,
+                guest_email: guestEmail,
+                product_id: productId,
+                stripe_checkout_session_id: session.id,
+                stripe_payment_intent_id:
+                  typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? null,
+                amount_paid_cents: session.amount_total ?? 0,
+              },
+              { onConflict: 'stripe_checkout_session_id', ignoreDuplicates: true },
+            )
+
+            const { data: product } = await supabase
+              .from('products')
+              .select('title, storage_path')
+              .eq('id', productId)
+              .single()
+
+            if (product) {
+              if (guestEmail) {
+                const { data: signedUrl } = await supabase.storage
+                  .from('shop-assets')
+                  .createSignedUrl(product.storage_path, 60 * 60 * 24 * 7)
+                if (signedUrl) {
+                  await sendPurchaseConfirmationEmail(guestEmail, {
+                    productTitle: product.title,
+                    downloadUrl: signedUrl.signedUrl,
+                  })
+                }
+              } else if (userId) {
+                const { data: authUser } = await supabase.auth.admin.getUserById(userId)
+                const email = authUser?.user?.email
+                if (email) {
+                  await sendPurchaseConfirmationEmail(email, {
+                    productTitle: product.title,
+                    downloadUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'}/shop/library`,
+                  })
+                }
+              }
+            }
+          }
+          break
+        }
+
         if (session.metadata?.type !== 'analysis') break
 
         const m = session.metadata
