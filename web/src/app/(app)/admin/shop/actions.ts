@@ -48,6 +48,45 @@ export async function createProduct(input: {
   return { success: true }
 }
 
+export async function updateProduct(productId: string, input: {
+  title: string
+  description: string
+  contentType: ProductContentType
+  priceCents: number | null
+  minSubscriptionTier: SubscriptionTier | null
+  storagePath: string
+  previewImageUrl: string | null
+}) {
+  const { supabase, error } = await requireAdmin()
+  if (error || !supabase) return { error }
+
+  if (!input.title.trim()) return { error: 'Title is required' }
+  if (!input.storagePath.trim()) return { error: 'A content file must be uploaded' }
+  if (input.priceCents === null && input.minSubscriptionTier === null) {
+    return { error: 'Set a price, a required subscription tier, or both' }
+  }
+
+  const { error: dbError } = await supabase
+    .from('products')
+    .update({
+      title: input.title.trim(),
+      description: input.description.trim() || null,
+      content_type: input.contentType,
+      price_cents: input.priceCents,
+      min_subscription_tier: input.minSubscriptionTier,
+      storage_path: input.storagePath,
+      preview_image_url: input.previewImageUrl?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', productId)
+
+  if (dbError) return { error: dbError.message }
+  revalidatePath('/admin/shop')
+  revalidatePath(`/shop/${productId}`)
+  revalidatePath('/shop')
+  return { success: true }
+}
+
 export async function togglePublish(productId: string, isPublished: boolean) {
   const { supabase, error } = await requireAdmin()
   if (error || !supabase) return { error }

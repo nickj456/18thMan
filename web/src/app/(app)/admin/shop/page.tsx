@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Trash2 } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { NewProductForm } from './NewProductForm'
 import { togglePublish, deleteProduct } from './actions'
@@ -69,6 +69,13 @@ export default async function AdminShopPage() {
                     {product.min_subscription_tier && ` · included in ${product.min_subscription_tier}`}
                   </p>
                 </div>
+                <Link
+                  href={`/admin/shop/${product.id}/edit`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-xs font-semibold hover:border-zinc-500 transition-colors"
+                >
+                  <Pencil size={13} />
+                  Edit
+                </Link>
                 <form action={async () => { 'use server'; await togglePublish(product.id, !product.is_published) }}>
                   <button
                     type="submit"
