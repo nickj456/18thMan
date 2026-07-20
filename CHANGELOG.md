@@ -2,6 +2,22 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.9.0.0] - 2026-07-20
+
+### Added
+- **Shop: a public storefront for official coaching PDFs, videos, and plans.** Sell content one-time, unlock it via subscription tier, or both — a product can require a price, a minimum tier, or accept either. The catalog and product pages are public, so a social media link can send a stranger straight to a purchase with no account required; a "Buy" button sits right on the catalog cards, not just the detail page.
+- **Guest checkout.** Buyers without an account pay via Stripe and get their download emailed directly (a 7-day signed link) — no login needed to receive their purchase. Logged-in members download instantly from a new "My Library" page.
+- **Admin product management** at `/admin/shop` — create, edit, publish/unpublish, and delete products, with file upload for PDFs and videos.
+- Post-purchase messaging explains what happens next (email vs. instant library access) and shows a real success state when returning from checkout, instead of silently re-showing the Buy button.
+- Refunding a shop purchase in Stripe now revokes the buyer's access instead of leaving it permanently unlocked.
+
+### Fixed
+- Product catalog/detail/library pages no longer expose internal storage paths, Stripe price IDs, or the uploading admin's profile ID to visitors — they now select an explicit column list instead of `*`.
+- Stripe webhook retries for a completed purchase no longer re-send the confirmation email or re-mint a guest's download link on every redelivery.
+- Fixed a nested `<a>` tag in drill cards causing hydration errors across every page that renders a `DrillCard` (drills library, sessions, chat, clubs, groups, weekly focus, podcasts, wellbeing).
+- Base UI `Button` no longer defaults to a native `<button>` when a custom `render` element is supplied.
+- Username validation no longer mishandles a hyphen in the allowed character pattern.
+
 ## [1.8.0.3] - 2026-07-06
 
 ### Changed
