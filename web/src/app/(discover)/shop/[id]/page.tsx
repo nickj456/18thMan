@@ -47,7 +47,14 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
       <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
         <div className="aspect-video bg-zinc-800 relative">
           {p.preview_image_url ? (
-            <Image src={p.preview_image_url} alt={p.title} fill className="object-cover" />
+            <Image
+              src={p.preview_image_url}
+              alt={p.title}
+              fill
+              sizes="(max-width: 672px) 100vw, 672px"
+              priority
+              className="object-cover"
+            />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center opacity-30">
               <Icon size={48} />

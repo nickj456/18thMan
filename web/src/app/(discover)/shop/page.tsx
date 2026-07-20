@@ -48,7 +48,7 @@ export default async function ShopPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {items.map(product => {
+          {items.map((product, index) => {
             const Icon = CONTENT_ICON[product.content_type]
             const includedInTier = user && tierMeetsRequirement(tier, product.min_subscription_tier)
             const price = formatPrice(product.price_cents)
@@ -61,7 +61,14 @@ export default async function ShopPage() {
               >
                 <div className="aspect-video bg-zinc-800 relative">
                   {product.preview_image_url ? (
-                    <Image src={product.preview_image_url} alt={product.title} fill className="object-cover" />
+                    <Image
+                      src={product.preview_image_url}
+                      alt={product.title}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                      priority={index === 0}
+                      className="object-cover"
+                    />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center opacity-30">
                       <Icon size={32} />
