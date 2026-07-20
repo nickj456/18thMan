@@ -123,25 +123,33 @@ export async function POST(req: NextRequest) {
           const guestEmail = !userId ? session.customer_details?.email ?? null : null
 
           if (productId && (userId || guestEmail)) {
-            // Idempotent — Stripe may redeliver the same event.
-            await supabase.from('purchases').upsert(
-              {
-                user_id: userId,
-                guest_email: guestEmail,
-                product_id: productId,
-                stripe_checkout_session_id: session.id,
-                stripe_payment_intent_id:
-                  typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? null,
-                amount_paid_cents: session.amount_total ?? 0,
-              },
-              { onConflict: 'stripe_checkout_session_id', ignoreDuplicates: true },
-            )
+            // Idempotent — Stripe may redeliver the same event. With
+            // ignoreDuplicates a conflicting call inserts nothing and
+            // .select() returns no rows, which we use below to skip
+            // re-sending the confirmation email on redelivery.
+            const { data: inserted } = await supabase
+              .from('purchases')
+              .upsert(
+                {
+                  user_id: userId,
+                  guest_email: guestEmail,
+                  product_id: productId,
+                  stripe_checkout_session_id: session.id,
+                  stripe_payment_intent_id:
+                    typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? null,
+                  amount_paid_cents: session.amount_total ?? 0,
+                },
+                { onConflict: 'stripe_checkout_session_id', ignoreDuplicates: true },
+              )
+              .select()
 
-            const { data: product } = await supabase
-              .from('products')
-              .select('title, storage_path')
-              .eq('id', productId)
-              .single()
+            const { data: product } = inserted && inserted.length > 0
+              ? await supabase
+                  .from('products')
+                  .select('title, storage_path')
+                  .eq('id', productId)
+                  .single()
+              : { data: null }
 
             if (product) {
               if (guestEmail) {
@@ -200,6 +208,20 @@ export async function POST(req: NextRequest) {
         // Log for now — could send an email here in future
         const invoice = event.data.object as Stripe.Invoice
         console.warn('[stripe/webhook] payment failed for customer:', invoice.customer)
+        break
+      }
+
+      case 'charge.refunded': {
+        // Revokes a shop purchase's access on refund — without this, a
+        // refunded buyer keeps the entitlement canAccessProduct() grants.
+        const charge = event.data.object as Stripe.Charge
+        const paymentIntentId = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id
+        if (paymentIntentId) {
+          await supabase
+            .from('purchases')
+            .update({ status: 'refunded' })
+            .eq('stripe_payment_intent_id', paymentIntentId)
+        }
         break
       }
     }

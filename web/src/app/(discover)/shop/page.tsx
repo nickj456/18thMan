@@ -25,7 +25,7 @@ export default async function ShopPage() {
   const [{ data: products }, tier, purchasedIds] = await Promise.all([
     supabase
       .from('products')
-      .select('*')
+      .select('id, title, description, content_type, price_cents, min_subscription_tier, preview_image_url, is_published, created_at')
       .eq('is_published', true)
       .order('created_at', { ascending: false }),
     user ? getEffectiveTier(supabase, user.id) : Promise.resolve<EffectiveTier>('free'),

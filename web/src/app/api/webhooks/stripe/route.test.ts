@@ -3,14 +3,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { NextRequest } from 'next/server'
 
 const constructEvent = vi.fn()
-const purchasesUpsert = vi.fn(async () => ({ error: null }))
+const purchasesUpsert = vi.fn(() => ({ select: async () => ({ data: state.insertedRows, error: null }) }))
+const purchasesUpdateEq = vi.fn(async () => ({ error: null }))
+const purchasesUpdate = vi.fn(() => ({ eq: purchasesUpdateEq }))
 const createSignedUrl = vi.fn(async () => ({ data: { signedUrl: 'https://signed.example/file.pdf' }, error: null }))
 const sendPurchaseConfirmationEmail = vi.fn()
 const getUserById = vi.fn(async () => ({ data: { user: { email: 'member@example.com' } } }))
 
 const state: {
   product: { title: string; storage_path: string } | null
-} = { product: { title: 'Drill Pack', storage_path: 'products/drill-pack.pdf' } }
+  insertedRows: { id: string }[]
+} = { product: { title: 'Drill Pack', storage_path: 'products/drill-pack.pdf' }, insertedRows: [{ id: 'purchase-1' }] }
 
 vi.mock('@/lib/stripe', () => ({
   getStripe: () => ({ webhooks: { constructEvent } }),
@@ -23,7 +26,7 @@ vi.mock('@/lib/email', () => ({
 vi.mock('@/lib/supabase/service', () => ({
   createServiceClient: () => ({
     from: (table: string) => {
-      if (table === 'purchases') return { upsert: purchasesUpsert }
+      if (table === 'purchases') return { upsert: purchasesUpsert, update: purchasesUpdate }
       if (table === 'products') return { select: () => ({ eq: () => ({ single: async () => ({ data: state.product }) }) }) }
       return { update: () => ({ eq: async () => ({}) }) }
     },
@@ -50,7 +53,10 @@ describe('POST /api/webhooks/stripe — product purchases', () => {
     createSignedUrl.mockClear()
     sendPurchaseConfirmationEmail.mockClear()
     getUserById.mockClear()
+    purchasesUpdate.mockClear()
+    purchasesUpdateEq.mockClear()
     state.product = { title: 'Drill Pack', storage_path: 'products/drill-pack.pdf' }
+    state.insertedRows = [{ id: 'purchase-1' }]
   })
 
   it('inserts a purchase row (idempotently) and emails the member when a logged-in checkout completes', async () => {
@@ -118,6 +124,27 @@ describe('POST /api/webhooks/stripe — product purchases', () => {
     expect(getUserById).not.toHaveBeenCalled()
   })
 
+  it('does not re-send the confirmation email when Stripe redelivers an already-processed event', async () => {
+    state.insertedRows = [] // ignoreDuplicates: true -> conflicting upsert returns no rows
+    constructEvent.mockReturnValue({
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_test_1',
+          payment_intent: 'pi_123',
+          amount_total: 1500,
+          metadata: { type: 'product', product_id: 'prod-1', user_id: 'user-1' },
+        },
+      },
+    })
+
+    const res = await POST(request('{}'))
+    expect(res.status).toBe(200)
+    expect(purchasesUpsert).toHaveBeenCalled()
+    expect(sendPurchaseConfirmationEmail).not.toHaveBeenCalled()
+    expect(createSignedUrl).not.toHaveBeenCalled()
+  })
+
   it('ignores product checkouts missing both user_id and a guest email rather than crashing', async () => {
     constructEvent.mockReturnValue({
       type: 'checkout.session.completed',
@@ -138,6 +165,29 @@ describe('POST /api/webhooks/stripe — product purchases', () => {
     const res = await POST(request('{}'))
     expect(res.status).toBe(200)
     expect(purchasesUpsert).not.toHaveBeenCalled()
+  })
+
+  it('marks a purchase refunded by payment_intent on charge.refunded', async () => {
+    constructEvent.mockReturnValue({
+      type: 'charge.refunded',
+      data: { object: { payment_intent: 'pi_123' } },
+    })
+
+    const res = await POST(request('{}'))
+    expect(res.status).toBe(200)
+    expect(purchasesUpdate).toHaveBeenCalledWith({ status: 'refunded' })
+    expect(purchasesUpdateEq).toHaveBeenCalledWith('stripe_payment_intent_id', 'pi_123')
+  })
+
+  it('ignores charge.refunded with no payment_intent rather than crashing', async () => {
+    constructEvent.mockReturnValue({
+      type: 'charge.refunded',
+      data: { object: {} },
+    })
+
+    const res = await POST(request('{}'))
+    expect(res.status).toBe(200)
+    expect(purchasesUpdateEq).not.toHaveBeenCalled()
   })
 
   it('returns 400 on invalid signature', async () => {

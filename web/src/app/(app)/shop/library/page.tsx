@@ -15,13 +15,15 @@ export default async function ShopLibraryPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const productColumns = 'id, title, description, content_type, price_cents, min_subscription_tier, preview_image_url, is_published, created_at'
+
   const [{ data: purchases }, { data: published }, tier] = await Promise.all([
     supabase
       .from('purchases')
-      .select('product_id, products(*)')
+      .select(`product_id, products(${productColumns})`)
       .eq('user_id', user.id)
       .eq('status', 'completed'),
-    supabase.from('products').select('*').eq('is_published', true),
+    supabase.from('products').select(productColumns).eq('is_published', true),
     getEffectiveTier(supabase, user.id),
   ])
 
