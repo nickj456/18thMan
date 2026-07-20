@@ -34,7 +34,7 @@ export function BuyButton({ productId, priceLabel }: { productId: string; priceL
       <button
         onClick={handleClick}
         disabled={loading}
-        className="w-full py-2.5 rounded-lg text-sm font-semibold bg-indigo-500 hover:bg-indigo-400 text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full min-h-11 py-2.5 rounded-lg text-sm font-semibold bg-indigo-500 hover:bg-indigo-400 text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
         {loading ? 'Redirecting…' : `Buy for ${priceLabel}`}
