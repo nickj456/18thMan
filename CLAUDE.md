@@ -64,6 +64,7 @@ Rugby league coaching platform. Full spec in [SPEC.md](SPEC.md).
 - **Club billing routes require `isClubAdmin()`.** Stripe checkout and portal routes (`web/src/app/api/stripe/`) must verify the caller administers the club before starting or managing a subscription — never trust a `clubId` from the request body alone.
 - Global security headers (HSTS, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`) are set once in `web/next.config.ts` — don't duplicate them per-route.
 - **`clubs` table has no wildcard SELECT.** `stripe_customer_id`/`stripe_subscription_id` are revoked from the table-level grant, so `select('*')` on `clubs` fails with 42501 for anon/authenticated — always use an explicit column list. Any migration adding a column to `clubs` must extend the grant in `web/supabase/migrations/075_clubs_hide_stripe_columns.sql`.
+- **`products` is anon-readable — don't `select('*')` on it.** Unlike `clubs`, `select('*')` on `products` still succeeds for anon (migration 078's `products_select_published_anon` policy is row-scoped, not column-scoped), but it leaks `storage_path`, `stripe_price_id`, and `created_by` to unauthenticated visitors. Public-facing reads (`/shop`, `/shop/[id]`, `/shop/library`) always use an explicit column list.
 
 ---
 
@@ -92,6 +93,8 @@ conversation_participants — conversation_id, user_id
 messages              — id, conversation_id, sender_id, content, created_at
 session_plans         — id, title, coach_id, drills_order (jsonb), total_duration
 admin_user_notes      — user_id, note, updated_at (admin-only; separate from profiles to keep out of user-readable RLS)
+products              — id, title, description, content_type (pdf|video|bundle), price_cents, min_subscription_tier, storage_path, preview_image_url, is_published, created_by
+purchases              — id, user_id (nullable), guest_email (nullable — one of the two is always set), product_id, stripe_checkout_session_id, stripe_payment_intent_id, status (completed|refunded), amount_paid_cents
 ```
 
 Migration files go in `supabase/migrations/`. Always write migrations — never mutate the schema by hand in the dashboard.
