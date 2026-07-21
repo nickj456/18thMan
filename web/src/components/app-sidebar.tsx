@@ -37,6 +37,7 @@ import {
   ClipboardCheck,
   Sparkles,
   TrendingUp,
+  ShoppingBag,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -61,6 +62,7 @@ const navItems = [
   { href: '/drills', label: 'Drill Library', icon: BookOpen },
   { href: '/drills/new', label: 'Drill Designer', icon: PenTool },
   { href: '/sessions', label: 'Session Planner', icon: CalendarDays },
+  { href: '/shop', label: 'Shop', icon: ShoppingBag },
   { href: '/chat', label: 'Coach Chat', icon: MessageSquare },
   { href: '/clubs', label: 'My Club', icon: Building2 },
   { href: '/groups', label: 'My Groups', icon: Users2 },
@@ -119,7 +121,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
               {navItems.map(({ href, label, icon: Icon }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
-                    isActive={pathname === href || (href === '/my-reviews' && pathname.startsWith('/my-reviews/'))}
+                    isActive={pathname === href || (href === '/my-reviews' && pathname.startsWith('/my-reviews/')) || (href === '/shop' && pathname.startsWith('/shop'))}
                     render={<Link href={href} onClick={closeMobile} />}
                   >
                     <Icon className="size-4" />
@@ -248,6 +250,15 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                     >
                       <Sparkles className="size-4" />
                       <span>Content Engine</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith('/admin/shop')}
+                      render={<Link href="/admin/shop" onClick={closeMobile} />}
+                    >
+                      <ShoppingBag className="size-4" />
+                      <span>Shop</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </>

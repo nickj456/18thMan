@@ -576,6 +576,19 @@ export async function sendSubscriptionConfirmationEmail(
   `))
 }
 
+export async function sendPurchaseConfirmationEmail(
+  to: string,
+  params: { productTitle: string; downloadUrl: string },
+): Promise<EmailResult> {
+  return send(to, `Your purchase is ready: ${params.productTitle}`, layout(`
+    ${heading('Thanks for your purchase.')}
+    ${para(`<strong style="color:#ffffff;">${esc(params.productTitle)}</strong> is ready for you.`)}
+    ${ctaButton('Download now', params.downloadUrl)}
+    ${para('This link is valid for 7 days. If it expires, reply to this email and we’ll send you a fresh one.')}
+    ${sign()}
+  `))
+}
+
 export function buildClubAddedEmailHtml(displayName: string, clubName: string, addedByName: string): string {
   return layout(`
     ${heading(`You're now part of ${esc(clubName)}.`)}
@@ -638,6 +651,33 @@ export async function sendGroupAddedEmail(
   const html = buildGroupAddedEmailHtml(displayName, groupName, clubName, addedByName)
   try {
     const { data, error } = await resend.emails.send({ from: FROM, to, subject: `You've been added to ${groupName} — 18th Man`, html })
+    if (error) return { success: false, error: error.message }
+    return { success: true, messageId: data?.id }
+  } catch (err) {
+    return { success: false, error: String(err) }
+  }
+}
+
+/** Sent when an admin composes a one-off email to a specific user */
+export async function sendDirectEmailHtml(
+  to: string,
+  displayName: string,
+  subject: string,
+  bodyHtml: string,
+): Promise<EmailResultWithId> {
+  const resendClient = getResend()
+  if (!resendClient) return { success: false, error: 'RESEND_API_KEY not configured' }
+
+  const html = layout(`
+    ${heading(esc(subject))}
+    ${divider()}
+    ${greeting(esc(displayName))}
+    <div style="color:#a1a1aa;font-size:15px;line-height:1.6;">${bodyHtml}</div>
+    ${sign()}
+  `)
+
+  try {
+    const { data, error } = await resendClient.emails.send({ from: FROM, to, subject, html })
     if (error) return { success: false, error: error.message }
     return { success: true, messageId: data?.id }
   } catch (err) {

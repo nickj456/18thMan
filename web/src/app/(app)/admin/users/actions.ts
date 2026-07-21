@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import type { UserRole } from '@/lib/supabase/types'
+import { sendDirectEmailHtml } from '@/lib/email'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -45,5 +46,44 @@ export async function deleteUser(targetUserId: string): Promise<{ error?: string
   if (error) return { error: error.message }
 
   revalidatePath('/admin/users')
+  return {}
+}
+
+export async function sendDirectEmail(
+  targetUserId: string,
+  subject: string,
+  bodyHtml: string,
+): Promise<{ error?: string }> {
+  const { supabase } = await requireAdmin()
+
+  const trimmedSubject = subject.trim()
+  const trimmedBody = bodyHtml.trim()
+  if (!trimmedSubject) return { error: 'Subject is required' }
+  if (!trimmedBody) return { error: 'Message body is required' }
+
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const [{ data: authUser }, { data: profile }] = await Promise.all([
+    serviceClient.auth.admin.getUserById(targetUserId),
+    supabase.from('profiles').select('display_name, username').eq('id', targetUserId).single(),
+  ])
+
+  const recipientEmail = authUser?.user?.email
+  if (!recipientEmail) return { error: 'This user has no email on file' }
+
+  const displayName = profile?.display_name ?? profile?.username ?? ''
+
+  const result = await sendDirectEmailHtml(recipientEmail, displayName, trimmedSubject, trimmedBody)
+  if (!result.success) return { error: result.error }
+
+  await serviceClient.from('email_sends').insert({
+    user_id: targetUserId,
+    category: 'direct_admin',
+    resend_message_id: result.messageId ?? null,
+  })
+
   return {}
 }

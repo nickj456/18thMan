@@ -62,6 +62,15 @@ Rugby league coaching platform for coaches to design drills, plan sessions, and 
 - Manage drill categories — add / edit / delete / reorder
 - Moderate community discussions
 - Site stats dashboard
+- Shop — create, edit, publish/unpublish, delete sellable products (see below)
+
+### Shop
+- Public storefront (`/shop`, `/shop/[id]`) — no account required to browse or buy
+- Products (PDFs, videos, bundles) sold one-time, unlocked by subscription tier, or both
+- Guest checkout via Stripe — no account required; download link emailed after payment
+- Logged-in members download instantly from `/shop/library`; already-included-by-tier and already-purchased items both resolve to instant download
+- Refunding a purchase in Stripe revokes the buyer's access
+- Admin CRUD at `/admin/shop` — create/edit products, upload PDF/video content, publish/unpublish, delete
 
 ---
 
@@ -96,6 +105,8 @@ conversation_participants — conversation_id, user_id
 messages              — id, conversation_id, sender_id, content, created_at
 session_plans         — id, title, coach_id, drills_order (jsonb), total_duration
 admin_user_notes      — user_id, note, updated_at (admin-only; separate from profiles to keep out of user-readable RLS)
+products              — id, title, description, content_type (pdf|video|bundle), price_cents, min_subscription_tier, storage_path, preview_image_url, is_published, created_by
+purchases              — id, user_id (nullable), guest_email (nullable — one of the two is always set), product_id, stripe_checkout_session_id, stripe_payment_intent_id, status (completed|refunded), amount_paid_cents
 ```
 
 ---
