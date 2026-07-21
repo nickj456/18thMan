@@ -20,6 +20,8 @@ export function ProductForm({ mode, productId, initial, onSaved }: ProductFormPr
   const [error, setError] = useState<string | null>(null)
   const [storagePath, setStoragePath] = useState(initial?.storage_path ?? '')
   const [fileName, setFileName] = useState('')
+  const [previewImageUrl, setPreviewImageUrl] = useState(initial?.preview_image_url ?? '')
+  const [uploadingPreview, setUploadingPreview] = useState(false)
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -44,6 +46,29 @@ export function ProductForm({ mode, productId, initial, onSaved }: ProductFormPr
     }
   }
 
+  async function handlePreviewFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingPreview(true)
+    setError(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/admin/shop-assets/preview-upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? 'Upload failed')
+        return
+      }
+      setPreviewImageUrl(data.url)
+    } catch {
+      setError('Upload failed. Please try again.')
+    } finally {
+      setUploadingPreview(false)
+      e.target.value = ''
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
@@ -59,7 +84,7 @@ export function ProductForm({ mode, productId, initial, onSaved }: ProductFormPr
       priceCents: priceRaw ? Math.round(parseFloat(priceRaw) * 100) : null,
       minSubscriptionTier: tierRaw ? (tierRaw as SubscriptionTier) : null,
       storagePath,
-      previewImageUrl: (form.get('previewImageUrl') as string) ?? '',
+      previewImageUrl,
     }
 
     setSubmitting(true)
@@ -76,6 +101,7 @@ export function ProductForm({ mode, productId, initial, onSaved }: ProductFormPr
     if (mode === 'create') {
       setStoragePath('')
       setFileName('')
+      setPreviewImageUrl('')
       formEl.reset()
       router.refresh()
     } else {
@@ -131,8 +157,25 @@ export function ProductForm({ mode, productId, initial, onSaved }: ProductFormPr
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-xs text-zinc-400">Preview image URL (optional)</label>
-        <input name="previewImageUrl" type="url" defaultValue={initial?.preview_image_url ?? ''} className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm" />
+        <label className="text-xs text-zinc-400">Preview image (optional)</label>
+        <div className="flex items-center gap-3">
+          {previewImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewImageUrl} alt="" className="h-12 w-12 rounded-md object-cover border border-zinc-700" />
+          )}
+          <input
+            type="url"
+            value={previewImageUrl}
+            onChange={(e) => setPreviewImageUrl(e.target.value)}
+            placeholder="https://…"
+            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
+          />
+          <label className="flex items-center gap-2 rounded-lg border border-dashed border-zinc-700 px-3 py-2 text-sm cursor-pointer hover:border-zinc-500 transition-colors whitespace-nowrap">
+            {uploadingPreview ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            <span className="text-zinc-400">{uploadingPreview ? 'Uploading…' : 'Upload'}</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handlePreviewFileChange} className="hidden" />
+          </label>
+        </div>
       </div>
 
       <div className="space-y-1.5">
