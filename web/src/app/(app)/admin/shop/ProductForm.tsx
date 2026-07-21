@@ -193,7 +193,7 @@ export function ProductForm({ mode, productId, initial, onSaved }: ProductFormPr
 
       <button
         type="submit"
-        disabled={submitting || uploading || !storagePath}
+        disabled={submitting || uploading || uploadingPreview || !storagePath}
         className="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-500 hover:bg-indigo-400 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {submitting ? 'Saving…' : mode === 'create' ? 'Create product' : 'Save changes'}
