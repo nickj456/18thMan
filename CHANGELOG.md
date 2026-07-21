@@ -2,6 +2,11 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.9.1.0] - 2026-07-21
+
+### Added
+- **Upload button for shop product preview images.** Admins can now upload an image directly in `/admin/shop` instead of hand-hosting one and pasting a URL — it goes to a new public `shop-previews` storage bucket and shows a live thumbnail. The URL field stays as a manual fallback.
+
 ## [1.9.0.0] - 2026-07-20
 
 ### Added
