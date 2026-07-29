@@ -2,6 +2,11 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.9.1.1] - 2026-07-29
+
+### Added
+- **"Free for everyone" option for shop products.** The minimum-tier dropdown in `/admin/shop` was missing a way to mark a product as free — it only offered Coach Pro and Club. Selecting it unlocks the product for every signed-in tier; guests are prompted to sign up (free) to download it.
+
 ## [1.9.1.0] - 2026-07-21
 
 ### Added
