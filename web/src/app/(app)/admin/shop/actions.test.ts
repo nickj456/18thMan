@@ -5,10 +5,16 @@ const state: {
   user: { id: string } | null
   role: string | null
   dbError: { message: string } | null
-} = { user: null, role: null, dbError: null }
+  existingSlugs: Set<string>
+  updatedSlug: string | null
+} = { user: null, role: null, dbError: null, existingSlugs: new Set(), updatedSlug: 'coaching-tips' }
 
 const insertMock = vi.fn(async () => ({ error: state.dbError }))
-const updateEqMock = vi.fn(async () => ({ error: state.dbError }))
+const updateEqMock = vi.fn(() => ({
+  select: () => ({
+    single: async () => ({ data: state.dbError ? null : { slug: state.updatedSlug }, error: state.dbError }),
+  }),
+}))
 const deleteEqMock = vi.fn(async () => ({ error: state.dbError }))
 const revalidateMock = vi.fn()
 
@@ -20,8 +26,11 @@ vi.mock('@/lib/supabase/server', () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
     from: (table: string) => ({
       select: () => ({
-        eq: () => ({
+        eq: (column: string, value: string) => ({
           single: async () => ({ data: table === 'profiles' ? { role: state.role } : null }),
+          maybeSingle: async () => ({
+            data: table === 'products' && column === 'slug' && state.existingSlugs.has(value) ? { id: 'existing' } : null,
+          }),
         }),
       }),
       insert: insertMock,
@@ -48,6 +57,8 @@ describe('admin/shop actions', () => {
     state.user = { id: 'admin-1' }
     state.role = 'admin'
     state.dbError = null
+    state.existingSlugs = new Set()
+    state.updatedSlug = 'coaching-tips'
     insertMock.mockClear()
     updateEqMock.mockClear()
     deleteEqMock.mockClear()
@@ -114,9 +125,17 @@ describe('admin/shop actions', () => {
       const result = await createProduct(validInput)
       expect(result).toEqual({ success: true })
       expect(insertMock).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Coaching Tips', is_published: false, created_by: 'admin-1' }),
+        expect.objectContaining({ title: 'Coaching Tips', slug: 'coaching-tips', is_published: false, created_by: 'admin-1' }),
       )
       expect(revalidateMock).toHaveBeenCalledWith('/admin/shop')
+    })
+
+    it('disambiguates the slug when one already exists', async () => {
+      state.existingSlugs = new Set(['coaching-tips'])
+      await createProduct(validInput)
+      expect(insertMock).toHaveBeenCalledWith(
+        expect.objectContaining({ slug: 'coaching-tips-2' }),
+      )
     })
 
     it('surfaces the database error without revalidating', async () => {
@@ -133,7 +152,7 @@ describe('admin/shop actions', () => {
       expect(result).toEqual({ success: true })
       expect(updateEqMock).toHaveBeenCalledWith('id', 'prod-1')
       expect(revalidateMock).toHaveBeenCalledWith('/admin/shop')
-      expect(revalidateMock).toHaveBeenCalledWith('/shop/prod-1')
+      expect(revalidateMock).toHaveBeenCalledWith('/shop/coaching-tips')
       expect(revalidateMock).toHaveBeenCalledWith('/shop')
     })
 

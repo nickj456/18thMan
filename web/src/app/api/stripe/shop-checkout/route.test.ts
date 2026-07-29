@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server'
 
 const state: {
   user: { id: string; email?: string } | null
-  product: { id: string; title: string; price_cents: number | null; stripe_price_id: string | null; is_published: boolean } | null
+  product: { id: string; slug: string; title: string; price_cents: number | null; stripe_price_id: string | null; is_published: boolean } | null
   profile: { display_name: string | null; stripe_customer_id: string | null } | null
 } = { user: null, product: null, profile: null }
 
@@ -66,20 +66,20 @@ describe('POST /api/stripe/shop-checkout', () => {
   })
 
   it('returns 404 when the product is unpublished', async () => {
-    state.product = { id: 'prod-1', title: 'Drill Pack', price_cents: 500, stripe_price_id: null, is_published: false }
+    state.product = { id: 'prod-1', slug: 'drill-pack', title: 'Drill Pack', price_cents: 500, stripe_price_id: null, is_published: false }
     const res = await POST(request({ productId: 'prod-1' }))
     expect(res.status).toBe(404)
   })
 
   it('returns 400 when the product has no price (subscription-only)', async () => {
-    state.product = { id: 'prod-1', title: 'Drill Pack', price_cents: null, stripe_price_id: null, is_published: true }
+    state.product = { id: 'prod-1', slug: 'drill-pack', title: 'Drill Pack', price_cents: null, stripe_price_id: null, is_published: true }
     const res = await POST(request({ productId: 'prod-1' }))
     expect(res.status).toBe(400)
     expect(checkoutCreate).not.toHaveBeenCalled()
   })
 
   it('creates a one-time payment checkout session, minting a customer if missing', async () => {
-    state.product = { id: 'prod-1', title: 'Drill Pack', price_cents: 500, stripe_price_id: null, is_published: true }
+    state.product = { id: 'prod-1', slug: 'drill-pack', title: 'Drill Pack', price_cents: 500, stripe_price_id: null, is_published: true }
     state.profile = { display_name: 'Nick', stripe_customer_id: null }
     const res = await POST(request({ productId: 'prod-1' }))
     expect(res.status).toBe(200)
@@ -89,12 +89,14 @@ describe('POST /api/stripe/shop-checkout', () => {
         customer: 'cus_new',
         mode: 'payment',
         metadata: { type: 'product', product_id: 'prod-1', user_id: 'user-1' },
+        success_url: 'https://18thman.app/shop/drill-pack?purchased=1',
+        cancel_url: 'https://18thman.app/shop/drill-pack',
       }),
     )
   })
 
   it('reuses an existing Stripe customer', async () => {
-    state.product = { id: 'prod-1', title: 'Drill Pack', price_cents: 500, stripe_price_id: null, is_published: true }
+    state.product = { id: 'prod-1', slug: 'drill-pack', title: 'Drill Pack', price_cents: 500, stripe_price_id: null, is_published: true }
     state.profile = { display_name: 'Nick', stripe_customer_id: 'cus_existing' }
     const res = await POST(request({ productId: 'prod-1' }))
     expect(res.status).toBe(200)
@@ -104,7 +106,7 @@ describe('POST /api/stripe/shop-checkout', () => {
 
   it('creates a guest checkout session with no customer, letting Stripe collect the email', async () => {
     state.user = null
-    state.product = { id: 'prod-1', title: 'Drill Pack', price_cents: 500, stripe_price_id: null, is_published: true }
+    state.product = { id: 'prod-1', slug: 'drill-pack', title: 'Drill Pack', price_cents: 500, stripe_price_id: null, is_published: true }
     const res = await POST(request({ productId: 'prod-1' }))
     expect(res.status).toBe(200)
     expect(customersCreate).not.toHaveBeenCalled()
@@ -121,7 +123,7 @@ describe('POST /api/stripe/shop-checkout', () => {
   })
 
   it('returns 500 when Stripe throws', async () => {
-    state.product = { id: 'prod-1', title: 'Drill Pack', price_cents: 500, stripe_price_id: null, is_published: true }
+    state.product = { id: 'prod-1', slug: 'drill-pack', title: 'Drill Pack', price_cents: 500, stripe_price_id: null, is_published: true }
     state.profile = { display_name: 'Nick', stripe_customer_id: 'cus_existing' }
     checkoutCreate.mockRejectedValueOnce(new Error('stripe down'))
     const res = await POST(request({ productId: 'prod-1' }))

@@ -15,7 +15,7 @@ export default async function ShopLibraryPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const productColumns = 'id, title, description, content_type, price_cents, min_subscription_tier, preview_image_url, is_published, created_at'
+  const productColumns = 'id, slug, title, description, content_type, price_cents, min_subscription_tier, preview_image_url, is_published, created_at'
 
   const [{ data: purchases }, { data: published }, tier] = await Promise.all([
     supabase
@@ -66,7 +66,7 @@ export default async function ShopLibraryPage() {
             return (
               <Link
                 key={product.id}
-                href={`/shop/${product.id}`}
+                href={`/shop/${product.slug}`}
                 className="group rounded-xl border border-zinc-800 bg-zinc-900 p-5 hover:border-zinc-700 transition-colors flex items-start gap-3"
               >
                 <Icon size={20} className="text-zinc-500 shrink-0 mt-0.5" />

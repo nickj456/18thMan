@@ -25,7 +25,7 @@ export default async function ShopPage() {
   const [{ data: products }, tier, purchasedIds] = await Promise.all([
     supabase
       .from('products')
-      .select('id, title, description, content_type, price_cents, min_subscription_tier, preview_image_url, is_published, created_at')
+      .select('id, slug, title, description, content_type, price_cents, min_subscription_tier, preview_image_url, is_published, created_at')
       .eq('is_published', true)
       .order('created_at', { ascending: false }),
     user ? getEffectiveTier(supabase, user.id) : Promise.resolve<EffectiveTier>('free'),
@@ -65,7 +65,7 @@ export default async function ShopPage() {
                 key={product.id}
                 className="group rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-zinc-700 transition-colors flex flex-col"
               >
-                <Link href={`/shop/${product.id}`} className="block">
+                <Link href={`/shop/${product.slug}`} className="block">
                   <div className="aspect-video bg-zinc-800 relative">
                     {product.preview_image_url ? (
                       <Image
