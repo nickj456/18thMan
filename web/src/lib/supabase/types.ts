@@ -17,6 +17,7 @@ export type PurchaseStatus = 'completed' | 'refunded'
 
 export interface Product {
   id: string
+  slug: string
   title: string
   description: string | null
   content_type: ProductContentType

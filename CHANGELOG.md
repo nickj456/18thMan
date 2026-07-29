@@ -2,6 +2,15 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.9.1.0] - 2026-07-21
+
+### Added
+- **Upload button for shop product preview images.** Admins can now upload an image directly in `/admin/shop` instead of hand-hosting one and pasting a URL — it goes to a new public `shop-previews` storage bucket and shows a live thumbnail. The URL field stays as a manual fallback.
+- **Human-readable shop product URLs.** `/shop/<id>` is now `/shop/<slug>` (e.g. `/shop/season-one-rugby-league-coaching-guide`), generated from the title and stable for the life of the product.
+
+### Fixed
+- Submitting the shop product form right after choosing a preview image no longer races ahead of the upload and saves the product with no image.
+
 ## [1.9.0.0] - 2026-07-20
 
 ### Added

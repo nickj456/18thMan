@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { slugify } from '@/lib/slug'
 import type { ProductContentType, SubscriptionTier } from '@/lib/supabase/types'
 
 async function requireAdmin() {
@@ -11,6 +12,22 @@ async function requireAdmin() {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (profile?.role !== 'admin') return { supabase: null, user: null, error: 'Not authorised' as const }
   return { supabase, user, error: null }
+}
+
+/** Generates a slug from the title, disambiguating against existing rows with a numeric suffix. */
+async function uniqueProductSlug(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  title: string,
+): Promise<string> {
+  const base = slugify(title)
+  let candidate = base
+  let suffix = 2
+  while (true) {
+    const { data } = await supabase.from('products').select('id').eq('slug', candidate).maybeSingle()
+    if (!data) return candidate
+    candidate = `${base}-${suffix}`
+    suffix += 1
+  }
 }
 
 export async function createProduct(input: {
@@ -31,8 +48,11 @@ export async function createProduct(input: {
     return { error: 'Set a price, a required subscription tier, or both' }
   }
 
+  const slug = await uniqueProductSlug(supabase, input.title.trim())
+
   const { error: dbError } = await supabase.from('products').insert({
     title: input.title.trim(),
+    slug,
     description: input.description.trim() || null,
     content_type: input.contentType,
     price_cents: input.priceCents,
@@ -66,7 +86,7 @@ export async function updateProduct(productId: string, input: {
     return { error: 'Set a price, a required subscription tier, or both' }
   }
 
-  const { error: dbError } = await supabase
+  const { data: updated, error: dbError } = await supabase
     .from('products')
     .update({
       title: input.title.trim(),
@@ -79,10 +99,12 @@ export async function updateProduct(productId: string, input: {
       updated_at: new Date().toISOString(),
     })
     .eq('id', productId)
+    .select('slug')
+    .single()
 
   if (dbError) return { error: dbError.message }
   revalidatePath('/admin/shop')
-  revalidatePath(`/shop/${productId}`)
+  if (updated?.slug) revalidatePath(`/shop/${updated.slug}`)
   revalidatePath('/shop')
   return { success: true }
 }

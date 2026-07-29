@@ -21,10 +21,10 @@ export default async function ProductPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ slug: string }>
   searchParams: Promise<{ purchased?: string }>
 }) {
-  const { id } = await params
+  const { slug } = await params
   const { purchased } = await searchParams
   const justPurchased = purchased === '1'
 
@@ -33,8 +33,8 @@ export default async function ProductPage({
 
   const { data: product } = await supabase
     .from('products')
-    .select('id, title, description, content_type, price_cents, min_subscription_tier, preview_image_url, is_published, created_at')
-    .eq('id', id)
+    .select('id, slug, title, description, content_type, price_cents, min_subscription_tier, preview_image_url, is_published, created_at')
+    .eq('slug', slug)
     .single()
 
   if (!product) notFound()

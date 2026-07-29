@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const serviceClient = createServiceClient()
     const { data: product } = await serviceClient
       .from('products')
-      .select('id, title, price_cents, stripe_price_id, is_published')
+      .select('id, slug, title, price_cents, stripe_price_id, is_published')
       .eq('id', productId)
       .single()
 
@@ -64,8 +64,8 @@ export async function POST(req: NextRequest) {
       mode: 'payment',
       line_items: [lineItem],
       metadata: { type: 'product', product_id: product.id, user_id: user?.id ?? '' },
-      success_url: `${origin}/shop/${product.id}?purchased=1`,
-      cancel_url: `${origin}/shop/${product.id}`,
+      success_url: `${origin}/shop/${product.slug}?purchased=1`,
+      cancel_url: `${origin}/shop/${product.slug}`,
       // Guests get no `customer` — Stripe collects their email itself and
       // still creates a lightweight Customer object so the webhook can read
       // it back via session.customer_details.
