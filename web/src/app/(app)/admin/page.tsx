@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2, Clock, HeartPulse, FileText, Mail } from 'lucide-react'
+import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2, Clock, HeartPulse, FileText, Mail, LineChart } from 'lucide-react'
 
 export const metadata = { title: 'Admin — 18th Man' }
 
@@ -104,6 +104,13 @@ export default async function AdminPage() {
       label: 'Email Campaigns',
       description: 'Compose, approve & send coach emails',
       colour: 'border-sky-500/20 hover:border-sky-500/40 text-sky-400',
+    },
+    {
+      href: '/admin/performance',
+      icon: LineChart,
+      label: 'App Performance',
+      description: 'Sign-ups, activity, revenue & page views',
+      colour: 'border-teal-500/20 hover:border-teal-500/40 text-teal-400',
     },
   ]
 
