@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
 import { HelpWidget } from '@/components/help/HelpWidget'
+import { PageViewTracker } from '@/components/analytics/PageViewTracker'
 import type { UserRole } from '@/lib/supabase/types'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -51,6 +52,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </main>
       </SidebarInset>
       <HelpWidget />
+      <PageViewTracker />
     </SidebarProvider>
   )
 }
