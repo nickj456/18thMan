@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { Suspense } from 'react'
+import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { RoleTiles, SignupsChart, CumulativeChart } from './GrowthSection'
 import { DrillsChart, SessionPlansChart, MessagesChart, PodcastPlaysTile } from './ActivitySection'
@@ -31,6 +33,10 @@ export default async function AdminPerformancePage() {
 
   return (
     <div className="space-y-10 max-w-5xl">
+      <Link href="/admin" className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors">
+        <ArrowLeft size={12} /> Admin Panel
+      </Link>
+
       <div>
         <h1 className="app-heading text-2xl">App Performance</h1>
         <p className="text-sm text-zinc-500 mt-0.5">Sign-ups, activity, revenue &amp; page traffic</p>

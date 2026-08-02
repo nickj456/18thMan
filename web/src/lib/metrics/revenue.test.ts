@@ -32,6 +32,23 @@ describe('aggregateRevenueByDay', () => {
     ]
     expect(aggregateRevenueByDay(onlyRefunded)).toEqual([])
   })
+
+  it('returns an empty array for no rows at all', () => {
+    expect(aggregateRevenueByDay([])).toEqual([])
+  })
+
+  // Fetchers order by `id` (a random uuid), so rows are not chronological.
+  it('sums into date order even when purchases arrive shuffled', () => {
+    const shuffled: PurchaseRow[] = [
+      { created_at: '2026-07-03T10:00:00Z', amount_paid_cents: 200, status: 'completed', product_id: 'p1' },
+      { created_at: '2026-07-01T12:00:00Z', amount_paid_cents: 1000, status: 'completed', product_id: 'p2' },
+      { created_at: '2026-07-01T10:00:00Z', amount_paid_cents: 500, status: 'completed', product_id: 'p1' },
+    ]
+    expect(aggregateRevenueByDay(shuffled)).toEqual([
+      { date: '2026-07-01', cents: 1500 },
+      { date: '2026-07-03', cents: 200 },
+    ])
+  })
 })
 
 describe('aggregateRevenueByProduct', () => {

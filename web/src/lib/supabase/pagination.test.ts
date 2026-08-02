@@ -7,7 +7,7 @@ import { fetchAllRows } from './pagination'
 
 describe('fetchAllRows', () => {
   it('returns all rows from a single short page', async () => {
-    const query = vi.fn(async (from: number, to: number) => {
+    const query = vi.fn(async (from: number) => {
       if (from > 0) return { data: [], error: null }
       return { data: [{ id: 1 }, { id: 2 }], error: null }
     })

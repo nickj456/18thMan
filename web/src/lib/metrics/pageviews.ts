@@ -9,7 +9,7 @@ export function aggregateTopPages(
     counts.set(row.path, (counts.get(row.path) ?? 0) + 1)
   }
   return [...counts.entries()]
-    .sort(([, a], [, b]) => b - a)
+    .sort(([aPath, a], [bPath, b]) => b - a || aPath.localeCompare(bPath))
     .slice(0, limit)
     .map(([path, count]) => ({ path, count }))
 }
