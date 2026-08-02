@@ -11,7 +11,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
 
-  if (typeof path !== 'string' || path.length === 0) {
+  // Must look like a real in-app path, and be bounded — this endpoint is
+  // reachable by any authenticated user, so an unvalidated `path` would let
+  // one flood page_views with junk and pollute the admin Top Pages list.
+  if (typeof path !== 'string' || !path.startsWith('/') || path.length > 512) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
 
@@ -21,8 +24,13 @@ export async function POST(request: Request) {
     return new NextResponse(null, { status: 204 })
   }
 
-  // Best-effort tracking: never surface an insert failure to the beacon caller.
-  await supabase.from('page_views').insert({ path, user_id: user.id })
+  // Best-effort tracking: never surface an insert failure to the beacon caller,
+  // but do log it server-side — otherwise an unapplied migration or a broken
+  // RLS policy silently records nothing forever.
+  const { error } = await supabase.from('page_views').insert({ path, user_id: user.id })
+  if (error) {
+    console.error('[track-page-view]', error.message)
+  }
 
   return new NextResponse(null, { status: 204 })
 }

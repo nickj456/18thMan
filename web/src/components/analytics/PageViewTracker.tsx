@@ -15,7 +15,11 @@ export function PageViewTracker() {
       const blob = new Blob([payload], { type: 'application/json' })
       navigator.sendBeacon('/api/track-page-view', blob)
     } else {
-      fetch('/api/track-page-view', { method: 'POST', body: payload, keepalive: true })
+      // Fire-and-forget: a failed beacon must never surface as an unhandled
+      // rejection in the user's console.
+      fetch('/api/track-page-view', { method: 'POST', body: payload, keepalive: true }).catch(
+        () => {}
+      )
     }
   }, [pathname])
 

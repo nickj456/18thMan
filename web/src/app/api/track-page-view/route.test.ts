@@ -45,6 +45,31 @@ describe('POST /api/track-page-view', () => {
     expect(insertMock).not.toHaveBeenCalled()
   })
 
+  it('returns 400 when path does not start with a slash', async () => {
+    const res = await POST(request({ path: 'https://evil.example/phish' }))
+    expect(res.status).toBe(400)
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it('returns 400 for an empty path', async () => {
+    const res = await POST(request({ path: '' }))
+    expect(res.status).toBe(400)
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it('returns 400 when path exceeds the length cap', async () => {
+    const res = await POST(request({ path: '/' + 'a'.repeat(512) }))
+    expect(res.status).toBe(400)
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it('accepts a path exactly at the length cap', async () => {
+    const path = '/' + 'a'.repeat(511)
+    const res = await POST(request({ path }))
+    expect(res.status).toBe(204)
+    expect(insertMock).toHaveBeenCalledWith({ path, user_id: 'user-1' })
+  })
+
   it('no-ops with 204 when there is no authenticated user', async () => {
     state.user = null
     const res = await POST(request({ path: '/dashboard' }))
@@ -60,7 +85,24 @@ describe('POST /api/track-page-view', () => {
 
   it('still returns 204 if the insert itself fails (best-effort tracking)', async () => {
     state.insertError = { message: 'db unreachable' }
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
     const res = await POST(request({ path: '/drills' }))
     expect(res.status).toBe(204)
+    consoleError.mockRestore()
+  })
+
+  it('logs the insert failure server-side so it is not silent', async () => {
+    state.insertError = { message: 'db unreachable' }
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await POST(request({ path: '/drills' }))
+    expect(consoleError).toHaveBeenCalledWith('[track-page-view]', 'db unreachable')
+    consoleError.mockRestore()
+  })
+
+  it('does not log when the insert succeeds', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await POST(request({ path: '/drills' }))
+    expect(consoleError).not.toHaveBeenCalled()
+    consoleError.mockRestore()
   })
 })
