@@ -50,10 +50,10 @@ export async function MessagesChart() {
   }
 
   if (errorMessage) {
-    return <ErrorNote label="Messages (all types) per day" message={errorMessage} />
+    return <ErrorNote label="Messages (all types) per day — last 90 days" message={errorMessage} />
   }
 
-  return <TimeSeriesChart data={data} label="Messages (all types) per day" />
+  return <TimeSeriesChart data={data} label="Messages (all types) per day — last 90 days" />
 }
 
 export async function PodcastPlaysTile() {

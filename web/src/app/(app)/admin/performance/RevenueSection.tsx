@@ -1,10 +1,10 @@
-import { getPurchases, getProducts, getClubs, getProfileSubscriptions } from './data'
 import {
-  aggregateRevenueByDay,
-  aggregateRevenueByProduct,
-  countActiveClubSubscriptions,
-  countActiveCoachSubscriptions,
-} from '@/lib/metrics/revenue'
+  getPurchases,
+  getProducts,
+  getActiveClubSubscriptionCount,
+  getActiveCoachSubscriptionCount,
+} from './data'
+import { aggregateRevenueByDay, aggregateRevenueByProduct } from '@/lib/metrics/revenue'
 import { formatCents } from '@/lib/format'
 import { StatTile, TimeSeriesChart, ErrorNote } from './components'
 
@@ -33,8 +33,7 @@ export async function ActiveClubSubsTile() {
   let errorMessage: string | null = null
 
   try {
-    const clubs = await getClubs()
-    count = countActiveClubSubscriptions(clubs)
+    count = await getActiveClubSubscriptionCount()
   } catch (err) {
     errorMessage = err instanceof Error ? err.message : 'Failed to load clubs'
   }
@@ -51,8 +50,7 @@ export async function ActiveCoachSubsTile() {
   let errorMessage: string | null = null
 
   try {
-    const profiles = await getProfileSubscriptions()
-    count = countActiveCoachSubscriptions(profiles)
+    count = await getActiveCoachSubscriptionCount()
   } catch (err) {
     errorMessage = err instanceof Error ? err.message : 'Failed to load coach subscriptions'
   }
