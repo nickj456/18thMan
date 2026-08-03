@@ -150,6 +150,7 @@ export function ProductForm({ mode, productId, initial, onSaved }: ProductFormPr
           <label className="text-xs text-zinc-400">Minimum tier to unlock (optional)</label>
           <select name="minTier" defaultValue={initial?.min_subscription_tier ?? ''} className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm">
             <option value="">Purchase required</option>
+            <option value="free">Free for everyone</option>
             <option value="coach">Coach Pro</option>
             <option value="club">Club</option>
           </select>

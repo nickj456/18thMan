@@ -18,6 +18,13 @@ describe('tierMeetsRequirement', () => {
   it('treats an active trial as club-level access', () => {
     expect(tierMeetsRequirement('trial', 'club')).toBe(true)
   })
+
+  it('unlocks a "free" minimum tier for every signed-in tier, including free itself', () => {
+    expect(tierMeetsRequirement('free', 'free')).toBe(true)
+    expect(tierMeetsRequirement('trial', 'free')).toBe(true)
+    expect(tierMeetsRequirement('coach', 'free')).toBe(true)
+    expect(tierMeetsRequirement('club', 'free')).toBe(true)
+  })
 })
 
 describe('canAccessProduct', () => {
