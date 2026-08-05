@@ -802,3 +802,27 @@ export interface Recommendation {
   completed_at: string | null
   created_at: string
 }
+
+// ── Coach DNA: Safeguarding & Admin Access Audit ──────────────────────────────
+
+export type SafeguardingFlagStatus = 'open' | 'reviewed' | 'dismissed'
+export type FlagDetectionMethod = 'automated' | 'manual'
+
+export interface SafeguardingFlag {
+  id: string
+  feedback_answer_id: string
+  flagged_text: string
+  detection_method: FlagDetectionMethod
+  status: SafeguardingFlagStatus
+  reviewed_by: string | null
+  reviewed_at: string | null
+  created_at: string
+}
+
+export interface AdminFeedbackAccessLog {
+  id: string
+  admin_id: string
+  feedback_response_id: string
+  action: string
+  accessed_at: string
+}
