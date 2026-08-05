@@ -718,3 +718,40 @@ export interface CoachCategoryScore {
   calculation_version: number
   calculated_at: string
 }
+
+// ── Coach DNA: Feedback Requests & Responses ──────────────────────────────
+
+export type FeedbackType = 'player_voice' | 'peer_observation'
+export type RespondentType = 'player' | 'parent' | 'peer_coach'
+export type FeedbackRequestStatus = 'active' | 'paused' | 'expired'
+
+export interface FeedbackRequest {
+  id: string
+  coach_id: string
+  feedback_type: FeedbackType
+  team_id: string | null
+  token: string
+  anonymous: boolean
+  expires_at: string
+  minimum_response_threshold: number
+  status: FeedbackRequestStatus
+  created_at: string
+}
+
+export interface FeedbackResponse {
+  id: string
+  feedback_request_id: string
+  respondent_type: RespondentType
+  respondent_id_nullable: string | null
+  submitted_at: string
+  held_for_review: boolean
+  device_fingerprint_hash: string
+}
+
+export interface FeedbackAnswer {
+  id: string
+  feedback_response_id: string
+  question_id: string
+  numeric_value: number | null
+  written_value: string | null
+}
