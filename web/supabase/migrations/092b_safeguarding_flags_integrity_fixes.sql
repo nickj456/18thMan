@@ -49,6 +49,8 @@ begin
 end;
 $$;
 
+drop trigger if exists safeguarding_flags_evidence_immutable on public.safeguarding_flags;
+
 create trigger safeguarding_flags_evidence_immutable
   before update on public.safeguarding_flags
   for each row execute function public.prevent_safeguarding_flag_evidence_edit();
