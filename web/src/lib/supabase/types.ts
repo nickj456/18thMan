@@ -675,3 +675,21 @@ export interface AssessmentOption {
   option_text: string
   category_weights_json: Record<string, number>
 }
+
+export interface AssessmentAttempt {
+  id: string
+  coach_id: string
+  assessment_type: AssessmentType
+  version: number
+  started_at: string
+  completed_at: string | null
+}
+
+export interface AssessmentResponse {
+  id: string
+  attempt_id: string
+  question_id: string
+  selected_option: string | null
+  written_response: string | null
+  response_value: number | null
+}
