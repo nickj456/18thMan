@@ -693,3 +693,28 @@ export interface AssessmentResponse {
   written_response: string | null
   response_value: number | null
 }
+
+export type ScoreSourceType = 'self' | 'player_voice' | 'peer_observation' | 'parent_voice'
+export type CoachScoreStatus = 'scored' | 'insufficient_data'
+
+export interface CoachScore {
+  id: string
+  coach_id: string
+  category_id: string
+  source_type: ScoreSourceType
+  score: number
+  sample_size: number
+  calculation_version: number
+  calculated_at: string
+}
+
+export interface CoachCategoryScore {
+  id: string
+  coach_id: string
+  category_id: string
+  status: CoachScoreStatus
+  blended_score: number | null
+  insufficient_data_message: string | null
+  calculation_version: number
+  calculated_at: string
+}
