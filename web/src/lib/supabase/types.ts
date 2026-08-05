@@ -664,6 +664,7 @@ export interface AssessmentQuestion {
   question_text: string
   question_format: string
   age_group: string | null
+  category_id: string | null
   active: boolean
   version: number
   created_at: string
