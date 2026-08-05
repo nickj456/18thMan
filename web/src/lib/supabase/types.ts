@@ -175,6 +175,18 @@ export interface DnaCategory {
   created_at: string
 }
 
+export interface CoachProfile {
+  id: string
+  user_id: string
+  age_group: string
+  experience_level: string
+  primary_profile_type: string | null
+  secondary_profile_type: string | null
+  current_focus_category_id: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface AiGuide {
   overview: string
   how_to_perform: string[]
