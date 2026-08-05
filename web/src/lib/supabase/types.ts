@@ -167,6 +167,14 @@ export interface DrillCategory {
   created_at: string
 }
 
+export interface DnaCategory {
+  id: string
+  name: string
+  slug: string
+  description: string
+  created_at: string
+}
+
 export interface AiGuide {
   overview: string
   how_to_perform: string[]
