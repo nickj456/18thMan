@@ -29,7 +29,7 @@ create index assessment_options_question_id_idx on public.assessment_options(que
 alter table public.assessment_questions enable row level security;
 alter table public.assessment_options enable row level security;
 
-create policy "Anyone authenticated can read active questions"
+create policy "Anyone authenticated can read questions"
   on public.assessment_questions for select
   using (auth.uid() is not null);
 
