@@ -764,6 +764,19 @@ export interface ClubGuardianConsent {
   granted_at: string
 }
 
+export type DisputeStatus = 'open' | 'excluded' | 'no_action'
+
+export interface ResponseDispute {
+  id: string
+  feedback_response_id: string
+  raised_by: string
+  reason: string
+  status: DisputeStatus
+  resolved_by: string | null
+  resolved_at: string | null
+  created_at: string
+}
+
 // ── Coach DNA: Reflections & Recommendations ──────────────────────────────
 
 export interface CoachReflection {
