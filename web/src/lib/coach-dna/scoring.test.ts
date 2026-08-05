@@ -155,6 +155,10 @@ describe('computeCategoryScore', () => {
     // peer_observation must NOT be treated as active just because 0 >= 0 — it has no data
     if (result.status === 'scored') {
       expect(result.sourceScores.peer_observation).toBeUndefined()
+      // if peer_observation were wrongly treated as active (old buggy filter), it would
+      // contribute a fabricated 0 at full weight and drag blendedScore down to ~50.35;
+      // correctly excluding it keeps the blend at ~75.53 (self=80, player_voice≈72.33 only)
+      expect(result.blendedScore).toBeGreaterThan(70)
     }
     // with peer_observation correctly excluded, only self + player_voice are active (2 sources) — still scoreable
     expect(result.status).toBe('scored')
