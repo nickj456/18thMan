@@ -6,11 +6,14 @@ export interface SourceResponse {
 const RECENCY_HALF_LIFE_DAYS = 90
 
 export function computeRecencyWeightedAverage(responses: SourceResponse[], now: Date): number {
-  if (responses.length === 0) return 0
+  const validResponses = responses.filter(
+    r => Number.isFinite(r.value) && Number.isFinite(new Date(r.submittedAt).getTime())
+  )
+  if (validResponses.length === 0) return 0
 
   let weightedSum = 0
   let totalWeight = 0
-  for (const r of responses) {
+  for (const r of validResponses) {
     const ageDays = (now.getTime() - new Date(r.submittedAt).getTime()) / (1000 * 60 * 60 * 24)
     const weight = Math.pow(0.5, Math.max(ageDays, 0) / RECENCY_HALF_LIFE_DAYS)
     weightedSum += r.value * weight

@@ -1,4 +1,4 @@
-import { SOURCES, type CategoryWeightConfig, type ScoreSource } from './config'
+import { SOURCES, getSampleSizeConfidence, type CategoryWeightConfig, type ScoreSource } from './config'
 import { redistributeWeights } from './redistribute'
 import { computeRecencyWeightedAverage, capOutliers, type SourceResponse } from './response-scoring'
 import { applyScoreChangeLimit, buildInsufficientDataMessage } from './limits'
@@ -16,11 +16,15 @@ export type CategoryScoreResult =
       status: 'scored'
       blendedScore: number
       sourceScores: Partial<Record<ScoreSource, number>>
+      activeSources: ScoreSource[]
+      sampleSizes: Record<ScoreSource, number>
     }
   | {
       status: 'insufficient_data'
       message: string
       sourceScores: Partial<Record<ScoreSource, number>>
+      activeSources: ScoreSource[]
+      sampleSizes: Record<ScoreSource, number>
     }
 
 export function computeCategoryScore(
@@ -52,10 +56,18 @@ export function computeCategoryScore(
       status: 'insufficient_data',
       message: buildInsufficientDataMessage(sampleSizes, thresholds, weights),
       sourceScores,
+      activeSources,
+      sampleSizes,
     }
   }
 
-  const redistributed = redistributeWeights(weights, activeSources)
+  const confidenceAdjustedWeights: CategoryWeightConfig = {
+    self: weights.self * getSampleSizeConfidence('self', sampleSizes.self),
+    player_voice: weights.player_voice * getSampleSizeConfidence('player_voice', sampleSizes.player_voice),
+    peer_observation: weights.peer_observation * getSampleSizeConfidence('peer_observation', sampleSizes.peer_observation),
+    parent_voice: weights.parent_voice * getSampleSizeConfidence('parent_voice', sampleSizes.parent_voice),
+  }
+  const redistributed = redistributeWeights(confidenceAdjustedWeights, activeSources)
   const redistributedWeightSum = Object.values(redistributed).reduce((a, b) => a + (b ?? 0), 0)
 
   if (redistributedWeightSum === 0) {
@@ -63,6 +75,8 @@ export function computeCategoryScore(
       status: 'insufficient_data',
       message: buildInsufficientDataMessage(sampleSizes, thresholds, weights),
       sourceScores,
+      activeSources,
+      sampleSizes,
     }
   }
 
@@ -72,5 +86,15 @@ export function computeCategoryScore(
   )
   const blendedScore = applyScoreChangeLimit(previousScore, rawBlended)
 
-  return { status: 'scored', blendedScore, sourceScores }
+  if (!Number.isFinite(blendedScore)) {
+    return {
+      status: 'insufficient_data',
+      message: buildInsufficientDataMessage(sampleSizes, thresholds, weights),
+      sourceScores,
+      activeSources,
+      sampleSizes,
+    }
+  }
+
+  return { status: 'scored', blendedScore, sourceScores, activeSources, sampleSizes }
 }

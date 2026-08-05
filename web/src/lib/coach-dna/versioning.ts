@@ -1,6 +1,6 @@
-export interface VersionedResponse {
-  value: number
-  submittedAt: string
+import type { SourceResponse } from './response-scoring'
+
+export interface VersionedResponse extends SourceResponse {
   questionVersion: number
 }
 

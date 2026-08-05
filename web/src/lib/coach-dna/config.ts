@@ -2,9 +2,9 @@
 
 export type ScoreSource = 'self' | 'player_voice' | 'peer_observation' | 'parent_voice'
 
-export const SOURCES: ScoreSource[] = ['self', 'player_voice', 'peer_observation', 'parent_voice']
+export const SOURCES: readonly ScoreSource[] = ['self', 'player_voice', 'peer_observation', 'parent_voice']
 
-export const SOURCE_LABELS: Record<ScoreSource, string> = {
+export const SOURCE_LABELS: Readonly<Record<ScoreSource, string>> = {
   self: 'Self-Assessment',
   player_voice: 'Player Voice',
   peer_observation: 'Peer Coach',
@@ -49,4 +49,17 @@ const THRESHOLD_OVERRIDES: Record<string, CategoryWeightConfig> = {}
 
 export function getSourceThresholds(categorySlug: string): CategoryWeightConfig {
   return THRESHOLD_OVERRIDES[categorySlug] ?? DEFAULT_THRESHOLDS
+}
+
+// ── Sample-size confidence weighting ────────────────────────────────────
+
+const CONFIDENCE_TARGET_SAMPLE_SIZE: Partial<Record<ScoreSource, number>> = {
+  player_voice: 10,
+  parent_voice: 10,
+}
+
+export function getSampleSizeConfidence(source: ScoreSource, sampleSize: number): number {
+  const target = CONFIDENCE_TARGET_SAMPLE_SIZE[source]
+  if (target === undefined) return 1 // self and peer_observation are not sample-size weighted — self is a single attempt, peer_observation uses outlier capping instead
+  return Math.min(1, sampleSize / target)
 }

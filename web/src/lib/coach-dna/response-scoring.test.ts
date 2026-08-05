@@ -30,8 +30,32 @@ describe('computeRecencyWeightedAverage', () => {
     const now = new Date('2026-08-05T00:00:00Z')
     const responses: SourceResponse[] = [
       { value: 40, submittedAt: '2026-08-06T00:00:00Z' }, // 1 day "in the future" (clock skew)
+      { value: 80, submittedAt: now.toISOString() }, // present-dated, weight exactly 1
     ]
-    expect(computeRecencyWeightedAverage(responses, now)).toBeCloseTo(40, 5)
+    // if the future date were NOT clamped to 0, it would get a weight > 1 (negative age divided
+    // by half-life gives a decay factor above 1), pulling the average below the unclamped case
+    const result = computeRecencyWeightedAverage(responses, now)
+    expect(result).toBeCloseTo(60, 1) // both responses clamped to weight 1 → plain average of 40 and 80
+  })
+
+  it('ignores a response with an unparseable submittedAt instead of producing NaN', () => {
+    const now = new Date('2026-08-05T00:00:00Z')
+    const responses: SourceResponse[] = [
+      { value: 80, submittedAt: 'not-a-date' },
+      { value: 60, submittedAt: '2026-08-05T00:00:00Z' },
+    ]
+    const result = computeRecencyWeightedAverage(responses, now)
+    expect(Number.isFinite(result)).toBe(true)
+    expect(result).toBeCloseTo(60, 5) // the bad row is dropped; only the valid 60 remains
+  })
+
+  it('ignores a response with a non-finite value', () => {
+    const now = new Date('2026-08-05T00:00:00Z')
+    const responses: SourceResponse[] = [
+      { value: NaN, submittedAt: now.toISOString() },
+      { value: 60, submittedAt: now.toISOString() },
+    ]
+    expect(computeRecencyWeightedAverage(responses, now)).toBeCloseTo(60, 5)
   })
 })
 

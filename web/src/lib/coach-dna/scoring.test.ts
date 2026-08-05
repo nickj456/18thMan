@@ -180,4 +180,61 @@ describe('computeCategoryScore', () => {
       expect(result.blendedScore).toBeLessThanOrEqual(35) // default max delta is 15
     }
   })
+
+  it('gives a player_voice source built from few responses less influence than one built from many, all else equal', () => {
+    const weights = getCategoryWeights('teacher')
+    const thresholds = getSourceThresholds('teacher')
+    const fewResponses: SourceInput[] = [
+      { source: 'self', responses: [response(50)] },
+      { source: 'player_voice', responses: [response(100), response(100), response(100)] }, // 3 responses, low confidence
+      { source: 'peer_observation', responses: [response(50)] },
+    ]
+    const manyResponses: SourceInput[] = [
+      { source: 'self', responses: [response(50)] },
+      { source: 'player_voice', responses: Array.from({ length: 10 }, () => response(100)) }, // 10 responses, full confidence
+      { source: 'peer_observation', responses: [response(50)] },
+    ]
+    const resultFew = computeCategoryScore(fewResponses, weights, thresholds, NOW)
+    const resultMany = computeCategoryScore(manyResponses, weights, thresholds, NOW)
+    expect(resultFew.status).toBe('scored')
+    expect(resultMany.status).toBe('scored')
+    if (resultFew.status === 'scored' && resultMany.status === 'scored') {
+      // player_voice reports 100 in both cases, self/peer report 50 — with more player_voice
+      // responses (higher confidence, more weight), the blend should be pulled higher toward 100
+      expect(resultMany.blendedScore).toBeGreaterThan(resultFew.blendedScore)
+    }
+  })
+
+  it('never returns a non-finite blendedScore even if every response has an invalid timestamp', () => {
+    const weights = getCategoryWeights('teacher')
+    const thresholds = getSourceThresholds('teacher')
+    const inputs: SourceInput[] = [
+      { source: 'self', responses: [{ value: 80, submittedAt: 'garbage' }] },
+      { source: 'player_voice', responses: [
+        { value: 70, submittedAt: 'garbage' },
+        { value: 75, submittedAt: 'garbage' },
+        { value: 72, submittedAt: 'garbage' },
+      ] },
+    ]
+    const result = computeCategoryScore(inputs, weights, thresholds, NOW)
+    if (result.status === 'scored') {
+      expect(Number.isFinite(result.blendedScore)).toBe(true)
+    } else {
+      expect(result.status).toBe('insufficient_data')
+    }
+  })
+
+  it('exposes which sources were active and their sample sizes', () => {
+    const weights = getCategoryWeights('teacher')
+    const thresholds = getSourceThresholds('teacher')
+    const inputs: SourceInput[] = [
+      { source: 'self', responses: [response(80)] },
+      { source: 'player_voice', responses: [response(70), response(75), response(72)] },
+      { source: 'peer_observation', responses: [] },
+      { source: 'parent_voice', responses: [] },
+    ]
+    const result = computeCategoryScore(inputs, weights, thresholds, NOW)
+    expect(result.activeSources).toEqual(['self', 'player_voice'])
+    expect(result.sampleSizes).toEqual({ self: 1, player_voice: 3, peer_observation: 0, parent_voice: 0 })
+  })
 })

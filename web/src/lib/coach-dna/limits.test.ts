@@ -20,8 +20,8 @@ describe('applyScoreChangeLimit', () => {
   })
 
   it('uses a sensible default delta when none is provided', () => {
-    // default is documented as 15 in the module; a jump of 100 must still be clamped
-    expect(applyScoreChangeLimit(20, 120)).toBeLessThan(120)
+    // default is documented as 15 in the module; a jump of 100 must be clamped to exactly 20+15=35
+    expect(applyScoreChangeLimit(20, 120)).toBe(35)
   })
 })
 

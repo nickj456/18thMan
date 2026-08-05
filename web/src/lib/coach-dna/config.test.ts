@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getCategoryWeights, getSourceThresholds, SOURCE_LABELS } from './config'
+import { getCategoryWeights, getSourceThresholds, getSampleSizeConfidence, SOURCE_LABELS } from './config'
 
 describe('getCategoryWeights', () => {
   it('returns the default weight split for a category with no override', () => {
@@ -57,5 +57,26 @@ describe('SOURCE_LABELS', () => {
       peer_observation: 'Peer Coach',
       parent_voice: 'Parent Voice',
     })
+  })
+})
+
+describe('getSampleSizeConfidence', () => {
+  it('returns full confidence (1) for self and peer_observation regardless of sample size', () => {
+    expect(getSampleSizeConfidence('self', 1)).toBe(1)
+    expect(getSampleSizeConfidence('peer_observation', 1)).toBe(1)
+  })
+
+  it('scales confidence linearly toward the target sample size for player_voice', () => {
+    expect(getSampleSizeConfidence('player_voice', 3)).toBeCloseTo(0.3, 5)
+    expect(getSampleSizeConfidence('player_voice', 5)).toBeCloseTo(0.5, 5)
+  })
+
+  it('caps confidence at 1 once the target sample size is reached', () => {
+    expect(getSampleSizeConfidence('player_voice', 10)).toBe(1)
+    expect(getSampleSizeConfidence('player_voice', 25)).toBe(1)
+  })
+
+  it('scales parent_voice the same way as player_voice', () => {
+    expect(getSampleSizeConfidence('parent_voice', 5)).toBeCloseTo(0.5, 5)
   })
 })
