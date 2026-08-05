@@ -106,8 +106,15 @@ describe('computeCategoryScore', () => {
     expect(resultWithout.status).toBe('scored')
     expect(resultWith.status).toBe('scored')
     if (resultWithout.status === 'scored' && resultWith.status === 'scored') {
-      // the outlier must not drag the blended score down by more than a few points
-      expect(resultWithout.blendedScore - resultWith.blendedScore).toBeLessThan(10)
+      // the outlier must not drag the blended score down by more than a few points.
+      // This bound is tight enough to fail if capOutliers is not actually applied:
+      // capped difference ≈ 3.333, uncapped difference ≈ 8.889.
+      expect(resultWithout.blendedScore - resultWith.blendedScore).toBeLessThan(5)
+    }
+    if (resultWith.status === 'scored') {
+      // capOutliers pulls the 0 up to median-25=50, so the peer_observation source score
+      // should reflect the capped value (~67.7), not the raw uncapped mean (51)
+      expect(resultWith.sourceScores.peer_observation).toBeGreaterThan(60)
     }
   })
 
@@ -134,6 +141,23 @@ describe('computeCategoryScore', () => {
         expect(result.blendedScore).toBeCloseTo(50, 1)
       }
     }
+  })
+
+  it('does not fabricate a score for a source with zero responses even if its threshold is configured as 0', () => {
+    const weights = getCategoryWeights('teacher')
+    const zeroThresholdConfig = { ...getSourceThresholds('teacher'), peer_observation: 0 }
+    const inputs: SourceInput[] = [
+      { source: 'self', responses: [response(80)] },
+      { source: 'player_voice', responses: [response(70), response(75), response(72)] },
+      { source: 'peer_observation', responses: [] }, // zero responses, but threshold is 0
+    ]
+    const result = computeCategoryScore(inputs, weights, zeroThresholdConfig, NOW)
+    // peer_observation must NOT be treated as active just because 0 >= 0 — it has no data
+    if (result.status === 'scored') {
+      expect(result.sourceScores.peer_observation).toBeUndefined()
+    }
+    // with peer_observation correctly excluded, only self + player_voice are active (2 sources) — still scoreable
+    expect(result.status).toBe('scored')
   })
 
   it('applies the score change limit against a previous score', () => {

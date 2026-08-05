@@ -45,7 +45,7 @@ export function computeCategoryScore(
     sourceScores[input.source] = computeRecencyWeightedAverage(responses, now)
   }
 
-  const activeSources = SOURCES.filter(s => sampleSizes[s] >= thresholds[s])
+  const activeSources = SOURCES.filter(s => sampleSizes[s] > 0 && sampleSizes[s] >= thresholds[s])
 
   if (activeSources.length < 2) {
     return {
