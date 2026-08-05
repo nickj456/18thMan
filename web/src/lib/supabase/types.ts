@@ -653,3 +653,25 @@ export interface ProgressionInsight {
   content: string
   generated_at: string
 }
+
+// ── Coach DNA: Assessment Questions & Options ────────────────────────────────
+
+export type AssessmentType = 'self_assessment' | 'player_voice' | 'peer_observation'
+
+export interface AssessmentQuestion {
+  id: string
+  assessment_type: AssessmentType
+  question_text: string
+  question_format: string
+  age_group: string | null
+  active: boolean
+  version: number
+  created_at: string
+}
+
+export interface AssessmentOption {
+  id: string
+  question_id: string
+  option_text: string
+  category_weights_json: Record<string, number>
+}
