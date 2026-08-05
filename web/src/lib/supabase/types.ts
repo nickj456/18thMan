@@ -167,6 +167,26 @@ export interface DrillCategory {
   created_at: string
 }
 
+export interface DnaCategory {
+  id: string
+  name: string
+  slug: string
+  description: string
+  created_at: string
+}
+
+export interface CoachProfile {
+  id: string
+  user_id: string
+  age_group: string
+  experience_level: string
+  primary_profile_type: string | null
+  secondary_profile_type: string | null
+  current_focus_category_id: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface AiGuide {
   overview: string
   how_to_perform: string[]
@@ -632,4 +652,177 @@ export interface ProgressionInsight {
   session_ids_hash: string  // btoa(sortedIds.join(','))
   content: string
   generated_at: string
+}
+
+// ── Coach DNA: Assessment Questions & Options ────────────────────────────────
+
+export type AssessmentType = 'self_assessment' | 'player_voice' | 'peer_observation'
+
+export interface AssessmentQuestion {
+  id: string
+  assessment_type: AssessmentType
+  question_text: string
+  question_format: string
+  age_group: string | null
+  active: boolean
+  version: number
+  created_at: string
+}
+
+export interface AssessmentOption {
+  id: string
+  question_id: string
+  option_text: string
+  category_weights_json: Record<string, number>
+}
+
+export interface AssessmentAttempt {
+  id: string
+  coach_id: string
+  assessment_type: AssessmentType
+  version: number
+  started_at: string
+  completed_at: string | null
+}
+
+export interface AssessmentResponse {
+  id: string
+  attempt_id: string
+  question_id: string
+  selected_option: string | null
+  written_response: string | null
+  response_value: number | null
+}
+
+export type ScoreSourceType = 'self' | 'player_voice' | 'peer_observation' | 'parent_voice'
+export type CoachScoreStatus = 'scored' | 'insufficient_data'
+
+export interface CoachScore {
+  id: string
+  coach_id: string
+  category_id: string
+  source_type: ScoreSourceType
+  score: number
+  sample_size: number
+  calculation_version: number
+  calculated_at: string
+}
+
+export interface CoachCategoryScore {
+  id: string
+  coach_id: string
+  category_id: string
+  status: CoachScoreStatus
+  blended_score: number | null
+  insufficient_data_message: string | null
+  calculation_version: number
+  calculated_at: string
+}
+
+// ── Coach DNA: Feedback Requests & Responses ──────────────────────────────
+
+export type FeedbackType = 'player_voice' | 'peer_observation'
+export type RespondentType = 'player' | 'parent' | 'peer_coach'
+export type FeedbackRequestStatus = 'active' | 'paused' | 'expired'
+
+export interface FeedbackRequest {
+  id: string
+  coach_id: string
+  feedback_type: FeedbackType
+  team_id: string | null
+  token: string
+  anonymous: boolean
+  expires_at: string
+  minimum_response_threshold: number
+  status: FeedbackRequestStatus
+  created_at: string
+}
+
+export interface FeedbackResponse {
+  id: string
+  feedback_request_id: string
+  respondent_type: RespondentType
+  respondent_id_nullable: string | null
+  submitted_at: string
+  held_for_review: boolean
+  device_fingerprint_hash: string
+}
+
+export interface FeedbackAnswer {
+  id: string
+  feedback_response_id: string
+  question_id: string
+  numeric_value: number | null
+  written_value: string | null
+}
+
+export interface ClubGuardianConsent {
+  id: string
+  club_id: string
+  season_label: string
+  granted_by: string | null
+  granted_at: string
+}
+
+export type DisputeStatus = 'open' | 'excluded' | 'no_action'
+
+export interface ResponseDispute {
+  id: string
+  feedback_response_id: string
+  raised_by: string | null
+  reason: string
+  status: DisputeStatus
+  resolved_by: string | null
+  resolved_at: string | null
+  created_at: string
+}
+
+// ── Coach DNA: Reflections & Recommendations ──────────────────────────────
+
+export interface CoachReflection {
+  id: string
+  coach_id: string
+  session_id_nullable: string | null
+  match_id_nullable: string | null
+  reflection_type: string
+  answers_json: Record<string, unknown>
+  created_at: string
+}
+
+export interface Recommendation {
+  id: string
+  coach_id: string
+  category_id: string
+  recommendation_type: string
+  title: string
+  description: string
+  priority: number
+  reason: string
+  dismissed_at: string | null
+  completed_at: string | null
+  created_at: string
+}
+
+// ── Coach DNA: Safeguarding & Admin Access Audit ──────────────────────────────
+
+export type SafeguardingFlagStatus = 'open' | 'reviewed' | 'dismissed'
+export type FlagDetectionMethod = 'automated' | 'manual'
+
+export interface SafeguardingFlag {
+  id: string
+  feedback_answer_id: string
+  flagged_text: string
+  detection_method: FlagDetectionMethod
+  status: SafeguardingFlagStatus
+  reviewed_by: string | null
+  reviewed_at: string | null
+  created_at: string
+}
+
+export interface AdminFeedbackAccessLog {
+  id: string
+  admin_id: string | null
+  feedback_response_id: string
+  action: string
+  accessed_at: string
 }
