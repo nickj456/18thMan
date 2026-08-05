@@ -755,3 +755,29 @@ export interface FeedbackAnswer {
   numeric_value: number | null
   written_value: string | null
 }
+
+// ── Coach DNA: Reflections & Recommendations ──────────────────────────────
+
+export interface CoachReflection {
+  id: string
+  coach_id: string
+  session_id_nullable: string | null
+  match_id_nullable: string | null
+  reflection_type: string
+  answers_json: Record<string, unknown>
+  created_at: string
+}
+
+export interface Recommendation {
+  id: string
+  coach_id: string
+  category_id: string
+  recommendation_type: string
+  title: string
+  description: string
+  priority: number
+  reason: string
+  dismissed_at: string | null
+  completed_at: string | null
+  created_at: string
+}
