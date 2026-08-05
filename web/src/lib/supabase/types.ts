@@ -756,6 +756,14 @@ export interface FeedbackAnswer {
   written_value: string | null
 }
 
+export interface ClubGuardianConsent {
+  id: string
+  club_id: string
+  season_label: string
+  granted_by: string
+  granted_at: string
+}
+
 // ── Coach DNA: Reflections & Recommendations ──────────────────────────────
 
 export interface CoachReflection {
