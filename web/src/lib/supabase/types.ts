@@ -760,7 +760,7 @@ export interface ClubGuardianConsent {
   id: string
   club_id: string
   season_label: string
-  granted_by: string
+  granted_by: string | null
   granted_at: string
 }
 
@@ -769,7 +769,7 @@ export type DisputeStatus = 'open' | 'excluded' | 'no_action'
 export interface ResponseDispute {
   id: string
   feedback_response_id: string
-  raised_by: string
+  raised_by: string | null
   reason: string
   status: DisputeStatus
   resolved_by: string | null
@@ -821,7 +821,7 @@ export interface SafeguardingFlag {
 
 export interface AdminFeedbackAccessLog {
   id: string
-  admin_id: string
+  admin_id: string | null
   feedback_response_id: string
   action: string
   accessed_at: string
