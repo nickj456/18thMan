@@ -8,12 +8,8 @@ import { CheckCircle2 } from 'lucide-react'
 import { generateSelfAssessmentSummary } from '../../../summary-actions'
 import { EmailSummaryButton } from './EmailSummaryButton'
 import { RetryGenerateButton } from './RetryGenerateButton'
+import { labelFor } from '@/lib/coach-dna/categories'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
-
-const CATEGORY_LABELS: Record<string, string> = {
-  teacher: 'Teacher', technician: 'Technician', motivator: 'Motivator', developer: 'Developer',
-  'game-manager': 'Game Manager', communicator: 'Communicator', organiser: 'Organiser', 'culture-builder': 'Culture Builder',
-}
 
 export const metadata = { title: 'Coach DNA — Your Results' }
 
@@ -94,8 +90,8 @@ export default async function AssessmentCompletePage({
               <CheckCircle2 size={18} className="text-emerald-400" />
             </div>
             <CardTitle>
-              You&apos;re a {CATEGORY_LABELS[summary.primaryType]}
-              {summary.secondaryType ? ` / ${CATEGORY_LABELS[summary.secondaryType]}` : ''} coach
+              You&apos;re a {labelFor(summary.primaryType)}
+              {summary.secondaryType ? ` / ${labelFor(summary.secondaryType)}` : ''} coach
             </CardTitle>
           </div>
         </CardHeader>
@@ -110,7 +106,7 @@ export default async function AssessmentCompletePage({
             <ul className="space-y-1.5">
               {summary.pros.map(pro => (
                 <li key={pro.categorySlug} className="text-sm text-zinc-400">
-                  <span className="text-zinc-200 font-medium">{CATEGORY_LABELS[pro.categorySlug]}:</span> {pro.text}
+                  <span className="text-zinc-200 font-medium">{labelFor(pro.categorySlug)}:</span> {pro.text}
                 </li>
               ))}
             </ul>
@@ -121,7 +117,7 @@ export default async function AssessmentCompletePage({
             <ul className="space-y-1.5">
               {summary.cons.map(con => (
                 <li key={con.categorySlug} className="text-sm text-zinc-400">
-                  <span className="text-zinc-200 font-medium">{CATEGORY_LABELS[con.categorySlug]}:</span> {con.text}
+                  <span className="text-zinc-200 font-medium">{labelFor(con.categorySlug)}:</span> {con.text}
                 </li>
               ))}
             </ul>

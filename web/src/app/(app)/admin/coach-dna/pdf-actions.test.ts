@@ -3,9 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const state: {
   user: { id: string; email?: string } | null
+  role: string | null
   summary: unknown
   sendResult: { success: boolean; error?: string }
-} = { user: null, summary: null, sendResult: { success: true } }
+} = { user: null, role: 'admin', summary: null, sendResult: { success: true } }
 
 const sendEmailMock = vi.fn(async (..._args: unknown[]) => state.sendResult)
 
@@ -28,9 +29,16 @@ vi.mock('@/lib/email', () => ({
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
-    from: () => ({
-      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: state.summary }) }) }),
-    }),
+    from: (table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: () => ({
+            eq: () => ({ single: async () => ({ data: state.role === null ? null : { role: state.role } }) }),
+          }),
+        }
+      }
+      return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: state.summary }) }) }) }
+    },
   }),
 }))
 
@@ -39,6 +47,7 @@ import { emailSelfAssessmentSummaryPDF } from './pdf-actions'
 describe('emailSelfAssessmentSummaryPDF', () => {
   beforeEach(() => {
     state.user = { id: 'coach-1', email: 'coach@example.com' }
+    state.role = 'admin'
     state.summary = { ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', pros: [], cons: [] } }
     state.sendResult = { success: true }
     sendEmailMock.mockClear()
@@ -47,6 +56,12 @@ describe('emailSelfAssessmentSummaryPDF', () => {
   it('redirects unauthenticated callers to login', async () => {
     state.user = null
     await expect(emailSelfAssessmentSummaryPDF()).rejects.toThrow('REDIRECT:/login')
+  })
+
+  it('redirects non-admin callers to the dashboard', async () => {
+    state.role = 'coach'
+    await expect(emailSelfAssessmentSummaryPDF()).rejects.toThrow('REDIRECT:/dashboard')
+    expect(sendEmailMock).not.toHaveBeenCalled()
   })
 
   it('returns an error when no summary exists yet', async () => {

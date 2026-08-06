@@ -4,16 +4,13 @@ import { redirect } from 'next/navigation'
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { computeSelfOnlyCategoryScores } from '@/lib/coach-dna/self-score'
 import { deriveArchetype } from '@/lib/coach-dna/archetype'
+import { labelFor } from '@/lib/coach-dna/categories'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
-
-const CATEGORY_LABELS: Record<string, string> = {
-  teacher: 'Teacher', technician: 'Technician', motivator: 'Motivator', developer: 'Developer',
-  'game-manager': 'Game Manager', communicator: 'Communicator', organiser: 'Organiser', 'culture-builder': 'Culture Builder',
-}
 
 function isCategoryEntryArray(value: unknown): value is { categorySlug: string; text: string }[] {
   return (
@@ -45,6 +42,8 @@ export async function generateSelfAssessmentSummary(attemptId: string): Promise<
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'admin') redirect('/dashboard')
 
   const { data: attempt } = await supabase
     .from('assessment_attempts')
@@ -62,7 +61,12 @@ export async function generateSelfAssessmentSummary(attemptId: string): Promise<
   if (!responses || responses.length === 0) throw new Error('No responses found for this completed attempt')
 
   const optionIds = responses.map(r => r.selected_option).filter((id): id is string => id !== null)
-  const { data: options, error: optionsError } = await supabase
+  // `category_weights_json` is revoked from the `authenticated` role (migration
+  // 109 closed a scoring-weight leak), so the scoring weights can only be read
+  // with the service role. Ownership of this attempt is already verified above,
+  // and only the derived scores ever leave this function.
+  const serviceSupabase = createServiceClient()
+  const { data: options, error: optionsError } = await serviceSupabase
     .from('assessment_options')
     .select('id, question_id, category_weights_json')
     .in('id', optionIds)
@@ -76,15 +80,15 @@ export async function generateSelfAssessmentSummary(attemptId: string): Promise<
 
   const prompt = `You are writing a short self-assessment summary for a rugby league coach, based on their own self-reported scores across 8 coaching categories. Write in a direct, encouraging coaching voice. No em dashes. No fluff.
 
-Their primary coaching type: ${CATEGORY_LABELS[archetype.primaryType]}
-${archetype.secondaryType ? `Their secondary type: ${CATEGORY_LABELS[archetype.secondaryType]}` : ''}
+Their primary coaching type: ${labelFor(archetype.primaryType)}
+${archetype.secondaryType ? `Their secondary type: ${labelFor(archetype.secondaryType)}` : ''}
 
-Their strongest categories (write one short encouraging sentence for each, referencing what that category means): ${archetype.pros.map(slug => CATEGORY_LABELS[slug]).join(', ')}
-Their growth-area categories (write one short constructive sentence for each): ${archetype.cons.map(slug => CATEGORY_LABELS[slug]).join(', ')}
+Their strongest categories, in this exact order (write one short encouraging sentence for each, referencing what that category means, and return them in the same order): ${archetype.pros.map(slug => labelFor(slug)).join(', ')}
+Their growth-area categories, in this exact order (write one short constructive sentence for each, in the same order): ${archetype.cons.map(slug => labelFor(slug)).join(', ')}
 
 Do not invent scores or claim data you were not given. Do not mention "self-assessment only" or any caveats about data sources - that framing is handled elsewhere in the UI, not by you.
 
-Respond with ONLY a valid JSON object, no markdown fences, no explanation. Shape:
+Respond with ONLY a valid JSON object, no markdown fences, no explanation. "pros" must contain exactly ${archetype.pros.length} entries and "cons" exactly ${archetype.cons.length}, in the same order as the lists above. Shape:
 {"narrative":"one paragraph, 2-4 sentences","pros":[{"categorySlug":"...","text":"one sentence"}],"cons":[{"categorySlug":"...","text":"one sentence"}]}`
 
   const { text } = await generateText({ model: groq('llama-3.3-70b-versatile'), prompt })
@@ -101,12 +105,20 @@ Respond with ONLY a valid JSON object, no markdown fences, no explanation. Shape
   }
   if (!isValidSummaryShape(parsed)) throw new Error('Could not generate your summary right now')
 
+  // The model only writes prose. Which categories are strengths vs focus areas
+  // (and their slugs) always comes from the TypeScript-computed archetype, so a
+  // model that returns a label, a misspelled slug, or a reordered list can never
+  // corrupt the structure or produce an unresolvable label at render time.
+  if (parsed.pros.length !== archetype.pros.length || parsed.cons.length !== archetype.cons.length) {
+    throw new Error('Could not generate your summary right now')
+  }
+
   const summary: SelfAssessmentSummary = {
     primaryType: archetype.primaryType,
     secondaryType: archetype.secondaryType,
     narrative: parsed.narrative,
-    pros: parsed.pros,
-    cons: parsed.cons,
+    pros: archetype.pros.map((categorySlug, i) => ({ categorySlug, text: parsed.pros[i].text })),
+    cons: archetype.cons.map((categorySlug, i) => ({ categorySlug, text: parsed.cons[i].text })),
   }
 
   const { error: upsertError } = await supabase
