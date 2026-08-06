@@ -2,6 +2,16 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.10.0.0] - 2026-08-06
+
+### Added
+- **Coach DNA self-assessment (admin preview).** A new 24-question scenario-based self-assessment under `/admin/coach-dna` — start, answer questions with a progress bar and back-navigation, save and resume anytime, and see a completion screen when done. Coach DNA scoring (Phase 2) already existed; this adds the first way to actually feed it self-reported data. Gated to admin accounts for now while the feature is previewed.
+
+### Fixed
+- Coach DNA self-assessment: the "Back" button could show a stale, unhighlighted state for a question you'd already answered earlier in the session (a Next.js client-cache quirk) — it now always reflects your saved answer.
+- Coach DNA self-assessment: answers are now validated server-side to belong to the question they're submitted for, already-completed assessments can no longer be silently overwritten, and a database error mid-save can no longer be mistaken for "assessment complete."
+- Closed a pre-existing gap where any authenticated coach could read the hidden scoring weights behind each self-assessment answer directly via the Supabase client.
+
 ## [1.9.1.0] - 2026-07-21
 
 ### Added
