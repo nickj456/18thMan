@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2, Clock, HeartPulse, FileText, Mail, LineChart } from 'lucide-react'
+import { Users, PenTool, CalendarDays, MessageSquare, ListVideo, Tag, ShieldCheck, ArrowRight, TrendingUp, Building2, Clock, HeartPulse, FileText, Mail, LineChart, Brain } from 'lucide-react'
 
 export const metadata = { title: 'Admin — 18th Man' }
 
@@ -111,6 +111,13 @@ export default async function AdminPage() {
       label: 'App Performance',
       description: 'Sign-ups, activity, revenue & page views',
       colour: 'border-teal-500/20 hover:border-teal-500/40 text-teal-400',
+    },
+    {
+      href: '/admin/coach-dna',
+      icon: Brain,
+      label: 'Coach DNA',
+      description: 'Self-assessment preview (admin only)',
+      colour: 'border-orange-500/20 hover:border-orange-500/40 text-orange-400',
     },
   ]
 
