@@ -92,7 +92,7 @@ export default async function AssessmentQuestionPage({
         </p>
         <div className="h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
           <div
-            className="h-full rounded-full bg-[#f97316] transition-all"
+            className="h-full rounded-full bg-orange-500 transition-all"
             style={{ width: `${(position / questions.length) * 100}%` }}
           />
         </div>

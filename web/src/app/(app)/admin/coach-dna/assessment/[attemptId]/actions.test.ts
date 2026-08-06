@@ -9,6 +9,7 @@ const state: {
   answeredQuestionIds: string[]
   upsertError: { message: string } | null
   completeError: { message: string } | null
+  optionBelongsToQuestion: boolean
 } = {
   user: null,
   role: null,
@@ -17,6 +18,7 @@ const state: {
   answeredQuestionIds: [],
   upsertError: null,
   completeError: null,
+  optionBelongsToQuestion: true,
 }
 
 const upsertMock = vi.fn(async () => ({ error: state.upsertError }))
@@ -43,6 +45,17 @@ vi.mock('@/lib/supabase/server', () => ({
         return {
           select: () => ({ eq: () => ({ single: async () => ({ data: state.attempt }) }) }),
           update: updateMock,
+        }
+      }
+      if (table === 'assessment_options') {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: state.optionBelongsToQuestion ? { id: 'opt-1' } : null }),
+              }),
+            }),
+          }),
         }
       }
       if (table === 'assessment_questions') {
@@ -78,6 +91,7 @@ describe('answerQuestion', () => {
     state.answeredQuestionIds = []
     state.upsertError = null
     state.completeError = null
+    state.optionBelongsToQuestion = true
     upsertMock.mockClear()
     updateMock.mockClear()
     revalidateMock.mockClear()
@@ -136,6 +150,15 @@ describe('answerQuestion', () => {
     state.attempt = null
 
     await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('REDIRECT:/admin/coach-dna')
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects an option that does not belong to the given question', async () => {
+    state.optionBelongsToQuestion = false
+
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-from-another-question')).rejects.toThrow(
+      'Selected option does not belong to this question',
+    )
     expect(upsertMock).not.toHaveBeenCalled()
   })
 

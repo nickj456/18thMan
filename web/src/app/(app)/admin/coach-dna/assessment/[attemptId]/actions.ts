@@ -25,6 +25,14 @@ async function requireOwnAttempt(attemptId: string) {
 export async function answerQuestion(attemptId: string, questionId: string, selectedOptionId: string) {
   const { supabase } = await requireOwnAttempt(attemptId)
 
+  const { data: option } = await supabase
+    .from('assessment_options')
+    .select('id')
+    .eq('id', selectedOptionId)
+    .eq('question_id', questionId)
+    .maybeSingle()
+  if (!option) throw new Error('Selected option does not belong to this question')
+
   const { error: upsertError } = await supabase
     .from('assessment_responses')
     .upsert(

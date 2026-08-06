@@ -21,7 +21,7 @@ export function OptionCard({
       <button type="submit" className="w-full text-left">
         <Card
           className={`p-4 transition-colors hover:bg-zinc-800/60 cursor-pointer ${
-            isSelected ? 'ring-2 ring-[#f97316] bg-zinc-800/40' : ''
+            isSelected ? 'ring-2 ring-orange-500 bg-zinc-800/40' : ''
           }`}
         >
           <p className="text-sm text-zinc-200">{optionText}</p>
