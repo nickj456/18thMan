@@ -1,5 +1,5 @@
 // web/src/app/(app)/admin/coach-dna/assessment/[attemptId]/complete/page.tsx
-import { redirect } from 'next/navigation'
+import { redirect, unstable_rethrow } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
@@ -52,9 +52,14 @@ export default async function AssessmentCompletePage({
     // condition generateSelfAssessmentSummary itself also redirects on, so by
     // this point the only realistic throw is a genuine generation failure
     // (Groq call, JSON parse, or DB write) — safe to catch broadly here.
+    // Still, if generateSelfAssessmentSummary's own redirect() conditions ever
+    // drift out of sync with this page's guards, unstable_rethrow ensures a
+    // real Next.js redirect propagates instead of being swallowed as a
+    // generation failure.
     try {
       summary = await generateSelfAssessmentSummary(attemptId)
     } catch (err) {
+      unstable_rethrow(err)
       console.error('[coach-dna] Failed to generate summary:', err)
       generationFailed = true
       summary = { primaryType: '', secondaryType: null, narrative: '', pros: [], cons: [] }
