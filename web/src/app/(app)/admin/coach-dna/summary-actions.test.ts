@@ -5,14 +5,18 @@ const state: {
   user: { id: string } | null
   attempt: { id: string; coach_id: string; completed_at: string | null } | null
   responses: { question_id: string; selected_option: string }[]
+  responsesError: { message: string } | null
   options: { id: string; question_id: string; category_weights_json: Record<string, number> }[]
+  optionsError: { message: string } | null
   aiText: string
   upsertError: { message: string } | null
 } = {
   user: null,
   attempt: null,
   responses: [],
+  responsesError: null,
   options: [],
+  optionsError: null,
   aiText: '',
   upsertError: null,
 }
@@ -38,10 +42,10 @@ vi.mock('@/lib/supabase/server', () => ({
         return { select: () => ({ eq: () => ({ single: async () => ({ data: state.attempt }) }) }) }
       }
       if (table === 'assessment_responses') {
-        return { select: () => ({ eq: async () => ({ data: state.responses }) }) }
+        return { select: () => ({ eq: async () => ({ data: state.responses, error: state.responsesError }) }) }
       }
       if (table === 'assessment_options') {
-        return { select: () => ({ in: async () => ({ data: state.options }) }) }
+        return { select: () => ({ in: async () => ({ data: state.options, error: state.optionsError }) }) }
       }
       if (table === 'coach_profiles') {
         return { upsert: upsertMock }
@@ -58,7 +62,9 @@ describe('generateSelfAssessmentSummary', () => {
     state.user = { id: 'coach-1' }
     state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: '2026-08-06T00:00:00.000Z' }
     state.responses = [{ question_id: 'q1', selected_option: 'opt-1' }]
+    state.responsesError = null
     state.options = [{ id: 'opt-1', question_id: 'q1', category_weights_json: { teacher: 100 } }]
+    state.optionsError = null
     state.aiText = JSON.stringify({
       narrative: 'You lead with clarity and patience.',
       pros: [{ categorySlug: 'teacher', text: 'You explain things well.' }],
@@ -106,5 +112,35 @@ describe('generateSelfAssessmentSummary', () => {
   it('throws when the DB write fails', async () => {
     state.upsertError = { message: 'db down' }
     await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('db down')
+  })
+
+  it('throws without persisting when the responses read errors', async () => {
+    state.responsesError = { message: 'connection reset' }
+    await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('connection reset')
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('throws without persisting when the options read errors', async () => {
+    state.optionsError = { message: 'connection reset' }
+    await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('connection reset')
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('throws without persisting when a completed attempt has no responses', async () => {
+    state.responses = []
+    await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow()
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('throws without persisting when the AI response is valid JSON but the wrong shape', async () => {
+    state.aiText = JSON.stringify({ foo: 1 })
+    await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow()
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('throws the friendly message without persisting on a genuine JSON syntax error', async () => {
+    state.aiText = '{"a":}'
+    await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('Could not generate your summary right now')
+    expect(upsertMock).not.toHaveBeenCalled()
   })
 })
