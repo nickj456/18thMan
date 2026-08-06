@@ -14,11 +14,12 @@ async function requireOwnAttempt(attemptId: string) {
 
   const { data: attempt } = await supabase
     .from('assessment_attempts')
-    .select('id, coach_id')
+    .select('id, coach_id, completed_at')
     .eq('id', attemptId)
     .single()
 
   if (!attempt || attempt.coach_id !== user.id) redirect('/admin/coach-dna')
+  if (attempt.completed_at) redirect(`/admin/coach-dna/assessment/${attemptId}/complete`)
   return { supabase, userId: user.id }
 }
 
@@ -41,16 +42,18 @@ export async function answerQuestion(attemptId: string, questionId: string, sele
     )
   if (upsertError) throw new Error(upsertError.message)
 
-  const { data: orderedQuestions } = await supabase
+  const { data: orderedQuestions, error: questionsError } = await supabase
     .from('assessment_questions')
     .select('id')
     .eq('assessment_type', 'self_assessment')
     .order('display_order', { ascending: true })
+  if (questionsError) throw new Error(questionsError.message)
 
-  const { data: responses } = await supabase
+  const { data: responses, error: responsesError } = await supabase
     .from('assessment_responses')
     .select('question_id')
     .eq('attempt_id', attemptId)
+  if (responsesError) throw new Error(responsesError.message)
 
   const progress = getQuestionProgress(orderedQuestions ?? [], (responses ?? []).map(r => r.question_id))
 

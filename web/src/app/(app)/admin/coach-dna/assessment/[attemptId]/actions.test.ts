@@ -4,12 +4,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const state: {
   user: { id: string } | null
   role: string | null
-  attempt: { id: string; coach_id: string } | null
+  attempt: { id: string; coach_id: string; completed_at: string | null } | null
   orderedQuestionIds: string[]
   answeredQuestionIds: string[]
   upsertError: { message: string } | null
   completeError: { message: string } | null
   optionBelongsToQuestion: boolean
+  questionsError: { message: string } | null
+  responsesError: { message: string } | null
 } = {
   user: null,
   role: null,
@@ -19,6 +21,8 @@ const state: {
   upsertError: null,
   completeError: null,
   optionBelongsToQuestion: true,
+  questionsError: null,
+  responsesError: null,
 }
 
 const upsertMock = vi.fn(async () => ({ error: state.upsertError }))
@@ -62,7 +66,7 @@ vi.mock('@/lib/supabase/server', () => ({
         return {
           select: () => ({
             eq: () => ({
-              order: async () => ({ data: state.orderedQuestionIds.map(id => ({ id })) }),
+              order: async () => ({ data: state.orderedQuestionIds.map(id => ({ id })), error: state.questionsError }),
             }),
           }),
         }
@@ -70,7 +74,10 @@ vi.mock('@/lib/supabase/server', () => ({
       if (table === 'assessment_responses') {
         return {
           select: () => ({
-            eq: async () => ({ data: state.answeredQuestionIds.map(id => ({ question_id: id })) }),
+            eq: async () => ({
+              data: state.answeredQuestionIds.map(id => ({ question_id: id })),
+              error: state.responsesError,
+            }),
           }),
           upsert: upsertMock,
         }
@@ -86,12 +93,14 @@ describe('answerQuestion', () => {
   beforeEach(() => {
     state.user = { id: 'coach-1' }
     state.role = 'admin'
-    state.attempt = { id: 'attempt-1', coach_id: 'coach-1' }
+    state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: null }
     state.orderedQuestionIds = ['q1', 'q2', 'q3']
     state.answeredQuestionIds = []
     state.upsertError = null
     state.completeError = null
     state.optionBelongsToQuestion = true
+    state.questionsError = null
+    state.responsesError = null
     upsertMock.mockClear()
     updateMock.mockClear()
     revalidateMock.mockClear()
@@ -124,10 +133,19 @@ describe('answerQuestion', () => {
   })
 
   it('rejects answering an attempt that belongs to a different coach', async () => {
-    state.attempt = { id: 'attempt-1', coach_id: 'someone-else' }
+    state.attempt = { id: 'attempt-1', coach_id: 'someone-else', completed_at: null }
 
     await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow(
       'REDIRECT:/admin/coach-dna',
+    )
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('redirects to the completion screen instead of mutating an already-completed attempt', async () => {
+    state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: '2026-08-01T00:00:00.000Z' }
+
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow(
+      'REDIRECT:/admin/coach-dna/assessment/attempt-1/complete',
     )
     expect(upsertMock).not.toHaveBeenCalled()
   })
@@ -167,6 +185,22 @@ describe('answerQuestion', () => {
 
     await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('upsert failed')
     expect(revalidateMock).not.toHaveBeenCalled()
+  })
+
+  it('throws instead of silently completing the attempt when the questions query errors', async () => {
+    state.questionsError = { message: 'questions query failed' }
+
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('questions query failed')
+    expect(updateMock).not.toHaveBeenCalled()
+    expect(redirectMock).not.toHaveBeenCalledWith(expect.stringContaining('/complete'))
+  })
+
+  it('throws instead of silently completing the attempt when the responses query errors', async () => {
+    state.responsesError = { message: 'responses query failed' }
+
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('responses query failed')
+    expect(updateMock).not.toHaveBeenCalled()
+    expect(redirectMock).not.toHaveBeenCalledWith(expect.stringContaining('/complete'))
   })
 
   it('throws when marking the attempt complete fails', async () => {
