@@ -559,7 +559,7 @@ export async function sendCoachDnaSummaryEmail(
     ${heading('Your Coach DNA self-assessment results.')}
     ${divider()}
     ${greeting('')}
-    ${para(`Your self-assessment results (you're a <strong style="color:#ffffff;">${primaryType}</strong> coach) are attached to this email as a PDF.`)}
+    ${para(`Your self-assessment results (you're a <strong style="color:#ffffff;">${esc(primaryType)}</strong> coach) are attached to this email as a PDF.`)}
     ${para('This reflects your self-assessment only, and will update as player and peer feedback comes in.')}
     ${sign()}
   `)

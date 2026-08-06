@@ -59,7 +59,14 @@ describe('emailSelfAssessmentSummaryPDF', () => {
   it('sends the PDF to the caller\'s own account email', async () => {
     const result = await emailSelfAssessmentSummaryPDF()
     expect(result).toEqual({ success: true })
-    expect(sendEmailMock).toHaveBeenCalledWith('coach@example.com', 'teacher', expect.any(Buffer))
+    expect(sendEmailMock).toHaveBeenCalledWith('coach@example.com', 'Teacher', expect.any(Buffer))
+  })
+
+  it('maps a hyphenated category slug to its display label before sending', async () => {
+    state.summary = { ai_summary: { primaryType: 'culture-builder', secondaryType: null, narrative: 'x', pros: [], cons: [] } }
+    const result = await emailSelfAssessmentSummaryPDF()
+    expect(result).toEqual({ success: true })
+    expect(sendEmailMock).toHaveBeenCalledWith('coach@example.com', 'Culture Builder', expect.any(Buffer))
   })
 
   it('surfaces the email send failure', async () => {
