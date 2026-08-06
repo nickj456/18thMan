@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { labelFor } from '@/lib/coach-dna/categories'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const E = '#e8560a'
@@ -15,24 +16,19 @@ const s = StyleSheet.create({
   disclaimer: { marginTop: 24, fontSize: 9, color: MUTED },
 })
 
-const CATEGORY_LABELS: Record<string, string> = {
-  teacher: 'Teacher', technician: 'Technician', motivator: 'Motivator', developer: 'Developer',
-  'game-manager': 'Game Manager', communicator: 'Communicator', organiser: 'Organiser', 'culture-builder': 'Culture Builder',
-}
-
 export function CoachDnaSummaryPDF({ data }: { data: SelfAssessmentSummary }) {
   return (
     <Document>
       <Page size="A4" style={s.page}>
         <Text style={s.title}>
-          {CATEGORY_LABELS[data.primaryType]}{data.secondaryType ? ` / ${CATEGORY_LABELS[data.secondaryType]}` : ''} Coach
+          {labelFor(data.primaryType)}{data.secondaryType ? ` / ${labelFor(data.secondaryType)}` : ''} Coach
         </Text>
         <Text style={s.narrative}>{data.narrative}</Text>
 
         <Text style={s.sectionTitle}>Strengths</Text>
         {data.pros.map(pro => (
           <Text key={pro.categorySlug} style={s.item}>
-            <Text style={s.itemLabel}>{CATEGORY_LABELS[pro.categorySlug]}: </Text>{pro.text}
+            <Text style={s.itemLabel}>{labelFor(pro.categorySlug)}: </Text>{pro.text}
           </Text>
         ))}
 
@@ -40,7 +36,7 @@ export function CoachDnaSummaryPDF({ data }: { data: SelfAssessmentSummary }) {
         {data.cons.map(con => (
           <View key={con.categorySlug}>
             <Text style={s.item}>
-              <Text style={s.itemLabel}>{CATEGORY_LABELS[con.categorySlug]}: </Text>{con.text}
+              <Text style={s.itemLabel}>{labelFor(con.categorySlug)}: </Text>{con.text}
             </Text>
           </View>
         ))}
