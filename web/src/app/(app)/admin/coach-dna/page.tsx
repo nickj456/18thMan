@@ -1,4 +1,5 @@
 // web/src/app/(app)/admin/coach-dna/page.tsx
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,7 @@ export default async function CoachDnaPage() {
     .eq('coach_id', user.id)
     .eq('assessment_type', 'self_assessment')
     .not('completed_at', 'is', null)
+    .order('completed_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
@@ -51,9 +53,9 @@ export default async function CoachDnaPage() {
         </CardHeader>
         <CardContent>
           {completed ? (
-            <p className="text-sm text-zinc-400">
-              You&apos;ve completed your self-assessment. Retaking it isn&apos;t supported yet.
-            </p>
+            <Button render={<Link href={`/admin/coach-dna/assessment/${completed.id}/complete`} />}>
+              View your results
+            </Button>
           ) : inProgress ? (
             <form action={async () => {
               'use server'
