@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getQuestionProgress } from '@/lib/coach-dna/assessment-progress'
 
@@ -44,6 +45,11 @@ export async function answerQuestion(attemptId: string, questionId: string, sele
     .eq('attempt_id', attemptId)
 
   const progress = getQuestionProgress(orderedQuestions ?? [], (responses ?? []).map(r => r.question_id))
+
+  // Bust the client Router Cache for this route so navigating "Back" to a
+  // question already visited earlier in the session re-fetches the freshly
+  // saved answer instead of reusing the stale pre-answer render.
+  revalidatePath(`/admin/coach-dna/assessment/${attemptId}`)
 
   if (progress.isComplete) {
     const { error: completeError } = await supabase
