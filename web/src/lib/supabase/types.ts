@@ -178,13 +178,23 @@ export interface DnaCategory {
 export interface CoachProfile {
   id: string
   user_id: string
-  age_group: string
-  experience_level: string
+  age_group: string | null
+  experience_level: string | null
   primary_profile_type: string | null
   secondary_profile_type: string | null
   current_focus_category_id: string | null
+  ai_summary: SelfAssessmentSummary | null
+  ai_summary_generated_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface SelfAssessmentSummary {
+  primaryType: string
+  secondaryType: string | null
+  narrative: string
+  pros: { categorySlug: string; text: string }[]
+  cons: { categorySlug: string; text: string }[]
 }
 
 export interface AiGuide {
