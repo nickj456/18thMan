@@ -11,6 +11,7 @@ function getResend(): Resend | null {
 export interface EmailResult {
   success: boolean
   error?: string
+  messageId?: string
 }
 
 export async function send(
@@ -22,9 +23,9 @@ export async function send(
   const resend = getResend()
   if (!resend) return { success: false, error: 'RESEND_API_KEY not configured' }
   try {
-    const { error } = await resend.emails.send({ from: FROM, to, subject, html, attachments })
+    const { data, error } = await resend.emails.send({ from: FROM, to, subject, html, attachments })
     if (error) return { success: false, error: error.message }
-    return { success: true }
+    return { success: true, messageId: data?.id }
   } catch (err) {
     return { success: false, error: String(err) }
   }
@@ -545,6 +546,29 @@ export async function sendMatchReportEmail(
     `Your Coaching Eye Report — ${params.opposition}`,
     html,
     [{ filename, content: pdfBuffer }],
+  )
+}
+
+/** Sent to a coach after completing a Coach DNA self-assessment */
+export async function sendCoachDnaSummaryEmail(
+  to: string,
+  primaryType: string,
+  pdfBuffer: Buffer,
+): Promise<EmailResult> {
+  const html = layout(`
+    ${heading('Your Coach DNA self-assessment results.')}
+    ${divider()}
+    ${greeting('')}
+    ${para(`Your self-assessment results (you're a <strong style="color:#ffffff;">${primaryType}</strong> coach) are attached to this email as a PDF.`)}
+    ${para('This reflects your self-assessment only, and will update as player and peer feedback comes in.')}
+    ${sign()}
+  `)
+
+  return send(
+    to,
+    'Your Coach DNA self-assessment results',
+    html,
+    [{ filename: 'coach-dna-self-assessment.pdf', content: pdfBuffer }],
   )
 }
 
