@@ -8,6 +8,7 @@ const state: {
   orderedQuestionIds: string[]
   answeredQuestionIds: string[]
   upsertError: { message: string } | null
+  completeError: { message: string } | null
 } = {
   user: null,
   role: null,
@@ -15,10 +16,11 @@ const state: {
   orderedQuestionIds: [],
   answeredQuestionIds: [],
   upsertError: null,
+  completeError: null,
 }
 
 const upsertMock = vi.fn(async () => ({ error: state.upsertError }))
-const updateMock = vi.fn(() => ({ eq: async () => ({ error: null }) }))
+const updateMock = vi.fn(() => ({ eq: async () => ({ error: state.completeError }) }))
 const revalidateMock = vi.fn()
 const redirectMock = vi.fn((path: string) => {
   throw new Error(`REDIRECT:${path}`)
@@ -75,6 +77,7 @@ describe('answerQuestion', () => {
     state.orderedQuestionIds = ['q1', 'q2', 'q3']
     state.answeredQuestionIds = []
     state.upsertError = null
+    state.completeError = null
     upsertMock.mockClear()
     updateMock.mockClear()
     revalidateMock.mockClear()
@@ -113,5 +116,40 @@ describe('answerQuestion', () => {
       'REDIRECT:/admin/coach-dna',
     )
     expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('redirects unauthenticated callers to login without writing a response', async () => {
+    state.user = null
+
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('REDIRECT:/login')
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('redirects non-admin callers to the dashboard without writing a response', async () => {
+    state.role = 'coach'
+
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('REDIRECT:/dashboard')
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('redirects to Coach DNA home when the attempt does not exist', async () => {
+    state.attempt = null
+
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('REDIRECT:/admin/coach-dna')
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('throws when saving the response fails', async () => {
+    state.upsertError = { message: 'upsert failed' }
+
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('upsert failed')
+    expect(revalidateMock).not.toHaveBeenCalled()
+  })
+
+  it('throws when marking the attempt complete fails', async () => {
+    state.answeredQuestionIds = ['q1', 'q2', 'q3']
+    state.completeError = { message: 'update failed' }
+
+    await expect(answerQuestion('attempt-1', 'q3', 'opt-1')).rejects.toThrow('update failed')
   })
 })
