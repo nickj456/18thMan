@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getQuestionProgress, getPreviousQuestionId } from '@/lib/coach-dna/assessment-progress'
-import { OptionCard } from './OptionCard'
+import { QuestionOptions } from './QuestionOptions'
 import { ArrowLeft } from 'lucide-react'
 
 export const metadata = { title: 'Coach DNA — Self-Assessment' }
@@ -40,7 +40,7 @@ export default async function AssessmentQuestionPage({
 
   const { data: responses } = await supabase
     .from('assessment_responses')
-    .select('question_id, selected_option')
+    .select('question_id, selected_option, least_option')
     .eq('attempt_id', attemptId)
   const answeredIds = (responses ?? []).map(r => r.question_id)
 
@@ -100,18 +100,13 @@ export default async function AssessmentQuestionPage({
 
       <h1 className="app-heading text-xl">{question.question_text}</h1>
 
-      <div className="space-y-3">
-        {(options ?? []).map(option => (
-          <OptionCard
-            key={option.id}
-            attemptId={attemptId}
-            questionId={currentQuestionId}
-            optionId={option.id}
-            optionText={option.option_text}
-            isSelected={existingResponse?.selected_option === option.id}
-          />
-        ))}
-      </div>
+      <QuestionOptions
+        attemptId={attemptId}
+        questionId={currentQuestionId}
+        options={(options ?? []).map(o => ({ id: o.id, optionText: o.option_text }))}
+        initialMostId={existingResponse?.selected_option ?? null}
+        initialLeastId={existingResponse?.least_option ?? null}
+      />
     </div>
   )
 }
