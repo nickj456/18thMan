@@ -13,14 +13,14 @@ describe('deriveArchetype', () => {
     expect(result.primaryType).toBe('teacher')
   })
 
-  it('sets secondaryType when the second-highest is within 15 points of the primary', () => {
+  it('sets secondaryType when the second-highest is within 10 points of the primary', () => {
     const result = deriveArchetype(scores({ teacher: 90, motivator: 80 }))
     expect(result.primaryType).toBe('teacher')
     expect(result.secondaryType).toBe('motivator')
   })
 
-  it('sets secondaryType to null when the second-highest is more than 15 points behind the primary', () => {
-    const result = deriveArchetype(scores({ teacher: 90, motivator: 70 }))
+  it('sets secondaryType to null when the second-highest is more than 10 points behind the primary', () => {
+    const result = deriveArchetype(scores({ teacher: 90, motivator: 79 }))
     expect(result.secondaryType).toBeNull()
   })
 

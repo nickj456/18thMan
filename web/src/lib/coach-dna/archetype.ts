@@ -26,7 +26,7 @@ export function deriveArchetype(scores: SelfCategoryScore[]): ArchetypeResult {
 
   return {
     primaryType: primary.categorySlug,
-    secondaryType: secondary && primary.score - secondary.score <= 15 ? secondary.categorySlug : null,
+    secondaryType: secondary && primary.score - secondary.score <= 10 ? secondary.categorySlug : null,
     pros: ranked.slice(0, 3).map(r => r.categorySlug),
     cons: ranked.slice(-3).reverse().map(r => r.categorySlug),
   }
