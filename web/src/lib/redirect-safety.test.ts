@@ -22,6 +22,14 @@ describe('isSafeRedirectPath', () => {
     expect(isSafeRedirectPath('/\\evil.com')).toBe(false)
   })
 
+  it('rejects a tab-based bypass attempt', () => {
+    expect(isSafeRedirectPath('/\t/evil.com')).toBe(false)
+  })
+
+  it('rejects a newline-based bypass attempt', () => {
+    expect(isSafeRedirectPath('/\n/evil.com')).toBe(false)
+  })
+
   it('rejects a path with no leading slash', () => {
     expect(isSafeRedirectPath('admin/coach-dna')).toBe(false)
   })

@@ -9,7 +9,7 @@
 export function isSafeRedirectPath(path: string | null | undefined): path is string {
   if (typeof path !== 'string' || path.length === 0) return false
   if (!path.startsWith('/')) return false
-  const normalized = path.replace(/\\/g, '/')
+  const normalized = path.replace(/[\t\n\r]/g, '').replace(/\\/g, '/')
   if (normalized.startsWith('//')) return false
   return true
 }
