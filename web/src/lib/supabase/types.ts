@@ -702,6 +702,7 @@ export interface AssessmentResponse {
   attempt_id: string
   question_id: string
   selected_option: string | null
+  least_option: string | null
   written_response: string | null
   response_value: number | null
 }
