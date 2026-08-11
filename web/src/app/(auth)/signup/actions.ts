@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { sendWelcomeEmail } from '@/lib/email'
+import { isSafeRedirectPath } from '@/lib/redirect-safety'
 
 export async function signup(formData: FormData) {
   const supabase = await createClient()
@@ -15,12 +16,15 @@ export async function signup(formData: FormData) {
   if (username.length > 32) redirect('/signup?error=Username+must+be+32+characters+or+fewer')
   if (password.length > 128) redirect('/signup?error=Password+is+too+long')
 
+  const next = formData.get('next') as string | null
+  const nextParam = isSafeRedirectPath(next) ? `?next=${encodeURIComponent(next)}` : ''
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { username },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback${nextParam}`,
     },
   })
 

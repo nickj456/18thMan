@@ -5,9 +5,9 @@ import { loginWithOAuth } from '../login/actions'
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; success?: string }>
+  searchParams: Promise<{ error?: string; success?: string; next?: string }>
 }) {
-  const { error, success } = await searchParams
+  const { error, success, next } = await searchParams
 
   if (success === 'check-email') {
     return (
@@ -187,6 +187,7 @@ export default async function SignupPage({
 
       {/* Google sign-in */}
       <form action={loginWithOAuth.bind(null, 'google')}>
+        {next && <input type="hidden" name="next" value={next} />}
         <button type="submit" className="auth-google-btn">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
@@ -201,6 +202,7 @@ export default async function SignupPage({
       <div className="auth-divider">or create with email</div>
 
       <form action={signup}>
+        {next && <input type="hidden" name="next" value={next} />}
         <div className="auth-field">
           <label htmlFor="username" className="auth-label">Username</label>
           <input
