@@ -99,4 +99,28 @@ describe('sendCoachDnaSummaryEmail', () => {
       html: expect.stringContaining('Periodization Training for Sports'),
     }))
   })
+
+  it('renders no resource list when a focus area has no curated resources', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_678' }, error: null })
+    const summaryWithoutResources = { ...summary, cons: [{ ...summary.cons[0], resources: [] }] }
+    await sendCoachDnaSummaryEmail('coach@example.com', summaryWithoutResources, Buffer.from('fake-pdf'))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.not.stringContaining('Periodization Training for Sports'),
+    }))
+  })
+
+  it('renders a resource with no url as plain text, not a broken link', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_901' }, error: null })
+    const summaryWithUnlinkedResource = {
+      ...summary,
+      cons: [{ ...summary.cons[0], resources: [{ title: 'RFL Coach Education', description: 'Coaching hub.', url: null }] }],
+    }
+    await sendCoachDnaSummaryEmail('coach@example.com', summaryWithUnlinkedResource, Buffer.from('fake-pdf'))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.stringContaining('RFL Coach Education'),
+    }))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.not.stringContaining('<a href="null"'),
+    }))
+  })
 })
