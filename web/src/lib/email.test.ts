@@ -51,13 +51,40 @@ describe('sendCoachDnaSummaryEmail', () => {
     process.env.RESEND_API_KEY = 're_test_key'
   })
 
+  const summary = {
+    primaryType: 'teacher',
+    secondaryType: 'motivator',
+    narrative: 'You lead with clarity.',
+    pros: [{ categorySlug: 'teacher', text: 'You explain things well.' }],
+    cons: [{ categorySlug: 'organiser', text: 'Sessions could run tighter.' }],
+  }
+
   it('sends the PDF as an attachment to the coach\'s own email', async () => {
     sendMock.mockResolvedValue({ data: { id: 'msg_456' }, error: null })
-    const result = await sendCoachDnaSummaryEmail('coach@example.com', 'Teacher', Buffer.from('fake-pdf'))
+    const result = await sendCoachDnaSummaryEmail('coach@example.com', summary, Buffer.from('fake-pdf'))
     expect(result).toEqual({ success: true, messageId: 'msg_456' })
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
       to: 'coach@example.com',
       attachments: [{ filename: 'coach-dna-self-assessment.pdf', content: Buffer.from('fake-pdf') }],
+    }))
+  })
+
+  it('includes the strengths and focus areas as feature lists in the email body', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_789' }, error: null })
+    await sendCoachDnaSummaryEmail('coach@example.com', summary, Buffer.from('fake-pdf'))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.stringContaining('You explain things well.'),
+    }))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.stringContaining('Sessions could run tighter.'),
+    }))
+  })
+
+  it('includes a CTA link back to the results page on-site', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_012' }, error: null })
+    await sendCoachDnaSummaryEmail('coach@example.com', summary, Buffer.from('fake-pdf'))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.stringContaining('/admin/coach-dna'),
     }))
   })
 })

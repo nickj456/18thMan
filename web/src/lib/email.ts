@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { labelFor } from '@/lib/coach-dna/categories'
 
 const FROM = '18th Man <hello@18thman.app>'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
@@ -552,21 +553,27 @@ export async function sendMatchReportEmail(
 /** Sent to a coach after completing a Coach DNA self-assessment */
 export async function sendCoachDnaSummaryEmail(
   to: string,
-  primaryType: string,
+  summary: { primaryType: string; secondaryType: string | null; pros: { categorySlug: string; text: string }[]; cons: { categorySlug: string; text: string }[] },
   pdfBuffer: Buffer,
 ): Promise<EmailResult> {
+  const typeLine = `${esc(labelFor(summary.primaryType))}${summary.secondaryType ? ` / ${esc(labelFor(summary.secondaryType))}` : ''}`
+
   const html = layout(`
-    ${heading('Your Coach DNA self-assessment results.')}
+    ${heading(`You're a ${typeLine} coach.`)}
     ${divider()}
     ${greeting('')}
-    ${para(`Your self-assessment results (you're a <strong style="color:#ffffff;">${esc(primaryType)}</strong> coach) are attached to this email as a PDF.`)}
+    ${para('Your Coach DNA self-assessment results are attached to this email as a PDF, and summarised below.')}
+    ${featureList(summary.pros.map(pro => `${esc(labelFor(pro.categorySlug))}: ${esc(pro.text)}`))}
+    ${para('Focus areas:')}
+    ${featureList(summary.cons.map(con => `${esc(labelFor(con.categorySlug))}: ${esc(con.text)}`))}
     ${para('This reflects your self-assessment only, and will update as player and peer feedback comes in.')}
+    ${ctaButton('View your full results', `${SITE_URL}/admin/coach-dna`)}
     ${sign()}
   `)
 
   return send(
     to,
-    'Your Coach DNA self-assessment results',
+    `You're a ${typeLine} coach — your Coach DNA results`,
     html,
     [{ filename: 'coach-dna-self-assessment.pdf', content: pdfBuffer }],
   )

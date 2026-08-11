@@ -5,7 +5,6 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import { createClient } from '@/lib/supabase/server'
 import { sendCoachDnaSummaryEmail } from '@/lib/email'
 import { CoachDnaSummaryPDF } from './CoachDnaSummaryPDF'
-import { labelFor } from '@/lib/coach-dna/categories'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 export async function emailSelfAssessmentSummaryPDF(): Promise<{ success: boolean; error?: string }> {
@@ -27,8 +26,7 @@ export async function emailSelfAssessmentSummaryPDF(): Promise<{ success: boolea
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pdfBuffer = await renderToBuffer(<CoachDnaSummaryPDF data={summary} /> as any)
-    const primaryLabel = labelFor(summary.primaryType)
-    return await sendCoachDnaSummaryEmail(user.email!, primaryLabel, Buffer.from(pdfBuffer))
+    return await sendCoachDnaSummaryEmail(user.email!, summary, Buffer.from(pdfBuffer))
   } catch (err) {
     console.error('[coach-dna] Failed to generate or send summary PDF:', err)
     return { success: false, error: 'Failed to send your PDF. Please try again.' }
