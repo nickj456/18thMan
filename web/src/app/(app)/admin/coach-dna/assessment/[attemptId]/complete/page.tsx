@@ -114,10 +114,31 @@ export default async function AssessmentCompletePage({
 
           <div>
             <h2 className="text-sm font-semibold text-orange-400 mb-2">Focus areas</h2>
-            <ul className="space-y-1.5">
+            <ul className="space-y-4">
               {summary.cons.map(con => (
                 <li key={con.categorySlug} className="text-sm text-zinc-400">
                   <span className="text-zinc-200 font-medium">{labelFor(con.categorySlug)}:</span> {con.text}
+                  {con.resources.length > 0 && (
+                    <ul className="mt-1.5 space-y-1 pl-3 border-l border-zinc-800">
+                      {con.resources.map(resource => (
+                        <li key={resource.title} className="text-xs text-zinc-500">
+                          {resource.url ? (
+                            <a
+                              href={resource.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-orange-400 hover:text-orange-300 font-medium"
+                            >
+                              {resource.title}
+                            </a>
+                          ) : (
+                            <span className="text-zinc-300 font-medium">{resource.title}</span>
+                          )}
+                          {' — '}{resource.description}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>
