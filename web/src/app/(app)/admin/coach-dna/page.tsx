@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { startAssessment } from './actions'
 
-export const metadata = { title: 'Coach DNA — Admin' }
+export const metadata = { title: 'Coach DNA' }
 
 export default async function CoachDnaPage() {
   const supabase = await createClient()

@@ -9,7 +9,11 @@
 export function isSafeRedirectPath(path: string | null | undefined): path is string {
   if (typeof path !== 'string' || path.length === 0) return false
   if (!path.startsWith('/')) return false
-  const normalized = path.replace(/[\t\n\r]/g, '').replace(/\\/g, '/')
+  // Reject outright rather than strip-and-check: a tab/newline/CR left in
+  // the original string would still reach redirect() downstream and can
+  // trigger a framework-level 500, which an unsafe `next` must never do.
+  if (/[\t\n\r]/.test(path)) return false
+  const normalized = path.replace(/\\/g, '/')
   if (normalized.startsWith('//')) return false
   return true
 }

@@ -63,6 +63,17 @@ describe('signup', () => {
     )
   })
 
+  it('carries a safe next param forward in the error redirect on validation failure', async () => {
+    await expect(
+      signup(formData({
+        email: 'coach@example.com',
+        password: 'secret123',
+        username: 'a'.repeat(33),
+        next: '/admin/coach-dna',
+      })),
+    ).rejects.toThrow(/^REDIRECT:\/signup\?error=.*&next=%2Fadmin%2Fcoach-dna$/)
+  })
+
   it('omits the next param from emailRedirectTo when next is unsafe', async () => {
     await expect(
       signup(formData({ email: 'coach@example.com', password: 'secret123', username: 'coachsmith', next: '//evil.com' })),

@@ -23,10 +23,14 @@ describe('isSafeRedirectPath', () => {
   })
 
   it('rejects a tab-based bypass attempt', () => {
+    // Rejected outright (not stripped-then-checked) so the raw tab never
+    // reaches a downstream redirect() call and can't trigger a 500.
     expect(isSafeRedirectPath('/\t/evil.com')).toBe(false)
   })
 
   it('rejects a newline-based bypass attempt', () => {
+    // Rejected outright (not stripped-then-checked) so the raw newline
+    // never reaches a downstream redirect() call and can't trigger a 500.
     expect(isSafeRedirectPath('/\n/evil.com')).toBe(false)
   })
 

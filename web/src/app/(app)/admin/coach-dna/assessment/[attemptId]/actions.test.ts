@@ -188,7 +188,9 @@ describe('answerQuestion', () => {
     // mocked redirect() throw is the expected outcome here (matches this
     // file's existing 'saves both picks in one upsert' test pattern) — this
     // only proves the role check let the call reach the upsert.
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('REDIRECT:')
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow(
+      'REDIRECT:/admin/coach-dna/assessment/attempt-1?q=q2',
+    )
     expect(upsertMock).toHaveBeenCalled()
   })
 
