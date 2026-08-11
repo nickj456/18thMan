@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 import { labelFor } from '@/lib/coach-dna/categories'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
@@ -20,7 +20,11 @@ const s = StyleSheet.create({
     paddingHorizontal: 44,
     paddingTop: 44,
     paddingBottom: 36,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
+  headerLogo: { width: 46, height: 46 },
   eyeLabel: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: 'rgba(255,255,255,0.6)', letterSpacing: 3, marginBottom: 10 },
   title: { fontSize: 26, fontFamily: 'Helvetica-Bold', color: WHITE, letterSpacing: -0.5 },
   subtitle: { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 6 },
@@ -75,9 +79,11 @@ function CommentBlock({ label, text, color }: { label: string; text: string; col
 export function CoachDnaSummaryPDF({
   data,
   completedAt,
+  logoSrc,
 }: {
   data: SelfAssessmentSummary
   completedAt: string
+  logoSrc?: string
 }) {
   const typeLine = `${labelFor(data.primaryType)}${data.secondaryType ? ` / ${labelFor(data.secondaryType)}` : ''} Coach`
   // "Completed" reflects when the assessment was actually finished, not when
@@ -96,9 +102,12 @@ export function CoachDnaSummaryPDF({
     <Document title="Coach DNA — Self-Assessment Results" author="18th Man Coach DNA">
       <Page size="A4" style={s.page}>
         <View style={s.header}>
-          <Text style={s.eyeLabel}>COACH DNA</Text>
-          <Text style={s.title}>{typeLine}</Text>
-          <Text style={s.subtitle}>Self-Assessment Results</Text>
+          <View>
+            <Text style={s.eyeLabel}>COACH DNA</Text>
+            <Text style={s.title}>{typeLine}</Text>
+            <Text style={s.subtitle}>Self-Assessment Results</Text>
+          </View>
+          {logoSrc && <Image style={s.headerLogo} src={logoSrc} />}
         </View>
 
         <View style={s.body}>
