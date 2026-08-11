@@ -5,7 +5,7 @@ const state: {
   user: { id: string } | null
   role: string | null
   attempt: { id: string; coach_id: string; completed_at: string | null } | null
-  responses: { question_id: string; selected_option: string }[]
+  responses: { question_id: string; selected_option: string | null; least_option: string | null }[]
   responsesError: { message: string } | null
   options: { id: string; question_id: string; category_weights_json: Record<string, number> }[]
   optionsError: { message: string } | null
@@ -79,10 +79,11 @@ vi.mock('@/lib/supabase/service', () => ({
 
 import { generateSelfAssessmentSummary } from './summary-actions'
 
-// Derived from a single option weighted 100 to `teacher`: every other category
-// scores 0 and falls back to CATEGORY_ORDER for tie-breaking.
-const EXPECTED_PROS = ['teacher', 'technician', 'motivator']
-const EXPECTED_CONS = ['culture-builder', 'organiser', 'communicator']
+// Derived from most option weighted 100 to `teacher` and least option weighted
+// 100 to `motivator`: teacher scores high, motivator scores low, others tie at 0
+// and fall back to CATEGORY_ORDER for tie-breaking.
+const EXPECTED_PROS = ['teacher', 'technician', 'developer']
+const EXPECTED_CONS = ['motivator', 'culture-builder', 'organiser']
 
 describe('generateSelfAssessmentSummary', () => {
   beforeEach(() => {
@@ -90,9 +91,12 @@ describe('generateSelfAssessmentSummary', () => {
     state.role = 'admin'
     tableReads.length = 0
     state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: '2026-08-06T00:00:00.000Z' }
-    state.responses = [{ question_id: 'q1', selected_option: 'opt-1' }]
+    state.responses = [{ question_id: 'q1', selected_option: 'opt-1', least_option: 'opt-2' }]
     state.responsesError = null
-    state.options = [{ id: 'opt-1', question_id: 'q1', category_weights_json: { teacher: 100 } }]
+    state.options = [
+      { id: 'opt-1', question_id: 'q1', category_weights_json: { teacher: 100 } },
+      { id: 'opt-2', question_id: 'q1', category_weights_json: { motivator: 100 } },
+    ]
     state.optionsError = null
     // Note the deliberately bogus slugs: the action must ignore them entirely
     // and use the TypeScript-computed archetype slugs instead.
@@ -214,6 +218,15 @@ describe('generateSelfAssessmentSummary', () => {
   it('throws without persisting when the options read errors', async () => {
     state.optionsError = { message: 'connection reset' }
     await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('connection reset')
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('throws when a response is missing its least-pick (pre-migration attempt)', async () => {
+    state.responses = [{ question_id: 'q1', selected_option: 'opt-1', least_option: null }]
+
+    await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow(
+      'This attempt was started before the current assessment format',
+    )
     expect(upsertMock).not.toHaveBeenCalled()
   })
 

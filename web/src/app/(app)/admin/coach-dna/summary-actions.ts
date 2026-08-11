@@ -55,12 +55,19 @@ export async function generateSelfAssessmentSummary(attemptId: string): Promise<
 
   const { data: responses, error: responsesError } = await supabase
     .from('assessment_responses')
-    .select('question_id, selected_option')
+    .select('question_id, selected_option, least_option')
     .eq('attempt_id', attemptId)
   if (responsesError) throw new Error(responsesError.message)
   if (!responses || responses.length === 0) throw new Error('No responses found for this completed attempt')
 
-  const optionIds = responses.map(r => r.selected_option).filter((id): id is string => id !== null)
+  const incompleteResponse = responses.find(r => !r.selected_option || !r.least_option)
+  if (incompleteResponse) {
+    throw new Error('This attempt was started before the current assessment format and cannot be scored. Please retake the assessment.')
+  }
+
+  const optionIds = Array.from(
+    new Set(responses.flatMap(r => [r.selected_option as string, r.least_option as string])),
+  )
   // `category_weights_json` is revoked from the `authenticated` role (migration
   // 109 closed a scoring-weight leak), so the scoring weights can only be read
   // with the service role. Ownership of this attempt is already verified above,
@@ -73,7 +80,7 @@ export async function generateSelfAssessmentSummary(attemptId: string): Promise<
   if (optionsError) throw new Error(optionsError.message)
 
   const scores = computeSelfOnlyCategoryScores(
-    (responses ?? []).map(r => ({ selectedOptionId: r.selected_option ?? '' })),
+    responses.map(r => ({ mostOptionId: r.selected_option as string, leastOptionId: r.least_option as string })),
     (options ?? []).map(o => ({ id: o.id, categoryWeights: o.category_weights_json })),
   )
   const archetype = deriveArchetype(scores)
