@@ -56,7 +56,11 @@ describe('sendCoachDnaSummaryEmail', () => {
     secondaryType: 'motivator',
     narrative: 'You lead with clarity.',
     pros: [{ categorySlug: 'teacher', text: 'You explain things well.' }],
-    cons: [{ categorySlug: 'organiser', text: 'Sessions could run tighter.' }],
+    cons: [{
+      categorySlug: 'organiser',
+      text: 'Sessions could run tighter. Try timeboxing each drill before you start.',
+      resources: [{ title: 'Periodization Training for Sports', description: 'Structuring a season.', url: 'https://openlibrary.org/works/OL1850738W' }],
+    }],
   }
 
   it('sends the PDF as an attachment to the coach\'s own email', async () => {
@@ -85,6 +89,14 @@ describe('sendCoachDnaSummaryEmail', () => {
     await sendCoachDnaSummaryEmail('coach@example.com', summary, Buffer.from('fake-pdf'))
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
       html: expect.stringContaining('/admin/coach-dna'),
+    }))
+  })
+
+  it('includes each focus area\'s curated resources in the email body', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_345' }, error: null })
+    await sendCoachDnaSummaryEmail('coach@example.com', summary, Buffer.from('fake-pdf'))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.stringContaining('Periodization Training for Sports'),
     }))
   })
 })

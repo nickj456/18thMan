@@ -553,10 +553,24 @@ export async function sendMatchReportEmail(
 /** Sent to a coach after completing a Coach DNA self-assessment */
 export async function sendCoachDnaSummaryEmail(
   to: string,
-  summary: { primaryType: string; secondaryType: string | null; pros: { categorySlug: string; text: string }[]; cons: { categorySlug: string; text: string }[] },
+  summary: {
+    primaryType: string
+    secondaryType: string | null
+    pros: { categorySlug: string; text: string }[]
+    cons: { categorySlug: string; text: string; resources: { title: string; description: string; url: string | null }[] }[]
+  },
   pdfBuffer: Buffer,
 ): Promise<EmailResult> {
   const typeLine = `${esc(labelFor(summary.primaryType))}${summary.secondaryType ? ` / ${esc(labelFor(summary.secondaryType))}` : ''}`
+
+  const consBlocks = summary.cons.map(con => `
+    ${para(`<strong style="color:#ffffff;">${esc(labelFor(con.categorySlug))}:</strong> ${esc(con.text)}`)}
+    ${con.resources.length > 0 ? featureList(con.resources.map(resource =>
+      resource.url
+        ? `<a href="${esc(resource.url)}" style="color:#e8560a;">${esc(resource.title)}</a> — ${esc(resource.description)}`
+        : `${esc(resource.title)} — ${esc(resource.description)}`,
+    )) : ''}
+  `).join('')
 
   const html = layout(`
     ${heading(`You're a ${typeLine} coach.`)}
@@ -565,7 +579,7 @@ export async function sendCoachDnaSummaryEmail(
     ${para('Your Coach DNA self-assessment results are attached to this email as a PDF, and summarised below.')}
     ${featureList(summary.pros.map(pro => `${esc(labelFor(pro.categorySlug))}: ${esc(pro.text)}`))}
     ${para('Focus areas:')}
-    ${featureList(summary.cons.map(con => `${esc(labelFor(con.categorySlug))}: ${esc(con.text)}`))}
+    ${consBlocks}
     ${para('This reflects your self-assessment only, and will update as player and peer feedback comes in.')}
     ${ctaButton('View your full results', `${SITE_URL}/admin/coach-dna`)}
     ${sign()}
