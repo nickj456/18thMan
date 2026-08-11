@@ -53,6 +53,10 @@ const s = StyleSheet.create({
     backgroundColor: LIGHT, borderRadius: 5, borderLeftWidth: 3, borderLeftStyle: 'solid',
   },
 
+  resourceList: { marginTop: 6, paddingLeft: 10 },
+  resourceItem: { fontSize: 8, color: MUTED, lineHeight: 1.5, marginBottom: 2 },
+  resourceTitle: { fontFamily: 'Helvetica-Bold', color: MID },
+
   footer: {
     position: 'absolute', bottom: 20, left: 44, right: 44,
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -128,7 +132,19 @@ export function CoachDnaSummaryPDF({
             <CommentBlock key={pro.categorySlug} label={labelFor(pro.categorySlug).toUpperCase()} text={pro.text} color={GREEN} />
           ))}
           {data.cons.map(con => (
-            <CommentBlock key={con.categorySlug} label={labelFor(con.categorySlug).toUpperCase()} text={con.text} color={AMBER} />
+            <View key={con.categorySlug}>
+              <CommentBlock label={labelFor(con.categorySlug).toUpperCase()} text={con.text} color={AMBER} />
+              {con.resources.length > 0 && (
+                <View style={s.resourceList}>
+                  {con.resources.map(resource => (
+                    <Text key={resource.title} style={s.resourceItem}>
+                      <Text style={s.resourceTitle}>{resource.title}</Text>
+                      {' — '}{resource.description}
+                    </Text>
+                  ))}
+                </View>
+              )}
+            </View>
           ))}
 
           <Text style={s.confidential}>
