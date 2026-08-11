@@ -194,7 +194,7 @@ export interface SelfAssessmentSummary {
   secondaryType: string | null
   narrative: string
   pros: { categorySlug: string; text: string }[]
-  cons: { categorySlug: string; text: string }[]
+  cons: { categorySlug: string; text: string; resources: { title: string; description: string; url: string | null }[] }[]
 }
 
 export interface AiGuide {
