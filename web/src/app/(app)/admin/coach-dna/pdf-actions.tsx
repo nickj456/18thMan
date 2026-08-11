@@ -7,6 +7,7 @@ import { readFileSync, existsSync } from 'fs'
 import { createClient } from '@/lib/supabase/server'
 import { sendCoachDnaSummaryEmail } from '@/lib/email'
 import { CoachDnaSummaryPDF } from './CoachDnaSummaryPDF'
+import { isCurrentSummaryShape } from '@/lib/coach-dna/summary-shape'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 function getLogoDataUri(): string | undefined {
@@ -33,7 +34,9 @@ export async function emailSelfAssessmentSummaryPDF(): Promise<{ success: boolea
     .maybeSingle()
 
   const summary = coachProfile?.ai_summary as SelfAssessmentSummary | undefined
-  if (!summary) return { success: false, error: 'No results to send yet.' }
+  if (!summary || !isCurrentSummaryShape(summary)) {
+    return { success: false, error: 'Your results need refreshing — open your Coach DNA results page, then try emailing again.' }
+  }
 
   // `ai_summary_generated_at` is set alongside `ai_summary` in the same upsert
   // (see generateSelfAssessmentSummary), so it's always present once a summary

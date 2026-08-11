@@ -9,6 +9,7 @@ import { generateSelfAssessmentSummary } from '../../../summary-actions'
 import { EmailSummaryButton } from './EmailSummaryButton'
 import { RetryGenerateButton } from './RetryGenerateButton'
 import { labelFor } from '@/lib/coach-dna/categories'
+import { isCurrentSummaryShape } from '@/lib/coach-dna/summary-shape'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 export const metadata = { title: 'Coach DNA — Your Results' }
@@ -41,7 +42,7 @@ export default async function AssessmentCompletePage({
 
   let summary: SelfAssessmentSummary
   let generationFailed = false
-  if (coachProfile?.ai_summary) {
+  if (coachProfile?.ai_summary && isCurrentSummaryShape(coachProfile.ai_summary)) {
     summary = coachProfile.ai_summary
   } else {
     // The auth/ownership/completed-at checks above already redirect for every

@@ -76,8 +76,25 @@ describe('emailSelfAssessmentSummaryPDF', () => {
   it('returns an error when no summary exists yet', async () => {
     state.summary = null
     const result = await emailSelfAssessmentSummaryPDF()
-    expect(result).toEqual({ success: false, error: 'No results to send yet.' })
+    expect(result).toEqual({ success: false, error: expect.stringContaining('refreshing') })
     expect(sendEmailMock).not.toHaveBeenCalled()
+  })
+
+  it('returns an error and skips sending when the summary is legacy-shaped (missing resources on a con)', async () => {
+    state.summary = {
+      ai_summary: {
+        primaryType: 'teacher',
+        secondaryType: null,
+        narrative: 'x',
+        pros: [],
+        cons: [{ categorySlug: 'communication', text: 'needs work' }],
+      },
+      ai_summary_generated_at: '2026-07-01T00:00:00.000Z',
+    }
+    const result = await emailSelfAssessmentSummaryPDF()
+    expect(result).toEqual({ success: false, error: expect.stringContaining('refreshing') })
+    expect(sendEmailMock).not.toHaveBeenCalled()
+    expect(renderToBufferMock).not.toHaveBeenCalled()
   })
 
   it('sends the PDF to the caller\'s own account email', async () => {
