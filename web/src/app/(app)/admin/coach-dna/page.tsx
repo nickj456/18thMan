@@ -14,7 +14,7 @@ export default async function CoachDnaPage() {
   if (!user) redirect('/login')
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') redirect('/dashboard')
+  if (profile?.role !== 'admin' && profile?.role !== 'coach') redirect('/dashboard')
 
   const { data: inProgress } = await supabase
     .from('assessment_attempts')

@@ -10,7 +10,7 @@ async function requireOwnAttempt(attemptId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') redirect('/dashboard')
+  if (profile?.role !== 'admin' && profile?.role !== 'coach') redirect('/dashboard')
 
   const { data: attempt } = await supabase
     .from('assessment_attempts')

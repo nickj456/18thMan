@@ -180,8 +180,20 @@ describe('answerQuestion', () => {
     expect(upsertMock).not.toHaveBeenCalled()
   })
 
-  it('redirects non-admin callers to the dashboard without writing a response', async () => {
+  it('allows a coach-role caller through (not just admin)', async () => {
     state.role = 'coach'
+    state.answeredQuestionIds = ['q1']
+
+    // answerQuestion redirects to the next question on success, so the
+    // mocked redirect() throw is the expected outcome here (matches this
+    // file's existing 'saves both picks in one upsert' test pattern) — this
+    // only proves the role check let the call reach the upsert.
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('REDIRECT:')
+    expect(upsertMock).toHaveBeenCalled()
+  })
+
+  it('redirects non-coach, non-admin callers to the dashboard without writing a response', async () => {
+    state.role = 'viewer'
 
     await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('REDIRECT:/dashboard')
     expect(upsertMock).not.toHaveBeenCalled()

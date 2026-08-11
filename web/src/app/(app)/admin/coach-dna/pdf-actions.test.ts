@@ -67,8 +67,14 @@ describe('emailSelfAssessmentSummaryPDF', () => {
     await expect(emailSelfAssessmentSummaryPDF()).rejects.toThrow('REDIRECT:/login')
   })
 
-  it('redirects non-admin callers to the dashboard', async () => {
+  it('allows a coach-role caller through (not just admin)', async () => {
     state.role = 'coach'
+    const result = await emailSelfAssessmentSummaryPDF()
+    expect(result).toEqual({ success: true })
+  })
+
+  it('redirects non-coach, non-admin callers to the dashboard', async () => {
+    state.role = 'viewer'
     await expect(emailSelfAssessmentSummaryPDF()).rejects.toThrow('REDIRECT:/dashboard')
     expect(sendEmailMock).not.toHaveBeenCalled()
   })

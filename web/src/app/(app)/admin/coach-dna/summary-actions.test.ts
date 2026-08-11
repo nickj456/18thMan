@@ -123,8 +123,14 @@ describe('generateSelfAssessmentSummary', () => {
     await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('REDIRECT:/login')
   })
 
-  it('redirects non-admin callers to the dashboard', async () => {
+  it('allows a coach-role caller through (not just admin)', async () => {
     state.role = 'coach'
+    const result = await generateSelfAssessmentSummary('attempt-1')
+    expect(result.primaryType).toBe('teacher')
+  })
+
+  it('redirects non-coach, non-admin callers to the dashboard', async () => {
+    state.role = 'viewer'
     await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('REDIRECT:/dashboard')
     expect(upsertMock).not.toHaveBeenCalled()
   })
