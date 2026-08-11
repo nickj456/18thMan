@@ -9,7 +9,7 @@ const state: {
   answeredQuestionIds: string[]
   upsertError: { message: string } | null
   completeError: { message: string } | null
-  optionBelongsToQuestion: boolean
+  matchingOptionIds: string[]
   questionsError: { message: string } | null
   responsesError: { message: string } | null
 } = {
@@ -20,7 +20,7 @@ const state: {
   answeredQuestionIds: [],
   upsertError: null,
   completeError: null,
-  optionBelongsToQuestion: true,
+  matchingOptionIds: ['opt-most', 'opt-least'],
   questionsError: null,
   responsesError: null,
 }
@@ -55,9 +55,7 @@ vi.mock('@/lib/supabase/server', () => ({
         return {
           select: () => ({
             eq: () => ({
-              eq: () => ({
-                maybeSingle: async () => ({ data: state.optionBelongsToQuestion ? { id: 'opt-1' } : null }),
-              }),
+              in: async () => ({ data: state.matchingOptionIds.map(id => ({ id })) }),
             }),
           }),
         }
@@ -98,7 +96,7 @@ describe('answerQuestion', () => {
     state.answeredQuestionIds = []
     state.upsertError = null
     state.completeError = null
-    state.optionBelongsToQuestion = true
+    state.matchingOptionIds = ['opt-most', 'opt-least']
     state.questionsError = null
     state.responsesError = null
     upsertMock.mockClear()
@@ -107,10 +105,28 @@ describe('answerQuestion', () => {
     redirectMock.mockClear()
   })
 
+  it('rejects identical most and least picks without writing a response', async () => {
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-most')).rejects.toThrow(
+      'Most and least picks must be different options',
+    )
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('saves both picks in one upsert', async () => {
+    state.answeredQuestionIds = ['q1']
+
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('REDIRECT:')
+
+    expect(upsertMock).toHaveBeenCalledWith(
+      { attempt_id: 'attempt-1', question_id: 'q1', selected_option: 'opt-most', least_option: 'opt-least' },
+      { onConflict: 'attempt_id,question_id' },
+    )
+  })
+
   it('revalidates the assessment route so a revisited question shows the freshly saved answer', async () => {
     state.answeredQuestionIds = ['q1']
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('REDIRECT:')
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('REDIRECT:')
 
     expect(revalidateMock).toHaveBeenCalledWith('/admin/coach-dna/assessment/attempt-1')
   })
@@ -118,7 +134,7 @@ describe('answerQuestion', () => {
   it('redirects to the next unanswered question when the attempt is incomplete', async () => {
     state.answeredQuestionIds = ['q1']
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow(
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow(
       'REDIRECT:/admin/coach-dna/assessment/attempt-1?q=q2',
     )
   })
@@ -126,7 +142,7 @@ describe('answerQuestion', () => {
   it('marks the attempt complete and redirects to the completion screen on the last question', async () => {
     state.answeredQuestionIds = ['q1', 'q2', 'q3']
 
-    await expect(answerQuestion('attempt-1', 'q3', 'opt-1')).rejects.toThrow(
+    await expect(answerQuestion('attempt-1', 'q3', 'opt-most', 'opt-least')).rejects.toThrow(
       'REDIRECT:/admin/coach-dna/assessment/attempt-1/complete',
     )
     expect(updateMock).toHaveBeenCalledWith({ completed_at: expect.any(String) })
@@ -135,7 +151,7 @@ describe('answerQuestion', () => {
   it('rejects answering an attempt that belongs to a different coach', async () => {
     state.attempt = { id: 'attempt-1', coach_id: 'someone-else', completed_at: null }
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow(
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow(
       'REDIRECT:/admin/coach-dna',
     )
     expect(upsertMock).not.toHaveBeenCalled()
@@ -144,7 +160,7 @@ describe('answerQuestion', () => {
   it('redirects to the completion screen instead of mutating an already-completed attempt', async () => {
     state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: '2026-08-01T00:00:00.000Z' }
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow(
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow(
       'REDIRECT:/admin/coach-dna/assessment/attempt-1/complete',
     )
     expect(upsertMock).not.toHaveBeenCalled()
@@ -153,29 +169,29 @@ describe('answerQuestion', () => {
   it('redirects unauthenticated callers to login without writing a response', async () => {
     state.user = null
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('REDIRECT:/login')
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('REDIRECT:/login')
     expect(upsertMock).not.toHaveBeenCalled()
   })
 
   it('redirects non-admin callers to the dashboard without writing a response', async () => {
     state.role = 'coach'
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('REDIRECT:/dashboard')
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('REDIRECT:/dashboard')
     expect(upsertMock).not.toHaveBeenCalled()
   })
 
   it('redirects to Coach DNA home when the attempt does not exist', async () => {
     state.attempt = null
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('REDIRECT:/admin/coach-dna')
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('REDIRECT:/admin/coach-dna')
     expect(upsertMock).not.toHaveBeenCalled()
   })
 
-  it('rejects an option that does not belong to the given question', async () => {
-    state.optionBelongsToQuestion = false
+  it('rejects when one or both options do not belong to the given question', async () => {
+    state.matchingOptionIds = ['opt-most'] // only one of the two resolves
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-from-another-question')).rejects.toThrow(
-      'Selected option does not belong to this question',
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-from-another-question')).rejects.toThrow(
+      'Selected options do not belong to this question',
     )
     expect(upsertMock).not.toHaveBeenCalled()
   })
@@ -183,14 +199,14 @@ describe('answerQuestion', () => {
   it('throws when saving the response fails', async () => {
     state.upsertError = { message: 'upsert failed' }
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('upsert failed')
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('upsert failed')
     expect(revalidateMock).not.toHaveBeenCalled()
   })
 
   it('throws instead of silently completing the attempt when the questions query errors', async () => {
     state.questionsError = { message: 'questions query failed' }
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('questions query failed')
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('questions query failed')
     expect(updateMock).not.toHaveBeenCalled()
     expect(redirectMock).not.toHaveBeenCalledWith(expect.stringContaining('/complete'))
   })
@@ -198,7 +214,7 @@ describe('answerQuestion', () => {
   it('throws instead of silently completing the attempt when the responses query errors', async () => {
     state.responsesError = { message: 'responses query failed' }
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-1')).rejects.toThrow('responses query failed')
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('responses query failed')
     expect(updateMock).not.toHaveBeenCalled()
     expect(redirectMock).not.toHaveBeenCalledWith(expect.stringContaining('/complete'))
   })
@@ -207,6 +223,6 @@ describe('answerQuestion', () => {
     state.answeredQuestionIds = ['q1', 'q2', 'q3']
     state.completeError = { message: 'update failed' }
 
-    await expect(answerQuestion('attempt-1', 'q3', 'opt-1')).rejects.toThrow('update failed')
+    await expect(answerQuestion('attempt-1', 'q3', 'opt-most', 'opt-least')).rejects.toThrow('update failed')
   })
 })

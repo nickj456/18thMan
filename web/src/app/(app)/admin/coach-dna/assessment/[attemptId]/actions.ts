@@ -23,21 +23,31 @@ async function requireOwnAttempt(attemptId: string) {
   return { supabase, userId: user.id }
 }
 
-export async function answerQuestion(attemptId: string, questionId: string, selectedOptionId: string) {
+export async function answerQuestion(
+  attemptId: string,
+  questionId: string,
+  mostOptionId: string,
+  leastOptionId: string,
+) {
+  if (mostOptionId === leastOptionId) {
+    throw new Error('Most and least picks must be different options')
+  }
+
   const { supabase } = await requireOwnAttempt(attemptId)
 
-  const { data: option } = await supabase
+  const { data: matchingOptions } = await supabase
     .from('assessment_options')
     .select('id')
-    .eq('id', selectedOptionId)
     .eq('question_id', questionId)
-    .maybeSingle()
-  if (!option) throw new Error('Selected option does not belong to this question')
+    .in('id', [mostOptionId, leastOptionId])
+  if ((matchingOptions ?? []).length !== 2) {
+    throw new Error('Selected options do not belong to this question')
+  }
 
   const { error: upsertError } = await supabase
     .from('assessment_responses')
     .upsert(
-      { attempt_id: attemptId, question_id: questionId, selected_option: selectedOptionId },
+      { attempt_id: attemptId, question_id: questionId, selected_option: mostOptionId, least_option: leastOptionId },
       { onConflict: 'attempt_id,question_id' },
     )
   if (upsertError) throw new Error(upsertError.message)
