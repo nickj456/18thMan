@@ -78,6 +78,7 @@ vi.mock('@/lib/supabase/service', () => ({
 }))
 
 import { generateSelfAssessmentSummary } from './summary-actions'
+import { CATEGORY_RESOURCES } from '@/lib/coach-dna/resources'
 
 // Derived from most option weighted 100 to `teacher` and least option weighted
 // 100 to `motivator`: teacher scores high, motivator scores low, others tie at 0
@@ -178,6 +179,15 @@ describe('generateSelfAssessmentSummary', () => {
 
     const persisted = upsertMock.mock.calls[0][0]
     expect(persisted.ai_summary.pros.map(p => p.categorySlug)).toEqual(EXPECTED_PROS)
+  })
+
+  it('attaches the curated resources for each focus area\'s category, never from the model', async () => {
+    const result = await generateSelfAssessmentSummary('attempt-1')
+
+    // EXPECTED_CONS = ['motivator', 'culture-builder', 'organiser']
+    expect(result.cons[0].resources).toEqual(CATEGORY_RESOURCES['motivator'])
+    expect(result.cons[1].resources).toEqual(CATEGORY_RESOURCES['culture-builder'])
+    expect(result.cons[2].resources).toEqual(CATEGORY_RESOURCES['organiser'])
   })
 
   it('throws without persisting when the model returns the wrong number of pros', async () => {

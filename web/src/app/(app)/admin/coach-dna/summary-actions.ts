@@ -8,6 +8,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { computeSelfOnlyCategoryScores } from '@/lib/coach-dna/self-score'
 import { deriveArchetype } from '@/lib/coach-dna/archetype'
 import { labelFor } from '@/lib/coach-dna/categories'
+import { resourcesFor } from '@/lib/coach-dna/resources'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
@@ -91,12 +92,12 @@ Their primary coaching type: ${labelFor(archetype.primaryType)}
 ${archetype.secondaryType ? `Their secondary type: ${labelFor(archetype.secondaryType)}` : ''}
 
 Their strongest categories, in this exact order (write one short encouraging sentence for each, referencing what that category means, and return them in the same order): ${archetype.pros.map(slug => labelFor(slug)).join(', ')}
-Their growth-area categories, in this exact order (write one short constructive sentence for each, in the same order): ${archetype.cons.map(slug => labelFor(slug)).join(', ')}
+Their growth-area categories, in this exact order (write 2-3 sentences for each: what the gap looks like in practice, and one concrete thing to try, in the same order): ${archetype.cons.map(slug => labelFor(slug)).join(', ')}
 
 Do not invent scores or claim data you were not given. Do not mention "self-assessment only" or any caveats about data sources - that framing is handled elsewhere in the UI, not by you.
 
 Respond with ONLY a valid JSON object, no markdown fences, no explanation. "pros" must contain exactly ${archetype.pros.length} entries and "cons" exactly ${archetype.cons.length}, in the same order as the lists above. Shape:
-{"narrative":"one paragraph, 2-4 sentences","pros":[{"categorySlug":"...","text":"one sentence"}],"cons":[{"categorySlug":"...","text":"one sentence"}]}`
+{"narrative":"one paragraph, 2-4 sentences","pros":[{"categorySlug":"...","text":"one sentence"}],"cons":[{"categorySlug":"...","text":"2-3 sentences: what the gap looks like in practice, and one concrete thing to try"}]}`
 
   const { text } = await generateText({ model: groq('llama-3.3-70b-versatile'), prompt })
 
@@ -125,7 +126,11 @@ Respond with ONLY a valid JSON object, no markdown fences, no explanation. "pros
     secondaryType: archetype.secondaryType,
     narrative: parsed.narrative,
     pros: archetype.pros.map((categorySlug, i) => ({ categorySlug, text: parsed.pros[i].text })),
-    cons: archetype.cons.map((categorySlug, i) => ({ categorySlug, text: parsed.cons[i].text })),
+    cons: archetype.cons.map((categorySlug, i) => ({
+      categorySlug,
+      text: parsed.cons[i].text,
+      resources: resourcesFor(categorySlug),
+    })),
   }
 
   const { error: upsertError } = await supabase
