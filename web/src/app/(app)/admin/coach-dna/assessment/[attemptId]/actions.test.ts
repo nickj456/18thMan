@@ -7,6 +7,7 @@ const state: {
   attempt: { id: string; coach_id: string; completed_at: string | null } | null
   orderedQuestionIds: string[]
   answeredQuestionIds: string[]
+  incompleteQuestionIds: string[]
   upsertError: { message: string } | null
   completeError: { message: string } | null
   matchingOptionIds: string[]
@@ -18,6 +19,7 @@ const state: {
   attempt: null,
   orderedQuestionIds: [],
   answeredQuestionIds: [],
+  incompleteQuestionIds: [],
   upsertError: null,
   completeError: null,
   matchingOptionIds: ['opt-most', 'opt-least'],
@@ -73,7 +75,11 @@ vi.mock('@/lib/supabase/server', () => ({
         return {
           select: () => ({
             eq: async () => ({
-              data: state.answeredQuestionIds.map(id => ({ question_id: id })),
+              data: state.answeredQuestionIds.map(id => ({
+                question_id: id,
+                selected_option: 'opt-most',
+                least_option: state.incompleteQuestionIds.includes(id) ? null : 'opt-least',
+              })),
               error: state.responsesError,
             }),
           }),
@@ -94,6 +100,7 @@ describe('answerQuestion', () => {
     state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: null }
     state.orderedQuestionIds = ['q1', 'q2', 'q3']
     state.answeredQuestionIds = []
+    state.incompleteQuestionIds = []
     state.upsertError = null
     state.completeError = null
     state.matchingOptionIds = ['opt-most', 'opt-least']
@@ -217,6 +224,21 @@ describe('answerQuestion', () => {
     await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('responses query failed')
     expect(updateMock).not.toHaveBeenCalled()
     expect(redirectMock).not.toHaveBeenCalledWith(expect.stringContaining('/complete'))
+  })
+
+  it('does not treat a response with a missing least_option as answered, so the attempt is not completed', async () => {
+    // q1 and q2 have both picks saved; q3's existing row is missing `least_option`
+    // (pre-migration / partially-saved). Answering q3 now should NOT be treated
+    // as completing the attempt — q3 must still count as unanswered until the
+    // upsert lands, so the "is complete" check re-derives from a fresh read that
+    // requires both selected_option and least_option to be non-null.
+    state.answeredQuestionIds = ['q1', 'q2', 'q3']
+    state.incompleteQuestionIds = ['q3']
+
+    await expect(answerQuestion('attempt-1', 'q2', 'opt-most', 'opt-least')).rejects.toThrow(
+      'REDIRECT:/admin/coach-dna/assessment/attempt-1?q=q3',
+    )
+    expect(updateMock).not.toHaveBeenCalled()
   })
 
   it('throws when marking the attempt complete fails', async () => {

@@ -9,6 +9,11 @@ const state: {
 } = { user: null, role: 'admin', summary: null, sendResult: { success: true } }
 
 const sendEmailMock = vi.fn(async (..._args: unknown[]) => state.sendResult)
+// renderToBuffer never actually invokes the component function it's handed —
+// it just serializes the element tree — so to see what props CoachDnaSummaryPDF
+// received we capture the element passed in here rather than mocking the
+// component itself (which the real renderer never calls in this test setup).
+const renderToBufferMock = vi.fn(async (_element: unknown) => new Uint8Array([1, 2, 3]))
 
 vi.mock('next/navigation', () => ({
   redirect: (path: string) => {
@@ -16,7 +21,7 @@ vi.mock('next/navigation', () => ({
   },
 }))
 vi.mock('@react-pdf/renderer', () => ({
-  renderToBuffer: async () => new Uint8Array([1, 2, 3]),
+  renderToBuffer: (element: unknown) => renderToBufferMock(element),
   StyleSheet: { create: (styles: unknown) => styles },
   Document: 'Document',
   Page: 'Page',
@@ -48,9 +53,13 @@ describe('emailSelfAssessmentSummaryPDF', () => {
   beforeEach(() => {
     state.user = { id: 'coach-1', email: 'coach@example.com' }
     state.role = 'admin'
-    state.summary = { ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', pros: [], cons: [] } }
+    state.summary = {
+      ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', pros: [], cons: [] },
+      ai_summary_generated_at: '2026-07-01T00:00:00.000Z',
+    }
     state.sendResult = { success: true }
     sendEmailMock.mockClear()
+    renderToBufferMock.mockClear()
   })
 
   it('redirects unauthenticated callers to login', async () => {
@@ -85,5 +94,26 @@ describe('emailSelfAssessmentSummaryPDF', () => {
     state.sendResult = { success: false, error: 'send failed' }
     const result = await emailSelfAssessmentSummaryPDF()
     expect(result).toEqual({ success: false, error: 'send failed' })
+  })
+
+  it('renders the PDF with the real completion timestamp, not render time', async () => {
+    await emailSelfAssessmentSummaryPDF()
+
+    expect(renderToBufferMock).toHaveBeenCalledTimes(1)
+    const element = renderToBufferMock.mock.calls[0][0] as { props: { completedAt: string } }
+    expect(element.props.completedAt).toBe('2026-07-01T00:00:00.000Z')
+  })
+
+  it('falls back to the current time if ai_summary_generated_at is somehow missing', async () => {
+    state.summary = {
+      ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', pros: [], cons: [] },
+      ai_summary_generated_at: null,
+    }
+
+    await emailSelfAssessmentSummaryPDF()
+
+    const element = renderToBufferMock.mock.calls[0][0] as { props: { completedAt: string } }
+    expect(element.props.completedAt).toEqual(expect.any(String))
+    expect(() => new Date(element.props.completedAt).toISOString()).not.toThrow()
   })
 })

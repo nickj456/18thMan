@@ -61,11 +61,20 @@ export async function answerQuestion(
 
   const { data: responses, error: responsesError } = await supabase
     .from('assessment_responses')
-    .select('question_id')
+    .select('question_id, selected_option, least_option')
     .eq('attempt_id', attemptId)
   if (responsesError) throw new Error(responsesError.message)
 
-  const progress = getQuestionProgress(orderedQuestions ?? [], (responses ?? []).map(r => r.question_id))
+  // Both picks must be recorded for a question to count as answered — a row with
+  // `selected_option` set but `least_option` still null is a pre-migration or
+  // partially-saved response, and must not count toward completion. Applying the
+  // same rule here as in page.tsx's answeredIds so the two can't disagree about
+  // whether an attempt is complete.
+  const answeredQuestionIds = (responses ?? [])
+    .filter(r => r.selected_option !== null && r.least_option !== null)
+    .map(r => r.question_id)
+
+  const progress = getQuestionProgress(orderedQuestions ?? [], answeredQuestionIds)
 
   // Bust the client Router Cache for this route so navigating "Back" to a
   // question already visited earlier in the session re-fetches the freshly

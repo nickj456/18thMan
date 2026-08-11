@@ -72,13 +72,23 @@ function CommentBlock({ label, text, color }: { label: string; text: string; col
   )
 }
 
-export function CoachDnaSummaryPDF({ data }: { data: SelfAssessmentSummary }) {
+export function CoachDnaSummaryPDF({
+  data,
+  completedAt,
+}: {
+  data: SelfAssessmentSummary
+  completedAt: string
+}) {
   const typeLine = `${labelFor(data.primaryType)}${data.secondaryType ? ` / ${labelFor(data.secondaryType)}` : ''} Coach`
+  // "Completed" reflects when the assessment was actually finished, not when
+  // this PDF happens to be rendered/emailed — `today` (below) is only for the
+  // footer's "generated on" stamp.
+  const completedLabel = new Date(completedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
   const rows = [
     { key: 'Coach Type', value: typeLine },
-    { key: 'Completed', value: today },
+    { key: 'Completed', value: completedLabel },
     { key: 'Data Source', value: 'Self-Assessment Only' },
   ]
 

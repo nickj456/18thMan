@@ -1,6 +1,7 @@
 'use client'
 
-import { useReducer, useTransition } from 'react'
+import { useReducer, useState, useTransition } from 'react'
+import { unstable_rethrow } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { OptionCard } from './OptionCard'
 import { pickReducer, type PickState } from './pickReducer'
@@ -22,6 +23,7 @@ export function QuestionOptions({
   const initialState: PickState = { mostId: initialMostId, leastId: initialLeastId }
   const [state, dispatch] = useReducer(pickReducer, initialState)
   const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
 
   const canContinue = state.mostId !== null && state.leastId !== null
 
@@ -42,8 +44,18 @@ export function QuestionOptions({
           onClick={() => {
             const { mostId, leastId } = state
             if (!mostId || !leastId) return
-            startTransition(() => {
-              answerQuestion(attemptId, questionId, mostId, leastId)
+            setError(null)
+            startTransition(async () => {
+              try {
+                await answerQuestion(attemptId, questionId, mostId, leastId)
+              } catch (err) {
+                // answerQuestion redirects on success, which throws a special
+                // NEXT_REDIRECT error under the hood — let that propagate so
+                // Next.js can perform the navigation instead of treating it as
+                // a failed save.
+                unstable_rethrow(err)
+                setError('Something went wrong saving your answer. Please try again.')
+              }
             })
           }}
         >
@@ -53,6 +65,9 @@ export function QuestionOptions({
           <p className="text-xs text-zinc-500">Pick your most and least like you.</p>
         )}
       </div>
+      {error && (
+        <p className="text-xs text-amber-500" role="alert">{error}</p>
+      )}
     </div>
   )
 }

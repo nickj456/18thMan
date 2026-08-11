@@ -42,7 +42,12 @@ export default async function AssessmentQuestionPage({
     .from('assessment_responses')
     .select('question_id, selected_option, least_option')
     .eq('attempt_id', attemptId)
-  const answeredIds = (responses ?? []).map(r => r.question_id)
+  // Both picks must be recorded for a question to count as answered — a row with
+  // `selected_option` set but `least_option` still null is a pre-migration or
+  // partially-saved response, and must not count toward completion.
+  const answeredIds = (responses ?? [])
+    .filter(r => r.selected_option !== null && r.least_option !== null)
+    .map(r => r.question_id)
 
   const progress = getQuestionProgress(questions, answeredIds)
   const currentQuestionId = q && questions.some(quest => quest.id === q) ? q : progress.nextQuestion?.id
@@ -101,6 +106,7 @@ export default async function AssessmentQuestionPage({
       <h1 className="app-heading text-xl">{question.question_text}</h1>
 
       <QuestionOptions
+        key={currentQuestionId}
         attemptId={attemptId}
         questionId={currentQuestionId}
         options={(options ?? []).map(o => ({ id: o.id, optionText: o.option_text }))}

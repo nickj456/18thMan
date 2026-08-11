@@ -16,16 +16,21 @@ export async function emailSelfAssessmentSummaryPDF(): Promise<{ success: boolea
 
   const { data: coachProfile } = await supabase
     .from('coach_profiles')
-    .select('ai_summary')
+    .select('ai_summary, ai_summary_generated_at')
     .eq('user_id', user.id)
     .maybeSingle()
 
   const summary = coachProfile?.ai_summary as SelfAssessmentSummary | undefined
   if (!summary) return { success: false, error: 'No results to send yet.' }
 
+  // `ai_summary_generated_at` is set alongside `ai_summary` in the same upsert
+  // (see generateSelfAssessmentSummary), so it's always present once a summary
+  // exists — fall back to "now" defensively rather than crash on a null.
+  const completedAt = coachProfile?.ai_summary_generated_at ?? new Date().toISOString()
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdfBuffer = await renderToBuffer(<CoachDnaSummaryPDF data={summary} /> as any)
+    const pdfBuffer = await renderToBuffer(<CoachDnaSummaryPDF data={summary} completedAt={completedAt} /> as any)
     return await sendCoachDnaSummaryEmail(user.email!, summary, Buffer.from(pdfBuffer))
   } catch (err) {
     console.error('[coach-dna] Failed to generate or send summary PDF:', err)
