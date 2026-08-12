@@ -1976,6 +1976,8 @@ export default async function LandingPage() {
                 { label: 'Drill Library', href: '/drills' },
                 { label: 'Community', href: '/chat/community' },
                 { label: 'Contact', href: '/contact' },
+                { label: 'Terms', href: '/legal/terms' },
+                { label: 'Privacy', href: '/legal/privacy' },
                 { label: 'Sign In', href: '/login' },
                 { label: 'Get Started', href: '/signup' },
               ].map(({ label, href }) => (
