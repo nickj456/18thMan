@@ -26,23 +26,21 @@ These are deferred, not rejected — worth another spec once v1 is validated wit
 
 ## Approach
 
-Follow the existing `web/src/app/(app)/how-to/page.tsx` pattern exactly, since it's the closest analog already in the codebase (long-form reference content, sticky anchored sub-nav, icon-coded sections) and reusing it keeps this feature visually and structurally consistent with the rest of `(app)`.
+Corrected during planning: `how-to/page.tsx` (an FAQ accordion, client component, no SEO metadata, lives in `(app)`) turns out to be the wrong analog. The actual closest match in the codebase is `web/src/app/(resources)/skills/page.tsx` (the Fundamental Skills Guide) — same genre of content (a long-form rugby league coaching reference, not a Q&A list), same route group, same rendering approach: a Server Component with an `export const metadata` block for SEO, a typed in-file content array, and colour-banded sections rendered directly (no accordion, no client state needed). `(resources)` is public (works for both logged-out and logged-in visitors — see its `layout.tsx`), which is a genuine bonus: this content has organic SEO value the way Positions/Age Groups/Skills/Tag Rugby guides do.
 
-**Route**: `web/src/app/(app)/communication/page.tsx` — client component (`'use client'`), no data fetching, no Server Actions, no new Supabase types. Content is a typed in-file data structure, same shape as `how-to`'s `Section[]`.
+**Route**: `web/src/app/(resources)/communication/page.tsx` — Server Component (no `'use client'`), no data fetching, no Server Actions, no new Supabase types. Content is a typed in-file data structure.
 
-**Nav entry**: add to `app-sidebar.tsx` in the resources group, alongside Positions Guide / Age Groups Guide / Fundamental Skills / How-to:
+**Nav entry**: add to `resourceItems` in `web/src/components/app-sidebar.tsx`, positioned after Fundamental Skills and before Tag Rugby Rules (groups it with the other technique/skill guides, ahead of rules reference and the app-usage FAQ):
 
 ```ts
 { href: '/communication', label: 'Player Communication', icon: MessagesSquare },
 ```
 
-Placed directly above `/how-to` in that group, since it's a coaching-skill reference rather than an app-usage FAQ.
-
-**No schema/DB changes, no migrations, no new dependencies.**
+**No schema/DB changes, no migrations, no new dependencies.** `MessagesSquare` already exists in the installed `lucide-react` version.
 
 ## Data shape
 
-Mirror `how-to`'s pattern but adapted for this content's structure (framework steps, levels, drills, principles are distinct shapes, not uniform Q&A):
+Typed in-file content arrays, following the same shape convention as `skills/page.tsx`'s `SkillSection[]`:
 
 ```ts
 interface FrameworkStep { id: 'see' | 'say' | 'solve'; title: string; description: string; examples?: string[] }
@@ -53,7 +51,7 @@ interface Principle { title: string; description: string }
 
 ## Page structure
 
-Single scrollable page, sticky anchored sub-nav at top (Framework / Levels / Drills & Games / Principles), colour-banded sections consistent with `how-to`'s convention (`text-{colour}-400 bg-{colour}-500/10 border-{colour}-500/20`), each section gets its own accent colour so levels/drills are visually distinguishable while scrolling.
+Single scrollable page (no sticky sub-nav — matching `skills/page.tsx`, which relies on section headings and normal scroll rather than a jump-nav), colour-banded sections consistent with the existing guide-page convention (`text-{colour}-400 bg-{colour}-500/10 border-{colour}-500/20` badges, colour-cycled per section as in `skills/page.tsx`'s `colMap`), so levels and drills stay visually distinguishable while scrolling.
 
 ### 1. Philosophy banner
 
@@ -154,4 +152,4 @@ Rugby league specific throughout — every example uses real rugby league scenar
 Static content page — no business logic to unit test, so no new `*.test.ts(x)` file is required for the page itself. Verify via:
 - `npm run test` — confirm no regressions elsewhere (e.g. sidebar snapshot/nav tests, if any exist).
 - `npx tsc --noEmit` — typecheck the new page and data structures.
-- Manual browser check once built: desktop and mobile viewport, sticky sub-nav scroll behaviour, dark-mode contrast on all colour-banded sections (project defaults to dark mode).
+- Manual browser check once built: desktop and mobile viewport, dark-mode contrast on all colour-banded sections (project defaults to dark mode), and the sidebar link navigates correctly for both a logged-in and logged-out visitor (since `(resources)` is public).
