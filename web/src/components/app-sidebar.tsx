@@ -28,6 +28,7 @@ import {
   Shirt,
   BookMarked,
   Dumbbell,
+  MessagesSquare,
   Clock,
   Headphones,
   Video,
@@ -77,6 +78,7 @@ const resourceItems = [
   { href: '/positions', label: 'Positions Guide', icon: Shirt },
   { href: '/age-groups', label: 'Age Groups Guide', icon: Users },
   { href: '/skills', label: 'Fundamental Skills', icon: Dumbbell },
+  { href: '/communication', label: 'Player Communication', icon: MessagesSquare },
   { href: '/tag-rugby', label: 'Tag Rugby Rules', icon: Tag },
   { href: '/how-to', label: 'How-to & FAQ', icon: BookMarked },
 ]
