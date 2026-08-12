@@ -233,11 +233,11 @@ export default function CommunicationPage() {
       <div className="space-y-2">
         <h1 className="app-heading text-2xl">Player Communication Guide</h1>
         <p className="text-sm font-medium text-zinc-200">
-          Don\'t tell players to communicate. Teach them the language.
+          Don't tell players to communicate. Teach them the language.
         </p>
         <p className="text-sm text-zinc-400 leading-relaxed max-w-xl">
           Young players are often told to "communicate more," but many stay quiet because they
-          feel stupid, lack confidence, or genuinely don\'t know what they\'re supposed to say.
+          feel stupid, lack confidence, or genuinely don't know what they're supposed to say.
           Treat communication as a coachable skill — just like passing, tackling, or decision-making —
           and it becomes something you can actually teach.
         </p>
@@ -263,7 +263,7 @@ export default function CommunicationPage() {
       <div className="space-y-3">
         <h2 className="text-lg font-bold text-white">See It</h2>
         <p className="text-sm text-zinc-400 leading-relaxed">
-          Before players can say anything useful, they need to know what\'s worth noticing. Teach
+          Before players can say anything useful, they need to know what's worth noticing. Teach
           them to actively scan for:
         </p>
         <div className="flex flex-wrap gap-2">
@@ -315,7 +315,7 @@ export default function CommunicationPage() {
       {/* SOLVE IT detail */}
       <div className="px-4 py-3 rounded-lg border border-indigo-500/15 bg-indigo-500/5 text-indigo-300/80 text-xs leading-relaxed">
         <span className="font-semibold">Solve it: </span>
-        If it didn\'t help someone act, it wasn\'t communication — it was noise. The aim is never volume, it\'s better decisions.
+        If it didn't help someone act, it wasn't communication — it was noise. The aim is never volume, it's better decisions.
       </div>
 
       {/* Levels */}
@@ -444,7 +444,7 @@ export default function CommunicationPage() {
             Start every quiet player at Level 1, regardless of age or ability elsewhere. Give them
             one or two words to own — just BALL is a win — before asking for more. Praise the
             attempt, not the volume or correctness. Use low-pressure reps like 2v1s, not full games,
-            to build the habit before it\'s tested under pressure.
+            to build the habit before it's tested under pressure.
           </p>
         </div>
 
