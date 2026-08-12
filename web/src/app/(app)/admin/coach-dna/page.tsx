@@ -4,7 +4,16 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { CheckCircle2 } from 'lucide-react'
 import { startAssessment } from './actions'
+
+const HOW_IT_WORKS = [
+  '24 scenario-based questions, about 10 minutes.',
+  "For each one, pick the option that's most like you and the one that's least like you.",
+  "Answers are forced-choice on purpose. Go with instinct, don't overthink it.",
+  'At the end you get your coaching type, strengths, focus areas, and resources to work on them.',
+  'This is based on your self-assessment only. It updates as player and peer feedback comes in later.',
+]
 
 export const metadata = { title: 'Coach DNA' }
 
@@ -40,7 +49,7 @@ export default async function CoachDnaPage() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="app-heading text-2xl">Coach DNA</h1>
-        <p className="text-sm text-zinc-500 mt-0.5">Self-assessment (admin preview)</p>
+        <p className="text-sm text-zinc-500 mt-0.5">Discover your coaching style</p>
       </div>
 
       <Card>
@@ -51,7 +60,23 @@ export default async function CoachDnaPage() {
             and come back at any time.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
+          {!completed && !inProgress && (
+            <div>
+              <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">
+                How it works
+              </h2>
+              <ul className="space-y-2">
+                {HOW_IT_WORKS.map(item => (
+                  <li key={item} className="flex items-start gap-2 text-sm text-zinc-400">
+                    <CheckCircle2 size={15} className="text-orange-400 shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {completed ? (
             <Button render={<Link href={`/admin/coach-dna/assessment/${completed.id}/complete`} />}>
               View your results
