@@ -71,6 +71,13 @@ const defensiveCalls: Call[] = [
   { call: 'RIGHT', meaning: 'Cover or threat is to the right.' },
 ]
 
+const organisingCalls: Call[] = [
+  { call: 'NUMBERS', meaning: 'We\'ve got more attackers than they\'ve got defenders — use it now.' },
+  { call: 'GET DEEP', meaning: 'Drop back into position to give the team depth and options.' },
+  { call: 'HOLD WIDTH', meaning: 'Stay spread — don\'t drift in and collapse the space.' },
+  { call: 'SET HERE', meaning: 'This is our line — everyone forms up on this spot.' },
+]
+
 type LevelColour = 'sky' | 'emerald' | 'amber' | 'rose'
 
 interface Level {
@@ -233,11 +240,11 @@ export default function CommunicationPage() {
       <div className="space-y-2">
         <h1 className="app-heading text-2xl">Player Communication Guide</h1>
         <p className="text-sm font-medium text-zinc-200">
-          Don't tell players to communicate. Teach them the language.
+          Don&apos;t tell players to communicate. Teach them the language.
         </p>
         <p className="text-sm text-zinc-400 leading-relaxed max-w-xl">
-          Young players are often told to "communicate more," but many stay quiet because they
-          feel stupid, lack confidence, or genuinely don't know what they're supposed to say.
+          Young players are often told to &ldquo;communicate more,&rdquo; but many stay quiet because they
+          feel stupid, lack confidence, or genuinely don&apos;t know what they&apos;re supposed to say.
           Treat communication as a coachable skill — just like passing, tackling, or decision-making —
           and it becomes something you can actually teach.
         </p>
@@ -263,7 +270,7 @@ export default function CommunicationPage() {
       <div className="space-y-3">
         <h2 className="text-lg font-bold text-white">See It</h2>
         <p className="text-sm text-zinc-400 leading-relaxed">
-          Before players can say anything useful, they need to know what's worth noticing. Teach
+          Before players can say anything useful, they need to know what&apos;s worth noticing. Teach
           them to actively scan for:
         </p>
         <div className="flex flex-wrap gap-2">
@@ -282,7 +289,7 @@ export default function CommunicationPage() {
           Short trigger words beat long sentences. A call has to be processed and acted on in a
           split second — teach a shared vocabulary, not eloquence.
         </p>
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="rounded-xl border border-zinc-800 overflow-hidden">
             <div className="px-4 py-2.5 border-b border-zinc-800 bg-zinc-900/50">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Attacking Calls</h3>
@@ -309,13 +316,26 @@ export default function CommunicationPage() {
               ))}
             </div>
           </div>
+          <div className="rounded-xl border border-zinc-800 overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-zinc-800 bg-zinc-900/50">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-400">Organising Calls</h3>
+            </div>
+            <div className="divide-y divide-zinc-800/60">
+              {organisingCalls.map(c => (
+                <div key={c.call} className="px-4 py-2.5 flex items-baseline gap-3">
+                  <span className="text-xs font-bold text-zinc-100 shrink-0 font-mono">{c.call}</span>
+                  <span className="text-xs text-zinc-500 leading-relaxed">{c.meaning}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* SOLVE IT detail */}
       <div className="px-4 py-3 rounded-lg border border-indigo-500/15 bg-indigo-500/5 text-indigo-300/80 text-xs leading-relaxed">
         <span className="font-semibold">Solve it: </span>
-        If it didn't help someone act, it wasn't communication — it was noise. The aim is never volume, it's better decisions.
+        If it didn&apos;t help someone act, it wasn&apos;t communication — it was noise. The aim is never volume, it&apos;s better decisions.
       </div>
 
       {/* Levels */}
@@ -323,8 +343,8 @@ export default function CommunicationPage() {
         <div className="space-y-1">
           <h2 className="text-lg font-bold text-white">The 4 Levels</h2>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Communication develops in stages. Don't skip ahead — a player who can't reliably do
-            Level 1 isn't ready for Level 3.
+            Communication develops in stages. Don&apos;t skip ahead — a player who can&apos;t reliably do
+            Level 1 isn&apos;t ready for Level 3.
           </p>
         </div>
 
@@ -351,7 +371,7 @@ export default function CommunicationPage() {
                 )}
                 <div className="grid sm:grid-cols-2 gap-3 pt-1">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-600 mb-1">Who it's for</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-600 mb-1">Who it&apos;s for</p>
                     <p className="text-xs text-zinc-400 leading-relaxed">{level.whoItsFor}</p>
                   </div>
                   <div>
@@ -444,7 +464,7 @@ export default function CommunicationPage() {
             Start every quiet player at Level 1, regardless of age or ability elsewhere. Give them
             one or two words to own — just BALL is a win — before asking for more. Praise the
             attempt, not the volume or correctness. Use low-pressure reps like 2v1s, not full games,
-            to build the habit before it's tested under pressure.
+            to build the habit before it&apos;s tested under pressure.
           </p>
         </div>
 
@@ -453,8 +473,8 @@ export default function CommunicationPage() {
           <p className="text-sm text-zinc-400 leading-relaxed">
             Level 3 and 4 communicators are grown deliberately, not discovered by accident. Identify
             players — especially halfbacks, hookers, and fullbacks — who are solid at Level 2, and
-            give them specific organising responsibilities in training ("you make the width call
-            this set"). Use Silent Game debriefs to let them articulate what the team needed to
+            give them specific organising responsibilities in training (&ldquo;you make the width call
+            this set&rdquo;). Use Silent Game debriefs to let them articulate what the team needed to
             hear. Build Level 4 by asking organisers to predict the next problem before it happens,
             not just react to the current one.
           </p>
