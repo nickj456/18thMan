@@ -4,9 +4,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const state: {
   user: { id: string; email?: string } | null
   role: string | null
+  displayName: string | null
+  club: string | null
+  clubId: string | null
+  clubName: string | null
   summary: unknown
   sendResult: { success: boolean; error?: string }
-} = { user: null, role: 'admin', summary: null, sendResult: { success: true } }
+} = { user: null, role: 'admin', displayName: null, club: null, clubId: null, clubName: null, summary: null, sendResult: { success: true } }
 
 const sendEmailMock = vi.fn(async (..._args: unknown[]) => state.sendResult)
 // renderToBuffer never actually invokes the component function it's handed —
@@ -38,9 +42,21 @@ vi.mock('@/lib/supabase/server', () => ({
       if (table === 'profiles') {
         return {
           select: () => ({
-            eq: () => ({ single: async () => ({ data: state.role === null ? null : { role: state.role } }) }),
+            eq: () => ({
+              single: async () => ({
+                data: state.role === null ? null : {
+                  role: state.role,
+                  display_name: state.displayName,
+                  club: state.club,
+                  club_id: state.clubId,
+                },
+              }),
+            }),
           }),
         }
+      }
+      if (table === 'clubs') {
+        return { select: () => ({ eq: () => ({ single: async () => ({ data: state.clubName ? { name: state.clubName } : null }) }) }) }
       }
       return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: state.summary }) }) }) }
     },
@@ -53,6 +69,10 @@ describe('emailSelfAssessmentSummaryPDF', () => {
   beforeEach(() => {
     state.user = { id: 'coach-1', email: 'coach@example.com' }
     state.role = 'admin'
+    state.displayName = null
+    state.club = null
+    state.clubId = null
+    state.clubName = null
     state.summary = {
       ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', pros: [], cons: [] },
       ai_summary_generated_at: '2026-07-01T00:00:00.000Z',
@@ -125,6 +145,42 @@ describe('emailSelfAssessmentSummaryPDF', () => {
     expect(renderToBufferMock).toHaveBeenCalledTimes(1)
     const element = renderToBufferMock.mock.calls[0][0] as { props: { completedAt: string } }
     expect(element.props.completedAt).toBe('2026-07-01T00:00:00.000Z')
+  })
+
+  it('passes the coach\'s display name through to the PDF', async () => {
+    state.displayName = 'Alex Coach'
+
+    await emailSelfAssessmentSummaryPDF()
+
+    const element = renderToBufferMock.mock.calls[0][0] as { props: { coachName: string | null } }
+    expect(element.props.coachName).toBe('Alex Coach')
+  })
+
+  it('resolves the club name via club_id when the coach belongs to a club', async () => {
+    state.clubId = 'club-1'
+    state.clubName = 'Wigan Warriors'
+
+    await emailSelfAssessmentSummaryPDF()
+
+    const element = renderToBufferMock.mock.calls[0][0] as { props: { clubName: string | null } }
+    expect(element.props.clubName).toBe('Wigan Warriors')
+  })
+
+  it('falls back to the legacy free-text club field when there is no club_id', async () => {
+    state.clubId = null
+    state.club = 'Legacy Club Name'
+
+    await emailSelfAssessmentSummaryPDF()
+
+    const element = renderToBufferMock.mock.calls[0][0] as { props: { clubName: string | null } }
+    expect(element.props.clubName).toBe('Legacy Club Name')
+  })
+
+  it('passes a null club name when the coach has no club assigned', async () => {
+    await emailSelfAssessmentSummaryPDF()
+
+    const element = renderToBufferMock.mock.calls[0][0] as { props: { clubName: string | null } }
+    expect(element.props.clubName).toBeNull()
   })
 
   it('falls back to the current time if ai_summary_generated_at is somehow missing', async () => {

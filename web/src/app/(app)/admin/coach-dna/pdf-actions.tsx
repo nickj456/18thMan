@@ -2,29 +2,22 @@
 
 import { redirect } from 'next/navigation'
 import { renderToBuffer } from '@react-pdf/renderer'
-import { resolve } from 'path'
-import { readFileSync, existsSync } from 'fs'
 import { createClient } from '@/lib/supabase/server'
 import { sendCoachDnaSummaryEmail } from '@/lib/email'
 import { CoachDnaSummaryPDF } from './CoachDnaSummaryPDF'
 import { isCurrentSummaryShape } from '@/lib/coach-dna/summary-shape'
+import { LOGO_DATA_URI } from '@/lib/pdf-logo'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
-
-function getLogoDataUri(): string | undefined {
-  try {
-    const p = resolve(process.cwd(), 'public/logo.png')
-    if (!existsSync(p)) return undefined
-    return `data:image/png;base64,${readFileSync(p).toString('base64')}`
-  } catch {
-    return undefined
-  }
-}
 
 export async function emailSelfAssessmentSummaryPDF(): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, display_name, club, club_id')
+    .eq('id', user.id)
+    .single()
   if (profile?.role !== 'admin' && profile?.role !== 'coach') redirect('/dashboard')
 
   const { data: coachProfile } = await supabase
@@ -43,10 +36,26 @@ export async function emailSelfAssessmentSummaryPDF(): Promise<{ success: boolea
   // exists — fall back to "now" defensively rather than crash on a null.
   const completedAt = coachProfile?.ai_summary_generated_at ?? new Date().toISOString()
 
+  // `club_id` (FK to `clubs`) is the current source of truth; `club` is a
+  // legacy free-text fallback for profiles never migrated to it — same
+  // resolution order as the admin users table.
+  let clubName: string | null = profile?.club ?? null
+  if (profile?.club_id) {
+    const { data: club } = await supabase.from('clubs').select('name').eq('id', profile.club_id).single()
+    clubName = club?.name ?? clubName
+  }
+
   try {
-    const logoSrc = getLogoDataUri()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdfBuffer = await renderToBuffer(<CoachDnaSummaryPDF data={summary} completedAt={completedAt} logoSrc={logoSrc} /> as any)
+    const pdfBuffer = await renderToBuffer(
+      <CoachDnaSummaryPDF
+        data={summary}
+        completedAt={completedAt}
+        logoSrc={LOGO_DATA_URI}
+        coachName={profile?.display_name ?? null}
+        clubName={clubName}
+      /> as any,
+    )
     return await sendCoachDnaSummaryEmail(user.email!, summary, Buffer.from(pdfBuffer))
   } catch (err) {
     console.error('[coach-dna] Failed to generate or send summary PDF:', err)
