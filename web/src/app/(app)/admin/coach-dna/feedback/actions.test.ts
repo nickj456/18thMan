@@ -69,6 +69,10 @@ vi.mock('@/lib/supabase/server', () => ({
         }
       }
       if (table === 'club_guardian_consents') {
+        // Note: this mock bypasses RLS entirely, so it does not prove the
+        // consent read succeeds for non-admin club members under real
+        // Postgres policies. That coverage lives in the migration itself
+        // (supabase/migrations/116_club_guardian_consents_member_select.sql).
         return {
           select: () => ({
             eq: () => ({
