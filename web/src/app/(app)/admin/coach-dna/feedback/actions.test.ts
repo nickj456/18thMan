@@ -7,6 +7,7 @@ const state: {
   role: string | null
   clubId: string | null
   teamCreatedBy: string | null
+  teamClubId: string | null
   teamInviteAccepted: boolean
   consentRow: { id: string } | null
   insertError: { message: string } | null
@@ -15,6 +16,7 @@ const state: {
   role: 'coach',
   clubId: null,
   teamCreatedBy: null,
+  teamClubId: null,
   teamInviteAccepted: false,
   consentRow: null,
   insertError: null,
@@ -48,9 +50,16 @@ vi.mock('@/lib/supabase/server', () => ({
         return {
           select: () => ({
             eq: () => ({
+              // Double .eq() chain: the "did this coach create the team" lookup
+              // (id + created_by), selecting club_id alongside it.
               eq: () => ({
-                maybeSingle: async () => ({ data: state.teamCreatedBy ? { id: 'team-1' } : null }),
+                maybeSingle: async () => ({
+                  data: state.teamCreatedBy ? { id: 'team-1', club_id: state.teamClubId } : null,
+                }),
               }),
+              // Single .eq() chain: the "what club does this team actually
+              // belong to" lookup (id only), used on the invite path.
+              maybeSingle: async () => ({ data: { club_id: state.teamClubId } }),
             }),
           }),
         }
@@ -105,6 +114,7 @@ describe('createFeedbackRequest', () => {
     state.role = 'coach'
     state.clubId = 'club-1'
     state.teamCreatedBy = null
+    state.teamClubId = 'club-1'
     state.teamInviteAccepted = false
     state.consentRow = null
     state.insertError = null
@@ -168,6 +178,20 @@ describe('createFeedbackRequest', () => {
     await expect(
       createFeedbackRequest(formData({ feedbackType: 'player_voice', teamId: 'team-1' })),
     ).rejects.toThrow('REDIRECT:/admin/coach-dna/feedback/new?error=consent-required')
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects a player_voice request when the coach\'s club differs from the team\'s actual club, even with an accepted invite', async () => {
+    // Regression test: profiles.club_id is mutable and stale group_invitations
+    // rows aren't cleaned up when a coach switches clubs. A coach who left
+    // Club A (where the team lives) for Club B must not be able to request
+    // player_voice feedback for Club A's team, gated only by Club B's consent.
+    state.teamInviteAccepted = true
+    state.teamClubId = 'club-2' // team's actual club differs from the caller's club-1
+    state.consentRow = { id: 'consent-1' }
+    await expect(
+      createFeedbackRequest(formData({ feedbackType: 'player_voice', teamId: 'team-1' })),
+    ).rejects.toThrow('not a member of that team')
     expect(insertMock).not.toHaveBeenCalled()
   })
 

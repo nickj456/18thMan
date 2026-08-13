@@ -18,14 +18,25 @@ async function requireCoach() {
   return { supabase, userId: user.id, clubId: (profile?.club_id as string | null) ?? null }
 }
 
-async function coachBelongsToTeam(supabase: SupabaseClient, userId: string, teamId: string): Promise<boolean> {
+async function coachBelongsToTeam(
+  supabase: SupabaseClient,
+  userId: string,
+  teamId: string,
+): Promise<{ belongs: boolean; teamClubId: string | null }> {
   const { data: created } = await supabase
     .from('coaching_groups')
-    .select('id')
+    .select('id, club_id')
     .eq('id', teamId)
     .eq('created_by', userId)
     .maybeSingle()
-  if (created) return true
+  if (created) return { belongs: true, teamClubId: (created.club_id as string | null) ?? null }
+
+  const { data: team } = await supabase
+    .from('coaching_groups')
+    .select('club_id')
+    .eq('id', teamId)
+    .maybeSingle()
+  const teamClubId = (team?.club_id as string | null) ?? null
 
   const { data: invite } = await supabase
     .from('group_invitations')
@@ -34,7 +45,7 @@ async function coachBelongsToTeam(supabase: SupabaseClient, userId: string, team
     .eq('user_id', userId)
     .eq('status', 'accepted')
     .maybeSingle()
-  return !!invite
+  return { belongs: !!invite, teamClubId }
 }
 
 export async function createFeedbackRequest(formData: FormData) {
@@ -50,15 +61,19 @@ export async function createFeedbackRequest(formData: FormData) {
   if (feedbackType === 'player_voice') {
     if (!teamId) throw new Error('Select a team for player/parent feedback')
 
-    const belongs = await coachBelongsToTeam(supabase, userId, teamId)
-    if (!belongs) throw new Error('You are not a member of that team')
-
-    if (!clubId) throw new Error('You need to be part of a club to request player/parent feedback')
+    const { belongs, teamClubId } = await coachBelongsToTeam(supabase, userId, teamId)
+    // A coach only belongs to a team if they're a member of it AND the team's
+    // current club matches their own current club. profiles.club_id is mutable
+    // (coaches can switch clubs) and stale group_invitations rows don't get
+    // cleaned up on a club switch, so both checks are required — a matching
+    // invite alone isn't enough. Any mismatch is reported identically to "not
+    // a member" so we don't leak which club the team actually belongs to.
+    if (!belongs || teamClubId !== clubId) throw new Error('You are not a member of that team')
 
     const { data: consent } = await supabase
       .from('club_guardian_consents')
       .select('id')
-      .eq('club_id', clubId)
+      .eq('club_id', teamClubId)
       .eq('season_label', getCurrentSeasonLabel())
       .maybeSingle()
     if (!consent) redirect('/admin/coach-dna/feedback/new?error=consent-required')

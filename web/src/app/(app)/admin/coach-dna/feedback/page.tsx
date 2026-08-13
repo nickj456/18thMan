@@ -32,7 +32,7 @@ export default async function FeedbackRequestsPage() {
     : { data: [] }
   const teamMap = Object.fromEntries((teams ?? []).map(t => [t.id, t.name]))
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
 
   return (
     <div className="space-y-6 max-w-2xl">
