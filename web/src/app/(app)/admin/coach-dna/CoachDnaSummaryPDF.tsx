@@ -24,7 +24,11 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  headerLogo: { width: 46, height: 46 },
+  headerLogoBadge: {
+    width: 54, height: 54, borderRadius: 27, backgroundColor: WHITE,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  headerLogo: { width: 36, height: 36 },
   eyeLabel: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: 'rgba(255,255,255,0.6)', letterSpacing: 3, marginBottom: 10 },
   title: { fontSize: 26, fontFamily: 'Helvetica-Bold', color: WHITE, letterSpacing: -0.5 },
   subtitle: { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 6 },
@@ -32,6 +36,10 @@ const s = StyleSheet.create({
   body: { paddingHorizontal: 44, paddingTop: 32 },
 
   sectionLabel: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: MUTED, letterSpacing: 2.5, marginBottom: 12 },
+  groupHeading: {
+    fontSize: 8, fontFamily: 'Helvetica-Bold', letterSpacing: 2, marginBottom: 12, marginTop: 28,
+    paddingBottom: 8, borderBottomWidth: 1.5, borderBottomStyle: 'solid',
+  },
 
   detailTable: { borderWidth: 1, borderColor: BORDER, borderStyle: 'solid', borderRadius: 8, marginBottom: 24 },
   detailRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: BORDER, borderBottomStyle: 'solid' },
@@ -42,9 +50,9 @@ const s = StyleSheet.create({
   },
   detailValue: { flex: 1, paddingVertical: 11, paddingHorizontal: 16, fontSize: 9, fontFamily: 'Helvetica-Bold', color: DARK },
 
-  narrative: { fontSize: 10.5, color: MID, lineHeight: 1.6, marginBottom: 24 },
+  narrative: { fontSize: 10.5, color: MID, lineHeight: 1.6, marginBottom: 8 },
 
-  commentBlock: { marginBottom: 14 },
+  commentBlock: { marginBottom: 16 },
   commentHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 7 },
   commentDot: { width: 7, height: 7, borderRadius: 4, marginRight: 8 },
   commentLabel: { fontSize: 7, fontFamily: 'Helvetica-Bold', letterSpacing: 2 },
@@ -65,17 +73,37 @@ const s = StyleSheet.create({
   footerBrand: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: E, letterSpacing: 1.5 },
   footerMeta: { fontSize: 6.5, color: MUTED },
 
-  confidential: { marginTop: 8, fontSize: 7.5, color: '#9ca3af', textAlign: 'center' },
+  confidential: { marginTop: 20, fontSize: 7.5, color: '#9ca3af', textAlign: 'center' },
 })
 
-function CommentBlock({ label, text, color }: { label: string; text: string; color: string }) {
+function CommentBlock({
+  label,
+  text,
+  color,
+  resources,
+}: {
+  label: string
+  text: string
+  color: string
+  resources?: { title: string; description: string }[]
+}) {
   return (
-    <View style={s.commentBlock}>
+    <View style={s.commentBlock} wrap={false}>
       <View style={s.commentHeaderRow}>
         <View style={[s.commentDot, { backgroundColor: color }]} />
         <Text style={[s.commentLabel, { color }]}>{label}</Text>
       </View>
       <Text style={[s.commentBody, { borderLeftColor: color }]}>{text}</Text>
+      {resources && resources.length > 0 && (
+        <View style={s.resourceList}>
+          {resources.map(resource => (
+            <Text key={resource.title} style={s.resourceItem}>
+              <Text style={s.resourceTitle}>{resource.title}</Text>
+              {' — '}{resource.description}
+            </Text>
+          ))}
+        </View>
+      )}
     </View>
   )
 }
@@ -84,10 +112,14 @@ export function CoachDnaSummaryPDF({
   data,
   completedAt,
   logoSrc,
+  coachName,
+  clubName,
 }: {
   data: SelfAssessmentSummary
   completedAt: string
   logoSrc?: string
+  coachName?: string | null
+  clubName?: string | null
 }) {
   const typeLine = `${labelFor(data.primaryType)}${data.secondaryType ? ` / ${labelFor(data.secondaryType)}` : ''} Coach`
   // "Completed" reflects when the assessment was actually finished, not when
@@ -97,6 +129,8 @@ export function CoachDnaSummaryPDF({
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
   const rows = [
+    ...(coachName ? [{ key: 'Coach', value: coachName }] : []),
+    ...(clubName ? [{ key: 'Club', value: clubName }] : []),
     { key: 'Coach Type', value: typeLine },
     { key: 'Completed', value: completedLabel },
     { key: 'Data Source', value: 'Self-Assessment Only' },
@@ -111,13 +145,17 @@ export function CoachDnaSummaryPDF({
             <Text style={s.title}>{typeLine}</Text>
             <Text style={s.subtitle}>Self-Assessment Results</Text>
           </View>
-          {logoSrc && <Image style={s.headerLogo} src={logoSrc} />}
+          {logoSrc && (
+            <View style={s.headerLogoBadge}>
+              <Image style={s.headerLogo} src={logoSrc} />
+            </View>
+          )}
         </View>
 
         <View style={s.body}>
           <Text style={s.sectionLabel}>SUMMARY</Text>
 
-          <View style={s.detailTable}>
+          <View style={s.detailTable} wrap={false}>
             {rows.map(({ key, value }, i) => (
               <View key={key} style={i === rows.length - 1 ? s.detailRowLast : s.detailRow}>
                 <Text style={s.detailKey}>{key}</Text>
@@ -128,23 +166,20 @@ export function CoachDnaSummaryPDF({
 
           <Text style={s.narrative}>{data.narrative}</Text>
 
+          <Text style={[s.groupHeading, { color: GREEN, borderBottomColor: GREEN }]}>STRENGTHS</Text>
           {data.pros.map(pro => (
             <CommentBlock key={pro.categorySlug} label={labelFor(pro.categorySlug).toUpperCase()} text={pro.text} color={GREEN} />
           ))}
+
+          <Text style={[s.groupHeading, { color: AMBER, borderBottomColor: AMBER }]}>FOCUS AREAS</Text>
           {data.cons.map(con => (
-            <View key={con.categorySlug}>
-              <CommentBlock label={labelFor(con.categorySlug).toUpperCase()} text={con.text} color={AMBER} />
-              {con.resources.length > 0 && (
-                <View style={s.resourceList}>
-                  {con.resources.map(resource => (
-                    <Text key={resource.title} style={s.resourceItem}>
-                      <Text style={s.resourceTitle}>{resource.title}</Text>
-                      {' — '}{resource.description}
-                    </Text>
-                  ))}
-                </View>
-              )}
-            </View>
+            <CommentBlock
+              key={con.categorySlug}
+              label={labelFor(con.categorySlug).toUpperCase()}
+              text={con.text}
+              color={AMBER}
+              resources={con.resources}
+            />
           ))}
 
           <Text style={s.confidential}>
@@ -152,9 +187,14 @@ export function CoachDnaSummaryPDF({
           </Text>
         </View>
 
-        <View style={s.footer}>
+        <View style={s.footer} fixed>
           <Text style={s.footerBrand}>COACH DNA · 18TH MAN</Text>
-          <Text style={s.footerMeta}>{today}</Text>
+          <Text
+            style={s.footerMeta}
+            render={({ pageNumber, totalPages }) =>
+              totalPages > 1 ? `${today} · Page ${pageNumber} of ${totalPages}` : today
+            }
+          />
         </View>
       </Page>
     </Document>

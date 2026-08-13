@@ -94,6 +94,8 @@ ${archetype.secondaryType ? `Their secondary type: ${labelFor(archetype.secondar
 Their strongest categories, in this exact order (write one short encouraging sentence for each, referencing what that category means, and return them in the same order): ${archetype.pros.map(slug => labelFor(slug)).join(', ')}
 Their growth-area categories, in this exact order (write 2-3 sentences for each: what the gap looks like in practice, and one concrete thing to try, in the same order): ${archetype.cons.map(slug => labelFor(slug)).join(', ')}
 
+Vary the sentence structure and opening across the three growth areas - do not start every one with the same phrase or template (e.g. do not open all three with "A gap in..."). Each should read like it was written fresh, not filled into a repeated pattern.
+
 Do not invent scores or claim data you were not given. Do not mention "self-assessment only" or any caveats about data sources - that framing is handled elsewhere in the UI, not by you.
 
 Respond with ONLY a valid JSON object, no markdown fences, no explanation. "pros" must contain exactly ${archetype.pros.length} entries and "cons" exactly ${archetype.cons.length}, in the same order as the lists above. Shape:
