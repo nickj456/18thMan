@@ -23,6 +23,22 @@ warning. No functional impact; deferred as low severity. See
 
 ## Coach DNA
 
+**`feedback_requests` INSERT policy has no DB-level guardian-consent check — must land before Plan 3**
+**Priority:** P2
+Final whole-branch review on 2026-08-13 (`worktree-feedback-request-creation`,
+Plan 1 of 4 for the coach 360-feedback loop) found the consent gate for
+`player_voice` requests is enforced only in `createFeedbackRequest`
+(`web/src/app/(app)/admin/coach-dna/feedback/actions.ts`). The `feedback_requests`
+INSERT policy (`088_feedback_requests.sql`) only checks `coach_id = auth.uid()`
+— an authenticated coach could `POST` directly to PostgREST with
+`feedback_type = 'player_voice'` and any `team_id`, bypassing the consent
+check entirely. No exploit path exists today since Plan 3 (public, no-login
+submission) isn't built yet, so a bypassed request can't collect any
+responses — but this becomes exploitable the moment Plan 3 ships. Tighten
+the INSERT policy to require, for `player_voice` rows, that `team_id`
+resolves to a `coaching_groups` row in the caller's club and a
+`club_guardian_consents` row exists for that club/season before Plan 3 lands.
+
 **Prevent duplicate in-progress self-assessment attempts from concurrent starts**
 **Priority:** P3
 Adversarial review on 2026-08-06 (`/ship`, v1.10.0.0) found `startAssessment` has
@@ -58,6 +74,16 @@ handling, unlike the sibling `083_dna_categories.sql` seed. Not fixed in place
 since the migration is already applied to prod (never edit an applied
 migration) — if idempotent re-seeding is ever needed (branch resets, local
 dev fixtures), add it as a new migration rather than editing this one.
+
+**`115_feedback_question_bank_seed.sql` is non-idempotent and worse than the precedent above**
+**Priority:** P4
+Final whole-branch review on 2026-08-13 (`worktree-feedback-request-creation`)
+noted this seed uses `gen_random_uuid()` rather than fixed UUIDs (unlike
+`108_self_assessment_seed.sql`), so a replay doesn't fail loudly on a PK
+conflict — it silently duplicates all 18 `player_voice`/`peer_observation`
+question rows, doubling every question set. Same fix as the item above (a
+new migration with `on conflict do nothing` or fixed UUIDs), not touching
+the already-applied 115.
 
 ## Completed
 
