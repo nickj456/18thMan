@@ -9,19 +9,23 @@ const state: {
   existingResponseId: string | null
   insertResponseError: { message: string } | null
   insertAnswersError: { message: string } | null
+  insertFlagError: { message: string } | null
   safeguardingFlagged: boolean
+  throwOnRequestLookup: boolean
 } = {
   request: null,
   questions: [],
   existingResponseId: null,
   insertResponseError: null,
   insertAnswersError: null,
+  insertFlagError: null,
   safeguardingFlagged: false,
+  throwOnRequestLookup: false,
 }
 
 const insertResponseMock = vi.fn()
 const insertAnswersMock = vi.fn()
-const insertFlagMock = vi.fn(async (_row: Record<string, unknown>) => ({ error: null }))
+const insertFlagMock = vi.fn(async (_row: Record<string, unknown>) => ({ error: state.insertFlagError }))
 const updateHeldMock = vi.fn()
 const checkSafeguardingConcernMock = vi.fn(async (_text: string) => state.safeguardingFlagged)
 
@@ -36,7 +40,10 @@ vi.mock('@/lib/supabase/service', () => ({
         return {
           select: () => ({
             eq: () => ({
-              maybeSingle: async () => ({ data: state.request }),
+              maybeSingle: async () => {
+                if (state.throwOnRequestLookup) throw new Error('unexpected db error')
+                return { data: state.request }
+              },
             }),
           }),
         }
@@ -123,7 +130,9 @@ describe('submitFeedbackResponse', () => {
     state.existingResponseId = null
     state.insertResponseError = null
     state.insertAnswersError = null
+    state.insertFlagError = null
     state.safeguardingFlagged = false
+    state.throwOnRequestLookup = false
     insertResponseMock.mockClear()
     insertAnswersMock.mockClear()
     insertFlagMock.mockClear()
@@ -222,5 +231,20 @@ describe('submitFeedbackResponse', () => {
     state.insertAnswersError = { message: 'db down' }
     const result = await submitFeedbackResponse('token-1', {}, formData(allRatings()))
     expect(result).toEqual({ error: 'Something went wrong submitting your feedback. Please try again.' })
+  })
+
+  it('still succeeds when the safeguarding_flags insert fails, without blocking the submission', async () => {
+    state.safeguardingFlagged = true
+    state.insertFlagError = { message: 'db down' }
+    const result = await submitFeedbackResponse('token-1', {}, formData({ ...allRatings(), comment: 'concerning text' }))
+    expect(result).toEqual({ success: true })
+    expect(updateHeldMock).not.toHaveBeenCalled()
+  })
+
+  it('returns a generic error instead of throwing when an unexpected exception occurs', async () => {
+    state.throwOnRequestLookup = true
+    await expect(submitFeedbackResponse('token-1', {}, formData(allRatings()))).resolves.toEqual({
+      error: 'Something went wrong submitting your feedback. Please try again.',
+    })
   })
 })
