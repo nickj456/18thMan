@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { createNotification } from '@/lib/notifications'
 import { sendClubAddedEmail } from '@/lib/email'
+import { getCurrentSeasonLabel } from '@/lib/season'
 
 export async function acceptClubInvite(invitationId: string, clubId: string) {
   const supabase = await createClient()
@@ -68,6 +69,28 @@ async function requireClubAdmin(clubId: string) {
   }
 
   return { error: null, supabase, user }
+}
+
+/** Club admin attests guardian consent is on file for player/parent feedback
+ *  this season. This is the club's attestation, not platform verification --
+ *  no document upload, no per-child tracking. Idempotent: a second
+ *  confirmation for a season already on file is treated as success, not an
+ *  error (relies on club_guardian_consents' unique(club_id, season_label)). */
+export async function grantGuardianConsent(clubId: string) {
+  const { error, supabase, user } = await requireClubAdmin(clubId)
+  if (error || !user) return { error: error ?? 'Not authorised' }
+
+  const { error: insertError } = await supabase.from('club_guardian_consents').insert({
+    club_id: clubId,
+    season_label: getCurrentSeasonLabel(),
+    granted_by: user.id,
+  })
+
+  if (insertError?.code === '23505') return { success: true as const, alreadyGranted: true as const }
+  if (insertError) return { error: insertError.message }
+
+  revalidatePath('/clubs')
+  return { success: true as const }
 }
 
 export async function clubAdminInviteUser(clubId: string, userId: string) {
