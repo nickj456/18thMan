@@ -59,6 +59,16 @@ since the migration is already applied to prod (never edit an applied
 migration) — if idempotent re-seeding is ever needed (branch resets, local
 dev fixtures), add it as a new migration rather than editing this one.
 
+**`115_feedback_question_bank_seed.sql` is non-idempotent and worse than the precedent above**
+**Priority:** P4
+Final whole-branch review on 2026-08-13 (`worktree-feedback-request-creation`)
+noted this seed uses `gen_random_uuid()` rather than fixed UUIDs (unlike
+`108_self_assessment_seed.sql`), so a replay doesn't fail loudly on a PK
+conflict — it silently duplicates all 18 `player_voice`/`peer_observation`
+question rows, doubling every question set. Same fix as the item above (a
+new migration with `on conflict do nothing` or fixed UUIDs), not touching
+the already-applied 115.
+
 ## Completed
 
 **Race condition let two concurrent submissions from the same device both pass `feedback_responses` dedup check**
@@ -76,6 +86,23 @@ now catches the resulting `23505` and returns the same friendly
 no local Postgres/Supabase CLI available, so the constraint is
 syntax-reviewed (matches this repo's existing `unique (...)` constraint
 patterns, e.g. `090_club_guardian_consents.sql`) but not execution-tested.
+
+**`feedback_requests` INSERT policy had no DB-level guardian-consent check**
+Fixed in `worktree-feedback-request-creation` (migration `118_feedback_requests_consent_check.sql`).
+Tightened the INSERT policy on `feedback_requests` so `player_voice` rows now
+require, at the database level, that `team_id` resolves to a `coaching_groups`
+row in the caller's own club AND a `club_guardian_consents` row exists for
+that club/season — matching (and now backstopping) the app-level check in
+`createFeedbackRequest`. `peer_observation` rows are unaffected (no minor
+involved). **Verification caveat:** no local Supabase/Postgres instance or
+CLI was available in this environment, so this migration is syntax-reviewed
+against the existing schema and this repo's own precedent for bare
+enum-string comparisons (`085_assessment_questions.sql`) and season-label
+matching (`web/src/lib/season.ts`), but not execution-tested against a real
+database. Recommend a manual check after this migration is applied: attempt
+a direct PostgREST insert as a coach with `feedback_type = 'player_voice'`
+and a `team_id` outside their club (or with no consent on file) and confirm
+it's rejected.
 
 **Nested `<a>` tags in DrillCard broke HTML validity on every drill-grid page**
 Fixed by `/qa` on 2026-07-12, `feat/landing-page-redesign` (commit 185f340).

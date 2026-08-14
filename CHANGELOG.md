@@ -2,6 +2,14 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.10.1.0] - 2026-08-13
+
+### Added
+- **Terms and Privacy links in the landing page footer.** Both legal pages already existed but weren't reachable from the homepage — they're now linked alongside the other footer links.
+
+### Changed
+- Drafted the content plan for an upcoming player communication hub (SEE IT / SAY IT / SOLVE IT framework) — planning only, not yet built or user-visible.
+
 ## [1.10.0.0] - 2026-08-06
 
 ### Added
