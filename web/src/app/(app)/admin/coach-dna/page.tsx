@@ -95,6 +95,20 @@ export default async function CoachDnaPage() {
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Feedback requests</CardTitle>
+          <CardDescription>
+            Request feedback from players, parents, or fellow coaches
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button render={<Link href="/admin/coach-dna/feedback" />}>
+            View feedback requests
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }
