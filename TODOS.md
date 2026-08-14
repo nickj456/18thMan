@@ -23,22 +23,6 @@ warning. No functional impact; deferred as low severity. See
 
 ## Coach DNA
 
-**`feedback_requests` INSERT policy has no DB-level guardian-consent check — must land before Plan 3**
-**Priority:** P2
-Final whole-branch review on 2026-08-13 (`worktree-feedback-request-creation`,
-Plan 1 of 4 for the coach 360-feedback loop) found the consent gate for
-`player_voice` requests is enforced only in `createFeedbackRequest`
-(`web/src/app/(app)/admin/coach-dna/feedback/actions.ts`). The `feedback_requests`
-INSERT policy (`088_feedback_requests.sql`) only checks `coach_id = auth.uid()`
-— an authenticated coach could `POST` directly to PostgREST with
-`feedback_type = 'player_voice'` and any `team_id`, bypassing the consent
-check entirely. No exploit path exists today since Plan 3 (public, no-login
-submission) isn't built yet, so a bypassed request can't collect any
-responses — but this becomes exploitable the moment Plan 3 ships. Tighten
-the INSERT policy to require, for `player_voice` rows, that `team_id`
-resolves to a `coaching_groups` row in the caller's club and a
-`club_guardian_consents` row exists for that club/season before Plan 3 lands.
-
 **Prevent duplicate in-progress self-assessment attempts from concurrent starts**
 **Priority:** P3
 Adversarial review on 2026-08-06 (`/ship`, v1.10.0.0) found `startAssessment` has
@@ -86,6 +70,23 @@ new migration with `on conflict do nothing` or fixed UUIDs), not touching
 the already-applied 115.
 
 ## Completed
+
+**`feedback_requests` INSERT policy had no DB-level guardian-consent check**
+Fixed in `worktree-feedback-request-creation` (migration `118_feedback_requests_consent_check.sql`).
+Tightened the INSERT policy on `feedback_requests` so `player_voice` rows now
+require, at the database level, that `team_id` resolves to a `coaching_groups`
+row in the caller's own club AND a `club_guardian_consents` row exists for
+that club/season — matching (and now backstopping) the app-level check in
+`createFeedbackRequest`. `peer_observation` rows are unaffected (no minor
+involved). **Verification caveat:** no local Supabase/Postgres instance or
+CLI was available in this environment, so this migration is syntax-reviewed
+against the existing schema and this repo's own precedent for bare
+enum-string comparisons (`085_assessment_questions.sql`) and season-label
+matching (`web/src/lib/season.ts`), but not execution-tested against a real
+database. Recommend a manual check after this migration is applied: attempt
+a direct PostgREST insert as a coach with `feedback_type = 'player_voice'`
+and a `team_id` outside their club (or with no consent on file) and confirm
+it's rejected.
 
 **Nested `<a>` tags in DrillCard broke HTML validity on every drill-grid page**
 Fixed by `/qa` on 2026-07-12, `feat/landing-page-redesign` (commit 185f340).
