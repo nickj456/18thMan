@@ -7,7 +7,7 @@ const state: {
   request: { id: string; feedback_type: 'player_voice' | 'peer_observation'; status: 'active' | 'paused' | 'expired'; expires_at: string } | null
   questions: Question[]
   existingResponseId: string | null
-  insertResponseError: { message: string } | null
+  insertResponseError: { message: string; code?: string } | null
   insertAnswersError: { message: string } | null
   insertFlagError: { message: string } | null
   safeguardingFlagged: boolean
@@ -200,6 +200,16 @@ describe('submitFeedbackResponse', () => {
     const result = await submitFeedbackResponse('token-1', {}, formData(allRatings()))
     expect(result).toEqual({ error: "You've already submitted feedback for this request." })
     expect(insertResponseMock).not.toHaveBeenCalled()
+  })
+
+  it('returns the same friendly duplicate message when the unique-constraint catches a lost race (not a generic error)', async () => {
+    // Simulates two concurrent submissions from the same device both passing
+    // the pre-insert existence check before either insert lands -- the
+    // second insert hits the (feedback_request_id, device_fingerprint_hash)
+    // unique constraint (119) and returns a 23505.
+    state.insertResponseError = { message: 'duplicate key value violates unique constraint', code: '23505' }
+    const result = await submitFeedbackResponse('token-1', {}, formData(allRatings()))
+    expect(result).toEqual({ error: "You've already submitted feedback for this request." })
   })
 
   it('a clean comment flips held_for_review to false and never creates a safeguarding flag', async () => {

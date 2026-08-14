@@ -74,6 +74,10 @@ export async function submitFeedbackResponse(
       .maybeSingle()
     if (existing) return { error: "You've already submitted feedback for this request." }
 
+    // The check above is a fast path only -- it has a TOCTOU gap under
+    // concurrent submissions from the same device. The unique constraint
+    // on (feedback_request_id, device_fingerprint_hash) (119) is the real
+    // guarantee; a 23505 here means we lost that race, not a genuine error.
     const { data: response, error: responseError } = await supabase
       .from('feedback_responses')
       .insert({
@@ -84,6 +88,7 @@ export async function submitFeedbackResponse(
       })
       .select('id')
       .single()
+    if (responseError?.code === '23505') return { error: "You've already submitted feedback for this request." }
     if (responseError || !response) return { error: GENERIC_ERROR }
 
     const answerRows: { feedback_response_id: string; question_id: string; numeric_value?: number; written_value?: string }[] =
