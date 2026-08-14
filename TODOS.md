@@ -71,6 +71,22 @@ the already-applied 115.
 
 ## Completed
 
+**Race condition let two concurrent submissions from the same device both pass `feedback_responses` dedup check**
+Fixed in `worktree-feedback-public-submission` (migration `119_feedback_responses_dedup_unique.sql`).
+`submitFeedbackResponse`'s pre-insert existence check (query for an existing
+row with the same `feedback_request_id` + `device_fingerprint_hash`) had a
+TOCTOU gap — two near-simultaneous submissions could both pass the check
+before either insert landed, producing two response rows for one
+respondent and silently padding a request's count past
+`minimum_response_threshold` (the anonymity floor). Added a unique
+constraint on `(feedback_request_id, device_fingerprint_hash)`; the action
+now catches the resulting `23505` and returns the same friendly
+"already submitted" message. Regression test added in `actions.test.ts`.
+**Verification caveat:** same as the guardian-consent-check migration —
+no local Postgres/Supabase CLI available, so the constraint is
+syntax-reviewed (matches this repo's existing `unique (...)` constraint
+patterns, e.g. `090_club_guardian_consents.sql`) but not execution-tested.
+
 **`feedback_requests` INSERT policy had no DB-level guardian-consent check**
 Fixed in `worktree-feedback-request-creation` (migration `118_feedback_requests_consent_check.sql`).
 Tightened the INSERT policy on `feedback_requests` so `player_voice` rows now
