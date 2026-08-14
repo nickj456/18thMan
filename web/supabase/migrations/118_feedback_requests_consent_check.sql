@@ -19,6 +19,12 @@
 --
 -- peer_observation rows are unaffected: no minor is involved, so no consent
 -- check applies -- only coach_id = auth.uid() still gates those inserts.
+--
+-- Depends on 116 (club_guardian_consents_member_select): without that
+-- permissive SELECT policy, the club_guardian_consents subquery below would
+-- see zero rows for any non-admin coach (090's original policy is
+-- admin-only), permanently blocking legitimate player_voice inserts even
+-- with consent on file. 116 must apply before this migration.
 
 alter policy "Coach can create own feedback requests"
   on public.feedback_requests
