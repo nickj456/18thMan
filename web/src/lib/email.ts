@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { labelFor } from '@/lib/coach-dna/categories'
+import { sourceTagFor, allCategoriesSelfOnly } from '@/lib/coach-dna/source-label'
 
 const FROM = '18th Man <hello@18thman.app>'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
@@ -558,13 +559,21 @@ export async function sendCoachDnaSummaryEmail(
     secondaryType: string | null
     pros: { categorySlug: string; text: string }[]
     cons: { categorySlug: string; text: string; resources: { title: string; description: string; url: string | null }[] }[]
+    sourcedCategories?: Record<string, string[]>
   },
   pdfBuffer: Buffer,
 ): Promise<EmailResult> {
   const typeLine = `${esc(labelFor(summary.primaryType))}${summary.secondaryType ? ` / ${esc(labelFor(summary.secondaryType))}` : ''}`
+  const allCategorySlugs = [...summary.pros, ...summary.cons].map(c => c.categorySlug)
+  const selfOnly = allCategoriesSelfOnly(summary.sourcedCategories, allCategorySlugs)
+
+  const tagSuffix = (categorySlug: string) => {
+    const tag = sourceTagFor(summary.sourcedCategories, categorySlug)
+    return tag ? ` <em style="color:#e8560a;">(${esc(tag)})</em>` : ''
+  }
 
   const consBlocks = summary.cons.map(con => `
-    ${para(`<strong style="color:#ffffff;">${esc(labelFor(con.categorySlug))}:</strong> ${esc(con.text)}`)}
+    ${para(`<strong style="color:#ffffff;">${esc(labelFor(con.categorySlug))}:</strong> ${esc(con.text)}${tagSuffix(con.categorySlug)}`)}
     ${con.resources.length > 0 ? featureList(con.resources.map(resource =>
       resource.url
         ? `<a href="${esc(resource.url)}" style="color:#e8560a;">${esc(resource.title)}</a> — ${esc(resource.description)}`
@@ -577,10 +586,10 @@ export async function sendCoachDnaSummaryEmail(
     ${divider()}
     ${greeting('')}
     ${para('Your Coach DNA self-assessment results are attached to this email as a PDF, and summarised below.')}
-    ${featureList(summary.pros.map(pro => `${esc(labelFor(pro.categorySlug))}: ${esc(pro.text)}`))}
+    ${featureList(summary.pros.map(pro => `${esc(labelFor(pro.categorySlug))}: ${esc(pro.text)}${tagSuffix(pro.categorySlug)}`))}
     ${para('Focus areas:')}
     ${consBlocks}
-    ${para('This reflects your self-assessment only, and will update as player and peer feedback comes in.')}
+    ${selfOnly ? para('This reflects your self-assessment only, and will update as player and peer feedback comes in.') : ''}
     ${ctaButton('View your full results', `${SITE_URL}/admin/coach-dna`)}
     ${sign()}
   `)
@@ -650,6 +659,26 @@ export function buildClubAddedEmailHtml(displayName: string, clubName: string, a
     ${ctaButton('Go to your club', `${SITE_URL}/clubs`)}
     ${sign()}
   `)
+}
+
+/** Sent to a coach the moment one of their feedback requests' cleared
+ *  response count first reaches its minimum_response_threshold. */
+export async function sendFeedbackThresholdReachedEmail(
+  to: string,
+  coachDisplayName: string,
+  requestType: 'player_voice' | 'peer_observation',
+): Promise<EmailResult> {
+  const typeLabel = requestType === 'player_voice' ? 'Player / Parent Voice' : 'Peer Observation'
+  const html = layout(`
+    ${heading('New feedback is ready to view.')}
+    ${divider()}
+    ${greeting(esc(coachDisplayName))}
+    ${para(`Your <strong style="color:#ffffff;">${esc(typeLabel)}</strong> feedback request has reached enough responses to show results.`)}
+    ${ctaButton('View your feedback requests', `${SITE_URL}/admin/coach-dna/feedback`)}
+    ${sign()}
+  `)
+
+  return send(to, `New ${typeLabel} feedback is ready — 18th Man`, html)
 }
 
 /** Sent when a platform admin or club admin adds a user directly to a club */

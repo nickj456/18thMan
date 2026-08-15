@@ -20,12 +20,19 @@ const state: {
 const updateFlagMock = vi.fn()
 const updateResponseMock = vi.fn()
 const insertLogMock = vi.fn(async (_row: Record<string, unknown>) => ({ error: state.logError }))
+const notifyThresholdMock = vi.fn(async (..._args: unknown[]) => undefined)
 const redirectMock = vi.fn((path: string) => {
   throw new Error(`REDIRECT:${path}`)
 })
 
 vi.mock('next/navigation', () => ({ redirect: (path: string) => redirectMock(path) }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('@/lib/coach-dna/notify-threshold', () => ({
+  notifyIfThresholdJustReached: (...args: unknown[]) => notifyThresholdMock(...args),
+}))
+vi.mock('@/lib/supabase/service', () => ({
+  createServiceClient: () => ({ __service: true }),
+}))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
@@ -49,6 +56,7 @@ vi.mock('@/lib/supabase/server', () => ({
       }
       if (table === 'feedback_responses') {
         return {
+          select: () => ({ eq: () => ({ single: async () => ({ data: { feedback_request_id: 'req-1' } }) }) }),
           update: (patch: Record<string, unknown>) => ({
             eq: async () => {
               updateResponseMock(patch)
@@ -78,6 +86,7 @@ describe('safeguarding queue actions', () => {
     updateFlagMock.mockClear()
     updateResponseMock.mockClear()
     insertLogMock.mockClear()
+    notifyThresholdMock.mockClear()
   })
 
   describe('dismissSafeguardingFlag', () => {
@@ -110,6 +119,11 @@ describe('safeguarding queue actions', () => {
         expect.objectContaining({ admin_id: 'admin-1', feedback_response_id: 'response-1', action: 'dismiss_safeguarding_flag' }),
       )
     })
+
+    it('checks the threshold notification for the response\'s request, via the service client', async () => {
+      await dismissSafeguardingFlag('flag-1')
+      expect(notifyThresholdMock).toHaveBeenCalledWith(expect.objectContaining({ __service: true }), 'req-1')
+    })
   })
 
   describe('confirmSafeguardingFlag', () => {
@@ -137,6 +151,11 @@ describe('safeguarding queue actions', () => {
       expect(insertLogMock).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'confirm_safeguarding_flag' }),
       )
+    })
+
+    it('does not check the threshold notification -- confirming does not change held_for_review', async () => {
+      await confirmSafeguardingFlag('flag-1')
+      expect(notifyThresholdMock).not.toHaveBeenCalled()
     })
   })
 })

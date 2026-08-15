@@ -9,6 +9,9 @@ import { computeSelfOnlyCategoryScores } from '@/lib/coach-dna/self-score'
 import { deriveArchetype } from '@/lib/coach-dna/archetype'
 import { labelFor } from '@/lib/coach-dna/categories'
 import { resourcesFor } from '@/lib/coach-dna/resources'
+import { fetchBlendInputs } from '@/lib/coach-dna/blend-inputs'
+import { computeCategoryScore, type SourceInput } from '@/lib/coach-dna/scoring'
+import { getCategoryWeights, getSourceThresholds, type ScoreSource } from '@/lib/coach-dna/config'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
@@ -84,7 +87,28 @@ export async function generateSelfAssessmentSummary(attemptId: string): Promise<
     responses.map(r => ({ mostOptionId: r.selected_option as string, leastOptionId: r.least_option as string })),
     (options ?? []).map(o => ({ id: o.id, categoryWeights: o.category_weights_json })),
   )
-  const archetype = deriveArchetype(scores)
+
+  // Blend in cleared external feedback per category. A category stays
+  // self-only (both in score and in sourcedCategories) until its external
+  // source(s) clear their sample-size threshold -- computeCategoryScore
+  // already encodes that via its 'insufficient_data' status.
+  const blendInputsByCategory = await fetchBlendInputs(serviceSupabase, user.id)
+  const sourcedCategories: Record<string, ScoreSource[]> = {}
+  const blendedScores = scores.map(({ categorySlug, score }) => {
+    const inputs: SourceInput[] = [
+      { source: 'self', responses: [{ value: score, submittedAt: attempt.completed_at as string }] },
+      ...(blendInputsByCategory[categorySlug] ?? []),
+    ]
+    const result = computeCategoryScore(inputs, getCategoryWeights(categorySlug), getSourceThresholds(categorySlug), new Date())
+    if (result.status === 'scored') {
+      sourcedCategories[categorySlug] = result.activeSources
+      return { categorySlug, score: result.blendedScore }
+    }
+    sourcedCategories[categorySlug] = ['self']
+    return { categorySlug, score }
+  })
+
+  const archetype = deriveArchetype(blendedScores)
 
   const prompt = `You are writing a short self-assessment summary for a rugby league coach, based on their own self-reported scores across 8 coaching categories. Write in a direct, encouraging coaching voice. No em dashes. No fluff.
 
@@ -133,6 +157,7 @@ Respond with ONLY a valid JSON object, no markdown fences, no explanation. "pros
       text: parsed.cons[i].text,
       resources: resourcesFor(categorySlug),
     })),
+    sourcedCategories,
   }
 
   const { error: upsertError } = await supabase

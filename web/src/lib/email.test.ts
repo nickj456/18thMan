@@ -9,7 +9,7 @@ vi.mock('resend', () => ({
   })),
 }))
 
-import { sendDirectEmailHtml, sendCoachDnaSummaryEmail } from './email'
+import { sendDirectEmailHtml, sendCoachDnaSummaryEmail, sendFeedbackThresholdReachedEmail } from './email'
 
 describe('sendDirectEmailHtml', () => {
   beforeEach(() => {
@@ -121,6 +121,48 @@ describe('sendCoachDnaSummaryEmail', () => {
     }))
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
       html: expect.not.stringContaining('<a href="null"'),
+    }))
+  })
+
+  it('includes the self-only disclaimer when every category is self-only (including when sourcedCategories is absent)', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_222' }, error: null })
+    await sendCoachDnaSummaryEmail('coach@example.com', summary, Buffer.from('fake-pdf'))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.stringContaining('This reflects your self-assessment only'),
+    }))
+  })
+
+  it('omits the blanket disclaimer and tags the blended category once external feedback clears threshold', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_333' }, error: null })
+    const blended = { ...summary, sourcedCategories: { teacher: ['self', 'player_voice'], organiser: ['self'] } }
+    await sendCoachDnaSummaryEmail('coach@example.com', blended, Buffer.from('fake-pdf'))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.not.stringContaining('This reflects your self-assessment only'),
+    }))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.stringContaining('Includes player feedback'),
+    }))
+  })
+})
+
+describe('sendFeedbackThresholdReachedEmail', () => {
+  beforeEach(() => {
+    sendMock.mockReset()
+    process.env.RESEND_API_KEY = 're_test_key'
+  })
+
+  it('sends to the coach with a subject naming the request type', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_555' }, error: null })
+    const result = await sendFeedbackThresholdReachedEmail('coach@example.com', 'Alex', 'player_voice')
+    expect(result).toEqual({ success: true, messageId: 'msg_555' })
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ to: 'coach@example.com' }))
+  })
+
+  it('includes a CTA link back to the feedback requests page', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_666' }, error: null })
+    await sendFeedbackThresholdReachedEmail('coach@example.com', 'Alex', 'peer_observation')
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.stringContaining('/admin/coach-dna/feedback'),
     }))
   })
 })

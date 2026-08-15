@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 import { labelFor } from '@/lib/coach-dna/categories'
+import { sourceTagFor, allCategoriesSelfOnly } from '@/lib/coach-dna/source-label'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const E      = '#e8560a'
@@ -56,6 +57,7 @@ const s = StyleSheet.create({
   commentHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 7 },
   commentDot: { width: 7, height: 7, borderRadius: 4, marginRight: 8 },
   commentLabel: { fontSize: 7, fontFamily: 'Helvetica-Bold', letterSpacing: 2 },
+  sourceTag: { fontSize: 6.5, color: MUTED, marginLeft: 8, fontFamily: 'Helvetica' },
   commentBody: {
     fontSize: 9.5, color: MID, lineHeight: 1.6, paddingHorizontal: 14, paddingVertical: 12,
     backgroundColor: LIGHT, borderRadius: 5, borderLeftWidth: 3, borderLeftStyle: 'solid',
@@ -81,17 +83,20 @@ function CommentBlock({
   text,
   color,
   resources,
+  tag,
 }: {
   label: string
   text: string
   color: string
   resources?: { title: string; description: string }[]
+  tag?: string | null
 }) {
   return (
     <View style={s.commentBlock} wrap={false}>
       <View style={s.commentHeaderRow}>
         <View style={[s.commentDot, { backgroundColor: color }]} />
         <Text style={[s.commentLabel, { color }]}>{label}</Text>
+        {tag && <Text style={s.sourceTag}>{tag}</Text>}
       </View>
       <Text style={[s.commentBody, { borderLeftColor: color }]}>{text}</Text>
       {resources && resources.length > 0 && (
@@ -128,12 +133,15 @@ export function CoachDnaSummaryPDF({
   const completedLabel = new Date(completedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
+  const allCategorySlugs = [...data.pros, ...data.cons].map(c => c.categorySlug)
+  const selfOnly = allCategoriesSelfOnly(data.sourcedCategories, allCategorySlugs)
+
   const rows = [
     ...(coachName ? [{ key: 'Coach', value: coachName }] : []),
     ...(clubName ? [{ key: 'Club', value: clubName }] : []),
     { key: 'Coach Type', value: typeLine },
     { key: 'Completed', value: completedLabel },
-    { key: 'Data Source', value: 'Self-Assessment Only' },
+    { key: 'Data Source', value: selfOnly ? 'Self-Assessment Only' : 'Self-Assessment + Player/Peer Feedback' },
   ]
 
   return (
@@ -168,7 +176,13 @@ export function CoachDnaSummaryPDF({
 
           <Text style={[s.groupHeading, { color: GREEN, borderBottomColor: GREEN }]}>STRENGTHS</Text>
           {data.pros.map(pro => (
-            <CommentBlock key={pro.categorySlug} label={labelFor(pro.categorySlug).toUpperCase()} text={pro.text} color={GREEN} />
+            <CommentBlock
+              key={pro.categorySlug}
+              label={labelFor(pro.categorySlug).toUpperCase()}
+              text={pro.text}
+              color={GREEN}
+              tag={sourceTagFor(data.sourcedCategories, pro.categorySlug)}
+            />
           ))}
 
           <Text style={[s.groupHeading, { color: AMBER, borderBottomColor: AMBER }]}>FOCUS AREAS</Text>
@@ -179,12 +193,15 @@ export function CoachDnaSummaryPDF({
               text={con.text}
               color={AMBER}
               resources={con.resources}
+              tag={sourceTagFor(data.sourcedCategories, con.categorySlug)}
             />
           ))}
 
-          <Text style={s.confidential}>
-            This reflects your self-assessment only and will update as player and peer feedback comes in.
-          </Text>
+          {selfOnly && (
+            <Text style={s.confidential}>
+              This reflects your self-assessment only and will update as player and peer feedback comes in.
+            </Text>
+          )}
         </View>
 
         <View style={s.footer} fixed>

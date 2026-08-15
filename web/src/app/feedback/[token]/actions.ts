@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { feedbackRequestEligibility } from '@/lib/coach-dna/feedback-request-status'
 import { hashDeviceFingerprint } from '@/lib/coach-dna/device-fingerprint'
 import { checkSafeguardingConcern } from '@/lib/coach-dna/safeguarding'
+import { notifyIfThresholdJustReached } from '@/lib/coach-dna/notify-threshold'
 import type { RespondentType } from '@/lib/supabase/types'
 
 export type SubmitFeedbackState = { error?: string; success?: boolean }
@@ -124,6 +125,7 @@ export async function submitFeedbackResponse(
     }
 
     await supabase.from('feedback_responses').update({ held_for_review: false }).eq('id', response.id)
+    await notifyIfThresholdJustReached(supabase, request.id)
     return { success: true }
   } catch (error) {
     console.error('[feedback] unexpected error submitting response', error)
