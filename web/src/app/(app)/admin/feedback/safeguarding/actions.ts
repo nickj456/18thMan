@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { requireFeedbackModerator } from '../require-moderator'
+import { createServiceClient } from '@/lib/supabase/service'
+import { notifyIfThresholdJustReached } from '@/lib/coach-dna/notify-threshold'
 
 async function responseIdForFlag(supabase: Awaited<ReturnType<typeof requireFeedbackModerator>>['supabase'], flagId: string) {
   const { data: flag } = await supabase.from('safeguarding_flags').select('feedback_answer_id').eq('id', flagId).single()
@@ -29,6 +31,11 @@ export async function dismissSafeguardingFlag(flagId: string) {
       feedback_response_id: responseId,
       action: 'dismiss_safeguarding_flag',
     })
+
+    const { data: response } = await supabase.from('feedback_responses').select('feedback_request_id').eq('id', responseId).single()
+    if (response?.feedback_request_id) {
+      await notifyIfThresholdJustReached(createServiceClient(), response.feedback_request_id)
+    }
   }
 
   revalidatePath('/admin/feedback/safeguarding')

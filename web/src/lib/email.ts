@@ -661,6 +661,26 @@ export function buildClubAddedEmailHtml(displayName: string, clubName: string, a
   `)
 }
 
+/** Sent to a coach the moment one of their feedback requests' cleared
+ *  response count first reaches its minimum_response_threshold. */
+export async function sendFeedbackThresholdReachedEmail(
+  to: string,
+  coachDisplayName: string,
+  requestType: 'player_voice' | 'peer_observation',
+): Promise<EmailResult> {
+  const typeLabel = requestType === 'player_voice' ? 'Player / Parent Voice' : 'Peer Observation'
+  const html = layout(`
+    ${heading('New feedback is ready to view.')}
+    ${divider()}
+    ${greeting(esc(coachDisplayName))}
+    ${para(`Your <strong style="color:#ffffff;">${esc(typeLabel)}</strong> feedback request has reached enough responses to show results.`)}
+    ${ctaButton('View your feedback requests', `${SITE_URL}/admin/coach-dna/feedback`)}
+    ${sign()}
+  `)
+
+  return send(to, `New ${typeLabel} feedback is ready — 18th Man`, html)
+}
+
 /** Sent when a platform admin or club admin adds a user directly to a club */
 export async function sendClubAddedEmail(
   to: string,

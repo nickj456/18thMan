@@ -29,8 +29,13 @@ const insertFlagMock = vi.fn(async (_row: Record<string, unknown>) => ({ error: 
 const updateHeldMock = vi.fn()
 const checkSafeguardingConcernMock = vi.fn(async (_text: string) => state.safeguardingFlagged)
 
+const notifyThresholdMock = vi.fn(async (..._args: unknown[]) => undefined)
+
 vi.mock('@/lib/coach-dna/safeguarding', () => ({
   checkSafeguardingConcern: (text: string) => checkSafeguardingConcernMock(text),
+}))
+vi.mock('@/lib/coach-dna/notify-threshold', () => ({
+  notifyIfThresholdJustReached: (...args: unknown[]) => notifyThresholdMock(...args),
 }))
 
 vi.mock('@/lib/supabase/service', () => ({
@@ -138,6 +143,7 @@ describe('submitFeedbackResponse', () => {
     insertFlagMock.mockClear()
     updateHeldMock.mockClear()
     checkSafeguardingConcernMock.mockClear()
+    notifyThresholdMock.mockClear()
   })
 
   it('rejects when the token does not resolve to a request', async () => {
@@ -256,5 +262,16 @@ describe('submitFeedbackResponse', () => {
     await expect(submitFeedbackResponse('token-1', {}, formData(allRatings()))).resolves.toEqual({
       error: 'Something went wrong submitting your feedback. Please try again.',
     })
+  })
+
+  it('checks the threshold notification after a clean submission clears the response', async () => {
+    await submitFeedbackResponse('token-1', {}, formData(allRatings()))
+    expect(notifyThresholdMock).toHaveBeenCalledWith(expect.anything(), 'req-1')
+  })
+
+  it('does not check the threshold notification when the comment is flagged (response stays held)', async () => {
+    state.safeguardingFlagged = true
+    await submitFeedbackResponse('token-1', {}, formData({ ...allRatings(), comment: 'concerning text' }))
+    expect(notifyThresholdMock).not.toHaveBeenCalled()
   })
 })
