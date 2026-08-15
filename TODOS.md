@@ -59,6 +59,19 @@ since the migration is already applied to prod (never edit an applied
 migration) — if idempotent re-seeding is ever needed (branch resets, local
 dev fixtures), add it as a new migration rather than editing this one.
 
+**Persist previous category scores for `applyScoreChangeLimit` continuity**
+**Priority:** P3
+`worktree-feedback-scoring-wiring` (Part 5 of the coach 360-feedback loop)
+wires `computeCategoryScore` into the live results path but always calls it
+with `previousScore: null`, so the score-change-limiting logic
+(`applyScoreChangeLimit`, already built and tested in `limits.ts`) never
+actually smooths anything — a single new batch of external feedback can move
+a category's shown score by its full raw delta with no continuity guard.
+`coach_profiles` has no column to store a prior score, and adding one is a
+real design decision (what counts as "previous" — last generation? a rolling
+window?) the design spec doesn't specify, so this was deliberately deferred
+rather than bolted on. Needs a decision before implementing.
+
 **`115_feedback_question_bank_seed.sql` is non-idempotent and worse than the precedent above**
 **Priority:** P4
 Final whole-branch review on 2026-08-13 (`worktree-feedback-request-creation`)
@@ -82,10 +95,8 @@ respondent and silently padding a request's count past
 constraint on `(feedback_request_id, device_fingerprint_hash)`; the action
 now catches the resulting `23505` and returns the same friendly
 "already submitted" message. Regression test added in `actions.test.ts`.
-**Verification caveat:** same as the guardian-consent-check migration —
-no local Postgres/Supabase CLI available, so the constraint is
-syntax-reviewed (matches this repo's existing `unique (...)` constraint
-patterns, e.g. `090_club_guardian_consents.sql`) but not execution-tested.
+**Applied and confirmed live** on 2026-08-14 via direct DB inspection —
+`feedback_responses_request_device_unique` constraint verified present.
 
 **`feedback_requests` INSERT policy had no DB-level guardian-consent check**
 Fixed in `worktree-feedback-request-creation` (migration `118_feedback_requests_consent_check.sql`).
@@ -94,15 +105,11 @@ require, at the database level, that `team_id` resolves to a `coaching_groups`
 row in the caller's own club AND a `club_guardian_consents` row exists for
 that club/season — matching (and now backstopping) the app-level check in
 `createFeedbackRequest`. `peer_observation` rows are unaffected (no minor
-involved). **Verification caveat:** no local Supabase/Postgres instance or
-CLI was available in this environment, so this migration is syntax-reviewed
-against the existing schema and this repo's own precedent for bare
-enum-string comparisons (`085_assessment_questions.sql`) and season-label
-matching (`web/src/lib/season.ts`), but not execution-tested against a real
-database. Recommend a manual check after this migration is applied: attempt
-a direct PostgREST insert as a coach with `feedback_type = 'player_voice'`
-and a `team_id` outside their club (or with no consent on file) and confirm
-it's rejected.
+involved). **Applied and confirmed live** on 2026-08-14 via direct DB
+inspection — the policy's `with_check` expression matches the migration
+exactly, and both 118/119 were behind the last-applied migration until this
+session caught the gap and applied both directly to the `18th-man`
+Supabase project.
 
 **Nested `<a>` tags in DrillCard broke HTML validity on every drill-grid page**
 Fixed by `/qa` on 2026-07-12, `feat/landing-page-redesign` (commit 185f340).
