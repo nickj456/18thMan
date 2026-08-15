@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { Building2, Users, CheckCircle, Clock, Shield } from 'lucide-react'
 import { AcceptDeclineButtons } from './AcceptDeclineButtons'
 import { ClubAdminPanel } from './ClubAdminPanel'
+import { GuardianConsentToggle } from './GuardianConsentToggle'
+import { getCurrentSeasonLabel } from '@/lib/season'
 
 export const metadata = { title: 'My Club — 18th Man' }
 export const dynamic = 'force-dynamic'
@@ -43,7 +45,16 @@ export default async function ClubPage({
     let availableUsers: { id: string; username: string; display_name: string | null }[] = []
     let pendingInvites: { invitationId: string; userId: string; createdAt: string; displayName: string | null; username: string }[] = []
     let groupCount = 0
+    let guardianConsentGranted = false
     if (profile.club_role === 'admin') {
+      const { data: consent } = await supabase
+        .from('club_guardian_consents')
+        .select('id')
+        .eq('club_id', profile.club_id)
+        .eq('season_label', getCurrentSeasonLabel())
+        .maybeSingle()
+      guardianConsentGranted = !!consent
+
       const memberIds = (members ?? []).map(m => m.id)
       let q = supabase
         .from('profiles')
@@ -133,6 +144,15 @@ export default async function ClubPage({
             </ul>
           </div>
         </section>
+
+        {/* Guardian consent for player/parent Coach DNA feedback */}
+        {profile.club_role === 'admin' && (
+          <GuardianConsentToggle
+            clubId={profile.club_id}
+            season={getCurrentSeasonLabel()}
+            granted={guardianConsentGranted}
+          />
+        )}
 
         {/* Club admin management panel */}
         {profile.club_role === 'admin' && club?.invite_token && (

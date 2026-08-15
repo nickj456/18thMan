@@ -38,6 +38,8 @@ import {
   Sparkles,
   TrendingUp,
   ShoppingBag,
+  ShieldAlert,
+  Gavel,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -205,6 +207,24 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                     >
                       <Users className="size-4" />
                       <span>Users</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith('/admin/feedback/safeguarding')}
+                      render={<Link href="/admin/feedback/safeguarding" onClick={closeMobile} />}
+                    >
+                      <ShieldAlert className="size-4" />
+                      <span>Safeguarding Queue</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith('/admin/feedback/disputes')}
+                      render={<Link href="/admin/feedback/disputes" onClick={closeMobile} />}
+                    >
+                      <Gavel className="size-4" />
+                      <span>Response Disputes</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>

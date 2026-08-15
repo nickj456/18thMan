@@ -72,6 +72,9 @@ export default async function FeedbackRequestsPage() {
               </code>
               <CopyLinkButton link={`${siteUrl}/feedback/${request.token}`} />
             </div>
+            <Link href={`/admin/coach-dna/feedback/${request.id}/responses`} className="text-xs text-orange-400 hover:text-orange-300">
+              View responses →
+            </Link>
           </CardContent>
         </Card>
       ))}
