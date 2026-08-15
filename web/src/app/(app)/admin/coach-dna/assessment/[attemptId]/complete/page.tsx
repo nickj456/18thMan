@@ -10,6 +10,7 @@ import { EmailSummaryButton } from './EmailSummaryButton'
 import { RetryGenerateButton } from './RetryGenerateButton'
 import { labelFor } from '@/lib/coach-dna/categories'
 import { isCurrentSummaryShape } from '@/lib/coach-dna/summary-shape'
+import { sourceTagFor, allCategoriesSelfOnly } from '@/lib/coach-dna/source-label'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 export const metadata = { title: 'Coach DNA — Your Results' }
@@ -97,19 +98,25 @@ export default async function AssessmentCompletePage({
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <p className="text-xs text-zinc-500 uppercase tracking-widest">
-            Based on your self-assessment only. This updates once player and peer feedback comes in.
-          </p>
+          {allCategoriesSelfOnly(summary.sourcedCategories, [...summary.pros, ...summary.cons].map(c => c.categorySlug)) && (
+            <p className="text-xs text-zinc-500 uppercase tracking-widest">
+              Based on your self-assessment only. This updates once player and peer feedback comes in.
+            </p>
+          )}
           <p className="text-sm text-zinc-300">{summary.narrative}</p>
 
           <div>
             <h2 className="text-sm font-semibold text-emerald-400 mb-2">Strengths</h2>
             <ul className="space-y-1.5">
-              {summary.pros.map(pro => (
-                <li key={pro.categorySlug} className="text-sm text-zinc-400">
-                  <span className="text-zinc-200 font-medium">{labelFor(pro.categorySlug)}:</span> {pro.text}
-                </li>
-              ))}
+              {summary.pros.map(pro => {
+                const tag = sourceTagFor(summary.sourcedCategories, pro.categorySlug)
+                return (
+                  <li key={pro.categorySlug} className="text-sm text-zinc-400">
+                    <span className="text-zinc-200 font-medium">{labelFor(pro.categorySlug)}:</span> {pro.text}
+                    {tag && <span className="ml-2 text-[10px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded-full align-middle">{tag}</span>}
+                  </li>
+                )
+              })}
             </ul>
           </div>
 
@@ -119,6 +126,11 @@ export default async function AssessmentCompletePage({
               {summary.cons.map(con => (
                 <li key={con.categorySlug} className="text-sm text-zinc-400">
                   <span className="text-zinc-200 font-medium">{labelFor(con.categorySlug)}:</span> {con.text}
+                  {sourceTagFor(summary.sourcedCategories, con.categorySlug) && (
+                    <span className="ml-2 text-[10px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded-full align-middle">
+                      {sourceTagFor(summary.sourcedCategories, con.categorySlug)}
+                    </span>
+                  )}
                   {con.resources.length > 0 && (
                     <ul className="mt-1.5 space-y-1 pl-3 border-l border-zinc-800">
                       {con.resources.map(resource => (

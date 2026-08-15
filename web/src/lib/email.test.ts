@@ -123,4 +123,24 @@ describe('sendCoachDnaSummaryEmail', () => {
       html: expect.not.stringContaining('<a href="null"'),
     }))
   })
+
+  it('includes the self-only disclaimer when every category is self-only (including when sourcedCategories is absent)', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_222' }, error: null })
+    await sendCoachDnaSummaryEmail('coach@example.com', summary, Buffer.from('fake-pdf'))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.stringContaining('This reflects your self-assessment only'),
+    }))
+  })
+
+  it('omits the blanket disclaimer and tags the blended category once external feedback clears threshold', async () => {
+    sendMock.mockResolvedValue({ data: { id: 'msg_333' }, error: null })
+    const blended = { ...summary, sourcedCategories: { teacher: ['self', 'player_voice'], organiser: ['self'] } }
+    await sendCoachDnaSummaryEmail('coach@example.com', blended, Buffer.from('fake-pdf'))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.not.stringContaining('This reflects your self-assessment only'),
+    }))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.stringContaining('Includes player feedback'),
+    }))
+  })
 })
