@@ -11,6 +11,7 @@ const state: {
   optionsError: { message: string } | null
   aiText: string
   upsertError: { message: string } | null
+  blendInputs: Record<string, { source: string; responses: { value: number; submittedAt: string }[] }[]>
 } = {
   user: null,
   role: 'admin',
@@ -21,10 +22,15 @@ const state: {
   optionsError: null,
   aiText: '',
   upsertError: null,
+  blendInputs: {},
 }
 
-const upsertMock = vi.fn(async (_row: { ai_summary: { pros: { categorySlug: string }[] } }, _opts?: unknown) => ({
+const upsertMock = vi.fn(async (_row: { ai_summary: { pros: { categorySlug: string }[]; sourcedCategories: Record<string, string[]> } }, _opts?: unknown) => ({
   error: state.upsertError,
+}))
+const fetchBlendInputsMock = vi.fn(async (..._args: unknown[]) => state.blendInputs)
+vi.mock('@/lib/coach-dna/blend-inputs', () => ({
+  fetchBlendInputs: (...args: unknown[]) => fetchBlendInputsMock(...args),
 }))
 /** Records which client each table read went through, so a regression back to
  *  the anon client for `assessment_options` (whose `category_weights_json` is
@@ -115,7 +121,9 @@ describe('generateSelfAssessmentSummary', () => {
       ],
     })
     state.upsertError = null
+    state.blendInputs = {}
     upsertMock.mockClear()
+    fetchBlendInputsMock.mockClear()
   })
 
   it('redirects unauthenticated callers to login', async () => {
@@ -262,5 +270,58 @@ describe('generateSelfAssessmentSummary', () => {
     state.aiText = '{"a":}'
     await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('Could not generate your summary right now')
     expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  describe('feedback blend', () => {
+    it('marks every category self-only when there is no external feedback', async () => {
+      state.blendInputs = {}
+      const result = await generateSelfAssessmentSummary('attempt-1')
+      expect(result.sourcedCategories!.teacher).toEqual(['self'])
+      expect(result.sourcedCategories!.motivator).toEqual(['self'])
+      // Unchanged baseline behaviour from the self-only-only path.
+      expect(result.primaryType).toBe('teacher')
+    })
+
+    it('calls fetchBlendInputs with the coach id', async () => {
+      await generateSelfAssessmentSummary('attempt-1')
+      expect(fetchBlendInputsMock).toHaveBeenCalledWith(expect.anything(), 'coach-1')
+    })
+
+    it('blends in a category once its external source clears the sample-size threshold', async () => {
+      // getSourceThresholds default: player_voice threshold is 3.
+      state.blendInputs = {
+        motivator: [{ source: 'player_voice', responses: [
+          { value: 100, submittedAt: '2026-08-01T00:00:00.000Z' },
+          { value: 100, submittedAt: '2026-08-01T00:00:00.000Z' },
+          { value: 100, submittedAt: '2026-08-01T00:00:00.000Z' },
+        ] }],
+      }
+      const result = await generateSelfAssessmentSummary('attempt-1')
+      expect(result.sourcedCategories!.motivator).toEqual(expect.arrayContaining(['self', 'player_voice']))
+      // Every other category, untouched, stays self-only.
+      expect(result.sourcedCategories!.teacher).toEqual(['self'])
+    })
+
+    it('does not blend a category whose external source is below the sample-size threshold', async () => {
+      // Only 1 player_voice response -- below the threshold of 3.
+      state.blendInputs = {
+        motivator: [{ source: 'player_voice', responses: [{ value: 100, submittedAt: '2026-08-01T00:00:00.000Z' }] }],
+      }
+      const result = await generateSelfAssessmentSummary('attempt-1')
+      expect(result.sourcedCategories!.motivator).toEqual(['self'])
+    })
+
+    it('persists sourcedCategories as part of ai_summary', async () => {
+      state.blendInputs = {
+        motivator: [{ source: 'player_voice', responses: [
+          { value: 100, submittedAt: '2026-08-01T00:00:00.000Z' },
+          { value: 100, submittedAt: '2026-08-01T00:00:00.000Z' },
+          { value: 100, submittedAt: '2026-08-01T00:00:00.000Z' },
+        ] }],
+      }
+      await generateSelfAssessmentSummary('attempt-1')
+      const persisted = upsertMock.mock.calls[0][0]
+      expect(persisted.ai_summary.sourcedCategories.motivator).toEqual(expect.arrayContaining(['self', 'player_voice']))
+    })
   })
 })

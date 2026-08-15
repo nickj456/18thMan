@@ -195,6 +195,11 @@ export interface SelfAssessmentSummary {
   narrative: string
   pros: { categorySlug: string; text: string }[]
   cons: { categorySlug: string; text: string; resources: { title: string; description: string; url: string | null }[] }[]
+  /** Which sources contributed to each category's shown score -- ['self'] until
+   *  cleared external feedback (Coach 360) clears its sample-size threshold.
+   *  Optional: rows persisted before this field existed simply lack it --
+   *  treat a missing value as self-only, not an error. */
+  sourcedCategories?: Record<string, string[]>
 }
 
 export interface AiGuide {
