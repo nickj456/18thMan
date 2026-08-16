@@ -11,6 +11,8 @@ const state: {
   teamInviteAccepted: boolean
   consentRow: { id: string } | null
   insertError: { message: string } | null
+  deleteError: { message: string } | null
+  deletedCount: number | null
 } = {
   user: null,
   role: 'coach',
@@ -20,15 +22,22 @@ const state: {
   teamInviteAccepted: false,
   consentRow: null,
   insertError: null,
+  deleteError: null,
+  deletedCount: null,
 }
 
 const insertMock = vi.fn(async (_row: Record<string, unknown>) => ({ error: state.insertError }))
 const redirectMock = vi.fn((path: string) => {
   throw new Error(`REDIRECT:${path}`)
 })
+const revalidatePathMock = vi.fn()
+const deleteEqMock = vi.fn()
 
 vi.mock('next/navigation', () => ({
   redirect: (path: string) => redirectMock(path),
+}))
+vi.mock('next/cache', () => ({
+  revalidatePath: (path: string) => revalidatePathMock(path),
 }))
 vi.mock('crypto', () => ({
   randomUUID: () => 'fake-token-uuid',
@@ -93,14 +102,24 @@ vi.mock('@/lib/supabase/server', () => ({
         }
       }
       if (table === 'feedback_requests') {
-        return { insert: insertMock }
+        return {
+          insert: insertMock,
+          delete: () => ({
+            in: (_col: string, ids: string[]) => ({
+              eq: async (_col2: string, _coachId: string) => {
+                deleteEqMock(ids)
+                return { error: state.deleteError, count: state.deleteError ? null : (state.deletedCount ?? ids.length) }
+              },
+            }),
+          }),
+        }
       }
       throw new Error(`unexpected table: ${table}`)
     },
   }),
 }))
 
-import { createFeedbackRequest } from './actions'
+import { createFeedbackRequest, deleteFeedbackRequests } from './actions'
 
 function formData(fields: Record<string, string>): FormData {
   const fd = new FormData()
@@ -226,5 +245,57 @@ describe('createFeedbackRequest', () => {
   it('throws when the insert fails', async () => {
     state.insertError = { message: 'db down' }
     await expect(createFeedbackRequest(formData({ feedbackType: 'peer_observation' }))).rejects.toThrow('db down')
+  })
+})
+
+describe('deleteFeedbackRequests', () => {
+  beforeEach(() => {
+    state.user = { id: 'coach-1' }
+    state.role = 'coach'
+    state.deleteError = null
+    state.deletedCount = null
+    deleteEqMock.mockClear()
+    revalidatePathMock.mockClear()
+    redirectMock.mockClear()
+  })
+
+  it('redirects unauthenticated callers to login', async () => {
+    state.user = null
+    await expect(deleteFeedbackRequests(['req-1'])).rejects.toThrow('REDIRECT:/login')
+  })
+
+  it('redirects viewer-role callers to the dashboard', async () => {
+    state.role = 'viewer'
+    await expect(deleteFeedbackRequests(['req-1'])).rejects.toThrow('REDIRECT:/dashboard')
+    expect(deleteEqMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects an empty selection without hitting the database', async () => {
+    const result = await deleteFeedbackRequests([])
+    expect(result).toEqual({ error: 'No requests selected.' })
+    expect(deleteEqMock).not.toHaveBeenCalled()
+  })
+
+  it('deletes the given ids, scoped to the caller as coach_id (defense in depth alongside RLS)', async () => {
+    const result = await deleteFeedbackRequests(['req-1', 'req-2'])
+    expect(result).toEqual({ success: true, deletedCount: 2 })
+    expect(deleteEqMock).toHaveBeenCalledWith(['req-1', 'req-2'])
+  })
+
+  it('revalidates the feedback requests list on success', async () => {
+    await deleteFeedbackRequests(['req-1'])
+    expect(revalidatePathMock).toHaveBeenCalledWith('/admin/coach-dna/feedback')
+  })
+
+  it('warns when fewer rows were deleted than requested (some ids not owned by the caller, or already gone)', async () => {
+    state.deletedCount = 1
+    const result = await deleteFeedbackRequests(['req-1', 'req-2'])
+    expect(result).toEqual({ success: true, deletedCount: 1, partial: true })
+  })
+
+  it('returns a friendly error when the delete fails', async () => {
+    state.deleteError = { message: 'db down' }
+    const result = await deleteFeedbackRequests(['req-1'])
+    expect(result).toEqual({ error: 'db down' })
   })
 })

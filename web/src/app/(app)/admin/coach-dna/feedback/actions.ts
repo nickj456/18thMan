@@ -2,6 +2,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentSeasonLabel } from '@/lib/season'
@@ -96,4 +97,27 @@ export async function createFeedbackRequest(formData: FormData) {
   if (error) throw new Error(error.message)
 
   redirect('/admin/coach-dna/feedback')
+}
+
+/** Bulk-deletes feedback requests belonging to the calling coach. Deleting a
+ *  request cascades (088/091/092) to its responses, answers, disputes, and
+ *  safeguarding flags -- irreversible. The `eq('coach_id', userId)` here is
+ *  defense in depth alongside the RLS delete policy (120), not a substitute
+ *  for it. */
+export async function deleteFeedbackRequests(ids: string[]) {
+  const { supabase, userId } = await requireCoach()
+  if (ids.length === 0) return { error: 'No requests selected.' }
+
+  const { error, count } = await supabase
+    .from('feedback_requests')
+    .delete({ count: 'exact' })
+    .in('id', ids)
+    .eq('coach_id', userId)
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin/coach-dna/feedback')
+
+  const deletedCount = count ?? ids.length
+  if (deletedCount < ids.length) return { success: true as const, deletedCount, partial: true as const }
+  return { success: true as const, deletedCount }
 }
