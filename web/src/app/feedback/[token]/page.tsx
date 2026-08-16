@@ -14,10 +14,13 @@ export default async function FeedbackPage({ params }: { params: Promise<{ token
 
   const { data: request } = await supabase
     .from('feedback_requests')
-    .select('id, feedback_type, status, expires_at')
+    .select('id, feedback_type, status, expires_at, profiles!feedback_requests_coach_id_fkey(display_name, username)')
     .eq('token', token)
     .maybeSingle()
   if (!request) notFound()
+
+  const coach = request.profiles as unknown as { display_name: string | null; username: string } | null
+  const coachName = coach?.display_name ?? coach?.username ?? 'this coach'
 
   const eligibility = feedbackRequestEligibility(request)
   if (eligibility === 'expired') {
@@ -26,7 +29,7 @@ export default async function FeedbackPage({ params }: { params: Promise<{ token
         <Card>
           <CardHeader>
             <CardTitle>This feedback request has expired</CardTitle>
-            <CardDescription>Ask the coach who shared this link to send a new one.</CardDescription>
+            <CardDescription>Ask {coachName} to send you a new link.</CardDescription>
           </CardHeader>
         </Card>
       </Shell>
@@ -38,7 +41,7 @@ export default async function FeedbackPage({ params }: { params: Promise<{ token
         <Card>
           <CardHeader>
             <CardTitle>This link isn&apos;t accepting feedback right now</CardTitle>
-            <CardDescription>The coach who shared this link has paused it. Try again later.</CardDescription>
+            <CardDescription>{coachName} has paused this link. Try again later.</CardDescription>
           </CardHeader>
         </Card>
       </Shell>
@@ -58,12 +61,10 @@ export default async function FeedbackPage({ params }: { params: Promise<{ token
       <Card>
         <CardHeader>
           <CardTitle>
-            {request.feedback_type === 'player_voice' ? 'Player / Parent Feedback' : 'Peer Coach Feedback'}
+            {request.feedback_type === 'player_voice' ? `Feedback for ${coachName}` : `Peer Feedback for ${coachName}`}
           </CardTitle>
           <CardDescription>
-            {request.feedback_type === 'player_voice'
-              ? 'Your feedback is anonymous and helps this coach improve. It takes about 2 minutes.'
-              : 'Your feedback is anonymous and helps this coach improve. It takes about 2 minutes.'}
+            Your feedback is anonymous and helps {coachName} improve. It takes about 2 minutes.
           </CardDescription>
         </CardHeader>
         <CardContent>
