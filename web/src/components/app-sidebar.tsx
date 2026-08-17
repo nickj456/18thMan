@@ -23,7 +23,6 @@ import {
   Users2,
   HelpCircle,
   Mail,
-  Scale,
   Settings,
   Shirt,
   BookMarked,
@@ -40,6 +39,9 @@ import {
   ShoppingBag,
   ShieldAlert,
   Gavel,
+  ChevronDown,
+  Brain,
+  type LucideIcon,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -51,42 +53,168 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarHeader,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { signOut } from '@/app/(app)/actions'
 import { useTheme } from '@/components/ThemeProvider'
 import type { UserRole } from '@/lib/supabase/types'
 
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/drills', label: 'Drill Library', icon: BookOpen },
-  { href: '/drills/new', label: 'Drill Designer', icon: PenTool },
-  { href: '/sessions', label: 'Session Planner', icon: CalendarDays },
-  { href: '/shop', label: 'Shop', icon: ShoppingBag },
-  { href: '/chat', label: 'Coach Chat', icon: MessageSquare },
-  { href: '/clubs', label: 'My Club', icon: Building2 },
-  { href: '/groups', label: 'My Groups', icon: Users2 },
-  { href: '/weekly-focus', label: 'Weekly Focus', icon: Target },
-  { href: '/podcasts', label: 'Podcasts', icon: Headphones },
-  { href: '/wellbeing', label: 'Wellbeing', icon: HeartPulse },
-  { href: '/analysis', label: 'Coaching Eye', icon: Video },
-  { href: '/my-reviews', label: 'Match Reviews', icon: ClipboardCheck },
+type NavItem = {
+  href: string
+  label: string
+  icon: LucideIcon
+  isActive: (pathname: string) => boolean
+  roles?: UserRole[]
+}
+
+const overviewItems: NavItem[] = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, isActive: (p) => p === '/dashboard' },
+  { href: '/shop', label: 'Shop', icon: ShoppingBag, isActive: (p) => p === '/shop' || p.startsWith('/shop') },
+  { href: '/analysis', label: 'Coaching Eye', icon: Video, isActive: (p) => p === '/analysis' },
 ]
 
-const resourceItems = [
-  { href: '/positions', label: 'Positions Guide', icon: Shirt },
-  { href: '/age-groups', label: 'Age Groups Guide', icon: Users },
-  { href: '/skills', label: 'Fundamental Skills', icon: Dumbbell },
-  { href: '/tag-rugby', label: 'Tag Rugby Rules', icon: Tag },
-  { href: '/how-to', label: 'How-to & FAQ', icon: BookMarked },
+const coachingToolItems: NavItem[] = [
+  { href: '/drills', label: 'Drill Library', icon: BookOpen, isActive: (p) => p === '/drills' },
+  { href: '/drills/new', label: 'Drill Designer', icon: PenTool, isActive: (p) => p === '/drills/new' },
+  { href: '/sessions', label: 'Session Planner', icon: CalendarDays, isActive: (p) => p === '/sessions' },
+  { href: '/weekly-focus', label: 'Weekly Focus', icon: Target, isActive: (p) => p === '/weekly-focus' },
 ]
 
-const profileItems = [
-  { href: '/profile', label: 'My Profile', icon: User },
-  { href: '/settings', label: 'Settings', icon: Settings },
+const analysisItems: NavItem[] = [
+  { href: '/my-reviews', label: 'Match Reviews', icon: ClipboardCheck, isActive: (p) => p === '/my-reviews' || p.startsWith('/my-reviews/') },
+  {
+    href: '/analyst/progression',
+    label: 'Match Analysis',
+    icon: TrendingUp,
+    isActive: (p) => p.startsWith('/analyst'),
+    roles: ['coach', 'admin'],
+  },
+  {
+    href: '/admin/coach-dna',
+    label: 'Coach DNA',
+    icon: Brain,
+    isActive: (p) => p.startsWith('/admin/coach-dna'),
+    roles: ['admin'],
+  },
 ]
+
+const communityItems: NavItem[] = [
+  { href: '/chat', label: 'Coach Chat', icon: MessageSquare, isActive: (p) => p === '/chat' },
+  { href: '/clubs', label: 'My Club', icon: Building2, isActive: (p) => p === '/clubs' },
+  { href: '/groups', label: 'My Groups', icon: Users2, isActive: (p) => p === '/groups' },
+]
+
+const resourceItems: NavItem[] = [
+  { href: '/positions', label: 'Positions Guide', icon: Shirt, isActive: (p) => p === '/positions' },
+  { href: '/age-groups', label: 'Age Groups Guide', icon: Users, isActive: (p) => p === '/age-groups' },
+  { href: '/skills', label: 'Fundamental Skills', icon: Dumbbell, isActive: (p) => p === '/skills' },
+  { href: '/tag-rugby', label: 'Tag Rugby Rules', icon: Tag, isActive: (p) => p === '/tag-rugby' },
+  { href: '/how-to', label: 'How-to & FAQ', icon: BookMarked, isActive: (p) => p === '/how-to' },
+  { href: '/podcasts', label: 'Podcasts', icon: Headphones, isActive: (p) => p === '/podcasts' },
+  { href: '/wellbeing', label: 'Wellbeing', icon: HeartPulse, isActive: (p) => p === '/wellbeing' },
+]
+
+const profileItems: NavItem[] = [
+  { href: '/profile', label: 'My Profile', icon: User, isActive: (p) => p === '/profile' },
+  { href: '/settings', label: 'Settings', icon: Settings, isActive: (p) => p === '/settings' },
+]
+
+const adminItems: NavItem[] = [
+  { href: '/admin', label: 'Admin', icon: ShieldCheck, isActive: (p) => p === '/admin' },
+  { href: '/game-plans', label: 'Game Plans', icon: ClipboardList, isActive: (p) => p.startsWith('/game-plans') },
+  { href: '/admin/users', label: 'Users', icon: Users, isActive: (p) => p.startsWith('/admin/users') },
+  { href: '/admin/feedback/safeguarding', label: 'Safeguarding Queue', icon: ShieldAlert, isActive: (p) => p.startsWith('/admin/feedback/safeguarding') },
+  { href: '/admin/feedback/disputes', label: 'Response Disputes', icon: Gavel, isActive: (p) => p.startsWith('/admin/feedback/disputes') },
+  { href: '/admin/categories', label: 'Categories', icon: Tag, isActive: (p) => p.startsWith('/admin/categories') },
+  { href: '/admin/drills', label: 'Drill Approval', icon: Clock, isActive: (p) => p.startsWith('/admin/drills') },
+  { href: '/admin/import-playlist', label: 'Import Playlist', icon: ListVideo, isActive: (p) => p.startsWith('/admin/import-playlist') },
+  { href: '/analyze', label: 'Video Analysis', icon: Video, isActive: (p) => p === '/analyze' },
+  { href: '/admin/content-engine', label: 'Content Engine', icon: Sparkles, isActive: (p) => p.startsWith('/admin/content-engine') },
+  { href: '/admin/shop', label: 'Shop', icon: ShoppingBag, isActive: (p) => p.startsWith('/admin/shop') },
+]
+
+function visibleFor(items: NavItem[], role: UserRole) {
+  return items.filter((item) => !item.roles || item.roles.includes(role))
+}
+
+function containsActiveRoute(items: NavItem[], pathname: string) {
+  return items.some((item) => item.isActive(pathname))
+}
+
+function NavMenuItems({
+  items,
+  role,
+  pathname,
+  closeMobile,
+}: {
+  items: NavItem[]
+  role: UserRole
+  pathname: string
+  closeMobile: () => void
+}) {
+  return (
+    <>
+      {visibleFor(items, role).map(({ href, label, icon: Icon, isActive }) => (
+        <SidebarMenuItem key={href}>
+          <SidebarMenuButton isActive={isActive(pathname)} render={<Link href={href} onClick={closeMobile} />}>
+            <Icon className="size-4" />
+            <span>{label}</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </>
+  )
+}
+
+function CollapsibleNavGroup({
+  label,
+  items,
+  role,
+  pathname,
+  closeMobile,
+  defaultOpen,
+}: {
+  label: string
+  items: NavItem[]
+  role: UserRole
+  pathname: string
+  closeMobile: () => void
+  defaultOpen: boolean
+}) {
+  const visibleItems = visibleFor(items, role)
+  // Captured once at mount: `defaultOpen` is recomputed from `pathname` on every
+  // render, but this component isn't remounted on navigation, so Base UI's
+  // uncontrolled Collapsible must only see its initial value, never a later change.
+  const [initialOpen] = useState(defaultOpen)
+  if (visibleItems.length === 0) return null
+
+  return (
+    <Collapsible defaultOpen={initialOpen} render={<SidebarMenuItem className="group/collapsible" />}>
+      <CollapsibleTrigger render={<SidebarMenuButton />}>
+        <span>{label}</span>
+        <ChevronDown className="ml-auto size-4 shrink-0 transition-transform group-data-open/collapsible:rotate-180" />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <SidebarMenuSub>
+          {visibleItems.map(({ href, label: itemLabel, icon: Icon, isActive }) => (
+            <SidebarMenuSubItem key={href}>
+              <SidebarMenuSubButton isActive={isActive(pathname)} render={<Link href={href} onClick={closeMobile} />}>
+                <Icon className="size-4" />
+                <span>{itemLabel}</span>
+              </SidebarMenuSubButton>
+            </SidebarMenuSubItem>
+          ))}
+        </SidebarMenuSub>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
 
 interface AppSidebarProps {
   role: UserRole
@@ -120,28 +248,31 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
           <SidebarGroupLabel>Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map(({ href, label, icon: Icon }) => (
-                <SidebarMenuItem key={href}>
-                  <SidebarMenuButton
-                    isActive={pathname === href || (href === '/my-reviews' && pathname.startsWith('/my-reviews/')) || (href === '/shop' && pathname.startsWith('/shop'))}
-                    render={<Link href={href} onClick={closeMobile} />}
-                  >
-                    <Icon className="size-4" />
-                    <span>{label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              {(role === 'coach' || role === 'admin') && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={pathname.startsWith('/analyst')}
-                    render={<Link href="/analyst/progression" onClick={closeMobile} />}
-                  >
-                    <TrendingUp className="size-4" />
-                    <span>Match Analysis</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
+              <NavMenuItems items={overviewItems} role={role} pathname={pathname} closeMobile={closeMobile} />
+              <CollapsibleNavGroup
+                label="Coaching Tools"
+                items={coachingToolItems}
+                role={role}
+                pathname={pathname}
+                closeMobile={closeMobile}
+                defaultOpen={containsActiveRoute(coachingToolItems, pathname)}
+              />
+              <CollapsibleNavGroup
+                label="Analysis & Development"
+                items={analysisItems}
+                role={role}
+                pathname={pathname}
+                closeMobile={closeMobile}
+                defaultOpen={containsActiveRoute(analysisItems, pathname)}
+              />
+              <CollapsibleNavGroup
+                label="Community"
+                items={communityItems}
+                role={role}
+                pathname={pathname}
+                closeMobile={closeMobile}
+                defaultOpen={containsActiveRoute(communityItems, pathname)}
+              />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -150,17 +281,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
           <SidebarGroupLabel>Resources</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {resourceItems.map(({ href, label, icon: Icon }) => (
-                <SidebarMenuItem key={href}>
-                  <SidebarMenuButton
-                    isActive={pathname === href}
-                    render={<Link href={href} onClick={closeMobile} />}
-                  >
-                    <Icon className="size-4" />
-                    <span>{label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <NavMenuItems items={resourceItems} role={role} pathname={pathname} closeMobile={closeMobile} />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -169,119 +290,16 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {profileItems.map(({ href, label, icon: Icon }) => (
-                <SidebarMenuItem key={href}>
-                  <SidebarMenuButton
-                    isActive={pathname === href}
-                    render={<Link href={href} onClick={closeMobile} />}
-                  >
-                    <Icon className="size-4" />
-                    <span>{label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <NavMenuItems items={profileItems} role={role} pathname={pathname} closeMobile={closeMobile} />
               {role === 'admin' && (
-                <>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={pathname === '/admin'}
-                      render={<Link href="/admin" onClick={closeMobile} />}
-                    >
-                      <ShieldCheck className="size-4" />
-                      <span>Admin</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith('/game-plans')}
-                      render={<Link href="/game-plans" onClick={closeMobile} />}
-                    >
-                      <ClipboardList className="size-4" />
-                      <span>Game Plans</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith('/admin/users')}
-                      render={<Link href="/admin/users" onClick={closeMobile} />}
-                    >
-                      <Users className="size-4" />
-                      <span>Users</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith('/admin/feedback/safeguarding')}
-                      render={<Link href="/admin/feedback/safeguarding" onClick={closeMobile} />}
-                    >
-                      <ShieldAlert className="size-4" />
-                      <span>Safeguarding Queue</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith('/admin/feedback/disputes')}
-                      render={<Link href="/admin/feedback/disputes" onClick={closeMobile} />}
-                    >
-                      <Gavel className="size-4" />
-                      <span>Response Disputes</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith('/admin/categories')}
-                      render={<Link href="/admin/categories" onClick={closeMobile} />}
-                    >
-                      <Tag className="size-4" />
-                      <span>Categories</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith('/admin/drills')}
-                      render={<Link href="/admin/drills" onClick={closeMobile} />}
-                    >
-                      <Clock className="size-4" />
-                      <span>Drill Approval</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith('/admin/import-playlist')}
-                      render={<Link href="/admin/import-playlist" onClick={closeMobile} />}
-                    >
-                      <ListVideo className="size-4" />
-                      <span>Import Playlist</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={pathname === '/analyze'}
-                      render={<Link href="/analyze" onClick={closeMobile} />}
-                    >
-                      <Video className="size-4" />
-                      <span>Video Analysis</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith('/admin/content-engine')}
-                      render={<Link href="/admin/content-engine" onClick={closeMobile} />}
-                    >
-                      <Sparkles className="size-4" />
-                      <span>Content Engine</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith('/admin/shop')}
-                      render={<Link href="/admin/shop" onClick={closeMobile} />}
-                    >
-                      <ShoppingBag className="size-4" />
-                      <span>Shop</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </>
+                <CollapsibleNavGroup
+                  label="Admin"
+                  items={adminItems}
+                  role={role}
+                  pathname={pathname}
+                  closeMobile={closeMobile}
+                  defaultOpen={containsActiveRoute(adminItems, pathname)}
+                />
               )}
             </SidebarMenu>
           </SidebarGroupContent>
