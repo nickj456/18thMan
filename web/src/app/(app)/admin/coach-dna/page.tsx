@@ -1,5 +1,6 @@
 // web/src/app/(app)/admin/coach-dna/page.tsx
 import Link from 'next/link'
+import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
@@ -16,6 +17,9 @@ const HOW_IT_WORKS = [
 ]
 
 export const metadata = { title: 'Coach DNA' }
+
+// Keep in sync with the page container's `max-w-4xl` below (56rem = 896px).
+const PAGE_MAX_WIDTH_PX = 896
 
 export default async function CoachDnaPage() {
   const supabase = await createClient()
@@ -46,69 +50,78 @@ export default async function CoachDnaPage() {
     .maybeSingle()
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="app-heading text-2xl">Coach DNA</h1>
-        <p className="text-sm text-zinc-500 mt-0.5">Discover your coaching style</p>
+    <div className="space-y-6 max-w-4xl">
+      <h1 className="sr-only">Coach DNA</h1>
+      <div className="relative h-64 sm:h-72 lg:h-80 rounded-2xl overflow-hidden ring-1 ring-foreground/10">
+        <Image
+          src="/coach-dna-hero.png"
+          alt="Coach DNA. Know your DNA. Lead your team. Grow as a coach."
+          fill
+          priority
+          sizes={`(min-width: ${PAGE_MAX_WIDTH_PX}px) ${PAGE_MAX_WIDTH_PX}px, 100vw`}
+          className="object-cover object-top"
+        />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Coach self-assessment</CardTitle>
-          <CardDescription>
-            24 scenario-based questions about how you coach. Takes about 10 minutes. You can save
-            and come back at any time.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {!completed && !inProgress && (
-            <div>
-              <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">
-                How it works
-              </h2>
-              <ul className="space-y-2">
-                {HOW_IT_WORKS.map(item => (
-                  <li key={item} className="flex items-start gap-2 text-sm text-zinc-400">
-                    <CheckCircle2 size={15} className="text-orange-400 shrink-0 mt-0.5" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Coach self-assessment</CardTitle>
+            <CardDescription>
+              24 scenario-based questions about how you coach. Takes about 10 minutes. You can
+              save and come back at any time.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {!completed && !inProgress && (
+              <div>
+                <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">
+                  How it works
+                </h2>
+                <ul className="space-y-2">
+                  {HOW_IT_WORKS.map(item => (
+                    <li key={item} className="flex items-start gap-2 text-sm text-zinc-400">
+                      <CheckCircle2 size={15} className="text-orange-400 shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-          {completed ? (
-            <Button render={<Link href={`/admin/coach-dna/assessment/${completed.id}/complete`} />}>
-              View your results
+            {completed ? (
+              <Button render={<Link href={`/admin/coach-dna/assessment/${completed.id}/complete`} />}>
+                View your results
+              </Button>
+            ) : inProgress ? (
+              <form action={async () => {
+                'use server'
+                redirect(`/admin/coach-dna/assessment/${inProgress.id}`)
+              }}>
+                <Button type="submit">Resume assessment</Button>
+              </form>
+            ) : (
+              <form action={startAssessment}>
+                <Button type="submit">Start assessment</Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Feedback requests</CardTitle>
+            <CardDescription>
+              Request feedback from players, parents, or fellow coaches
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button render={<Link href="/admin/coach-dna/feedback" />}>
+              View feedback requests
             </Button>
-          ) : inProgress ? (
-            <form action={async () => {
-              'use server'
-              redirect(`/admin/coach-dna/assessment/${inProgress.id}`)
-            }}>
-              <Button type="submit">Resume assessment</Button>
-            </form>
-          ) : (
-            <form action={startAssessment}>
-              <Button type="submit">Start assessment</Button>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Feedback requests</CardTitle>
-          <CardDescription>
-            Request feedback from players, parents, or fellow coaches
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button render={<Link href="/admin/coach-dna/feedback" />}>
-            View feedback requests
-          </Button>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

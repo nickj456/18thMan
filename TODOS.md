@@ -82,6 +82,18 @@ question rows, doubling every question set. Same fix as the item above (a
 new migration with `on conflict do nothing` or fixed UUIDs), not touching
 the already-applied 115.
 
+## Nav
+
+**Simplify per-NavItem `isActive` boilerplate in app-sidebar.tsx**
+**Priority:** P4
+Maintainability review on 2026-08-17 (`/ship`, coach-dna-hero-and-nav) found
+~15 `NavItem` entries define `isActive: (p) => p === href`, a plain restatement
+of the item's own `href`. Defaulting to exact-match when `isActive` is omitted,
+and only requiring an explicit override for the prefix-matching items
+(my-reviews, shop, analyst, admin/*, game-plans, analyze), would roughly halve
+the boilerplate. Pre-existing pattern from before this session, not a bug —
+deferred as a cleanup, not a ship blocker.
+
 ## Completed
 
 **Race condition let two concurrent submissions from the same device both pass `feedback_responses` dedup check**
