@@ -2,6 +2,12 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.11.0.0] - 2026-08-17
+
+### Added
+- **Coach DNA hero banner.** The Coach DNA page now opens with a branded hero image, and the page is wider on desktop with the self-assessment and feedback-requests cards laid out side by side instead of stacked.
+- **Grouped, collapsible sidebar navigation.** The sidebar's flat list of links is now organized into collapsible sections (Coaching Tools, Analysis & Development, Community, Admin) so it scales without becoming a wall of links. The section containing your current page opens automatically, including when you navigate there from a link outside the sidebar (a dashboard quick action, for example) rather than only on first load. Coach DNA also gained a direct sidebar entry for admins.
+
 ## [1.10.1.0] - 2026-08-13
 
 ### Added
