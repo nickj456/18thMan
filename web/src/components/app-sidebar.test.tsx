@@ -97,6 +97,29 @@ describe('AppSidebar', () => {
     expect(screen.getByRole('button', { name: new RegExp(groupLabel, 'i') })).toHaveAttribute('aria-expanded', 'true')
   })
 
+  it('auto-opens a group when client-side navigation (no remount) lands the active route inside it', () => {
+    mockUsePathname.mockReturnValue('/dashboard')
+    const { rerender } = render(
+      <SidebarProvider>
+        <AppSidebar role="admin" displayName="Test Coach" avatarUrl={null} unreadNotifications={0} />
+      </SidebarProvider>
+    )
+    expect(screen.getByRole('button', { name: /Coaching Tools/i })).toHaveAttribute('aria-expanded', 'false')
+
+    // Simulate a same-instance client-side navigation (AppSidebar is not
+    // remounted by the app's persistent layout) into a route inside a
+    // currently-collapsed group.
+    mockUsePathname.mockReturnValue('/drills/new')
+    rerender(
+      <SidebarProvider>
+        <AppSidebar role="admin" displayName="Test Coach" avatarUrl={null} unreadNotifications={0} />
+      </SidebarProvider>
+    )
+
+    expect(screen.getByRole('button', { name: /Coaching Tools/i })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('link', { name: /Drill Designer/i })).toBeInTheDocument()
+  })
+
   it('renders nothing for a group with no items visible to the current role', () => {
     render(
       <SidebarProvider>
@@ -107,7 +130,7 @@ describe('AppSidebar', () => {
             role="viewer"
             pathname="/dashboard"
             closeMobile={() => {}}
-            defaultOpen={false}
+            shouldBeOpen={false}
           />
         </SidebarMenu>
       </SidebarProvider>

@@ -178,24 +178,32 @@ export function CollapsibleNavGroup({
   role,
   pathname,
   closeMobile,
-  defaultOpen,
+  shouldBeOpen,
 }: {
   label: string
   items: NavItem[]
   role: UserRole
   pathname: string
   closeMobile: () => void
-  defaultOpen: boolean
+  shouldBeOpen: boolean
 }) {
   const visibleItems = visibleFor(items, role)
-  // Captured once at mount: `defaultOpen` is recomputed from `pathname` on every
-  // render, but this component isn't remounted on navigation, so Base UI's
-  // uncontrolled Collapsible must only see its initial value, never a later change.
-  const [initialOpen] = useState(defaultOpen)
+  const [open, setOpen] = useState(shouldBeOpen)
+  // AppSidebar persists across client-side navigations (it isn't remounted per
+  // route), so a group must re-open itself when navigation lands the active
+  // route inside it — otherwise the highlighted link can end up hidden inside
+  // a collapsed group. Auto-open only; never auto-close a group the user opened.
+  // Adjusting state during render (React's recommended pattern for deriving
+  // state from a prop change) instead of an effect, per react-hooks/set-state-in-effect.
+  const [prevShouldBeOpen, setPrevShouldBeOpen] = useState(shouldBeOpen)
+  if (shouldBeOpen !== prevShouldBeOpen) {
+    setPrevShouldBeOpen(shouldBeOpen)
+    if (shouldBeOpen) setOpen(true)
+  }
   if (visibleItems.length === 0) return null
 
   return (
-    <Collapsible defaultOpen={initialOpen} render={<SidebarMenuItem className="group/collapsible" />}>
+    <Collapsible open={open} onOpenChange={setOpen} render={<SidebarMenuItem className="group/collapsible" />}>
       <CollapsibleTrigger render={<SidebarMenuButton />}>
         <span>{label}</span>
         <ChevronDown className="ml-auto size-4 shrink-0 transition-transform group-data-open/collapsible:rotate-180" />
@@ -255,7 +263,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                 role={role}
                 pathname={pathname}
                 closeMobile={closeMobile}
-                defaultOpen={containsActiveRoute(coachingToolItems, pathname)}
+                shouldBeOpen={containsActiveRoute(coachingToolItems, pathname)}
               />
               <CollapsibleNavGroup
                 label="Analysis & Development"
@@ -263,7 +271,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                 role={role}
                 pathname={pathname}
                 closeMobile={closeMobile}
-                defaultOpen={containsActiveRoute(analysisItems, pathname)}
+                shouldBeOpen={containsActiveRoute(analysisItems, pathname)}
               />
               <CollapsibleNavGroup
                 label="Community"
@@ -271,7 +279,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                 role={role}
                 pathname={pathname}
                 closeMobile={closeMobile}
-                defaultOpen={containsActiveRoute(communityItems, pathname)}
+                shouldBeOpen={containsActiveRoute(communityItems, pathname)}
               />
             </SidebarMenu>
           </SidebarGroupContent>
@@ -298,7 +306,7 @@ export function AppSidebar({ role, displayName, avatarUrl, unreadNotifications }
                   role={role}
                   pathname={pathname}
                   closeMobile={closeMobile}
-                  defaultOpen={containsActiveRoute(adminItems, pathname)}
+                  shouldBeOpen={containsActiveRoute(adminItems, pathname)}
                 />
               )}
             </SidebarMenu>
