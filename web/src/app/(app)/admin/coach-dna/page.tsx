@@ -18,6 +18,9 @@ const HOW_IT_WORKS = [
 
 export const metadata = { title: 'Coach DNA' }
 
+// Keep in sync with the page container's `max-w-4xl` below (56rem = 896px).
+const PAGE_MAX_WIDTH_PX = 896
+
 export default async function CoachDnaPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -55,7 +58,7 @@ export default async function CoachDnaPage() {
           alt="Coach DNA. Know your DNA. Lead your team. Grow as a coach."
           fill
           priority
-          sizes="(min-width: 896px) 896px, 100vw"
+          sizes={`(min-width: ${PAGE_MAX_WIDTH_PX}px) ${PAGE_MAX_WIDTH_PX}px, 100vw`}
           className="object-cover object-top"
         />
       </div>

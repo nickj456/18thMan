@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { AppSidebar } from './app-sidebar'
-import { SidebarProvider } from '@/components/ui/sidebar'
+import { LayoutDashboard } from 'lucide-react'
+import { AppSidebar, CollapsibleNavGroup } from './app-sidebar'
+import { SidebarProvider, SidebarMenu } from '@/components/ui/sidebar'
 import type { UserRole } from '@/lib/supabase/types'
 
 const mockUsePathname = vi.fn(() => '/dashboard')
@@ -86,5 +87,32 @@ describe('AppSidebar', () => {
     const inactiveLink = screen.getByRole('link', { name: /Match Analysis/i })
     expect(activeLink).toHaveAttribute('data-active')
     expect(inactiveLink).not.toHaveAttribute('data-active')
+  })
+
+  it.each([
+    ['/chat', 'Community'],
+    ['/admin/users', 'Admin'],
+  ])('expands the %s group by default when the current route is %s', (pathname, groupLabel) => {
+    renderSidebar('admin', pathname)
+    expect(screen.getByRole('button', { name: new RegExp(groupLabel, 'i') })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('renders nothing for a group with no items visible to the current role', () => {
+    render(
+      <SidebarProvider>
+        <SidebarMenu>
+          <CollapsibleNavGroup
+            label="Admin Only Group"
+            items={[{ href: '/secret', label: 'Secret', icon: LayoutDashboard, isActive: () => false, roles: ['admin'] }]}
+            role="viewer"
+            pathname="/dashboard"
+            closeMobile={() => {}}
+            defaultOpen={false}
+          />
+        </SidebarMenu>
+      </SidebarProvider>
+    )
+
+    expect(screen.queryByRole('button', { name: 'Admin Only Group' })).not.toBeInTheDocument()
   })
 })

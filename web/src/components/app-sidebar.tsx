@@ -172,7 +172,7 @@ function NavMenuItems({
   )
 }
 
-function CollapsibleNavGroup({
+export function CollapsibleNavGroup({
   label,
   items,
   role,
