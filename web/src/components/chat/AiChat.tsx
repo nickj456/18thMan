@@ -180,6 +180,7 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
   const [limitHit, setLimitHit] = useState(false)
   const [squadLoading, setSquadLoading] = useState(false)
   const [squadInjected, setSquadInjected] = useState(false)
+  const [chatError, setChatError] = useState<string | null>(null)
 
   const { messages: liveMessages, status, sendMessage } = useChat({
     transport: new DefaultChatTransport({
@@ -189,7 +190,16 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
     onError: (err) => {
       if (err.message?.includes('Daily limit') || err.message?.includes('Upgrade')) {
         setLimitHit(true)
+        return
       }
+      let message = 'Something went wrong sending that message. Please try again.'
+      try {
+        const parsed = JSON.parse(err.message)
+        if (typeof parsed?.error === 'string' && parsed.error) message = parsed.error
+      } catch {
+        // response body wasn't JSON — fall back to the generic message above
+      }
+      setChatError(message)
     },
   })
 
@@ -257,6 +267,7 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
     setSquadLoading(false)
     if (!context) return
     lastUserTextRef.current = context
+    setChatError(null)
     sendMessage({ text: context })
     setSquadInjected(true)
   }
@@ -271,6 +282,7 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
   function submit() {
     if (!input.trim() || isLoading) return
     lastUserTextRef.current = input
+    setChatError(null)
     sendMessage({ text: input })
     setInput('')
   }
@@ -311,6 +323,7 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
                   key={prompt}
                   onClick={() => {
                     lastUserTextRef.current = prompt
+                    setChatError(null)
                     sendMessage({ text: prompt })
                   }}
                   className="px-3 py-1.5 text-xs rounded-full border border-zinc-700 bg-zinc-800 hover:border-indigo-500 hover:bg-indigo-500/10 transition-colors text-zinc-300"
@@ -379,6 +392,9 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
       <div className="border-t border-zinc-800 p-4 space-y-3">
         {saveError && (
           <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{saveError}</p>
+        )}
+        {chatError && (
+          <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{chatError}</p>
         )}
         {limitHit && (
           <UpgradePrompt
