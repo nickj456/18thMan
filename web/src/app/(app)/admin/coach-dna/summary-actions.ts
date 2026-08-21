@@ -5,13 +5,9 @@ import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { computeSelfOnlyCategoryScores } from '@/lib/coach-dna/self-score'
-import { deriveArchetype } from '@/lib/coach-dna/archetype'
 import { labelFor } from '@/lib/coach-dna/categories'
 import { resourcesFor } from '@/lib/coach-dna/resources'
-import { fetchBlendInputs } from '@/lib/coach-dna/blend-inputs'
-import { computeCategoryScore, type SourceInput } from '@/lib/coach-dna/scoring'
-import { getCategoryWeights, getSourceThresholds, type ScoreSource } from '@/lib/coach-dna/config'
+import { computeBlendedArchetype } from '@/lib/coach-dna/blended-archetype'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
@@ -57,58 +53,18 @@ export async function generateSelfAssessmentSummary(attemptId: string): Promise<
   if (!attempt || attempt.coach_id !== user.id) redirect('/admin/coach-dna')
   if (!attempt.completed_at) throw new Error('This attempt is not completed yet')
 
-  const { data: responses, error: responsesError } = await supabase
-    .from('assessment_responses')
-    .select('question_id, selected_option, least_option')
-    .eq('attempt_id', attemptId)
-  if (responsesError) throw new Error(responsesError.message)
-  if (!responses || responses.length === 0) throw new Error('No responses found for this completed attempt')
-
-  const incompleteResponse = responses.find(r => !r.selected_option || !r.least_option)
-  if (incompleteResponse) {
-    throw new Error('This attempt was started before the current assessment format and cannot be scored. Please retake the assessment.')
-  }
-
-  const optionIds = Array.from(
-    new Set(responses.flatMap(r => [r.selected_option as string, r.least_option as string])),
-  )
   // `category_weights_json` is revoked from the `authenticated` role (migration
   // 109 closed a scoring-weight leak), so the scoring weights can only be read
   // with the service role. Ownership of this attempt is already verified above,
   // and only the derived scores ever leave this function.
   const serviceSupabase = createServiceClient()
-  const { data: options, error: optionsError } = await serviceSupabase
-    .from('assessment_options')
-    .select('id, question_id, category_weights_json')
-    .in('id', optionIds)
-  if (optionsError) throw new Error(optionsError.message)
-
-  const scores = computeSelfOnlyCategoryScores(
-    responses.map(r => ({ mostOptionId: r.selected_option as string, leastOptionId: r.least_option as string })),
-    (options ?? []).map(o => ({ id: o.id, categoryWeights: o.category_weights_json })),
+  const { archetype, sourcedCategories } = await computeBlendedArchetype(
+    supabase,
+    serviceSupabase,
+    attemptId,
+    user.id,
+    attempt.completed_at as string,
   )
-
-  // Blend in cleared external feedback per category. A category stays
-  // self-only (both in score and in sourcedCategories) until its external
-  // source(s) clear their sample-size threshold -- computeCategoryScore
-  // already encodes that via its 'insufficient_data' status.
-  const blendInputsByCategory = await fetchBlendInputs(serviceSupabase, user.id)
-  const sourcedCategories: Record<string, ScoreSource[]> = {}
-  const blendedScores = scores.map(({ categorySlug, score }) => {
-    const inputs: SourceInput[] = [
-      { source: 'self', responses: [{ value: score, submittedAt: attempt.completed_at as string }] },
-      ...(blendInputsByCategory[categorySlug] ?? []),
-    ]
-    const result = computeCategoryScore(inputs, getCategoryWeights(categorySlug), getSourceThresholds(categorySlug), new Date())
-    if (result.status === 'scored') {
-      sourcedCategories[categorySlug] = result.activeSources
-      return { categorySlug, score: result.blendedScore }
-    }
-    sourcedCategories[categorySlug] = ['self']
-    return { categorySlug, score }
-  })
-
-  const archetype = deriveArchetype(blendedScores)
 
   const prompt = `You are writing a short self-assessment summary for a rugby league coach, based on their own self-reported scores across 8 coaching categories. Write in a direct, encouraging coaching voice. No em dashes. No fluff.
 
