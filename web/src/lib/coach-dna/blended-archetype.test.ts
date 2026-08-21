@@ -18,7 +18,7 @@ const OPTIONS = [
 ]
 const COMPLETED_AT = '2026-08-06T00:00:00.000Z'
 
-function makeSupabase(overrides: { responses?: typeof RESPONSES; responsesError?: { message: string } | null } = {}) {
+function makeSupabase(overrides: { responses?: unknown; responsesError?: { message: string } | null } = {}) {
   return {
     from: (table: string) => {
       if (table === 'assessment_responses') {
@@ -29,7 +29,7 @@ function makeSupabase(overrides: { responses?: typeof RESPONSES; responsesError?
   }
 }
 
-function makeServiceSupabase(overrides: { options?: typeof OPTIONS; optionsError?: { message: string } | null } = {}) {
+function makeServiceSupabase(overrides: { options?: unknown; optionsError?: { message: string } | null } = {}) {
   return {
     from: (table: string) => {
       if (table === 'assessment_options') {
