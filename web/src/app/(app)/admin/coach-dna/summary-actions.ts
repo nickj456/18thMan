@@ -83,7 +83,7 @@ Do not invent scores or claim data you were not given. Do not mention "self-asse
 Respond with ONLY a valid JSON object, no markdown fences, no explanation. "pros" must contain exactly ${archetype.pros.length} entries and "cons" exactly ${archetype.cons.length}, in the same order as the lists above. Shape:
 {"narrative":"one paragraph, 2-4 sentences","pros":[{"categorySlug":"...","text":"one sentence"}],"cons":[{"categorySlug":"...","text":"2-3 sentences: what the gap looks like in practice, and one concrete thing to try"}]}`
 
-  const { text } = await generateText({ model: groq('llama-3.3-70b-versatile'), prompt })
+  const { text } = await generateText({ model: groq('openai/gpt-oss-120b'), prompt })
 
   const start = text.indexOf('{')
   const end = text.lastIndexOf('}')
