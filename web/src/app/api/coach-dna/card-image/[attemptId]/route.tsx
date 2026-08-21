@@ -1,0 +1,133 @@
+import { ImageResponse } from 'next/og'
+import { createClient } from '@/lib/supabase/server'
+import { ensureFreshSummary } from '@/app/(app)/admin/coach-dna/summary-actions'
+import { hasBlendedFeedback } from '@/lib/coach-dna/blend-status'
+import { buildCardData } from '@/lib/coach-dna/card-data'
+import { loadGoogleFont } from '@/lib/coach-dna/google-font'
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ attemptId: string }> }
+) {
+  const { attemptId } = await params
+
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return new Response('Unauthorized', { status: 401 })
+
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role !== 'admin' && profile?.role !== 'coach') {
+      return new Response('Forbidden', { status: 403 })
+    }
+
+    const { data: attempt } = await supabase
+      .from('assessment_attempts')
+      .select('id, coach_id, completed_at')
+      .eq('id', attemptId)
+      .single()
+    if (!attempt || attempt.coach_id !== user.id || !attempt.completed_at) {
+      return new Response('Not Found', { status: 404 })
+    }
+
+    const summary = await ensureFreshSummary(attemptId, user.id)
+    if (!hasBlendedFeedback(summary.sourcedCategories)) {
+      return new Response('Not Found', { status: 404 })
+    }
+
+    const card = buildCardData(summary)
+    const headlineText = `${card.primaryLabel}${card.secondaryLabel ? ` / ${card.secondaryLabel}` : ''}`
+    const barlowCondensed = await loadGoogleFont(
+      'Barlow Condensed:ital,wght@1,800',
+      `${headlineText}COACH DNA`,
+    )
+
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            backgroundColor: '#151517',
+            padding: 64,
+            color: '#f4f4f5',
+            fontFamily: 'Geist, sans-serif',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                background: '#e8560a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 18,
+                fontWeight: 700,
+                color: 'white',
+              }}
+            >
+              18
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: 1 }}>18TH MAN</span>
+              <span style={{ fontSize: 10, color: '#a1a1aa', letterSpacing: 3 }}>RUGBY LEAGUE</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <span style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 6, color: '#e8560a', fontWeight: 700 }}>
+              Coach DNA
+            </span>
+            <span
+              style={{
+                fontFamily: 'Barlow Condensed',
+                fontStyle: 'italic',
+                fontWeight: 800,
+                fontSize: 72,
+                textTransform: 'uppercase',
+                lineHeight: 1.05,
+                letterSpacing: -1,
+              }}
+            >
+              {headlineText}
+            </span>
+            <div style={{ display: 'flex', gap: 48 }}>
+              {card.topStrengthLabel && (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: '#34d399', fontWeight: 700 }}>
+                    Top strength
+                  </span>
+                  <span style={{ fontSize: 26, fontWeight: 700 }}>{card.topStrengthLabel}</span>
+                </div>
+              )}
+              {card.focusAreaLabel && (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: '#fb923c', fontWeight: 700 }}>
+                    Development focus
+                  </span>
+                  <span style={{ fontSize: 26, fontWeight: 700 }}>{card.focusAreaLabel}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <span style={{ fontSize: 12, color: '#71717a' }}>18thman.app · Coach DNA</span>
+        </div>
+      ),
+      {
+        width: 1200,
+        height: 630,
+        fonts: [{ name: 'Barlow Condensed', data: barlowCondensed, weight: 800, style: 'italic' }],
+      },
+    )
+  } catch (err) {
+    console.error('[coach-dna/card-image] Failed to generate card image:', err)
+    return new Response('Internal Server Error', { status: 500 })
+  }
+}
