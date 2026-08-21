@@ -65,6 +65,15 @@
         ],
         "createdAt": "2026-08-21T12:58:39.314Z",
         "reason": "next/og ImageResponse (Satori) only accepts literal inline style values; this is the zinc-500 muted-footer-text token translated to a literal hex for that constraint"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#d4d4d8",
+        "files": [
+          "web/src/app/api/coach-dna/card-image/[attemptId]/route.tsx"
+        ],
+        "createdAt": "2026-08-21T14:49:25.426Z",
+        "reason": "next/og ImageResponse (Satori) only accepts literal inline style values; this is the zinc-300 narrative-snippet text token translated to a literal hex for that constraint"
       }
     ]
   }
