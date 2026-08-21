@@ -162,7 +162,7 @@ export async function ensureFreshSummary(attemptId: string, coachId: string): Pr
     .maybeSingle()
   const cached = coachProfile?.ai_summary as SelfAssessmentSummary | null
 
-  const { sourcedCategories } = await computeBlendedArchetype(
+  const { archetype, sourcedCategories } = await computeBlendedArchetype(
     supabase,
     serviceSupabase,
     attemptId,
@@ -170,7 +170,18 @@ export async function ensureFreshSummary(attemptId: string, coachId: string): Pr
     attempt.completed_at as string,
   )
 
-  if (cached && isCurrentSummaryShape(cached) && sourcedCategoriesEqual(cached.sourcedCategories, sourcedCategories)) {
+  const archetypeUnchanged =
+    cached?.primaryType === archetype.primaryType &&
+    cached?.secondaryType === archetype.secondaryType &&
+    cached?.pros[0]?.categorySlug === archetype.pros[0] &&
+    cached?.cons[0]?.categorySlug === archetype.cons[0]
+
+  if (
+    cached &&
+    isCurrentSummaryShape(cached) &&
+    archetypeUnchanged &&
+    sourcedCategoriesEqual(cached.sourcedCategories, sourcedCategories)
+  ) {
     return cached
   }
 

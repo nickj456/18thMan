@@ -33,16 +33,17 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }))
 
-const ensureFreshSummaryMock = vi.fn(async () => {
+const ensureFreshSummaryMock = vi.fn(async (_attemptId: string, _coachId: string) => {
   if (state.ensureFreshSummaryError) throw state.ensureFreshSummaryError
   return state.summary
 })
 vi.mock('@/app/(app)/admin/coach-dna/summary-actions', () => ({
-  ensureFreshSummary: () => ensureFreshSummaryMock(),
+  ensureFreshSummary: (attemptId: string, coachId: string) => ensureFreshSummaryMock(attemptId, coachId),
 }))
 
+const loadGoogleFontMock = vi.fn(async (_family: string, _text: string) => new ArrayBuffer(8))
 vi.mock('@/lib/coach-dna/google-font', () => ({
-  loadGoogleFont: async () => new ArrayBuffer(8),
+  loadGoogleFont: (family: string, text: string) => loadGoogleFontMock(family, text),
 }))
 
 const imageResponseMock = vi.fn((_el: unknown, opts: unknown) => new Response(null, { status: 200 }))
@@ -78,6 +79,8 @@ describe('GET /api/coach-dna/card-image/[attemptId]', () => {
     state.ensureFreshSummaryError = null
     ensureFreshSummaryMock.mockClear()
     imageResponseMock.mockClear()
+    loadGoogleFontMock.mockClear()
+    loadGoogleFontMock.mockImplementation(async () => new ArrayBuffer(8))
   })
 
   it('returns 401 when there is no authenticated user', async () => {
@@ -121,6 +124,25 @@ describe('GET /api/coach-dna/card-image/[attemptId]', () => {
     expect(opts.width).toBe(1200)
     expect(opts.height).toBe(630)
     expect(opts.fonts[0].name).toBe('Barlow Condensed')
+    // ensureFreshSummary must always be called with the authenticated caller's
+    // own id, never something derived from the attempt row -- a security-
+    // critical argument (finding #7).
+    expect(ensureFreshSummaryMock).toHaveBeenCalledWith('attempt-1', 'coach-1')
+  })
+
+  it('serves the image with a private, short-lived, revalidating cache header (not next/og\'s public/immutable default)', async () => {
+    await makeRequest('attempt-1')
+    const opts = imageResponseMock.mock.calls[0][1] as { headers?: Record<string, string> }
+    expect(opts.headers?.['cache-control']).toBe('private, max-age=300, must-revalidate')
+  })
+
+  it('still returns 200 with the image rendered in the fallback font when loadGoogleFont fails', async () => {
+    loadGoogleFontMock.mockRejectedValueOnce(new Error('fonts.googleapis.com timed out'))
+    const res = await makeRequest('attempt-1')
+    expect(res.status).toBe(200)
+    expect(imageResponseMock).toHaveBeenCalledTimes(1)
+    const opts = imageResponseMock.mock.calls[0][1] as { fonts: unknown[] }
+    expect(opts.fonts).toEqual([])
   })
 
   it('returns 500 when ensureFreshSummary throws', async () => {

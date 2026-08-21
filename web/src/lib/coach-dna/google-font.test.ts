@@ -19,7 +19,30 @@ describe('loadGoogleFont', () => {
     const result = await loadGoogleFont('Barlow Condensed:ital,wght@1,800', 'Motivator')
 
     expect(result).toBe(fontBytes)
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://fonts.gstatic.com/font.ttf')
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://fonts.gstatic.com/font.ttf',
+      expect.objectContaining({ cache: 'force-cache' }),
+    )
+  })
+
+  it('requests both the CSS and font file with a timeout signal and force-cache, so a hung Google Fonts response cannot hang the request', async () => {
+    const fontBytes = new ArrayBuffer(8)
+    const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => `@font-face { font-family: 'Barlow Condensed'; src: url(https://fonts.gstatic.com/font.ttf) format('truetype'); }`,
+      })
+      .mockResolvedValueOnce({ ok: true, arrayBuffer: async () => fontBytes })
+
+    await loadGoogleFont('Barlow Condensed:ital,wght@1,800', 'Motivator')
+
+    for (const call of fetchMock.mock.calls) {
+      const opts = call[1] as { signal?: AbortSignal; cache?: string }
+      expect(opts.signal).toBeInstanceOf(AbortSignal)
+      expect(opts.cache).toBe('force-cache')
+    }
   })
 
   it('throws when the CSS response is not ok', async () => {

@@ -7,14 +7,14 @@
  *  examples use, so no font file needs to be vendored into the repo. */
 export async function loadGoogleFont(family: string, text: string): Promise<ArrayBuffer> {
   const cssUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}&text=${encodeURIComponent(text)}`
-  const cssRes = await fetch(cssUrl)
+  const cssRes = await fetch(cssUrl, { signal: AbortSignal.timeout(3000), cache: 'force-cache' })
   if (!cssRes.ok) throw new Error(`Could not load font CSS for ${family}`)
   const css = await cssRes.text()
 
   const match = css.match(/src: url\(([^)]+)\) format\('(?:truetype|opentype)'\)/)
   if (!match) throw new Error(`Could not find a truetype/opentype source for ${family}`)
 
-  const fontRes = await fetch(match[1])
+  const fontRes = await fetch(match[1], { signal: AbortSignal.timeout(3000), cache: 'force-cache' })
   if (!fontRes.ok) throw new Error(`Could not download font file for ${family}`)
   return fontRes.arrayBuffer()
 }

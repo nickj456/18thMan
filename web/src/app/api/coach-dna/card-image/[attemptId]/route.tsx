@@ -37,10 +37,12 @@ export async function GET(
 
     const card = buildCardData(summary)
     const headlineText = `${card.primaryLabel}${card.secondaryLabel ? ` / ${card.secondaryLabel}` : ''}`
-    const barlowCondensed = await loadGoogleFont(
-      'Barlow Condensed:ital,wght@1,800',
-      `${headlineText}COACH DNA`,
-    )
+    let barlowCondensed: ArrayBuffer | null = null
+    try {
+      barlowCondensed = await loadGoogleFont('Barlow Condensed:ital,wght@1,800', headlineText.toUpperCase())
+    } catch (fontErr) {
+      console.error('[coach-dna/card-image] Failed to load Barlow Condensed, falling back to default font:', fontErr)
+    }
 
     return new ImageResponse(
       (
@@ -123,7 +125,10 @@ export async function GET(
       {
         width: 1200,
         height: 630,
-        fonts: [{ name: 'Barlow Condensed', data: barlowCondensed, weight: 800, style: 'italic' }],
+        fonts: barlowCondensed
+          ? [{ name: 'Barlow Condensed', data: barlowCondensed, weight: 800, style: 'italic' as const }]
+          : [],
+        headers: { 'cache-control': 'private, max-age=300, must-revalidate' },
       },
     )
   } catch (err) {

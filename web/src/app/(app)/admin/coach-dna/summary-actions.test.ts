@@ -395,10 +395,14 @@ describe('ensureFreshSummary', () => {
     expect(upsertMock).toHaveBeenCalledTimes(1)
   })
 
-  it('returns the cached summary without generating when sourcedCategories already match', async () => {
+  it('returns the cached summary without generating when sourcedCategories and archetype already match', async () => {
+    // secondaryType: 'technician' here because with these fixture responses/options
+    // teacher scores 54.17 and technician ties the next batch at 50 -- a <=10 gap,
+    // so deriveArchetype assigns a secondaryType (see archetype.ts). Getting this
+    // wrong would make the archetype-drift check (finding #3) falsely regenerate.
     state.cachedAiSummary = {
       primaryType: 'teacher',
-      secondaryType: null,
+      secondaryType: 'technician',
       narrative: 'cached narrative',
       pros: [{ categorySlug: 'teacher', text: 'cached' }],
       cons: [{ categorySlug: 'motivator', text: 'cached', resources: [] }],
@@ -407,6 +411,26 @@ describe('ensureFreshSummary', () => {
     const result = await ensureFreshSummary('attempt-1', 'coach-1')
     expect(result.narrative).toBe('cached narrative')
     expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('regenerates when sourcedCategories match but the freshly computed primaryType has drifted', async () => {
+    // sourcedCategories below are identical to what a fresh (self-only) computation
+    // would produce here -- no category has crossed a blend threshold. But the
+    // cached primaryType ('motivator') no longer matches what the self-scores
+    // above (teacher scores highest) would compute -- e.g. because ongoing
+    // self-only score drift moved the top category after the cache was written.
+    // This must still trigger a regeneration, not a false "unchanged" match.
+    state.cachedAiSummary = {
+      primaryType: 'motivator',
+      secondaryType: null,
+      narrative: 'cached narrative',
+      pros: [{ categorySlug: 'motivator', text: 'cached' }],
+      cons: [{ categorySlug: 'organiser', text: 'cached', resources: [] }],
+      sourcedCategories: { teacher: ['self'], technician: ['self'], motivator: ['self'], developer: ['self'], 'game-manager': ['self'], communicator: ['self'], organiser: ['self'], 'culture-builder': ['self'] },
+    }
+    const result = await ensureFreshSummary('attempt-1', 'coach-1')
+    expect(result.narrative).toBe('You lead with clarity and patience.')
+    expect(upsertMock).toHaveBeenCalledTimes(1)
   })
 
   it('regenerates when new feedback has blended into a category the cache does not reflect', async () => {

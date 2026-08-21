@@ -1,7 +1,7 @@
 // web/src/app/(app)/admin/coach-dna/page.tsx
 import Link from 'next/link'
 import Image from 'next/image'
-import { redirect } from 'next/navigation'
+import { redirect, unstable_rethrow } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -79,6 +79,7 @@ export default async function CoachDnaPage() {
     try {
       summary = await ensureFreshSummary(completed.id, user.id)
     } catch (err) {
+      unstable_rethrow(err)
       // ensureFreshSummary can throw (no responses / stale attempt format /
       // a Groq failure regenerating a stale summary). The hub page stays
       // fast and never shows an error for this -- fall back to whatever's

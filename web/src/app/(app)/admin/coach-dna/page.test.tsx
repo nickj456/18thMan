@@ -64,6 +64,7 @@ const redirectMock = vi.fn((path: string) => {
 
 vi.mock('next/navigation', () => ({
   redirect: (path: string) => redirectMock(path),
+  unstable_rethrow: () => {},
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -84,12 +85,12 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }))
 
-const ensureFreshSummaryMock = vi.fn(async () => {
+const ensureFreshSummaryMock = vi.fn(async (_attemptId: string, _coachId: string) => {
   if (state.ensureFreshSummaryError) throw state.ensureFreshSummaryError
   return state.ensureFreshSummaryResult
 })
 vi.mock('./summary-actions', () => ({
-  ensureFreshSummary: () => ensureFreshSummaryMock(),
+  ensureFreshSummary: (attemptId: string, coachId: string) => ensureFreshSummaryMock(attemptId, coachId),
   startAssessment: () => {
     throw new Error('startAssessment should not be called by these tests')
   },
@@ -143,6 +144,10 @@ describe('CoachDnaPage', () => {
       'href',
       '/admin/coach-dna/assessment/attempt-1/complete'
     )
+    // ensureFreshSummary must always be called with the authenticated caller's
+    // own id (user.id), never e.g. attempt.coach_id -- a security-critical
+    // argument (finding #7).
+    expect(ensureFreshSummaryMock).toHaveBeenCalledWith('attempt-1', 'coach-1')
   })
 
   it('shows the Coach DNA card button when feedback has blended in', async () => {
