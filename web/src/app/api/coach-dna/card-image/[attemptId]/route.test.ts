@@ -137,7 +137,14 @@ describe('GET /api/coach-dna/card-image/[attemptId]', () => {
   })
 
   it('still returns 200 with the image rendered in the fallback font when loadGoogleFont fails', async () => {
-    loadGoogleFontMock.mockRejectedValueOnce(new Error('fonts.googleapis.com timed out'))
+    // Three font loads happen per request (Barlow Condensed, Geist 400, Geist
+    // 700) -- reject all three so this test genuinely exercises "every font
+    // load failed", not just the first one, without leaking a persistent
+    // rejection into later tests via a non-Once mock override.
+    loadGoogleFontMock
+      .mockRejectedValueOnce(new Error('fonts.googleapis.com timed out'))
+      .mockRejectedValueOnce(new Error('fonts.googleapis.com timed out'))
+      .mockRejectedValueOnce(new Error('fonts.googleapis.com timed out'))
     const res = await makeRequest('attempt-1')
     expect(res.status).toBe(200)
     expect(imageResponseMock).toHaveBeenCalledTimes(1)

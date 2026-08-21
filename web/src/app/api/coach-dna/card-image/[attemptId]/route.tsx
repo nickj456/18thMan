@@ -4,6 +4,14 @@ import { ensureFreshSummary } from '@/app/(app)/admin/coach-dna/summary-actions'
 import { hasBlendedFeedback } from '@/lib/coach-dna/blend-status'
 import { buildCardData } from '@/lib/coach-dna/card-data'
 import { loadGoogleFont } from '@/lib/coach-dna/google-font'
+import { CARD_LOGO_DATA_URI } from '@/lib/coach-dna/card-logo'
+
+interface CardFont {
+  name: string
+  data: ArrayBuffer
+  weight: 400 | 700 | 800
+  style: 'normal' | 'italic'
+}
 
 export async function GET(
   _request: Request,
@@ -37,11 +45,26 @@ export async function GET(
 
     const card = buildCardData(summary)
     const headlineText = `${card.primaryLabel}${card.secondaryLabel ? ` / ${card.secondaryLabel}` : ''}`
-    let barlowCondensed: ArrayBuffer | null = null
+    const bodyText = `18TH MANRUGBY LEAGUECOACH DNATop strengthDevelopment focus18thman.app · Coach DNA${card.topStrengthLabel ?? ''}${card.focusAreaLabel ?? ''}`
+
+    const fonts: CardFont[] = []
     try {
-      barlowCondensed = await loadGoogleFont('Barlow Condensed:ital,wght@1,800', headlineText.toUpperCase())
+      const data = await loadGoogleFont('Barlow Condensed:ital,wght@1,800', headlineText.toUpperCase())
+      fonts.push({ name: 'Barlow Condensed', data, weight: 800, style: 'italic' })
     } catch (fontErr) {
       console.error('[coach-dna/card-image] Failed to load Barlow Condensed, falling back to default font:', fontErr)
+    }
+    try {
+      const data = await loadGoogleFont('Geist:wght@400', bodyText)
+      fonts.push({ name: 'Geist', data, weight: 400, style: 'normal' })
+    } catch (fontErr) {
+      console.error('[coach-dna/card-image] Failed to load Geist 400, falling back to default font:', fontErr)
+    }
+    try {
+      const data = await loadGoogleFont('Geist:wght@700', bodyText)
+      fonts.push({ name: 'Geist', data, weight: 700, style: 'normal' })
+    } catch (fontErr) {
+      console.error('[coach-dna/card-image] Failed to load Geist 700, falling back to default font:', fontErr)
     }
 
     return new ImageResponse(
@@ -60,25 +83,11 @@ export async function GET(
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                background: '#e8560a',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 18,
-                fontWeight: 700,
-                color: 'white',
-              }}
-            >
-              18
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element -- Satori/ImageResponse rendering, not a Next.js page */}
+            <img src={CARD_LOGO_DATA_URI} alt="" width={42} height={44} />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: 1 }}>18TH MAN</span>
-              <span style={{ fontSize: 10, color: '#a1a1aa', letterSpacing: 3 }}>RUGBY LEAGUE</span>
+              <span style={{ fontSize: 10, fontWeight: 400, color: '#a1a1aa', letterSpacing: 3 }}>RUGBY LEAGUE</span>
             </div>
           </div>
 
@@ -119,15 +128,13 @@ export async function GET(
             </div>
           </div>
 
-          <span style={{ fontSize: 12, color: '#71717a' }}>18thman.app · Coach DNA</span>
+          <span style={{ fontSize: 12, fontWeight: 400, color: '#71717a' }}>18thman.app · Coach DNA</span>
         </div>
       ),
       {
         width: 1200,
         height: 630,
-        ...(barlowCondensed
-          ? { fonts: [{ name: 'Barlow Condensed', data: barlowCondensed, weight: 800, style: 'italic' as const }] }
-          : {}),
+        ...(fonts.length > 0 ? { fonts } : {}),
         headers: { 'cache-control': 'private, max-age=300, must-revalidate' },
       },
     )

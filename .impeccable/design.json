@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-12T00:00:00.000Z",
+  "title": "Design System: 18th Man",
+  "extensions": {
+    "colorMeta": {
+      "ember-orange": {
+        "role": "primary",
+        "displayName": "Ember Orange",
+        "canonical": "oklch(0.62 0.2 42)",
+        "tonalRamp": [
+          "oklch(0.15 0.2 42)",
+          "oklch(0.25 0.2 42)",
+          "oklch(0.35 0.2 42)",
+          "oklch(0.45 0.2 42)",
+          "oklch(0.55 0.2 42)",
+          "oklch(0.65 0.2 42)",
+          "oklch(0.75 0.2 42)",
+          "oklch(0.85 0.2 42)"
+        ]
+      },
+      "near-black-warm": {
+        "role": "neutral",
+        "displayName": "Near-Black Warm",
+        "canonical": "oklch(0.13 0.004 260)",
+        "tonalRamp": [
+          "oklch(0.10 0.004 260)",
+          "oklch(0.17 0.004 260)",
+          "oklch(0.25 0.004 260)",
+          "oklch(0.35 0.004 260)",
+          "oklch(0.45 0.004 260)",
+          "oklch(0.60 0.004 260)",
+          "oklch(0.78 0.004 260)",
+          "oklch(0.92 0.004 260)"
+        ]
+      },
+      "card-surface": {
+        "role": "neutral",
+        "displayName": "Card Surface",
+        "canonical": "oklch(0.17 0.004 260)"
+      },
+      "muted-surface": {
+        "role": "neutral",
+        "displayName": "Muted Surface",
+        "canonical": "oklch(0.22 0.004 260)"
+      },
+      "warm-white": {
+        "role": "neutral",
+        "displayName": "Warm White",
+        "canonical": "oklch(0.95 0.005 60)"
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Muted Foreground",
+        "canonical": "oklch(0.58 0.005 60)"
+      },
+      "hairline-border": {
+        "role": "neutral",
+        "displayName": "Hairline Border",
+        "canonical": "oklch(1 0 0 / 8%)"
+      },
+      "destructive-red": {
+        "role": "error",
+        "displayName": "Destructive Red",
+        "canonical": "oklch(0.704 0.191 22.216)"
+      },
+      "sidebar-surface": {
+        "role": "neutral",
+        "displayName": "Sidebar Surface",
+        "canonical": "oklch(0.15 0.005 260)"
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page/section headings only (.app-heading) — condensed, heavy, italic, uppercase." },
+      "body": { "displayName": "Body", "purpose": "Default UI text, descriptions, chat content." },
+      "label": { "displayName": "Label / Mono", "purpose": "Stats, IDs, durations, code — never prose." }
+    },
+    "shadows": [
+      { "name": "overlay", "value": "0 4px 24px rgba(0,0,0,0.35)", "purpose": "Floating overlays only: dropdown, sheet, popover, select. Never used on resting surfaces (cards, panels, sidebar)." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default transition easing for hover/focus/active state changes." }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default call-to-action button — ember fill, white text, tactile press feedback.",
+      "html": "<button class=\"ds-btn-primary\">Save drill</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 10px; border: 1px solid transparent; background: oklch(0.62 0.2 42); color: oklch(1 0 0); font-size: 14px; font-weight: 500; font-family: 'Geist', ui-sans-serif, system-ui, sans-serif; transition: background 0.15s cubic-bezier(0.4,0,0.2,1), transform 0.1s; } .ds-btn-primary:hover { background: oklch(0.62 0.2 42 / 80%); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.62 0.2 42 / 50%); } .ds-btn-primary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action — transparent fill, hairline border, fills to muted on hover.",
+      "html": "<button class=\"ds-btn-outline\">Cancel</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 10px; border: 1px solid oklch(1 0 0 / 12%); background: transparent; color: oklch(0.95 0.005 60); font-size: 14px; font-weight: 500; font-family: 'Geist', ui-sans-serif, system-ui, sans-serif; transition: background 0.15s cubic-bezier(0.4,0,0.2,1); } .ds-btn-outline:hover { background: oklch(0.22 0.004 260); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.62 0.2 42 / 50%); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Resting content surface — flat, one step lighter than page background, hairline ring instead of shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Kick-chase pattern</div><div class=\"ds-card-desc\">6v6 chase and contest drill for edge defense.</div></div>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 14px; background: oklch(0.17 0.004 260); box-shadow: 0 0 0 1px oklch(1 0 0 / 10%); } .ds-card-title { font-family: 'Barlow Condensed', ui-sans-serif, sans-serif; font-weight: 800; font-style: italic; text-transform: uppercase; letter-spacing: -0.01em; font-size: 18px; color: oklch(0.95 0.005 60); } .ds-card-desc { font-size: 14px; color: oklch(0.58 0.005 60); }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text field — transparent fill, hairline border, ember focus ring matching buttons.",
+      "html": "<input class=\"ds-input\" placeholder=\"Search drills…\" />",
+      "css": ".ds-input { height: 32px; width: 100%; padding: 4px 10px; border-radius: 10px; border: 1px solid oklch(1 0 0 / 12%); background: transparent; color: oklch(0.95 0.005 60); font-size: 14px; font-family: 'Geist', ui-sans-serif, system-ui, sans-serif; outline: none; transition: border-color 0.15s; } .ds-input::placeholder { color: oklch(0.58 0.005 60); } .ds-input:focus-visible { border-color: oklch(0.62 0.2 42); box-shadow: 0 0 0 3px oklch(0.62 0.2 42 / 50%); }"
+    },
+    {
+      "name": "Hexagon Icon Badge",
+      "kind": "custom",
+      "refersTo": "hexagon-badge",
+      "description": "Signature marketing-surface motif — hexagonal icon container with low-opacity ember fill/stroke. Persuade surfaces only, not the app UI.",
+      "html": "<div class=\"ds-hex-badge\"><svg viewBox=\"0 0 48 48\" width=\"48\" height=\"48\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M12 2L36 2L48 24L36 46L12 46L0 24Z\" fill=\"oklch(0.62 0.2 42 / 15%)\" stroke=\"oklch(0.62 0.2 42 / 40%)\" stroke-width=\"1.5\"/><g transform=\"translate(12,12)\" stroke=\"oklch(0.62 0.2 42 / 95%)\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"8\"/></g></svg></div>",
+      "css": ".ds-hex-badge { width: 48px; height: 48px; display: block; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Playbook",
+    "overview": "18th Man reads like a coach's tactics board, not a consumer lifestyle app: near-black surfaces, hairline dividers, and monospace-adjacent precision for anything measured (stats, IDs, durations), with a single ember-orange accent used the way a coach marks a whiteboard — sparingly, and only where it means something (primary actions, active states, the one thing that matters on screen). Condensed, heavy, italic uppercase headings (.app-heading, Barlow Condensed 800) give the interface a scoreboard/jersey-number energy that a neutral sans-serif heading never would — this is where the 'bold and energetic' character lives, concentrated in type and the ember accent rather than spread evenly across every surface. The landing page (Persuade mode) extends this world outward with a recurring hexagon motif — icon containers, background hex-grid texture — treated as a deliberate 18th Man signature, not incidental decoration. Source Serif 4 appears only on the landing page as an editorial counterweight to the condensed display type; the authenticated app (Operate mode) stays on Geist + Barlow Condensed and does not introduce serif type. Both dark and light themes are fully implemented; dark is the deliberate default, but light mode remaps the same neutral scale rather than inventing a second identity.",
+    "keyCharacteristics": [
+      "Near-black warm-neutral base with a single ember-orange accent, used sparingly and deliberately",
+      "Flat surfaces at rest (ring/hairline border, not shadow); shadows appear only on floating overlays",
+      "Condensed, heavy, italic, uppercase display type for headings — the system's signature voice",
+      "Geist Mono for anything measured or identifying (stats, IDs, durations, code)",
+      "Hexagon motif as a recurring brand signature on marketing/Persuade surfaces"
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Ember orange is the only color allowed to signal \"this matters.\" It never appears as decoration — only on primary actions, focus/active states, and the handful of AI-prose accents that intentionally echo the brand mark.", "section": "colors" },
+      { "name": "The Light Mode Is Not an Afterthought Rule", "body": "Light mode remaps the same neutral scale rather than defining a second palette. Any new hardcoded zinc-* utility must get a matching light-mode remap in globals.css's html:not(.dark) block.", "section": "colors" },
+      { "name": "The Condensed-For-Structure Rule", "body": "Barlow Condensed only appears in headings and the AI-prose H1–H3 accent color. It never appears in body copy, buttons, or form labels — those stay on Geist.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "A resting surface (card, panel, sidebar) is distinguished by a hairline border or a one-step surface-color shift, never a shadow. Shadow appears only on overlay/floating primitives (dropdown, sheet, popover, select).", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep ember orange to primary actions, focus states, and active/selected states — never as a background fill for large areas.",
+      "Do use Barlow Condensed 800 italic uppercase for headings only; keep body copy on Geist.",
+      "Do use a hairline ring/border for resting-surface separation; reserve shadow for genuinely floating overlays.",
+      "Do add a light-mode remap in globals.css's html:not(.dark) block for any new hardcoded zinc-* utility.",
+      "Do use Geist Mono for stats, IDs, durations, and code — never for prose."
+    ],
+    "donts": [
+      "Don't introduce a second accent color — the system deliberately has exactly one.",
+      "Don't add drop shadows to cards, panels, or sidebar at rest.",
+      "Don't use the hexagon motif as a generic container shape inside the authenticated app — it's a Persuade-surface signature, not a UI primitive.",
+      "Don't use Source Serif 4 (or any serif) inside the authenticated app — it's a landing-page-only editorial accent.",
+      "Don't ship a light-mode value that isn't a value already defined in the neutral scale — light mode remaps, it doesn't reinterpret."
+    ]
+  }
+}
