@@ -8,11 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { CheckCircle2, ArrowRight, Clock, Users, Eye, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { startAssessment } from './actions'
+import { ensureFreshSummary } from './summary-actions'
 import { labelFor } from '@/lib/coach-dna/categories'
 import { isCurrentSummaryShape } from '@/lib/coach-dna/summary-shape'
 import { firstSentence } from '@/lib/coach-dna/narrative'
 import { feedbackRequestEligibility } from '@/lib/coach-dna/feedback-request-status'
-import type { FeedbackType } from '@/lib/supabase/types'
+import { hasBlendedFeedback } from '@/lib/coach-dna/blend-status'
+import { CoachDnaCardDialog } from './CoachDnaCardDialog'
+import type { FeedbackType, SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const HOW_IT_WORKS = [
   '24 scenario-based questions, about 10 minutes.',
@@ -71,15 +74,26 @@ export default async function CoachDnaPage() {
     .limit(1)
     .maybeSingle()
 
-  let summary: { primaryType: string; secondaryType: string | null; narrative: string; pros: { categorySlug: string; text: string }[]; cons: { categorySlug: string; text: string }[] } | null = null
+  let summary: SelfAssessmentSummary | null = null
   if (completed) {
-    const { data: coachProfile } = await supabase
-      .from('coach_profiles')
-      .select('ai_summary')
-      .eq('user_id', user.id)
-      .maybeSingle()
-    if (coachProfile?.ai_summary && isCurrentSummaryShape(coachProfile.ai_summary)) {
-      summary = coachProfile.ai_summary
+    try {
+      summary = await ensureFreshSummary(completed.id, user.id)
+    } catch (err) {
+      // ensureFreshSummary can throw (no responses / stale attempt format /
+      // a Groq failure regenerating a stale summary). The hub page stays
+      // fast and never shows an error for this -- fall back to whatever's
+      // already cached, same as before this feature existed. The coach can
+      // still reach /complete, which surfaces a real error via its own
+      // generationFailed UI and RetryGenerateButton.
+      console.error('[coach-dna] Failed to refresh summary on hub page:', err)
+      const { data: coachProfile } = await supabase
+        .from('coach_profiles')
+        .select('ai_summary')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (coachProfile?.ai_summary && isCurrentSummaryShape(coachProfile.ai_summary)) {
+        summary = coachProfile.ai_summary
+      }
     }
   }
 
@@ -211,6 +225,9 @@ export default async function CoachDnaPage() {
                   View full breakdown
                   <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
                 </Link>
+                {hasBlendedFeedback(summary.sourcedCategories) && (
+                  <CoachDnaCardDialog attemptId={completed.id} />
+                )}
               </div>
             ) : completed ? (
               <Button render={<Link href={`/admin/coach-dna/assessment/${completed.id}/complete`} />}>

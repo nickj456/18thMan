@@ -6,7 +6,9 @@ const state: {
   role: string | null
   inProgress: { id: string } | null
   completed: { id: string } | null
-  aiSummary: unknown
+  ensureFreshSummaryResult: unknown
+  ensureFreshSummaryError: Error | null
+  fallbackCachedAiSummary: unknown
   feedbackRequests: { id: string; feedback_type: string; minimum_response_threshold: number; status: string; expires_at: string }[]
   feedbackResponses: { id: string; feedback_request_id: string }[]
 } = {
@@ -14,7 +16,9 @@ const state: {
   role: null,
   inProgress: null,
   completed: null,
-  aiSummary: null,
+  ensureFreshSummaryResult: null,
+  ensureFreshSummaryError: null,
+  fallbackCachedAiSummary: null,
   feedbackRequests: [],
   feedbackResponses: [],
 }
@@ -72,12 +76,23 @@ vi.mock('@/lib/supabase/server', () => ({
         assessmentAttemptCall += 1
         return makeQuery(assessmentAttemptCall === 1 ? state.inProgress : state.completed)
       }
-      if (table === 'coach_profiles') return makeQuery({ ai_summary: state.aiSummary })
+      if (table === 'coach_profiles') return makeQuery({ ai_summary: state.fallbackCachedAiSummary })
       if (table === 'feedback_requests') return makeQuery(state.feedbackRequests)
       if (table === 'feedback_responses') return makeQuery(state.feedbackResponses)
       throw new Error(`unexpected table: ${table}`)
     },
   }),
+}))
+
+const ensureFreshSummaryMock = vi.fn(async () => {
+  if (state.ensureFreshSummaryError) throw state.ensureFreshSummaryError
+  return state.ensureFreshSummaryResult
+})
+vi.mock('./summary-actions', () => ({
+  ensureFreshSummary: () => ensureFreshSummaryMock(),
+  startAssessment: () => {
+    throw new Error('startAssessment should not be called by these tests')
+  },
 }))
 
 import CoachDnaPage from './page'
@@ -88,7 +103,9 @@ describe('CoachDnaPage', () => {
     state.role = 'admin'
     state.inProgress = null
     state.completed = null
-    state.aiSummary = null
+    state.ensureFreshSummaryResult = null
+    state.ensureFreshSummaryError = null
+    state.fallbackCachedAiSummary = null
     state.feedbackRequests = []
     state.feedbackResponses = []
     assessmentAttemptCall = 0
@@ -108,12 +125,13 @@ describe('CoachDnaPage', () => {
 
   it('renders a condensed snapshot when completed with a valid summary', async () => {
     state.completed = { id: 'attempt-1' }
-    state.aiSummary = {
+    state.ensureFreshSummaryResult = {
       primaryType: 'motivator',
       secondaryType: 'technician',
       narrative: 'You build trust fast.',
       pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
       cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      sourcedCategories: { motivator: ['self'] },
     }
 
     render(await CoachDnaPage())
@@ -127,19 +145,72 @@ describe('CoachDnaPage', () => {
     )
   })
 
-  it('falls back to the plain results button when no valid summary has been generated yet', async () => {
+  it('shows the Coach DNA card button when feedback has blended in', async () => {
     state.completed = { id: 'attempt-1' }
-    state.aiSummary = null
+    state.ensureFreshSummaryResult = {
+      primaryType: 'motivator',
+      secondaryType: 'technician',
+      narrative: 'You build trust fast.',
+      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
+      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      sourcedCategories: { motivator: ['self', 'player_voice'] },
+    }
+
+    render(await CoachDnaPage())
+
+    expect(screen.getByRole('button', { name: 'View my Coach DNA card' })).toBeInTheDocument()
+  })
+
+  it('hides the Coach DNA card button for a self-only summary', async () => {
+    state.completed = { id: 'attempt-1' }
+    state.ensureFreshSummaryResult = {
+      primaryType: 'motivator',
+      secondaryType: null,
+      narrative: 'You build trust fast.',
+      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
+      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      sourcedCategories: { motivator: ['self'] },
+    }
+
+    render(await CoachDnaPage())
+
+    expect(screen.queryByRole('button', { name: 'View my Coach DNA card' })).not.toBeInTheDocument()
+  })
+
+  it('still shows the card button off a fallback-cached summary that is itself already blended', async () => {
+    state.completed = { id: 'attempt-1' }
+    state.ensureFreshSummaryError = new Error('groq down')
+    state.fallbackCachedAiSummary = {
+      primaryType: 'motivator',
+      secondaryType: null,
+      narrative: 'Cached narrative.',
+      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
+      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      sourcedCategories: { motivator: ['self', 'player_voice'] },
+    }
+
+    render(await CoachDnaPage())
+
+    expect(screen.getByText(/You're a Motivator coach/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'View my Coach DNA card' })).toBeInTheDocument()
+  })
+
+  it('falls back to the plain results button when ensureFreshSummary fails and nothing valid is cached', async () => {
+    state.completed = { id: 'attempt-1' }
+    state.ensureFreshSummaryError = new Error('groq down')
+    state.fallbackCachedAiSummary = null
 
     render(await CoachDnaPage())
 
     expect(screen.getByRole('button', { name: 'View your results' })).toBeInTheDocument()
   })
 
-  it('falls back to the plain results button for a stale summary shape', async () => {
+  it('falls back to the plain results button when ensureFreshSummary fails and the cached fallback has a stale shape', async () => {
     state.completed = { id: 'attempt-1' }
-    // Missing `resources` on cons marks this as a pre-growth-resources shape.
-    state.aiSummary = {
+    state.ensureFreshSummaryError = new Error('groq down')
+    // Missing `resources` on cons marks this as a pre-growth-resources shape --
+    // the fallback branch's own isCurrentSummaryShape check must reject it too.
+    state.fallbackCachedAiSummary = {
       primaryType: 'motivator',
       secondaryType: null,
       narrative: '',
