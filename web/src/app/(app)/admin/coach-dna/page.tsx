@@ -5,13 +5,12 @@ import { redirect, unstable_rethrow } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { CheckCircle2, ArrowRight, Clock, Users, Eye, type LucideIcon } from 'lucide-react'
+import { CheckCircle2, ArrowRight, Clock, Users, Eye, Quote, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { startAssessment } from './actions'
 import { ensureFreshSummary } from './summary-actions'
 import { labelFor } from '@/lib/coach-dna/categories'
 import { isCurrentSummaryShape } from '@/lib/coach-dna/summary-shape'
-import { firstSentence } from '@/lib/coach-dna/narrative'
 import { feedbackRequestEligibility } from '@/lib/coach-dna/feedback-request-status'
 import { hasBlendedFeedback } from '@/lib/coach-dna/blend-status'
 import { CoachDnaCardDialog } from './CoachDnaCardDialog'
@@ -143,6 +142,39 @@ export default async function CoachDnaPage() {
   const totalThreshold = feedbackTypeSummaries.reduce((sum, t) => sum + t.threshold, 0)
   const feedbackPercent = totalThreshold > 0 ? Math.min(100, Math.round((totalReceived / totalThreshold) * 100)) : 0
 
+  // Most recent written comment across the coach's own feedback responses, as
+  // a quick taste of the actual feedback content rather than just counts.
+  // RLS already scopes feedback_responses/feedback_answers to this coach's
+  // own, cleared (held_for_review = false) responses -- same as the
+  // feedback responses detail page.
+  const { data: recentResponses } = requestIds.length > 0
+    ? await supabase
+      .from('feedback_responses')
+      .select('id, submitted_at')
+      .in('feedback_request_id', requestIds)
+      .order('submitted_at', { ascending: false })
+      .limit(20)
+    : { data: [] }
+
+  const recentResponseIds = (recentResponses ?? []).map(r => r.id)
+  const { data: recentAnswers } = recentResponseIds.length > 0
+    ? await supabase
+      .from('feedback_answers')
+      .select('feedback_response_id, written_value')
+      .in('feedback_response_id', recentResponseIds)
+      .not('written_value', 'is', null)
+    : { data: [] }
+
+  const commentByResponse = new Map((recentAnswers ?? []).map(a => [a.feedback_response_id, a.written_value as string]))
+  let recentComment: string | null = null
+  for (const r of recentResponses ?? []) {
+    const comment = commentByResponse.get(r.id)
+    if (comment) {
+      recentComment = comment.length > 220 ? `${comment.slice(0, 220).trimEnd()}…` : comment
+      break
+    }
+  }
+
   return (
     <div className="space-y-6 max-w-6xl">
       <h1 className="sr-only">Coach DNA</h1>
@@ -195,7 +227,7 @@ export default async function CoachDnaPage() {
                   </p>
                 </div>
                 {summary.narrative && (
-                  <p className="text-sm text-zinc-400">{firstSentence(summary.narrative)}</p>
+                  <p className="text-sm text-zinc-400">{summary.narrative}</p>
                 )}
                 <div className="grid grid-cols-2 gap-3">
                   {summary.pros[0] && (
@@ -336,6 +368,12 @@ export default async function CoachDnaPage() {
                     )
                   })}
                 </div>
+                {recentComment && (
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 flex gap-2">
+                    <Quote size={14} className="text-zinc-600 shrink-0 mt-0.5" />
+                    <p className="text-sm text-zinc-400 italic">{recentComment}</p>
+                  </div>
+                )}
                 <Link
                   href="/admin/coach-dna/feedback"
                   className="group inline-flex items-center gap-1 text-sm text-orange-400 hover:text-orange-300"

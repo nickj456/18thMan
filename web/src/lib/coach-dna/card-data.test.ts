@@ -22,19 +22,38 @@ describe('buildCardData', () => {
     expect(data.secondaryLabel).toBe('Organiser')
   })
 
-  it('labels the top strength and focus area from the first pro/con', () => {
+  it('labels every strength and focus area, not just the first', () => {
     const data = buildCardData({
       ...BASE_SUMMARY,
-      pros: [{ categorySlug: 'communicator', text: '...' }],
-      cons: [{ categorySlug: 'game-manager', text: '...', resources: [] }],
+      pros: [
+        { categorySlug: 'communicator', text: '...' },
+        { categorySlug: 'motivator', text: '...' },
+      ],
+      cons: [
+        { categorySlug: 'game-manager', text: '...', resources: [] },
+        { categorySlug: 'organiser', text: '...', resources: [] },
+      ],
     })
-    expect(data.topStrengthLabel).toBe('Communicator')
-    expect(data.focusAreaLabel).toBe('Game Manager')
+    expect(data.strengthLabels).toEqual(['Communicator', 'Motivator'])
+    expect(data.focusAreaLabels).toEqual(['Game Manager', 'Organiser'])
   })
 
-  it('returns null strength/focus when pros/cons are empty', () => {
+  it('returns empty arrays when pros/cons are empty', () => {
     const data = buildCardData(BASE_SUMMARY)
-    expect(data.topStrengthLabel).toBeNull()
-    expect(data.focusAreaLabel).toBeNull()
+    expect(data.strengthLabels).toEqual([])
+    expect(data.focusAreaLabels).toEqual([])
+  })
+
+  it('reduces the narrative to its first sentence, never null unless the narrative itself is empty', () => {
+    const data = buildCardData({
+      ...BASE_SUMMARY,
+      narrative: 'You build trust fast. Your sessions stay focused on the fundamentals.',
+    })
+    expect(data.narrativeSnippet).toBe('You build trust fast.')
+  })
+
+  it('returns a null narrative snippet when there is no narrative', () => {
+    const data = buildCardData(BASE_SUMMARY)
+    expect(data.narrativeSnippet).toBeNull()
   })
 })

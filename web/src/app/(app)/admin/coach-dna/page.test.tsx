@@ -10,7 +10,8 @@ const state: {
   ensureFreshSummaryError: Error | null
   fallbackCachedAiSummary: unknown
   feedbackRequests: { id: string; feedback_type: string; minimum_response_threshold: number; status: string; expires_at: string }[]
-  feedbackResponses: { id: string; feedback_request_id: string }[]
+  feedbackResponses: { id: string; feedback_request_id: string; submitted_at?: string }[]
+  feedbackAnswers: { feedback_response_id: string; written_value: string | null }[]
 } = {
   user: null,
   role: null,
@@ -21,6 +22,7 @@ const state: {
   fallbackCachedAiSummary: null,
   feedbackRequests: [],
   feedbackResponses: [],
+  feedbackAnswers: [],
 }
 
 let assessmentAttemptCall = 0
@@ -80,6 +82,7 @@ vi.mock('@/lib/supabase/server', () => ({
       if (table === 'coach_profiles') return makeQuery({ ai_summary: state.fallbackCachedAiSummary })
       if (table === 'feedback_requests') return makeQuery(state.feedbackRequests)
       if (table === 'feedback_responses') return makeQuery(state.feedbackResponses)
+      if (table === 'feedback_answers') return makeQuery(state.feedbackAnswers)
       throw new Error(`unexpected table: ${table}`)
     },
   }),
@@ -109,6 +112,7 @@ describe('CoachDnaPage', () => {
     state.fallbackCachedAiSummary = null
     state.feedbackRequests = []
     state.feedbackResponses = []
+    state.feedbackAnswers = []
     assessmentAttemptCall = 0
     redirectMock.mockClear()
   })
@@ -267,6 +271,50 @@ describe('CoachDnaPage', () => {
       'href',
       '/admin/coach-dna/feedback'
     )
+  })
+
+  it('shows the most recent written comment when one exists', async () => {
+    state.feedbackRequests = [
+      { id: 'req-1', feedback_type: 'player_voice', minimum_response_threshold: 8, status: 'active', expires_at: FUTURE },
+    ]
+    // Mock query ordering isn't real (makeQuery ignores .order()), so the
+    // fixture is listed already in the desired most-recent-first order.
+    state.feedbackResponses = [
+      { id: 'resp-2', feedback_request_id: 'req-1', submitted_at: '2026-08-15T00:00:00.000Z' },
+      { id: 'resp-1', feedback_request_id: 'req-1', submitted_at: '2026-08-01T00:00:00.000Z' },
+    ]
+    state.feedbackAnswers = [
+      { feedback_response_id: 'resp-1', written_value: 'An older comment.' },
+      { feedback_response_id: 'resp-2', written_value: 'Really clear communicator, sessions feel well organised.' },
+    ]
+
+    render(await CoachDnaPage())
+
+    expect(screen.getByText('Really clear communicator, sessions feel well organised.')).toBeInTheDocument()
+  })
+
+  it('truncates an overly long comment with an ellipsis', async () => {
+    state.feedbackRequests = [
+      { id: 'req-1', feedback_type: 'player_voice', minimum_response_threshold: 8, status: 'active', expires_at: FUTURE },
+    ]
+    state.feedbackResponses = [{ id: 'resp-1', feedback_request_id: 'req-1', submitted_at: '2026-08-15T00:00:00.000Z' }]
+    state.feedbackAnswers = [{ feedback_response_id: 'resp-1', written_value: 'x'.repeat(300) }]
+
+    render(await CoachDnaPage())
+
+    expect(screen.getByText(`${'x'.repeat(220)}…`)).toBeInTheDocument()
+  })
+
+  it('shows no comment block when no response has a written comment', async () => {
+    state.feedbackRequests = [
+      { id: 'req-1', feedback_type: 'player_voice', minimum_response_threshold: 8, status: 'active', expires_at: FUTURE },
+    ]
+    state.feedbackResponses = [{ id: 'resp-1', feedback_request_id: 'req-1', submitted_at: '2026-08-15T00:00:00.000Z' }]
+    state.feedbackAnswers = [{ feedback_response_id: 'resp-1', written_value: null }]
+
+    render(await CoachDnaPage())
+
+    expect(screen.getByText('1 of 8 responses received')).toBeInTheDocument()
   })
 
   it('excludes expired requests from the aggregate but keeps active ones', async () => {

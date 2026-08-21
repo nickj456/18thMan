@@ -45,7 +45,7 @@ export async function GET(
 
     const card = buildCardData(summary)
     const headlineText = `${card.primaryLabel}${card.secondaryLabel ? ` / ${card.secondaryLabel}` : ''}`
-    const bodyText = `18TH MANRUGBY LEAGUECOACH DNATop strengthDevelopment focus18thman.app · Coach DNA${card.topStrengthLabel ?? ''}${card.focusAreaLabel ?? ''}`
+    const bodyText = `18TH MANRUGBY LEAGUECOACH DNAStrengthsFocus areas18thman.app · Coach DNA${card.narrativeSnippet ?? ''}${card.strengthLabels.join('')}${card.focusAreaLabels.join('')}`
 
     const fonts: CardFont[] = []
     try {
@@ -75,7 +75,6 @@ export async function GET(
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
             backgroundColor: '#151517',
             padding: 64,
             color: '#f4f4f5',
@@ -91,7 +90,7 @@ export async function GET(
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 36 }}>
             <span style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 6, color: '#e8560a', fontWeight: 700 }}>
               Coach DNA
             </span>
@@ -100,7 +99,7 @@ export async function GET(
                 fontFamily: 'Barlow Condensed',
                 fontStyle: 'italic',
                 fontWeight: 800,
-                fontSize: 72,
+                fontSize: 68,
                 textTransform: 'uppercase',
                 lineHeight: 1.05,
                 letterSpacing: -1,
@@ -108,32 +107,42 @@ export async function GET(
             >
               {headlineText}
             </span>
-            <div style={{ display: 'flex', gap: 48 }}>
-              {card.topStrengthLabel && (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: '#34d399', fontWeight: 700 }}>
-                    Top strength
-                  </span>
-                  <span style={{ fontSize: 26, fontWeight: 700 }}>{card.topStrengthLabel}</span>
-                </div>
-              )}
-              {card.focusAreaLabel && (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: '#fb923c', fontWeight: 700 }}>
-                    Development focus
-                  </span>
-                  <span style={{ fontSize: 26, fontWeight: 700 }}>{card.focusAreaLabel}</span>
-                </div>
-              )}
-            </div>
+            {card.narrativeSnippet && (
+              <span style={{ fontSize: 22, fontWeight: 400, color: '#d4d4d8', lineHeight: 1.4, maxWidth: 900 }}>
+                {card.narrativeSnippet}
+              </span>
+            )}
           </div>
 
-          <span style={{ fontSize: 12, fontWeight: 400, color: '#71717a' }}>18thman.app · Coach DNA</span>
+          <div style={{ display: 'flex', gap: 64, marginTop: 40 }}>
+            {card.strengthLabels.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+                <span style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, color: '#34d399', fontWeight: 700 }}>
+                  Strengths
+                </span>
+                {card.strengthLabels.map(label => (
+                  <span key={label} style={{ fontSize: 24, fontWeight: 700 }}>{label}</span>
+                ))}
+              </div>
+            )}
+            {card.focusAreaLabels.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+                <span style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, color: '#fb923c', fontWeight: 700 }}>
+                  Focus areas
+                </span>
+                {card.focusAreaLabels.map(label => (
+                  <span key={label} style={{ fontSize: 24, fontWeight: 700 }}>{label}</span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <span style={{ fontSize: 12, fontWeight: 400, color: '#71717a', marginTop: 'auto' }}>18thman.app · Coach DNA</span>
         </div>
       ),
       {
         width: 1200,
-        height: 630,
+        height: 900,
         ...(fonts.length > 0 ? { fonts } : {}),
         headers: { 'cache-control': 'private, max-age=300, must-revalidate' },
       },

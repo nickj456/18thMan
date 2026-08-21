@@ -116,13 +116,13 @@ describe('GET /api/coach-dna/card-image/[attemptId]', () => {
     expect(imageResponseMock).not.toHaveBeenCalled()
   })
 
-  it('generates a 1200x630 image with Barlow Condensed for a blended profile', async () => {
+  it('generates a 1200x900 image with Barlow Condensed for a blended profile', async () => {
     const res = await makeRequest('attempt-1')
     expect(res.status).toBe(200)
     expect(imageResponseMock).toHaveBeenCalledTimes(1)
     const opts = imageResponseMock.mock.calls[0][1] as { width: number; height: number; fonts: { name: string }[] }
     expect(opts.width).toBe(1200)
-    expect(opts.height).toBe(630)
+    expect(opts.height).toBe(900)
     expect(opts.fonts[0].name).toBe('Barlow Condensed')
     // ensureFreshSummary must always be called with the authenticated caller's
     // own id, never something derived from the attempt row -- a security-
