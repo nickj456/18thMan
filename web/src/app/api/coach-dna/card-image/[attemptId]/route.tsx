@@ -125,9 +125,9 @@ export async function GET(
       {
         width: 1200,
         height: 630,
-        fonts: barlowCondensed
-          ? [{ name: 'Barlow Condensed', data: barlowCondensed, weight: 800, style: 'italic' as const }]
-          : [],
+        ...(barlowCondensed
+          ? { fonts: [{ name: 'Barlow Condensed', data: barlowCondensed, weight: 800, style: 'italic' as const }] }
+          : {}),
         headers: { 'cache-control': 'private, max-age=300, must-revalidate' },
       },
     )

@@ -1,0 +1,71 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "web/src/app/globals.css"
+        ],
+        "createdAt": "2026-08-12T00:18:32.585Z",
+        "reason": "Blockquote left-border is a standard editorial convention for quoted AI chat text, not the AI-generated-card pattern the rule targets"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#f4f4f5",
+        "files": [
+          "web/src/app/api/coach-dna/card-image/[attemptId]/route.tsx"
+        ],
+        "createdAt": "2026-08-21T12:51:33.599Z",
+        "reason": "next/og ImageResponse (Satori) only accepts literal inline style values, no Tailwind classes/CSS vars; this is the warm-white token from DESIGN.md's palette translated to a literal hex for that constraint"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#e8560a",
+        "files": [
+          "web/src/app/api/coach-dna/card-image/[attemptId]/route.tsx"
+        ],
+        "createdAt": "2026-08-21T12:51:33.714Z",
+        "reason": "next/og ImageResponse (Satori) only accepts literal inline style values; #e8560a is DESIGN.md's own documented Ember Orange hex, not a new color"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#a1a1aa",
+        "files": [
+          "web/src/app/api/coach-dna/card-image/[attemptId]/route.tsx"
+        ],
+        "createdAt": "2026-08-21T12:51:33.804Z",
+        "reason": "next/og ImageResponse (Satori) only accepts literal inline style values; this is the zinc-400 muted-foreground token translated to a literal hex for that constraint"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#34d399",
+        "files": [
+          "web/src/app/api/coach-dna/card-image/[attemptId]/route.tsx"
+        ],
+        "createdAt": "2026-08-21T12:51:33.920Z",
+        "reason": "next/og ImageResponse (Satori) only accepts literal inline style values; this is the emerald-400 success/strength token already used elsewhere on the hub page, translated to a literal hex for that constraint"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#fb923c",
+        "files": [
+          "web/src/app/api/coach-dna/card-image/[attemptId]/route.tsx"
+        ],
+        "createdAt": "2026-08-21T12:58:39.224Z",
+        "reason": "next/og ImageResponse (Satori) only accepts literal inline style values; this is the orange-400 focus-area accent token already used elsewhere in this Coach DNA module, translated to a literal hex for that constraint"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#71717a",
+        "files": [
+          "web/src/app/api/coach-dna/card-image/[attemptId]/route.tsx"
+        ],
+        "createdAt": "2026-08-21T12:58:39.314Z",
+        "reason": "next/og ImageResponse (Satori) only accepts literal inline style values; this is the zinc-500 muted-footer-text token translated to a literal hex for that constraint"
+      }
+    ]
+  }
+}

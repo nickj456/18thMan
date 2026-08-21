@@ -141,8 +141,12 @@ describe('GET /api/coach-dna/card-image/[attemptId]', () => {
     const res = await makeRequest('attempt-1')
     expect(res.status).toBe(200)
     expect(imageResponseMock).toHaveBeenCalledTimes(1)
-    const opts = imageResponseMock.mock.calls[0][1] as { fonts: unknown[] }
-    expect(opts.fonts).toEqual([])
+    const opts = imageResponseMock.mock.calls[0][1] as { fonts?: unknown[] }
+    // The `fonts` key must be omitted entirely, not passed as `[]` -- next/og's
+    // ImageResponse treats an empty array as "these are the only fonts" (skipping
+    // its own bundled default) and throws "No fonts are loaded" inside the
+    // response stream, which the route's own try/catch can't see.
+    expect(opts.fonts).toBeUndefined()
   })
 
   it('returns 500 when ensureFreshSummary throws', async () => {
