@@ -8,6 +8,8 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { labelFor } from '@/lib/coach-dna/categories'
 import { resourcesFor } from '@/lib/coach-dna/resources'
 import { computeBlendedArchetype } from '@/lib/coach-dna/blended-archetype'
+import { isCurrentSummaryShape } from '@/lib/coach-dna/summary-shape'
+import { sourcedCategoriesEqual } from '@/lib/coach-dna/blend-status'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
@@ -131,4 +133,46 @@ Respond with ONLY a valid JSON object, no markdown fences, no explanation. "pros
   if (upsertError) throw new Error(upsertError.message)
 
   return summary
+}
+
+/** Returns the cached summary if it already reflects current feedback data,
+ *  otherwise regenerates it (one AI call) first. Does not perform its own
+ *  auth/role check -- callers (the hub page, the /complete page, the card
+ *  image route) already ran theirs before calling this, and this function's
+ *  call path is reachable from a Route Handler where redirect() does not
+ *  behave correctly. Only the data-level ownership/completed-at check is
+ *  this function's own responsibility. */
+export async function ensureFreshSummary(attemptId: string, coachId: string): Promise<SelfAssessmentSummary> {
+  const supabase = await createClient()
+  const serviceSupabase = createServiceClient()
+
+  const { data: attempt } = await supabase
+    .from('assessment_attempts')
+    .select('id, coach_id, completed_at')
+    .eq('id', attemptId)
+    .single()
+  if (!attempt || attempt.coach_id !== coachId || !attempt.completed_at) {
+    throw new Error('This attempt is not a completed attempt belonging to this coach')
+  }
+
+  const { data: coachProfile } = await supabase
+    .from('coach_profiles')
+    .select('ai_summary')
+    .eq('user_id', coachId)
+    .maybeSingle()
+  const cached = coachProfile?.ai_summary as SelfAssessmentSummary | null
+
+  const { sourcedCategories } = await computeBlendedArchetype(
+    supabase,
+    serviceSupabase,
+    attemptId,
+    coachId,
+    attempt.completed_at as string,
+  )
+
+  if (cached && isCurrentSummaryShape(cached) && sourcedCategoriesEqual(cached.sourcedCategories, sourcedCategories)) {
+    return cached
+  }
+
+  return generateSelfAssessmentSummary(attemptId)
 }
