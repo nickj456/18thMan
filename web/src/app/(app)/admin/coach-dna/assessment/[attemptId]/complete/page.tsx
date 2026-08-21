@@ -5,11 +5,10 @@ import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle2 } from 'lucide-react'
-import { generateSelfAssessmentSummary } from '../../../summary-actions'
+import { ensureFreshSummary } from '../../../summary-actions'
 import { EmailSummaryButton } from './EmailSummaryButton'
 import { RetryGenerateButton } from './RetryGenerateButton'
 import { labelFor } from '@/lib/coach-dna/categories'
-import { isCurrentSummaryShape } from '@/lib/coach-dna/summary-shape'
 import { sourceTagFor, allCategoriesSelfOnly } from '@/lib/coach-dna/source-label'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
@@ -35,33 +34,15 @@ export default async function AssessmentCompletePage({
     .single()
   if (!attempt || attempt.coach_id !== user.id || !attempt.completed_at) redirect('/admin/coach-dna')
 
-  const { data: coachProfile } = await supabase
-    .from('coach_profiles')
-    .select('ai_summary')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
   let summary: SelfAssessmentSummary
   let generationFailed = false
-  if (coachProfile?.ai_summary && isCurrentSummaryShape(coachProfile.ai_summary)) {
-    summary = coachProfile.ai_summary
-  } else {
-    // The auth/ownership/completed-at checks above already redirect for every
-    // condition generateSelfAssessmentSummary itself also redirects on, so by
-    // this point the only realistic throw is a genuine generation failure
-    // (Groq call, JSON parse, or DB write) — safe to catch broadly here.
-    // Still, if generateSelfAssessmentSummary's own redirect() conditions ever
-    // drift out of sync with this page's guards, unstable_rethrow ensures a
-    // real Next.js redirect propagates instead of being swallowed as a
-    // generation failure.
-    try {
-      summary = await generateSelfAssessmentSummary(attemptId)
-    } catch (err) {
-      unstable_rethrow(err)
-      console.error('[coach-dna] Failed to generate summary:', err)
-      generationFailed = true
-      summary = { primaryType: '', secondaryType: null, narrative: '', pros: [], cons: [] }
-    }
+  try {
+    summary = await ensureFreshSummary(attemptId, user.id)
+  } catch (err) {
+    unstable_rethrow(err)
+    console.error('[coach-dna] Failed to generate summary:', err)
+    generationFailed = true
+    summary = { primaryType: '', secondaryType: null, narrative: '', pros: [], cons: [] }
   }
 
   if (generationFailed) {
