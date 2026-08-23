@@ -12,6 +12,7 @@ const state: {
   aiText: string
   upsertError: { message: string } | null
   blendInputs: Record<string, { source: string; responses: { value: number; submittedAt: string }[] }[]>
+  cachedAiSummary: unknown
 } = {
   user: null,
   role: 'admin',
@@ -23,6 +24,7 @@ const state: {
   aiText: '',
   upsertError: null,
   blendInputs: {},
+  cachedAiSummary: null,
 }
 
 const upsertMock = vi.fn(async (_row: { ai_summary: { pros: { categorySlug: string }[]; sourcedCategories: Record<string, string[]> } }, _opts?: unknown) => ({
@@ -42,8 +44,12 @@ vi.mock('next/navigation', () => ({
     throw new Error(`REDIRECT:${path}`)
   },
 }))
+let capturedModelId: string | undefined
 vi.mock('@ai-sdk/groq', () => ({
-  createGroq: () => () => 'mock-model',
+  createGroq: () => (modelId: string) => {
+    capturedModelId = modelId
+    return { modelId }
+  },
 }))
 vi.mock('ai', () => ({
   generateText: async () => ({ text: state.aiText }),
@@ -63,7 +69,10 @@ vi.mock('@/lib/supabase/server', () => ({
         return { select: () => ({ eq: async () => ({ data: state.responses, error: state.responsesError }) }) }
       }
       if (table === 'coach_profiles') {
-        return { upsert: upsertMock }
+        return {
+          upsert: upsertMock,
+          select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: state.cachedAiSummary ? { ai_summary: state.cachedAiSummary } : null }) }) }),
+        }
       }
       // `assessment_options` must NOT be readable through the user client:
       // its `category_weights_json` column is granted to service_role only.
@@ -83,7 +92,7 @@ vi.mock('@/lib/supabase/service', () => ({
   }),
 }))
 
-import { generateSelfAssessmentSummary } from './summary-actions'
+import { generateSelfAssessmentSummary, ensureFreshSummary } from './summary-actions'
 import { CATEGORY_RESOURCES } from '@/lib/coach-dna/resources'
 
 // Derived from most option weighted 100 to `teacher` and least option weighted
@@ -122,6 +131,7 @@ describe('generateSelfAssessmentSummary', () => {
     })
     state.upsertError = null
     state.blendInputs = {}
+    state.cachedAiSummary = null
     upsertMock.mockClear()
     fetchBlendInputsMock.mockClear()
   })
@@ -180,6 +190,16 @@ describe('generateSelfAssessmentSummary', () => {
       }),
       expect.objectContaining({ onConflict: 'user_id' }),
     )
+  })
+
+  it('never sends a deprecated/decommissioned Groq model id', async () => {
+    // Regression test: Groq deprecated `llama-3.3-70b-versatile` (404
+    // model_not_found), which broke every summary generation until fixed --
+    // matches the same regression test already in src/app/api/chat/route.test.ts.
+    await generateSelfAssessmentSummary('attempt-1')
+
+    expect(capturedModelId).toBe('openai/gpt-oss-120b')
+    expect(capturedModelId).not.toBe('llama-3.3-70b-versatile')
   })
 
   it('uses the computed archetype slugs, not the slugs the model returned', async () => {
@@ -323,5 +343,129 @@ describe('generateSelfAssessmentSummary', () => {
       const persisted = upsertMock.mock.calls[0][0]
       expect(persisted.ai_summary.sourcedCategories.motivator).toEqual(expect.arrayContaining(['self', 'player_voice']))
     })
+  })
+})
+
+describe('ensureFreshSummary', () => {
+  beforeEach(() => {
+    state.user = { id: 'coach-1' }
+    state.role = 'admin'
+    state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: '2026-08-06T00:00:00.000Z' }
+    state.responses = [{ question_id: 'q1', selected_option: 'opt-1', least_option: 'opt-2' }]
+    state.responsesError = null
+    state.options = [
+      { id: 'opt-1', question_id: 'q1', category_weights_json: { teacher: 100 } },
+      { id: 'opt-2', question_id: 'q1', category_weights_json: { motivator: 100 } },
+    ]
+    state.optionsError = null
+    state.aiText = JSON.stringify({
+      narrative: 'You lead with clarity and patience.',
+      pros: [
+        { categorySlug: 'Teacher', text: 'You explain things well.' },
+        { categorySlug: 'nonsense', text: 'Your detail work is sharp.' },
+        { categorySlug: '', text: 'You lift the room.' },
+      ],
+      cons: [
+        { categorySlug: 'Culture Builder', text: 'Set the tone more explicitly.' },
+        { categorySlug: 'nonsense', text: 'Sessions could run tighter.' },
+        { categorySlug: '', text: 'Say less, say it clearer.' },
+      ],
+    })
+    state.upsertError = null
+    state.blendInputs = {}
+    state.cachedAiSummary = null
+    upsertMock.mockClear()
+    fetchBlendInputsMock.mockClear()
+  })
+
+  it('throws when the attempt does not belong to the coach', async () => {
+    state.attempt = { id: 'attempt-1', coach_id: 'someone-else', completed_at: '2026-08-06T00:00:00.000Z' }
+    await expect(ensureFreshSummary('attempt-1', 'coach-1')).rejects.toThrow()
+  })
+
+  it('throws when the attempt is not completed', async () => {
+    state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: null }
+    await expect(ensureFreshSummary('attempt-1', 'coach-1')).rejects.toThrow()
+  })
+
+  it('generates and persists a new summary when nothing is cached yet', async () => {
+    state.cachedAiSummary = null
+    const result = await ensureFreshSummary('attempt-1', 'coach-1')
+    expect(result.primaryType).toBe('teacher')
+    expect(upsertMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('regenerates when the cached summary has a stale (pre-resources) shape', async () => {
+    state.cachedAiSummary = {
+      primaryType: 'teacher',
+      secondaryType: null,
+      narrative: 'old',
+      pros: [{ categorySlug: 'teacher', text: 'old' }],
+      cons: [{ categorySlug: 'motivator', text: 'old' }], // missing `resources` -> stale shape
+      sourcedCategories: { teacher: ['self'], motivator: ['self'] },
+    }
+    const result = await ensureFreshSummary('attempt-1', 'coach-1')
+    expect(result.narrative).toBe('You lead with clarity and patience.')
+    expect(upsertMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns the cached summary without generating when sourcedCategories and archetype already match', async () => {
+    // secondaryType: 'technician' here because with these fixture responses/options
+    // teacher scores 54.17 and technician ties the next batch at 50 -- a <=10 gap,
+    // so deriveArchetype assigns a secondaryType (see archetype.ts). Getting this
+    // wrong would make the archetype-drift check (finding #3) falsely regenerate.
+    state.cachedAiSummary = {
+      primaryType: 'teacher',
+      secondaryType: 'technician',
+      narrative: 'cached narrative',
+      pros: [{ categorySlug: 'teacher', text: 'cached' }],
+      cons: [{ categorySlug: 'motivator', text: 'cached', resources: [] }],
+      sourcedCategories: { teacher: ['self'], technician: ['self'], motivator: ['self'], developer: ['self'], 'game-manager': ['self'], communicator: ['self'], organiser: ['self'], 'culture-builder': ['self'] },
+    }
+    const result = await ensureFreshSummary('attempt-1', 'coach-1')
+    expect(result.narrative).toBe('cached narrative')
+    expect(upsertMock).not.toHaveBeenCalled()
+  })
+
+  it('regenerates when sourcedCategories match but the freshly computed primaryType has drifted', async () => {
+    // sourcedCategories below are identical to what a fresh (self-only) computation
+    // would produce here -- no category has crossed a blend threshold. But the
+    // cached primaryType ('motivator') no longer matches what the self-scores
+    // above (teacher scores highest) would compute -- e.g. because ongoing
+    // self-only score drift moved the top category after the cache was written.
+    // This must still trigger a regeneration, not a false "unchanged" match.
+    state.cachedAiSummary = {
+      primaryType: 'motivator',
+      secondaryType: null,
+      narrative: 'cached narrative',
+      pros: [{ categorySlug: 'motivator', text: 'cached' }],
+      cons: [{ categorySlug: 'organiser', text: 'cached', resources: [] }],
+      sourcedCategories: { teacher: ['self'], technician: ['self'], motivator: ['self'], developer: ['self'], 'game-manager': ['self'], communicator: ['self'], organiser: ['self'], 'culture-builder': ['self'] },
+    }
+    const result = await ensureFreshSummary('attempt-1', 'coach-1')
+    expect(result.narrative).toBe('You lead with clarity and patience.')
+    expect(upsertMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('regenerates when new feedback has blended into a category the cache does not reflect', async () => {
+    state.cachedAiSummary = {
+      primaryType: 'teacher',
+      secondaryType: null,
+      narrative: 'cached narrative',
+      pros: [{ categorySlug: 'teacher', text: 'cached' }],
+      cons: [{ categorySlug: 'motivator', text: 'cached', resources: [] }],
+      sourcedCategories: { teacher: ['self'], technician: ['self'], motivator: ['self'], developer: ['self'], 'game-manager': ['self'], communicator: ['self'], organiser: ['self'], 'culture-builder': ['self'] },
+    }
+    // New player_voice feedback clears the threshold for `motivator` -- the cache above doesn't reflect this yet.
+    state.blendInputs = {
+      motivator: [{ source: 'player_voice', responses: [
+        { value: 100, submittedAt: '2026-08-01T00:00:00.000Z' },
+        { value: 100, submittedAt: '2026-08-01T00:00:00.000Z' },
+        { value: 100, submittedAt: '2026-08-01T00:00:00.000Z' },
+      ] }],
+    }
+    const result = await ensureFreshSummary('attempt-1', 'coach-1')
+    expect(result.narrative).toBe('You lead with clarity and patience.')
+    expect(upsertMock).toHaveBeenCalledTimes(1)
   })
 })
