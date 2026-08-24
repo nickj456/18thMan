@@ -13,7 +13,7 @@ import { labelFor } from '@/lib/coach-dna/categories'
 import { isCurrentSummaryShape } from '@/lib/coach-dna/summary-shape'
 import { feedbackRequestEligibility } from '@/lib/coach-dna/feedback-request-status'
 import { hasBlendedFeedback } from '@/lib/coach-dna/blend-status'
-import { CoachDnaCardDialog } from './CoachDnaCardDialog'
+import { CoachDnaOutcomeReveal } from './CoachDnaOutcomeReveal'
 import type { FeedbackType, SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const HOW_IT_WORKS = [
@@ -259,7 +259,7 @@ export default async function CoachDnaPage() {
                   <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 {hasBlendedFeedback(summary.sourcedCategories) && (
-                  <CoachDnaCardDialog attemptId={completed.id} />
+                  <CoachDnaOutcomeReveal attemptId={completed.id} />
                 )}
               </div>
             ) : completed ? (

@@ -28,7 +28,7 @@ export async function GET(
     }
 
     // The attemptId here is only used for the ownership/completion/blended
-    // gate, matching the old card-image route's pattern -- the feedback
+    // gate, matching the sibling report-pdf route's pattern -- the feedback
     // summary itself is keyed off coachId, not the attempt, since feedback
     // isn't tied to one specific assessment attempt.
     const { data: attempt } = await supabase
