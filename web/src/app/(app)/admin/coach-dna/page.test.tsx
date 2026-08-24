@@ -154,7 +154,7 @@ describe('CoachDnaPage', () => {
     expect(ensureFreshSummaryMock).toHaveBeenCalledWith('attempt-1', 'coach-1')
   })
 
-  it('shows the Coach DNA card button when feedback has blended in', async () => {
+  it('shows the outcome reveal trigger when feedback has blended in', async () => {
     state.completed = { id: 'attempt-1' }
     state.ensureFreshSummaryResult = {
       primaryType: 'motivator',
@@ -167,10 +167,10 @@ describe('CoachDnaPage', () => {
 
     render(await CoachDnaPage())
 
-    expect(screen.getByRole('button', { name: 'View my Coach DNA card' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Get Your Report/ })).toBeInTheDocument()
   })
 
-  it('hides the Coach DNA card button for a self-only summary', async () => {
+  it('hides the outcome reveal trigger for a self-only summary', async () => {
     state.completed = { id: 'attempt-1' }
     state.ensureFreshSummaryResult = {
       primaryType: 'motivator',
@@ -183,10 +183,10 @@ describe('CoachDnaPage', () => {
 
     render(await CoachDnaPage())
 
-    expect(screen.queryByRole('button', { name: 'View my Coach DNA card' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Get Your Report/ })).not.toBeInTheDocument()
   })
 
-  it('still shows the card button off a fallback-cached summary that is itself already blended', async () => {
+  it('still shows the outcome reveal trigger off a fallback-cached summary that is itself already blended', async () => {
     state.completed = { id: 'attempt-1' }
     state.ensureFreshSummaryError = new Error('groq down')
     state.fallbackCachedAiSummary = {
@@ -201,7 +201,7 @@ describe('CoachDnaPage', () => {
     render(await CoachDnaPage())
 
     expect(screen.getByText(/You're a Motivator coach/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'View my Coach DNA card' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Get Your Report/ })).toBeInTheDocument()
   })
 
   it('falls back to the plain results button when ensureFreshSummary fails and nothing valid is cached', async () => {

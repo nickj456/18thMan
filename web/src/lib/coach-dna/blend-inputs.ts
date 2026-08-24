@@ -4,7 +4,7 @@ import type { ScoreSource } from './config'
 
 type ServiceClient = ReturnType<typeof createServiceClient>
 
-const RESPONDENT_TO_SOURCE: Record<string, ScoreSource> = {
+export const RESPONDENT_TO_SOURCE: Record<string, ScoreSource> = {
   player: 'player_voice',
   parent: 'parent_voice',
   peer_coach: 'peer_observation',
