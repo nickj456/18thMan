@@ -137,11 +137,11 @@ Respond with ONLY a valid JSON object, no markdown fences, no explanation. "pros
 
 /** Returns the cached summary if it already reflects current feedback data,
  *  otherwise regenerates it (one AI call) first. Does not perform its own
- *  auth/role check -- callers (the hub page, the /complete page, the card
- *  image route) already ran theirs before calling this, and this function's
- *  call path is reachable from a Route Handler where redirect() does not
- *  behave correctly. Only the data-level ownership/completed-at check is
- *  this function's own responsibility. */
+ *  auth/role check -- callers (the hub page, the /complete page, the two
+ *  outcome-PDF routes) already ran theirs before calling this, and this
+ *  function's call path is reachable from a Route Handler where redirect()
+ *  does not behave correctly. Only the data-level ownership/completed-at
+ *  check is this function's own responsibility. */
 export async function ensureFreshSummary(attemptId: string, coachId: string): Promise<SelfAssessmentSummary> {
   const supabase = await createClient()
   const serviceSupabase = createServiceClient()
