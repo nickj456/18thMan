@@ -113,7 +113,8 @@ export default async function AssessmentCompletePage({
     ? await supabase.from('feedback_responses').select('id, feedback_request_id').in('feedback_request_id', requestIds)
     : { data: [] }
   const activeRequests = (feedbackRequests ?? []).filter(r => feedbackRequestEligibility(r) !== 'expired')
-  const totalReceived = (feedbackResponses ?? []).length
+  const activeRequestIds = new Set(activeRequests.map(r => r.id))
+  const totalReceived = (feedbackResponses ?? []).filter(r => activeRequestIds.has(r.feedback_request_id)).length
   const totalThreshold = activeRequests.reduce((sum, r) => sum + r.minimum_response_threshold, 0)
 
   const guidanceSteps = buildGuidance({
