@@ -172,6 +172,30 @@ describe('CoachDnaPage', () => {
     expect(screen.getByRole('button', { name: 'Retake assessment' })).toBeInTheDocument()
   })
 
+  it('shows Resume assessment instead of the retake button/cooldown message when a retake is already in progress', async () => {
+    // The coach clicked "Retake assessment" (creating a new in-progress
+    // attempt) then exited the flow before finishing -- the old completed
+    // attempt still wins the completed-branch, but it must defer to the
+    // in-progress retake instead of offering another "Retake assessment"
+    // click (which would orphan yet another attempt).
+    state.completed = { id: 'attempt-1' }
+    state.inProgress = { id: 'attempt-2' }
+    state.ensureFreshSummaryResult = {
+      primaryType: 'motivator',
+      secondaryType: 'technician',
+      narrative: 'You build trust fast.',
+      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
+      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      sourcedCategories: { motivator: ['self'] },
+    }
+
+    render(await CoachDnaPage())
+
+    expect(screen.getByRole('button', { name: 'Resume assessment' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Retake assessment' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/You can retake this on/)).not.toBeInTheDocument()
+  })
+
   it('shows a quiet date message instead of a retake button during the cooldown', async () => {
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)

@@ -265,7 +265,19 @@ export default async function CoachDnaPage() {
                   <CoachDnaCardDialog attemptId={completed.id} />
                 )}
                 <div className="pt-3 border-t border-zinc-800">
-                  {retakeEligible ? (
+                  {inProgress ? (
+                    // The coach already started a retake (e.g. clicked "Retake
+                    // assessment" then exited the flow before finishing) --
+                    // send them back to it rather than showing the retake
+                    // button/cooldown message for the now-superseded completed
+                    // attempt.
+                    <form action={async () => {
+                      'use server'
+                      redirect(`/admin/coach-dna/assessment/${inProgress.id}`)
+                    }}>
+                      <Button type="submit" variant="outline" size="sm">Resume assessment</Button>
+                    </form>
+                  ) : retakeEligible ? (
                     <form action={startAssessment}>
                       <Button type="submit" variant="outline" size="sm">Retake assessment</Button>
                     </form>
