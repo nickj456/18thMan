@@ -171,7 +171,7 @@ describe('CoachDnaPage', () => {
 
     render(await CoachDnaPage())
 
-    expect(screen.getByRole('button', { name: /Get Your Report/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Download your Coach DNA report/ })).toBeInTheDocument()
   })
 
   it('shows a link to the feedback breakdown page once feedback has blended in', async () => {
@@ -228,7 +228,7 @@ describe('CoachDnaPage', () => {
 
     render(await CoachDnaPage())
 
-    expect(screen.queryByRole('button', { name: /Get Your Report/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Download your Coach DNA report/ })).not.toBeInTheDocument()
   })
 
   it('still shows the outcome reveal trigger off a fallback-cached summary that is itself already blended', async () => {
@@ -248,7 +248,7 @@ describe('CoachDnaPage', () => {
     render(await CoachDnaPage())
 
     expect(screen.getByText(/You're a Motivator coach/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Get Your Report/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Download your Coach DNA report/ })).toBeInTheDocument()
   })
 
   it('falls back to the plain results button when ensureFreshSummary fails and nothing valid is cached', async () => {
