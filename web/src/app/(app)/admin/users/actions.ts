@@ -49,6 +49,33 @@ export async function deleteUser(targetUserId: string): Promise<{ error?: string
   return {}
 }
 
+export async function resetCoachDnaData(targetUserId: string, reason: string): Promise<{ error?: string }> {
+  const { user } = await requireAdmin()
+
+  const trimmedReason = reason.trim()
+  if (!trimmedReason) return { error: 'A reason is required' }
+
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  await serviceClient.from('assessment_attempts').delete().eq('coach_id', targetUserId)
+  await serviceClient.from('feedback_requests').delete().eq('coach_id', targetUserId)
+  await serviceClient
+    .from('coach_profiles')
+    .update({ ai_summary: null, ai_summary_generated_at: null })
+    .eq('user_id', targetUserId)
+
+  const { error: logError } = await serviceClient
+    .from('admin_coach_dna_reset_log')
+    .insert({ admin_id: user.id, coach_id: targetUserId, reason: trimmedReason })
+  if (logError) return { error: logError.message }
+
+  revalidatePath('/admin/users')
+  return {}
+}
+
 export async function sendDirectEmail(
   targetUserId: string,
   subject: string,
