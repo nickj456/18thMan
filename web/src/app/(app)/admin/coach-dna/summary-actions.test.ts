@@ -397,6 +397,20 @@ describe('ensureFreshSummary', () => {
     expect(upsertMock).toHaveBeenCalledTimes(1)
   })
 
+  it('regenerates without throwing when the cached summary has the legacy pros/cons shape (pre-migration)', async () => {
+    state.cachedAiSummary = {
+      primaryType: 'teacher',
+      secondaryType: null,
+      narrative: 'old',
+      pros: [{ categorySlug: 'teacher', text: 'old' }],
+      cons: [{ categorySlug: 'motivator', text: 'old' }],
+      sourcedCategories: { teacher: ['self'], motivator: ['self'] },
+    }
+    const result = await ensureFreshSummary('attempt-1', 'coach-1')
+    expect(result.narrative).toBe('You lead with clarity and patience.')
+    expect(upsertMock).toHaveBeenCalledTimes(1)
+  })
+
   it('returns the cached summary without generating when sourcedCategories and archetype already match', async () => {
     // secondaryType: 'technician' here because with these fixture responses/options
     // teacher scores 54.17 and technician ties the next batch at 50 -- a <=10 gap,

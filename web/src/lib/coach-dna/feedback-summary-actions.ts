@@ -1,5 +1,3 @@
-'use server'
-
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
 import { createClient } from '@/lib/supabase/server'
@@ -22,12 +20,21 @@ function isCategoryTextEntryArray(value: unknown): value is { categorySlug: stri
   )
 }
 
-function allCategories(data: FeedbackSummaryData): FeedbackCategorySummary[] {
-  return [...data.playerParentVoice.categories, ...data.peerObservation.categories]
+type SectionKey = 'playerParentVoice' | 'peerObservation'
+
+function allCategoriesWithSection(data: FeedbackSummaryData): { sectionKey: SectionKey; category: FeedbackCategorySummary }[] {
+  return [
+    ...data.playerParentVoice.categories.map(category => ({ sectionKey: 'playerParentVoice' as const, category })),
+    ...data.peerObservation.categories.map(category => ({ sectionKey: 'peerObservation' as const, category })),
+  ]
 }
 
-function withText(section: FeedbackSummaryData['playerParentVoice'], textBySlug: Map<string, string>): FeedbackSummaryData['playerParentVoice'] {
-  return { ...section, categories: section.categories.map(c => ({ ...c, text: textBySlug.get(c.categorySlug) ?? c.text })) }
+function textKey(sectionKey: SectionKey, categorySlug: string): string {
+  return `${sectionKey}:${categorySlug}`
+}
+
+function withText(sectionKey: SectionKey, section: FeedbackSummaryData['playerParentVoice'], textBySlug: Map<string, string>): FeedbackSummaryData['playerParentVoice'] {
+  return { ...section, categories: section.categories.map(c => ({ ...c, text: textBySlug.get(textKey(sectionKey, c.categorySlug)) ?? c.text })) }
 }
 
 function cacheMatchesFresh(cached: FeedbackSummaryData | null, fresh: FeedbackSummaryData): boolean {
@@ -54,7 +61,7 @@ export async function ensureFreshFeedbackSummary(coachId: string): Promise<Feedb
 
   const fresh = await computeFeedbackSummary(serviceSupabase, coachId)
 
-  const categoriesNeedingText = allCategories(fresh)
+  const categoriesNeedingText = allCategoriesWithSection(fresh)
   if (categoriesNeedingText.length === 0) return fresh
 
   const { data: coachProfile } = await supabase
@@ -71,7 +78,7 @@ export async function ensureFreshFeedbackSummary(coachId: string): Promise<Feedb
 For each category below, write 1-2 sentences interpreting what this rating suggests, given the category and the number of responses it's based on. A rating at or above 3.5/5 should read as an affirming, specific observation. A rating below 3.5/5 should name what the gap likely looks like in practice and gesture at what to try, without being harsh.
 
 Categories, in this exact order:
-${categoriesNeedingText.map(c => `${labelFor(c.categorySlug)}: ${c.averageRating.toFixed(1)}/5 (${c.responseCount} responses)`).join('\n')}
+${categoriesNeedingText.map(({ category: c }) => `${labelFor(c.categorySlug)}: ${c.averageRating.toFixed(1)}/5 (${c.responseCount} responses)`).join('\n')}
 
 Respond with ONLY a valid JSON object, no markdown fences, no explanation. "categories" must contain exactly ${categoriesNeedingText.length} entries, in the same order as the list above. Shape:
 {"categories":[{"categorySlug":"...","text":"..."}]}`
@@ -98,11 +105,11 @@ Respond with ONLY a valid JSON object, no markdown fences, no explanation. "cate
 
   // The model only writes prose -- slugs and order always come from the
   // aggregation, never the model, same invariant as generateSelfAssessmentSummary.
-  const textBySlug = new Map(categoriesNeedingText.map((c, i) => [c.categorySlug, parsedCategories[i].text]))
+  const textBySlug = new Map(categoriesNeedingText.map(({ sectionKey, category }, i) => [textKey(sectionKey, category.categorySlug), parsedCategories[i].text]))
 
   const result: FeedbackSummaryData = {
-    playerParentVoice: withText(fresh.playerParentVoice, textBySlug),
-    peerObservation: withText(fresh.peerObservation, textBySlug),
+    playerParentVoice: withText('playerParentVoice', fresh.playerParentVoice, textBySlug),
+    peerObservation: withText('peerObservation', fresh.peerObservation, textBySlug),
   }
 
   const { error: upsertError } = await supabase

@@ -179,8 +179,8 @@ export async function ensureFreshSummary(attemptId: string, coachId: string): Pr
   const archetypeUnchanged =
     cached?.primaryType === archetype.primaryType &&
     cached?.secondaryType === archetype.secondaryType &&
-    cached?.categories[0]?.categorySlug === archetype.categories[0].categorySlug &&
-    cached?.categories[archetype.categories.length - 1]?.categorySlug === archetype.categories[archetype.categories.length - 1].categorySlug
+    cached?.categories?.[0]?.categorySlug === archetype.categories[0].categorySlug &&
+    cached?.categories?.[archetype.categories.length - 1]?.categorySlug === archetype.categories[archetype.categories.length - 1].categorySlug
 
   if (
     cached &&

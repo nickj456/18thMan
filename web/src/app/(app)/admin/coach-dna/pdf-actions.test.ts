@@ -35,6 +35,10 @@ vi.mock('@react-pdf/renderer', () => ({
 vi.mock('@/lib/email', () => ({
   sendCoachDnaSummaryEmail: (...args: unknown[]) => sendEmailMock(...args),
 }))
+const registerPdfFontsMock = vi.fn(async () => {})
+vi.mock('@/lib/coach-dna/pdf-font', () => ({
+  registerPdfFonts: () => registerPdfFontsMock(),
+}))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
@@ -80,6 +84,7 @@ describe('emailSelfAssessmentSummaryPDF', () => {
     state.sendResult = { success: true }
     sendEmailMock.mockClear()
     renderToBufferMock.mockClear()
+    registerPdfFontsMock.mockClear()
   })
 
   it('redirects unauthenticated callers to login', async () => {
@@ -136,6 +141,11 @@ describe('emailSelfAssessmentSummaryPDF', () => {
     state.sendResult = { success: false, error: 'send failed' }
     const result = await emailSelfAssessmentSummaryPDF()
     expect(result).toEqual({ success: false, error: 'send failed' })
+  })
+
+  it('registers PDF fonts before rendering', async () => {
+    await emailSelfAssessmentSummaryPDF()
+    expect(registerPdfFontsMock).toHaveBeenCalledTimes(1)
   })
 
   it('renders the PDF with the real completion timestamp, not render time', async () => {

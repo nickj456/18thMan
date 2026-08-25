@@ -28,7 +28,7 @@ let registered: Promise<void> | null = null
 async function registerFontsOnce(): Promise<void> {
   try {
     const barlowCondensed = await loadPdfFont('Barlow+Condensed:ital,wght@1,800')
-    Font.register({ family: 'Barlow Condensed', fonts: [{ src: toFontDataUrl(barlowCondensed) }] })
+    Font.register({ family: 'Barlow Condensed', fonts: [{ src: toFontDataUrl(barlowCondensed), fontStyle: 'italic', fontWeight: 800 }] })
   } catch (err) {
     console.error('[coach-dna/pdf-font] Failed to load Barlow Condensed, falling back to default font:', err)
   }

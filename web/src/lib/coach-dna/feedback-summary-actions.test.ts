@@ -141,6 +141,36 @@ describe('ensureFreshFeedbackSummary', () => {
     expect(upsertMock).toHaveBeenCalledTimes(1)
   })
 
+  it('keeps each section\'s own AI text when the same categorySlug appears in both sections', async () => {
+    // Regression test: playerParentVoice and peerObservation are aggregated
+    // independently and can legitimately produce the same categorySlug (e.g.
+    // 'teacher') with different ratings/counts. Text must be matched by
+    // (section, slug), not slug alone, or the second section's AI text
+    // silently overwrites the first's in the lookup map.
+    state.fresh = {
+      playerParentVoice: {
+        ready: true, responseCount: 3,
+        categories: [{ categorySlug: 'teacher', averageRating: 4.5, responseCount: 3, text: '', resources: [] }],
+      },
+      peerObservation: {
+        ready: true, responseCount: 5,
+        categories: [{ categorySlug: 'teacher', averageRating: 2.1, responseCount: 5, text: '', resources: [] }],
+      },
+    }
+    // Order matches allCategoriesWithSection: playerParentVoice's categories first, then peerObservation's.
+    state.aiText = JSON.stringify({
+      categories: [
+        { categorySlug: 'teacher', text: 'Players and parents rate your teaching highly.' },
+        { categorySlug: 'teacher', text: 'Peers see room to grow in your instruction.' },
+      ],
+    })
+
+    const result = await ensureFreshFeedbackSummary('coach-1')
+
+    expect(result.playerParentVoice.categories[0].text).toBe('Players and parents rate your teaching highly.')
+    expect(result.peerObservation.categories[0].text).toBe('Peers see room to grow in your instruction.')
+  })
+
   it('never sends a deprecated/decommissioned Groq model id', async () => {
     state.fresh = {
       playerParentVoice: {

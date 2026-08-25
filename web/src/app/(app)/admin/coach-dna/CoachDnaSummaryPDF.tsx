@@ -32,7 +32,7 @@ const s = StyleSheet.create({
   },
   headerLogo: { width: 32, height: 32 },
   eyeLabel: { fontSize: 7, fontFamily: 'Geist', fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 3, marginBottom: 8 },
-  title: { fontFamily: 'Barlow Condensed', fontStyle: 'italic', fontSize: 30, color: WHITE, letterSpacing: -0.5 },
+  title: { fontFamily: 'Barlow Condensed', fontStyle: 'italic', fontWeight: 800, fontSize: 30, color: WHITE, letterSpacing: -0.5 },
   subtitle: { fontSize: 10, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
 
   body: { paddingHorizontal: 44, paddingTop: 24 },
