@@ -60,6 +60,11 @@ export async function resetCoachDnaData(targetUserId: string, reason: string): P
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // Write the audit log first, before any destructive step below, so an audit trail
+  // exists for any reset attempt that got this far even if a later delete/update
+  // fails partway through. A row therefore means "a reset was attempted with this
+  // reason," not "all data was definitely deleted" — there's no status column or
+  // viewing UI to distinguish a fully-succeeded reset from a partially-failed one.
   const { error: logError } = await serviceClient
     .from('admin_coach_dna_reset_log')
     .insert({ admin_id: user.id, coach_id: targetUserId, reason: trimmedReason })
@@ -73,7 +78,12 @@ export async function resetCoachDnaData(targetUserId: string, reason: string): P
 
   const { error: profileError } = await serviceClient
     .from('coach_profiles')
-    .update({ ai_summary: null, ai_summary_generated_at: null })
+    .update({
+      ai_summary: null,
+      ai_summary_generated_at: null,
+      primary_profile_type: null,
+      secondary_profile_type: null,
+    })
     .eq('user_id', targetUserId)
   if (profileError) return { error: profileError.message }
 

@@ -231,7 +231,12 @@ describe('resetCoachDnaData', () => {
     await resetCoachDnaData('coach-2', 'Coach requested a redo')
     expect(updateEqMock).toHaveBeenCalledWith(
       'coach_profiles',
-      { ai_summary: null, ai_summary_generated_at: null },
+      {
+        ai_summary: null,
+        ai_summary_generated_at: null,
+        primary_profile_type: null,
+        secondary_profile_type: null,
+      },
       'user_id',
       'coach-2',
     )
@@ -303,7 +308,12 @@ describe('resetCoachDnaData', () => {
     expect(deleteEqMock).toHaveBeenCalledWith('feedback_requests', 'coach_id', 'coach-2')
     expect(updateEqMock).toHaveBeenCalledWith(
       'coach_profiles',
-      { ai_summary: null, ai_summary_generated_at: null },
+      {
+        ai_summary: null,
+        ai_summary_generated_at: null,
+        primary_profile_type: null,
+        secondary_profile_type: null,
+      },
       'user_id',
       'coach-2',
     )
