@@ -193,8 +193,15 @@ export interface SelfAssessmentSummary {
   primaryType: string
   secondaryType: string | null
   narrative: string
-  pros: { categorySlug: string; text: string }[]
-  cons: { categorySlug: string; text: string; resources: { title: string; description: string; url: string | null }[] }[]
+  /** All 8 categories, ranked by score descending -- not just a curated top/bottom slice. */
+  categories: {
+    categorySlug: string
+    score: number
+    tier: 'strength' | 'solid' | 'focus'
+    text: string
+    /** Non-empty only when tier === 'focus'. */
+    resources: { title: string; description: string; url: string | null }[]
+  }[]
   /** Which sources contributed to each category's shown score -- ['self'] until
    *  cleared external feedback (Coach 360) clears its sample-size threshold.
    *  Optional: rows persisted before this field existed simply lack it --

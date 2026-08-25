@@ -557,14 +557,18 @@ export async function sendCoachDnaSummaryEmail(
   summary: {
     primaryType: string
     secondaryType: string | null
-    pros: { categorySlug: string; text: string }[]
-    cons: { categorySlug: string; text: string; resources: { title: string; description: string; url: string | null }[] }[]
+    categories: {
+      categorySlug: string
+      tier: 'strength' | 'solid' | 'focus'
+      text: string
+      resources: { title: string; description: string; url: string | null }[]
+    }[]
     sourcedCategories?: Record<string, string[]>
   },
   pdfBuffer: Buffer,
 ): Promise<EmailResult> {
   const typeLine = `${esc(labelFor(summary.primaryType))}${summary.secondaryType ? ` / ${esc(labelFor(summary.secondaryType))}` : ''}`
-  const allCategorySlugs = [...summary.pros, ...summary.cons].map(c => c.categorySlug)
+  const allCategorySlugs = summary.categories.map(c => c.categorySlug)
   const selfOnly = allCategoriesSelfOnly(summary.sourcedCategories, allCategorySlugs)
 
   const tagSuffix = (categorySlug: string) => {
@@ -572,9 +576,12 @@ export async function sendCoachDnaSummaryEmail(
     return tag ? ` <em style="color:#e8560a;">(${esc(tag)})</em>` : ''
   }
 
-  const consBlocks = summary.cons.map(con => `
-    ${para(`<strong style="color:#ffffff;">${esc(labelFor(con.categorySlug))}:</strong> ${esc(con.text)}${tagSuffix(con.categorySlug)}`)}
-    ${con.resources.length > 0 ? featureList(con.resources.map(resource =>
+  const strengths = summary.categories.filter(c => c.tier === 'strength')
+  const focusAreas = summary.categories.filter(c => c.tier === 'focus')
+
+  const focusBlocks = focusAreas.map(category => `
+    ${para(`<strong style="color:#ffffff;">${esc(labelFor(category.categorySlug))}:</strong> ${esc(category.text)}${tagSuffix(category.categorySlug)}`)}
+    ${category.resources.length > 0 ? featureList(category.resources.map(resource =>
       resource.url
         ? `<a href="${esc(resource.url)}" style="color:#e8560a;">${esc(resource.title)}</a> — ${esc(resource.description)}`
         : `${esc(resource.title)} — ${esc(resource.description)}`,
@@ -586,9 +593,9 @@ export async function sendCoachDnaSummaryEmail(
     ${divider()}
     ${greeting('')}
     ${para('Your Coach DNA self-assessment results are attached to this email as a PDF, and summarised below.')}
-    ${featureList(summary.pros.map(pro => `${esc(labelFor(pro.categorySlug))}: ${esc(pro.text)}${tagSuffix(pro.categorySlug)}`))}
+    ${featureList(strengths.map(category => `${esc(labelFor(category.categorySlug))}: ${esc(category.text)}${tagSuffix(category.categorySlug)}`))}
     ${para('Focus areas:')}
-    ${consBlocks}
+    ${focusBlocks}
     ${selfOnly ? para('This reflects your self-assessment only, and will update as player and peer feedback comes in.') : ''}
     ${ctaButton('View your full results', `${SITE_URL}/admin/coach-dna`)}
     ${sign()}

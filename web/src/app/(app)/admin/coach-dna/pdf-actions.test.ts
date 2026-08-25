@@ -74,7 +74,7 @@ describe('emailSelfAssessmentSummaryPDF', () => {
     state.clubId = null
     state.clubName = null
     state.summary = {
-      ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', pros: [], cons: [] },
+      ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', categories: [] },
       ai_summary_generated_at: '2026-07-01T00:00:00.000Z',
     }
     state.sendResult = { success: true }
@@ -112,8 +112,7 @@ describe('emailSelfAssessmentSummaryPDF', () => {
         primaryType: 'teacher',
         secondaryType: null,
         narrative: 'x',
-        pros: [],
-        cons: [{ categorySlug: 'communication', text: 'needs work' }],
+        categories: [{ categorySlug: 'communicator', score: 20, tier: 'focus', text: 'needs work' }],
       },
       ai_summary_generated_at: '2026-07-01T00:00:00.000Z',
     }
@@ -185,7 +184,7 @@ describe('emailSelfAssessmentSummaryPDF', () => {
 
   it('falls back to the current time if ai_summary_generated_at is somehow missing', async () => {
     state.summary = {
-      ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', pros: [], cons: [] },
+      ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', categories: [] },
       ai_summary_generated_at: null,
     }
 

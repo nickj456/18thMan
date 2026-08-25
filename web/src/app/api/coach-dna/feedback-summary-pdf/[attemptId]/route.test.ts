@@ -13,8 +13,7 @@ const state: {
     primaryType: string
     secondaryType: string | null
     narrative: string
-    pros: unknown[]
-    cons: unknown[]
+    categories: unknown[]
     sourcedCategories?: Record<string, string[]>
   } | null
   ensureFreshSummaryError: Error | null
@@ -106,7 +105,7 @@ describe('GET /api/coach-dna/feedback-summary-pdf/[attemptId]', () => {
     state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: '2026-08-06T00:00:00.000Z' }
     state.summary = {
       primaryType: 'motivator', secondaryType: null, narrative: '',
-      pros: [], cons: [], sourcedCategories: { motivator: ['self', 'player_voice'] },
+      categories: [], sourcedCategories: { motivator: ['self', 'player_voice'] },
     }
     state.ensureFreshSummaryError = null
     state.feedbackSummary = {

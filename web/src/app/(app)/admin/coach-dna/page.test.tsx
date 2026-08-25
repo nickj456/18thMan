@@ -134,8 +134,10 @@ describe('CoachDnaPage', () => {
       primaryType: 'motivator',
       secondaryType: 'technician',
       narrative: 'You build trust fast.',
-      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
       sourcedCategories: { motivator: ['self'] },
     }
 
@@ -160,8 +162,10 @@ describe('CoachDnaPage', () => {
       primaryType: 'motivator',
       secondaryType: 'technician',
       narrative: 'You build trust fast.',
-      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
       sourcedCategories: { motivator: ['self', 'player_voice'] },
     }
 
@@ -176,8 +180,10 @@ describe('CoachDnaPage', () => {
       primaryType: 'motivator',
       secondaryType: null,
       narrative: 'You build trust fast.',
-      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
       sourcedCategories: { motivator: ['self'] },
     }
 
@@ -193,8 +199,10 @@ describe('CoachDnaPage', () => {
       primaryType: 'motivator',
       secondaryType: null,
       narrative: 'Cached narrative.',
-      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
       sourcedCategories: { motivator: ['self', 'player_voice'] },
     }
 
@@ -217,14 +225,13 @@ describe('CoachDnaPage', () => {
   it('falls back to the plain results button when ensureFreshSummary fails and the cached fallback has a stale shape', async () => {
     state.completed = { id: 'attempt-1' }
     state.ensureFreshSummaryError = new Error('groq down')
-    // Missing `resources` on cons marks this as a pre-growth-resources shape --
+    // Missing `resources` on the category marks this as a pre-growth-resources shape --
     // the fallback branch's own isCurrentSummaryShape check must reject it too.
     state.fallbackCachedAiSummary = {
       primaryType: 'motivator',
       secondaryType: null,
       narrative: '',
-      pros: [],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management' }],
+      categories: [{ categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management' }],
     }
 
     render(await CoachDnaPage())

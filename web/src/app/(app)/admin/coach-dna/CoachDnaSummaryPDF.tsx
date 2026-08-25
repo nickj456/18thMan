@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 import { labelFor } from '@/lib/coach-dna/categories'
 import { sourceTagFor, allCategoriesSelfOnly } from '@/lib/coach-dna/source-label'
+import { tierLabel } from '@/lib/coach-dna/tier-label'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const E      = '#e8560a'
@@ -80,12 +81,14 @@ const s = StyleSheet.create({
 
 function CommentBlock({
   label,
+  meta,
   text,
   color,
   resources,
   tag,
 }: {
   label: string
+  meta: string
   text: string
   color: string
   resources?: { title: string; description: string }[]
@@ -96,6 +99,7 @@ function CommentBlock({
       <View style={s.commentHeaderRow}>
         <View style={[s.commentDot, { backgroundColor: color }]} />
         <Text style={[s.commentLabel, { color }]}>{label}</Text>
+        <Text style={s.sourceTag}>{meta}</Text>
         {tag && <Text style={s.sourceTag}>{tag}</Text>}
       </View>
       <Text style={[s.commentBody, { borderLeftColor: color }]}>{text}</Text>
@@ -133,7 +137,7 @@ export function CoachDnaSummaryPDF({
   const completedLabel = new Date(completedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
-  const allCategorySlugs = [...data.pros, ...data.cons].map(c => c.categorySlug)
+  const allCategorySlugs = data.categories.map(c => c.categorySlug)
   const selfOnly = allCategoriesSelfOnly(data.sourcedCategories, allCategorySlugs)
 
   const rows = [
@@ -175,25 +179,39 @@ export function CoachDnaSummaryPDF({
           <Text style={s.narrative}>{data.narrative}</Text>
 
           <Text style={[s.groupHeading, { color: GREEN, borderBottomColor: GREEN }]}>STRENGTHS</Text>
-          {data.pros.map(pro => (
+          {data.categories.filter(c => c.tier === 'strength').map(category => (
             <CommentBlock
-              key={pro.categorySlug}
-              label={labelFor(pro.categorySlug).toUpperCase()}
-              text={pro.text}
+              key={category.categorySlug}
+              label={labelFor(category.categorySlug).toUpperCase()}
+              meta={`${tierLabel(category.tier)} · ${Math.round(category.score)}/100`}
+              text={category.text}
               color={GREEN}
-              tag={sourceTagFor(data.sourcedCategories, pro.categorySlug)}
+              tag={sourceTagFor(data.sourcedCategories, category.categorySlug)}
+            />
+          ))}
+
+          <Text style={[s.groupHeading, { color: MID, borderBottomColor: BORDER }]}>SOLID GROUND</Text>
+          {data.categories.filter(c => c.tier === 'solid').map(category => (
+            <CommentBlock
+              key={category.categorySlug}
+              label={labelFor(category.categorySlug).toUpperCase()}
+              meta={`${tierLabel(category.tier)} · ${Math.round(category.score)}/100`}
+              text={category.text}
+              color={MID}
+              tag={sourceTagFor(data.sourcedCategories, category.categorySlug)}
             />
           ))}
 
           <Text style={[s.groupHeading, { color: AMBER, borderBottomColor: AMBER }]}>FOCUS AREAS</Text>
-          {data.cons.map(con => (
+          {data.categories.filter(c => c.tier === 'focus').map(category => (
             <CommentBlock
-              key={con.categorySlug}
-              label={labelFor(con.categorySlug).toUpperCase()}
-              text={con.text}
+              key={category.categorySlug}
+              label={labelFor(category.categorySlug).toUpperCase()}
+              meta={`${tierLabel(category.tier)} · ${Math.round(category.score)}/100`}
+              text={category.text}
               color={AMBER}
-              resources={con.resources}
-              tag={sourceTagFor(data.sourcedCategories, con.categorySlug)}
+              resources={category.resources}
+              tag={sourceTagFor(data.sourcedCategories, category.categorySlug)}
             />
           ))}
 

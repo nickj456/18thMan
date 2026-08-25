@@ -30,13 +30,28 @@ describe('deriveArchetype', () => {
     expect(result.primaryType).toBe('teacher')
   })
 
-  it('returns the top 3 categories as pros and bottom 3 as cons, sorted by score', () => {
+  it('returns all 8 categories, ranked by score descending, each carrying its score', () => {
     const result = deriveArchetype(scores({
       teacher: 90, motivator: 85, developer: 80,
       technician: 20, organiser: 15, communicator: 10,
-      'game-manager': 50, 'culture-builder': 50,
+      'game-manager': 55, 'culture-builder': 50,
     }))
-    expect(result.pros).toEqual(['teacher', 'motivator', 'developer'])
-    expect(result.cons).toEqual(['communicator', 'organiser', 'technician'])
+    expect(result.categories).toHaveLength(8)
+    expect(result.categories.map(c => c.categorySlug)).toEqual([
+      'teacher', 'motivator', 'developer', 'game-manager', 'culture-builder', 'technician', 'organiser', 'communicator',
+    ])
+    expect(result.categories[0].score).toBe(90)
+    expect(result.categories.every(c => typeof c.score === 'number')).toBe(true)
+  })
+
+  it('tags the top 3 ranked categories as strength, the next 2 as solid, the bottom 3 as focus', () => {
+    const result = deriveArchetype(scores({
+      teacher: 90, motivator: 85, developer: 80,
+      technician: 20, organiser: 15, communicator: 10,
+      'game-manager': 55, 'culture-builder': 50,
+    }))
+    expect(result.categories.map(c => c.tier)).toEqual([
+      'strength', 'strength', 'strength', 'solid', 'solid', 'focus', 'focus', 'focus',
+    ])
   })
 })

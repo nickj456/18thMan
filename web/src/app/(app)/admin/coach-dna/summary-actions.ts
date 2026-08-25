@@ -14,7 +14,7 @@ import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
 
-function isCategoryEntryArray(value: unknown): value is { categorySlug: string; text: string }[] {
+function isCategoryTextEntryArray(value: unknown): value is { categorySlug: string; text: string }[] {
   return (
     Array.isArray(value) &&
     value.every(
@@ -29,14 +29,13 @@ function isCategoryEntryArray(value: unknown): value is { categorySlug: string; 
 
 function isValidSummaryShape(
   value: unknown,
-): value is { narrative: string; pros: { categorySlug: string; text: string }[]; cons: { categorySlug: string; text: string }[] } {
+): value is { narrative: string; categories: { categorySlug: string; text: string }[] } {
   if (typeof value !== 'object' || value === null) return false
   const candidate = value as Record<string, unknown>
   return (
     typeof candidate.narrative === 'string' &&
     candidate.narrative.trim().length > 0 &&
-    isCategoryEntryArray(candidate.pros) &&
-    isCategoryEntryArray(candidate.cons)
+    isCategoryTextEntryArray(candidate.categories)
   )
 }
 
@@ -68,20 +67,25 @@ export async function generateSelfAssessmentSummary(attemptId: string): Promise<
     attempt.completed_at as string,
   )
 
-  const prompt = `You are writing a short self-assessment summary for a rugby league coach, based on their own self-reported scores across 8 coaching categories. Write in a direct, encouraging coaching voice. No em dashes. No fluff.
+  const prompt = `You are writing a self-assessment summary for a rugby league coach, based on their own self-reported scores across 8 coaching categories. Write in a direct, professional coaching voice — confident and specific, not hype, not generic praise. No em dashes. No fluff.
 
 Their primary coaching type: ${labelFor(archetype.primaryType)}
 ${archetype.secondaryType ? `Their secondary type: ${labelFor(archetype.secondaryType)}` : ''}
 
-Their strongest categories, in this exact order (write one short encouraging sentence for each, referencing what that category means, and return them in the same order): ${archetype.pros.map(slug => labelFor(slug)).join(', ')}
-Their growth-area categories, in this exact order (write 2-3 sentences for each: what the gap looks like in practice, and one concrete thing to try, in the same order): ${archetype.cons.map(slug => labelFor(slug)).join(', ')}
+For each of the 8 categories below, write text in the voice appropriate to its tier:
+- "strength": one confident sentence naming what this strength looks like in practice.
+- "solid": one plain sentence on what steady performance in this category looks like for them — not a strength to lead with, not a gap, just solid ground.
+- "focus": 2-3 sentences — what the gap looks like in practice, and one concrete thing to try.
 
-Vary the sentence structure and opening across the three growth areas - do not start every one with the same phrase or template (e.g. do not open all three with "A gap in..."). Each should read like it was written fresh, not filled into a repeated pattern.
+Categories, in this exact order (write one entry per category, same order, referencing the tier given):
+${archetype.categories.map(c => `${labelFor(c.categorySlug)} (tier: ${c.tier}, score: ${c.score}/100)`).join('\n')}
+
+Vary sentence structure and opening across categories of the same tier — do not open every "focus" entry with the same phrase. Each should read like it was written fresh.
 
 Do not invent scores or claim data you were not given. Do not mention "self-assessment only" or any caveats about data sources - that framing is handled elsewhere in the UI, not by you.
 
-Respond with ONLY a valid JSON object, no markdown fences, no explanation. "pros" must contain exactly ${archetype.pros.length} entries and "cons" exactly ${archetype.cons.length}, in the same order as the lists above. Shape:
-{"narrative":"one paragraph, 2-4 sentences","pros":[{"categorySlug":"...","text":"one sentence"}],"cons":[{"categorySlug":"...","text":"2-3 sentences: what the gap looks like in practice, and one concrete thing to try"}]}`
+Respond with ONLY a valid JSON object, no markdown fences, no explanation. "categories" must contain exactly 8 entries, in the same order as the list above. Shape:
+{"narrative":"one paragraph, 2-4 sentences summarizing the overall picture","categories":[{"categorySlug":"...","text":"..."}]}`
 
   const { text } = await generateText({ model: groq('openai/gpt-oss-120b'), prompt })
 
@@ -97,11 +101,12 @@ Respond with ONLY a valid JSON object, no markdown fences, no explanation. "pros
   }
   if (!isValidSummaryShape(parsed)) throw new Error('Could not generate your summary right now')
 
-  // The model only writes prose. Which categories are strengths vs focus areas
-  // (and their slugs) always comes from the TypeScript-computed archetype, so a
-  // model that returns a label, a misspelled slug, or a reordered list can never
-  // corrupt the structure or produce an unresolvable label at render time.
-  if (parsed.pros.length !== archetype.pros.length || parsed.cons.length !== archetype.cons.length) {
+  // The model only writes prose. Which categories are strengths, solid ground,
+  // or focus areas (and their slugs/scores) always comes from the
+  // TypeScript-computed archetype, so a model that returns a label, a
+  // misspelled slug, or a reordered list can never corrupt the structure or
+  // produce an unresolvable label at render time.
+  if (parsed.categories.length !== archetype.categories.length) {
     throw new Error('Could not generate your summary right now')
   }
 
@@ -109,11 +114,12 @@ Respond with ONLY a valid JSON object, no markdown fences, no explanation. "pros
     primaryType: archetype.primaryType,
     secondaryType: archetype.secondaryType,
     narrative: parsed.narrative,
-    pros: archetype.pros.map((categorySlug, i) => ({ categorySlug, text: parsed.pros[i].text })),
-    cons: archetype.cons.map((categorySlug, i) => ({
-      categorySlug,
-      text: parsed.cons[i].text,
-      resources: resourcesFor(categorySlug),
+    categories: archetype.categories.map((entry, i) => ({
+      categorySlug: entry.categorySlug,
+      score: entry.score,
+      tier: entry.tier,
+      text: parsed.categories[i].text,
+      resources: entry.tier === 'focus' ? resourcesFor(entry.categorySlug) : [],
     })),
     sourcedCategories,
   }
@@ -173,8 +179,8 @@ export async function ensureFreshSummary(attemptId: string, coachId: string): Pr
   const archetypeUnchanged =
     cached?.primaryType === archetype.primaryType &&
     cached?.secondaryType === archetype.secondaryType &&
-    cached?.pros[0]?.categorySlug === archetype.pros[0] &&
-    cached?.cons[0]?.categorySlug === archetype.cons[0]
+    cached?.categories[0]?.categorySlug === archetype.categories[0].categorySlug &&
+    cached?.categories[archetype.categories.length - 1]?.categorySlug === archetype.categories[archetype.categories.length - 1].categorySlug
 
   if (
     cached &&

@@ -10,7 +10,44 @@ import { EmailSummaryButton } from './EmailSummaryButton'
 import { RetryGenerateButton } from './RetryGenerateButton'
 import { labelFor } from '@/lib/coach-dna/categories'
 import { sourceTagFor, allCategoriesSelfOnly } from '@/lib/coach-dna/source-label'
+import { tierLabel } from '@/lib/coach-dna/tier-label'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
+
+function CategoryRow({ category, sourcedCategories }: {
+  category: SelfAssessmentSummary['categories'][number]
+  sourcedCategories: SelfAssessmentSummary['sourcedCategories']
+}) {
+  const tag = sourceTagFor(sourcedCategories, category.categorySlug)
+  return (
+    <li className="text-sm text-zinc-400">
+      <span className="text-zinc-200 font-medium">{labelFor(category.categorySlug)}</span>
+      <span className="text-zinc-500"> · {tierLabel(category.tier)} · {Math.round(category.score)}/100</span>
+      {tag && <span className="ml-2 text-[10px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded-full align-middle">{tag}</span>}
+      <p className="mt-0.5">{category.text}</p>
+      {category.resources.length > 0 && (
+        <ul className="mt-1.5 space-y-1 pl-3 border-l border-zinc-800">
+          {category.resources.map(resource => (
+            <li key={resource.title} className="text-xs text-zinc-500">
+              {resource.url ? (
+                <a
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-orange-400 hover:text-orange-300 font-medium"
+                >
+                  {resource.title}
+                </a>
+              ) : (
+                <span className="text-zinc-300 font-medium">{resource.title}</span>
+              )}
+              {' — '}{resource.description}
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
+  )
+}
 
 export const metadata = { title: 'Coach DNA — Your Results' }
 
@@ -42,7 +79,7 @@ export default async function AssessmentCompletePage({
     unstable_rethrow(err)
     console.error('[coach-dna] Failed to generate summary:', err)
     generationFailed = true
-    summary = { primaryType: '', secondaryType: null, narrative: '', pros: [], cons: [] }
+    summary = { primaryType: '', secondaryType: null, narrative: '', categories: [] }
   }
 
   if (generationFailed) {
@@ -79,7 +116,7 @@ export default async function AssessmentCompletePage({
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {allCategoriesSelfOnly(summary.sourcedCategories, [...summary.pros, ...summary.cons].map(c => c.categorySlug)) && (
+          {allCategoriesSelfOnly(summary.sourcedCategories, summary.categories.map(c => c.categorySlug)) && (
             <p className="text-xs text-zinc-500 uppercase tracking-widest">
               Based on your self-assessment only. This updates once player and peer feedback comes in.
             </p>
@@ -88,52 +125,27 @@ export default async function AssessmentCompletePage({
 
           <div>
             <h2 className="text-sm font-semibold text-emerald-400 mb-2">Strengths</h2>
-            <ul className="space-y-1.5">
-              {summary.pros.map(pro => {
-                const tag = sourceTagFor(summary.sourcedCategories, pro.categorySlug)
-                return (
-                  <li key={pro.categorySlug} className="text-sm text-zinc-400">
-                    <span className="text-zinc-200 font-medium">{labelFor(pro.categorySlug)}:</span> {pro.text}
-                    {tag && <span className="ml-2 text-[10px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded-full align-middle">{tag}</span>}
-                  </li>
-                )
-              })}
+            <ul className="space-y-3">
+              {summary.categories.filter(c => c.tier === 'strength').map(category => (
+                <CategoryRow key={category.categorySlug} category={category} sourcedCategories={summary.sourcedCategories} />
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-300 mb-2">Solid ground</h2>
+            <ul className="space-y-3">
+              {summary.categories.filter(c => c.tier === 'solid').map(category => (
+                <CategoryRow key={category.categorySlug} category={category} sourcedCategories={summary.sourcedCategories} />
+              ))}
             </ul>
           </div>
 
           <div>
             <h2 className="text-sm font-semibold text-orange-400 mb-2">Focus areas</h2>
             <ul className="space-y-4">
-              {summary.cons.map(con => (
-                <li key={con.categorySlug} className="text-sm text-zinc-400">
-                  <span className="text-zinc-200 font-medium">{labelFor(con.categorySlug)}:</span> {con.text}
-                  {sourceTagFor(summary.sourcedCategories, con.categorySlug) && (
-                    <span className="ml-2 text-[10px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded-full align-middle">
-                      {sourceTagFor(summary.sourcedCategories, con.categorySlug)}
-                    </span>
-                  )}
-                  {con.resources.length > 0 && (
-                    <ul className="mt-1.5 space-y-1 pl-3 border-l border-zinc-800">
-                      {con.resources.map(resource => (
-                        <li key={resource.title} className="text-xs text-zinc-500">
-                          {resource.url ? (
-                            <a
-                              href={resource.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-orange-400 hover:text-orange-300 font-medium"
-                            >
-                              {resource.title}
-                            </a>
-                          ) : (
-                            <span className="text-zinc-300 font-medium">{resource.title}</span>
-                          )}
-                          {' — '}{resource.description}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
+              {summary.categories.filter(c => c.tier === 'focus').map(category => (
+                <CategoryRow key={category.categorySlug} category={category} sourcedCategories={summary.sourcedCategories} />
               ))}
             </ul>
           </div>

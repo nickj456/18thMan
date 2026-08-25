@@ -230,20 +230,20 @@ export default async function CoachDnaPage() {
                   <p className="text-sm text-zinc-400">{summary.narrative}</p>
                 )}
                 <div className="grid grid-cols-2 gap-3">
-                  {summary.pros[0] && (
+                  {summary.categories.find(c => c.tier === 'strength') && (
                     <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
                       <p className="text-sm font-semibold text-zinc-100">
-                        {labelFor(summary.pros[0].categorySlug)}
+                        {labelFor(summary.categories.find(c => c.tier === 'strength')!.categorySlug)}
                       </p>
                       <p className="text-xs font-semibold text-emerald-400 uppercase tracking-widest mt-1">
                         Top strength
                       </p>
                     </div>
                   )}
-                  {summary.cons[0] && (
+                  {summary.categories.find(c => c.tier === 'focus') && (
                     <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3">
                       <p className="text-sm font-semibold text-zinc-100">
-                        {labelFor(summary.cons[0].categorySlug)}
+                        {labelFor(summary.categories.find(c => c.tier === 'focus')!.categorySlug)}
                       </p>
                       <p className="text-xs font-semibold text-orange-400 uppercase tracking-widest mt-1">
                         Focus area
