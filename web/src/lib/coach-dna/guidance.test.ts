@@ -45,4 +45,14 @@ describe('buildGuidance', () => {
     expect(steps).toHaveLength(1)
     expect(steps[0].href).toBe('/admin/coach-dna')
   })
+
+  it('returns blended guidance when both below-threshold and blended are true (realistic overlap)', () => {
+    // A coach can have below-threshold responses on some sources (e.g. Player Voice still accumulating)
+    // while others have blended completely (e.g. Peer Observation returned quickly).
+    // In this case, the blended data is actionable and wins over "keep waiting".
+    const steps = buildGuidance({ ...BASE, hasAnyFeedbackRequest: true, activeRequestsBelowThreshold: true, hasBlendedFeedback: true, focusCategories: ['organiser'] })
+    expect(steps).toHaveLength(3)
+    expect(steps.every(s => s.body.includes('Organiser'))).toBe(true)
+    expect(steps.map(s => s.href)).toEqual(['/sessions/new', '/drills', '/chat/ai'])
+  })
 })

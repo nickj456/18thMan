@@ -9,8 +9,10 @@ export interface GuidanceStep {
 
 /** State-conditional "what to do next" for the Coach DNA hub/breakdown --
  *  one clear next action, not a checklist, so it reads as guidance rather
- *  than a gimmick. Priority order matters: a coach who somehow satisfies
- *  more than one condition always sees the earliest-listed one. */
+ *  than a gimmick. Priority order: no-request beats below-threshold, but once
+ *  feedback has genuinely blended into the score, blended guidance wins even
+ *  if some requests are still below threshold — a coach with real data to act
+ *  on shouldn't be told to keep waiting. */
 export function buildGuidance(params: {
   hasAnyFeedbackRequest: boolean
   activeRequestsBelowThreshold: boolean
