@@ -6,11 +6,13 @@ const state: {
   role: string | null
   insertError: { message: string } | null
   insertedAttempt: { id: string } | null
+  lastCompletedAt: string | null
 } = {
   user: null,
   role: null,
   insertError: null,
   insertedAttempt: null,
+  lastCompletedAt: null,
 }
 
 const insertMock = vi.fn(() => ({
@@ -33,7 +35,22 @@ vi.mock('@/lib/supabase/server', () => ({
         return { select: () => ({ eq: () => ({ single: async () => ({ data: { role: state.role } }) }) }) }
       }
       if (table === 'assessment_attempts') {
-        return { insert: insertMock }
+        return {
+          insert: insertMock,
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                not: () => ({
+                  order: () => ({
+                    limit: () => ({
+                      maybeSingle: async () => ({ data: state.lastCompletedAt ? { completed_at: state.lastCompletedAt } : null }),
+                    }),
+                  }),
+                }),
+              }),
+            }),
+          }),
+        }
       }
       throw new Error(`unexpected table: ${table}`)
     },
@@ -48,6 +65,7 @@ describe('startAssessment', () => {
     state.role = 'admin'
     state.insertError = null
     state.insertedAttempt = { id: 'attempt-1' }
+    state.lastCompletedAt = null
     insertMock.mockClear()
     redirectMock.mockClear()
   })
@@ -93,5 +111,30 @@ describe('startAssessment', () => {
   it('creates an attempt and redirects to the assessment for a valid admin', async () => {
     await expect(startAssessment()).rejects.toThrow('REDIRECT:/admin/coach-dna/assessment/attempt-1')
     expect(insertMock).toHaveBeenCalledWith({ coach_id: 'coach-1', assessment_type: 'self_assessment', version: 1 })
+  })
+
+  it('allows a first-time start with no prior completed attempt', async () => {
+    state.lastCompletedAt = null
+
+    await expect(startAssessment()).rejects.toThrow('REDIRECT:/admin/coach-dna/assessment/attempt-1')
+    expect(insertMock).toHaveBeenCalled()
+  })
+
+  it('rejects a retake attempt within the 3-month cooldown, without creating an attempt', async () => {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    state.lastCompletedAt = yesterday.toISOString()
+
+    await expect(startAssessment()).rejects.toThrow('You are not yet eligible to retake this assessment')
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it('allows a retake once the 3-month cooldown has passed', async () => {
+    const fourMonthsAgo = new Date()
+    fourMonthsAgo.setMonth(fourMonthsAgo.getMonth() - 4)
+    state.lastCompletedAt = fourMonthsAgo.toISOString()
+
+    await expect(startAssessment()).rejects.toThrow('REDIRECT:/admin/coach-dna/assessment/attempt-1')
+    expect(insertMock).toHaveBeenCalled()
   })
 })
