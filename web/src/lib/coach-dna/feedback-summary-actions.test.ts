@@ -45,8 +45,12 @@ vi.mock('@/lib/supabase/service', () => ({
 vi.mock('ai', () => ({
   generateText: async () => ({ text: state.aiText }),
 }))
+let capturedModelId: string | undefined
 vi.mock('@ai-sdk/groq', () => ({
-  createGroq: () => (modelId: string) => ({ modelId }),
+  createGroq: () => (modelId: string) => {
+    capturedModelId = modelId
+    return { modelId }
+  },
 }))
 
 import { ensureFreshFeedbackSummary } from './feedback-summary-actions'
@@ -147,10 +151,8 @@ describe('ensureFreshFeedbackSummary', () => {
     }
     state.aiText = JSON.stringify({ categories: [{ categorySlug: 'teacher', text: 'x' }] })
     await ensureFreshFeedbackSummary('coach-1')
-    // The mocked createGroq captures whatever model id ensureFreshFeedbackSummary passes it --
-    // asserted indirectly via the mock's returned modelId not throwing; the real assertion
-    // that matters is covered by summary-actions.test.ts's equivalent regression test, since
-    // both files must use the same 'openai/gpt-oss-120b' constant.
-    expect(upsertMock).toHaveBeenCalledTimes(1)
+
+    expect(capturedModelId).toBe('openai/gpt-oss-120b')
+    expect(capturedModelId).not.toBe('llama-3.3-70b-versatile')
   })
 })
