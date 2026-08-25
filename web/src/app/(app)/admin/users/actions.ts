@@ -60,17 +60,22 @@ export async function resetCoachDnaData(targetUserId: string, reason: string): P
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  await serviceClient.from('assessment_attempts').delete().eq('coach_id', targetUserId)
-  await serviceClient.from('feedback_requests').delete().eq('coach_id', targetUserId)
-  await serviceClient
-    .from('coach_profiles')
-    .update({ ai_summary: null, ai_summary_generated_at: null })
-    .eq('user_id', targetUserId)
-
   const { error: logError } = await serviceClient
     .from('admin_coach_dna_reset_log')
     .insert({ admin_id: user.id, coach_id: targetUserId, reason: trimmedReason })
   if (logError) return { error: logError.message }
+
+  const { error: attemptsError } = await serviceClient.from('assessment_attempts').delete().eq('coach_id', targetUserId)
+  if (attemptsError) return { error: attemptsError.message }
+
+  const { error: feedbackError } = await serviceClient.from('feedback_requests').delete().eq('coach_id', targetUserId)
+  if (feedbackError) return { error: feedbackError.message }
+
+  const { error: profileError } = await serviceClient
+    .from('coach_profiles')
+    .update({ ai_summary: null, ai_summary_generated_at: null })
+    .eq('user_id', targetUserId)
+  if (profileError) return { error: profileError.message }
 
   revalidatePath('/admin/users')
   return {}

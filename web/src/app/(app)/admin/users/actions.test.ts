@@ -9,6 +9,9 @@ const state: {
   targetDisplayName: string | null
   targetUsername: string | null
   resetLogInsertError: { message: string } | null
+  assessmentDeleteError: { message: string } | null
+  feedbackDeleteError: { message: string } | null
+  coachProfileUpdateError: { message: string } | null
 } = {
   user: null,
   role: null,
@@ -17,14 +20,23 @@ const state: {
   targetDisplayName: null,
   targetUsername: null,
   resetLogInsertError: null,
+  assessmentDeleteError: null,
+  feedbackDeleteError: null,
+  coachProfileUpdateError: null,
 }
 
 const upsertMock = vi.fn(async () => ({ error: state.upsertError }))
 const revalidateMock = vi.fn()
 const emailSendsInsertMock = vi.fn(async (..._args: unknown[]) => ({ error: null }))
 const sendDirectEmailHtmlMock = vi.fn()
-const deleteEqMock = vi.fn(async (_table: string, _column: string, _value: string) => ({ error: null }))
-const updateEqMock = vi.fn(async (_table: string, _payload: unknown, _column: string, _value: string) => ({ error: null }))
+const deleteEqMock = vi.fn(async (table: string, _column: string, _value: string) => ({
+  error: table === 'assessment_attempts'
+    ? state.assessmentDeleteError
+    : table === 'feedback_requests'
+      ? state.feedbackDeleteError
+      : null,
+}))
+const updateEqMock = vi.fn(async (_table: string, _payload: unknown, _column: string, _value: string) => ({ error: state.coachProfileUpdateError }))
 const resetLogInsertMock = vi.fn(async (_payload: unknown) => ({ error: state.resetLogInsertError }))
 
 vi.mock('next/cache', () => ({
@@ -182,6 +194,9 @@ describe('resetCoachDnaData', () => {
     state.user = { id: 'admin-1' }
     state.role = 'admin'
     state.resetLogInsertError = null
+    state.assessmentDeleteError = null
+    state.feedbackDeleteError = null
+    state.coachProfileUpdateError = null
     deleteEqMock.mockClear()
     updateEqMock.mockClear()
     resetLogInsertMock.mockClear()
@@ -237,10 +252,62 @@ describe('resetCoachDnaData', () => {
     expect(revalidateMock).toHaveBeenCalledWith('/admin/users')
   })
 
-  it('surfaces the audit log insert error as a failed result', async () => {
+  it('surfaces the audit log insert error as a failed result without touching any data', async () => {
     state.resetLogInsertError = { message: 'insert failed' }
     const result = await resetCoachDnaData('coach-2', 'reason')
     expect(result).toEqual({ error: 'insert failed' })
+    expect(deleteEqMock).not.toHaveBeenCalled()
+    expect(updateEqMock).not.toHaveBeenCalled()
+    expect(revalidateMock).not.toHaveBeenCalled()
+  })
+
+  it('writes the audit log before deleting data, so a log row exists even if a later step fails', async () => {
+    const callOrder: string[] = []
+    resetLogInsertMock.mockImplementationOnce(async (payload: unknown) => {
+      callOrder.push('log-insert')
+      return { error: state.resetLogInsertError }
+    })
+    deleteEqMock.mockImplementationOnce(async (table: string) => {
+      callOrder.push(`delete:${table}`)
+      return { error: null }
+    })
+    await resetCoachDnaData('coach-2', 'reason')
+    expect(callOrder[0]).toBe('log-insert')
+  })
+
+  it('surfaces the assessment_attempts delete error and does not proceed to feedback_requests, coach_profiles, or revalidate', async () => {
+    state.assessmentDeleteError = { message: 'assessment delete failed' }
+    const result = await resetCoachDnaData('coach-2', 'reason')
+    expect(result).toEqual({ error: 'assessment delete failed' })
+    expect(deleteEqMock).toHaveBeenCalledWith('assessment_attempts', 'coach_id', 'coach-2')
+    expect(deleteEqMock).not.toHaveBeenCalledWith('feedback_requests', 'coach_id', 'coach-2')
+    expect(updateEqMock).not.toHaveBeenCalled()
+    expect(revalidateMock).not.toHaveBeenCalled()
+  })
+
+  it('surfaces the feedback_requests delete error and does not proceed to coach_profiles or revalidate', async () => {
+    state.feedbackDeleteError = { message: 'feedback delete failed' }
+    const result = await resetCoachDnaData('coach-2', 'reason')
+    expect(result).toEqual({ error: 'feedback delete failed' })
+    expect(deleteEqMock).toHaveBeenCalledWith('assessment_attempts', 'coach_id', 'coach-2')
+    expect(deleteEqMock).toHaveBeenCalledWith('feedback_requests', 'coach_id', 'coach-2')
+    expect(updateEqMock).not.toHaveBeenCalled()
+    expect(revalidateMock).not.toHaveBeenCalled()
+  })
+
+  it('surfaces the coach_profiles update error and does not revalidate', async () => {
+    state.coachProfileUpdateError = { message: 'profile update failed' }
+    const result = await resetCoachDnaData('coach-2', 'reason')
+    expect(result).toEqual({ error: 'profile update failed' })
+    expect(deleteEqMock).toHaveBeenCalledWith('assessment_attempts', 'coach_id', 'coach-2')
+    expect(deleteEqMock).toHaveBeenCalledWith('feedback_requests', 'coach_id', 'coach-2')
+    expect(updateEqMock).toHaveBeenCalledWith(
+      'coach_profiles',
+      { ai_summary: null, ai_summary_generated_at: null },
+      'user_id',
+      'coach-2',
+    )
+    expect(revalidateMock).not.toHaveBeenCalled()
   })
 
   it('allows an admin to reset their own Coach DNA data', async () => {
