@@ -73,6 +73,11 @@ vi.mock('@react-pdf/renderer', () => ({
   Image: 'Image',
 }))
 
+const registerPdfFontsMock = vi.fn(async () => {})
+vi.mock('@/lib/coach-dna/pdf-font', () => ({
+  registerPdfFonts: () => registerPdfFontsMock(),
+}))
+
 import { GET } from './route'
 
 function makeRequest(attemptId: string) {
@@ -97,6 +102,7 @@ describe('GET /api/coach-dna/report-pdf/[attemptId]', () => {
     state.ensureFreshSummaryError = null
     ensureFreshSummaryMock.mockClear()
     renderToBufferMock.mockClear()
+    registerPdfFontsMock.mockClear()
   })
 
   it('returns 401 when there is no authenticated user', async () => {
@@ -160,5 +166,10 @@ describe('GET /api/coach-dna/report-pdf/[attemptId]', () => {
     state.ensureFreshSummaryError = new Error('groq down')
     const res = await makeRequest('attempt-1')
     expect(res.status).toBe(500)
+  })
+
+  it('registers PDF fonts before rendering', async () => {
+    await makeRequest('attempt-1')
+    expect(registerPdfFontsMock).toHaveBeenCalledTimes(1)
   })
 })
