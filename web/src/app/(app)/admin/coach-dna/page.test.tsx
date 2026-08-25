@@ -174,6 +174,45 @@ describe('CoachDnaPage', () => {
     expect(screen.getByRole('button', { name: /Get Your Report/ })).toBeInTheDocument()
   })
 
+  it('shows a link to the feedback breakdown page once feedback has blended in', async () => {
+    state.completed = { id: 'attempt-1' }
+    state.ensureFreshSummaryResult = {
+      primaryType: 'motivator',
+      secondaryType: 'technician',
+      narrative: 'You build trust fast.',
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
+      sourcedCategories: { motivator: ['self', 'player_voice'] },
+    }
+
+    render(await CoachDnaPage())
+
+    expect(screen.getByRole('link', { name: 'View feedback breakdown' })).toHaveAttribute(
+      'href',
+      '/admin/coach-dna/feedback/summary',
+    )
+  })
+
+  it('hides the feedback breakdown link for a self-only summary', async () => {
+    state.completed = { id: 'attempt-1' }
+    state.ensureFreshSummaryResult = {
+      primaryType: 'motivator',
+      secondaryType: null,
+      narrative: 'You build trust fast.',
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
+      sourcedCategories: { motivator: ['self'] },
+    }
+
+    render(await CoachDnaPage())
+
+    expect(screen.queryByRole('link', { name: 'View feedback breakdown' })).not.toBeInTheDocument()
+  })
+
   it('hides the outcome reveal trigger for a self-only summary', async () => {
     state.completed = { id: 'attempt-1' }
     state.ensureFreshSummaryResult = {

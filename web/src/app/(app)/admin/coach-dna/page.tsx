@@ -259,6 +259,15 @@ export default async function CoachDnaPage() {
                   <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 {hasBlendedFeedback(summary.sourcedCategories) && (
+                  <Link
+                    href="/admin/coach-dna/feedback/summary"
+                    className="group inline-flex items-center gap-1 text-sm text-orange-400 hover:text-orange-300"
+                  >
+                    View feedback breakdown
+                    <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+                )}
+                {hasBlendedFeedback(summary.sourcedCategories) && (
                   <CoachDnaOutcomeReveal attemptId={completed.id} />
                 )}
               </div>

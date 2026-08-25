@@ -11,6 +11,9 @@ import { RetryGenerateButton } from './RetryGenerateButton'
 import { labelFor } from '@/lib/coach-dna/categories'
 import { sourceTagFor, allCategoriesSelfOnly } from '@/lib/coach-dna/source-label'
 import { tierLabel } from '@/lib/coach-dna/tier-label'
+import { buildGuidance } from '@/lib/coach-dna/guidance'
+import { hasBlendedFeedback } from '@/lib/coach-dna/blend-status'
+import { feedbackRequestEligibility } from '@/lib/coach-dna/feedback-request-status'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
 function CategoryRow({ category, sourcedCategories }: {
@@ -101,6 +104,25 @@ export default async function AssessmentCompletePage({
     )
   }
 
+  const { data: feedbackRequests } = await supabase
+    .from('feedback_requests')
+    .select('id, minimum_response_threshold, status, expires_at')
+    .eq('coach_id', user.id)
+  const requestIds = (feedbackRequests ?? []).map(r => r.id)
+  const { data: feedbackResponses } = requestIds.length > 0
+    ? await supabase.from('feedback_responses').select('id, feedback_request_id').in('feedback_request_id', requestIds)
+    : { data: [] }
+  const activeRequests = (feedbackRequests ?? []).filter(r => feedbackRequestEligibility(r) !== 'expired')
+  const totalReceived = (feedbackResponses ?? []).length
+  const totalThreshold = activeRequests.reduce((sum, r) => sum + r.minimum_response_threshold, 0)
+
+  const guidanceSteps = buildGuidance({
+    hasAnyFeedbackRequest: (feedbackRequests ?? []).length > 0,
+    activeRequestsBelowThreshold: activeRequests.length > 0 && totalReceived < totalThreshold,
+    hasBlendedFeedback: hasBlendedFeedback(summary.sourcedCategories),
+    focusCategories: summary.categories.filter(c => c.tier === 'focus').map(c => c.categorySlug),
+  })
+
   return (
     <div className="space-y-6 max-w-2xl">
       <Card>
@@ -154,6 +176,25 @@ export default async function AssessmentCompletePage({
             <Button render={<Link href="/admin/coach-dna" />}>Back to Coach DNA</Button>
             <EmailSummaryButton />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>What to do next</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {guidanceSteps.map(step => (
+            <div key={step.heading} className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3">
+              <p className="text-sm font-semibold text-zinc-100">{step.heading}</p>
+              <p className="text-sm text-zinc-400 mt-0.5">{step.body}</p>
+              {step.href && step.linkLabel && (
+                <Link href={step.href} className="inline-block mt-2 text-sm text-orange-400 hover:text-orange-300">
+                  {step.linkLabel} →
+                </Link>
+              )}
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>
