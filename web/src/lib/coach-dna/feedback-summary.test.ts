@@ -51,7 +51,8 @@ function makeClient() {
   }
 }
 
-import { computeFeedbackSummary } from './feedback-summary'
+import { computeFeedbackSummary, feedbackBandLabel } from './feedback-summary'
+import { CATEGORY_RESOURCES } from './resources'
 
 describe('computeFeedbackSummary', () => {
   beforeEach(() => {
@@ -101,7 +102,7 @@ describe('computeFeedbackSummary', () => {
     ]
     const result = await computeFeedbackSummary(makeClient() as never, 'coach-1')
     expect(result.playerParentVoice.ready).toBe(true)
-    expect(result.playerParentVoice.categories).toEqual([{ categorySlug: 'teacher', averageRating: 4, responseCount: 3 }])
+    expect(result.playerParentVoice.categories).toEqual([{ categorySlug: 'teacher', averageRating: 4, responseCount: 3, text: '', resources: [] }])
     expect(result.playerParentVoice.responseCount).toBe(3)
   })
 
@@ -112,7 +113,7 @@ describe('computeFeedbackSummary', () => {
     ]
     const result = await computeFeedbackSummary(makeClient() as never, 'coach-1')
     expect(result.peerObservation.ready).toBe(true)
-    expect(result.peerObservation.categories).toEqual([{ categorySlug: 'organiser', averageRating: 3, responseCount: 1 }])
+    expect(result.peerObservation.categories).toEqual([{ categorySlug: 'organiser', averageRating: 3, responseCount: 1, text: '', resources: CATEGORY_RESOURCES['organiser'] }])
   })
 
   it('computes a plain arithmetic mean across multiple answers in the same category', async () => {
@@ -136,7 +137,7 @@ describe('computeFeedbackSummary', () => {
     ]
     state.excludedResponseIds = ['resp-1']
     const result = await computeFeedbackSummary(makeClient() as never, 'coach-1')
-    expect(result.peerObservation.categories).toEqual([{ categorySlug: 'organiser', averageRating: 5, responseCount: 1 }])
+    expect(result.peerObservation.categories).toEqual([{ categorySlug: 'organiser', averageRating: 5, responseCount: 1, text: '', resources: [] }])
     expect(result.peerObservation.responseCount).toBe(1)
   })
 
@@ -151,5 +152,17 @@ describe('computeFeedbackSummary', () => {
     expect(result.peerObservation.ready).toBe(true)
     expect(result.playerParentVoice.ready).toBe(false)
     expect(result.playerParentVoice.categories).toEqual([])
+  })
+})
+
+describe('feedbackBandLabel', () => {
+  it('labels 3.5 and above as Strong', () => {
+    expect(feedbackBandLabel(3.5)).toBe('Strong')
+    expect(feedbackBandLabel(5)).toBe('Strong')
+  })
+
+  it('labels below 3.5 as Focus area', () => {
+    expect(feedbackBandLabel(3.4)).toBe('Focus area')
+    expect(feedbackBandLabel(1)).toBe('Focus area')
   })
 })
