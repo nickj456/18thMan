@@ -15,7 +15,7 @@ export const getEffectiveTierCached = cache(async (userId: string): Promise<Effe
 })
 
 export const FREE_DRILL_LIMIT = 20
-export const FREE_SESSION_LIMIT = 3
+export const FREE_SESSION_LIMIT = 1
 export const FREE_AI_CHAT_DAILY_LIMIT = 20
 
 /**
@@ -147,7 +147,7 @@ export async function canSendAiMessage(
   return { allowed: msgCount < FREE_AI_CHAT_DAILY_LIMIT, tier, count: msgCount }
 }
 
-/** True if the user can create another session (free tier: max 3) */
+/** True if the user can create another session (free tier: max 1) */
 export async function canCreateSession(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any>,

@@ -21,6 +21,7 @@ import { GripVertical, X, ChevronDown, ChevronUp, Clock, Plus, Search, Globe, Lo
 import { toast } from 'sonner'
 import { createSession, updateSession } from '@/app/(app)/sessions/actions'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
+import { FREE_SESSION_LIMIT } from '@/lib/subscription'
 import type { Drill, DrillCategory, SessionPlan, SessionDrillItem } from '@/lib/supabase/types'
 
 interface SessionItem {
@@ -205,7 +206,7 @@ export function SessionBuilder({ allDrills, categories, initialSession, groups, 
           scheduledAt || undefined,
         )
         if (result?.error === 'session_limit_reached') {
-          toast.error("You've reached the 3-session free limit. Upgrade your club for unlimited sessions.")
+          toast.error(`You've reached the ${FREE_SESSION_LIMIT}-session free limit. Upgrade your club for unlimited sessions.`)
         }
       }
     })
