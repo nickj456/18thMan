@@ -164,8 +164,10 @@ describe('CoachDnaPage', () => {
       primaryType: 'motivator',
       secondaryType: 'technician',
       narrative: 'You build trust fast.',
-      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
       sourcedCategories: { motivator: ['self'] },
     }
 
@@ -186,8 +188,10 @@ describe('CoachDnaPage', () => {
       primaryType: 'motivator',
       secondaryType: 'technician',
       narrative: 'You build trust fast.',
-      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
       sourcedCategories: { motivator: ['self'] },
     }
 
@@ -206,8 +210,10 @@ describe('CoachDnaPage', () => {
       primaryType: 'motivator',
       secondaryType: 'technician',
       narrative: 'You build trust fast.',
-      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
       sourcedCategories: { motivator: ['self'] },
     }
 
