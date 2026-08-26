@@ -21,7 +21,7 @@ import { GripVertical, X, ChevronDown, ChevronUp, Clock, Plus, Search, Globe, Lo
 import { toast } from 'sonner'
 import { createSession, updateSession } from '@/app/(app)/sessions/actions'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
-import { FREE_SESSION_LIMIT } from '@/lib/subscription'
+import { FREE_SESSION_LIMIT } from '@/lib/subscription-limits'
 import type { Drill, DrillCategory, SessionPlan, SessionDrillItem } from '@/lib/supabase/types'
 
 interface SessionItem {
