@@ -78,6 +78,44 @@ Three roles: `admin`, `coach`, `viewer`. Stored on the `profiles` table.
 
 ---
 
+## Subscription Tiers & Feature Access
+
+This is separate from `profiles.role` (admin/coach/viewer, above) — a tier is what a coach has *paid for*, independent of their platform role. Tier logic lives in `web/src/lib/subscription.ts` (`getEffectiveTier`, `EffectiveTier = 'free' | 'trial' | 'coach' | 'club'`); the plain numeric limits live in `web/src/lib/subscription-limits.ts` (see the client-import rule below).
+
+| | **Free** | **Trial** (48h, one-time) | **Coach Pro** — £9.99/mo · £89/yr | **Club** — £24.99/mo · £219/yr (per club, covers every coach in it) |
+|---|---|---|---|---|
+| Drills created | Up to 20 | Unlimited | Unlimited | Unlimited |
+| Session plans | 1 | Unlimited | Unlimited | Unlimited |
+| AI coaching chat | 20 msgs/day | Unlimited | Unlimited | Unlimited |
+| Public drill library | ✅ | ✅ | ✅ | ✅ |
+| Community access | ✅ | ✅ | ✅ | ✅ |
+| PDF export | ❌ | ✅ | ✅ | ✅ |
+| Club-private drills | ❌ | ✅ | ❌ | ✅ |
+| Coaching groups | ❌ | ✅ | ❌ | ✅ (up to 5) |
+| Collaborative session plans | ❌ | ✅ | ❌ | ✅ |
+| AI session guidance (GameSense) | ❌ | ✅ | ❌ | ✅ |
+| Multiple coaches covered | — (self only) | — (self only) | — (self only) | ✅ unlimited |
+
+**How a tier is granted** (`getEffectiveTier` resolution order, first match wins):
+1. `role = 'admin'` → always `'club'`, no paywall, regardless of payment.
+2. A `feature_overrides` row for the user or their club (admin-set escape hatch) — can force `'club'` or `'free'`.
+3. `profiles.club_id` is set → `'club'` (membership alone grants it; club creation itself is gated behind the Stripe checkout in `/api/stripe/club-checkout`).
+4. `profiles.trial_ends_at` is in the future → `'trial'` (same access as Club). Auto-granted once, 48 hours, triggered when a free-tier coach creates their 3rd drill (`designer-actions.ts`).
+5. `profiles.subscription_tier = 'coach'` → `'coach'`.
+6. Otherwise → `'free'`.
+
+**Product priority (set 2026-08-26):** free/non-club coaches are the primary conversion target — any new feature should be checked against whether it moves that segment toward paying. Session/drill/chat limits and the upsell CTAs on `/clubs` and `/pricing` exist for this reason; the AI chat's system prompt should stay consistent with them too.
+
+**Keeping this in sync — update ALL of these together whenever a limit, price, or feature changes:**
+- This table.
+- `web/src/lib/subscription-limits.ts` (the actual enforced numbers) and `web/src/lib/subscription.ts` (tier resolution).
+- `web/src/app/pricing/page.tsx` (reads the limit constants directly — don't hardcode numbers there; if a bullet can't reference the constant, update it by hand).
+- `web/src/app/api/chat/route.ts`'s `SYSTEM_PROMPT` (the AI coach describes tiers/prices in plain text — it drifted out of sync with the real Club price and was missing Coach Pro entirely before this table existed, so treat this as a known drift risk, not a one-time fix).
+
+**Client-import rule:** `subscription.ts` also exports server-only DB functions (`getEffectiveTier`, `canCreateDrill`, etc.) that depend on `next/headers` via the Supabase server client. A `'use client'` component that imports *anything* from `subscription.ts` — even just a constant — pulls that server-only code into the client bundle and breaks `next build` (dev mode won't catch it). Client components must import limits from `subscription-limits.ts` directly, never from `subscription.ts`.
+
+---
+
 ## Database
 
 Schema lives in Supabase. Core tables:

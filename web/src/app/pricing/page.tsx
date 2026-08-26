@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { getEffectiveTier, hasClubAccess } from '@/lib/subscription'
+import { getEffectiveTier, hasClubAccess, FREE_DRILL_LIMIT, FREE_SESSION_LIMIT, FREE_AI_CHAT_DAILY_LIMIT } from '@/lib/subscription'
 import { Check, Lock } from 'lucide-react'
 import { CheckoutButton } from '@/components/pricing/CheckoutButton'
 import { ClubCheckoutButton } from '@/components/pricing/ClubCheckoutButton'
@@ -27,10 +27,10 @@ export const metadata = {
 }
 
 const FREE_FEATURES = [
-  'Up to 20 drills',
+  `Up to ${FREE_DRILL_LIMIT} drills`,
   'Public drill library (unlimited)',
-  'Session planning (unlimited)',
-  'AI coaching chat (20 messages/day)',
+  `${FREE_SESSION_LIMIT} session plan${FREE_SESSION_LIMIT === 1 ? '' : 's'}`,
+  `AI coaching chat (${FREE_AI_CHAT_DAILY_LIMIT} messages/day)`,
   'Community access',
   'Profile page',
 ]

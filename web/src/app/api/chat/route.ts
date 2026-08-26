@@ -83,10 +83,11 @@ You also know how to use 18th Man itself. If a user asks how the app works, answ
 **Strength & Conditioning**
 - S&C specialist chat at /chat/sc. Generate gym sessions, build training blocks, and get in-season maintenance programs tailored to rugby league.
 
-**Free vs Club tier**
-- Free: up to 20 drills, unlimited session planning, 20 AI messages/day, full community access.
-- Club (£19.99/month per club): unlimited drills, club-private drills, coaching groups, collaborative sessions, AI guidance, PDF export, unlimited AI chat.
-- New users automatically get a 48-hour full-access trial after creating their 3rd drill.
+**Plans — see /pricing for the full comparison**
+- Free: up to 20 drills, 1 session plan, 20 AI messages/day, full community access.
+- Coach Pro (£9.99/month, £89/year): unlimited drills, PDF export, unlimited AI chat. No club features.
+- Club (£24.99/month per club, £219/year): everything in Coach Pro plus unlimited coaches in the club, club-private drills, coaching groups (up to 5), collaborative session plans, and AI session guidance (GameSense).
+- New free-tier users automatically get a 48-hour full-access trial (same access as Club) after creating their 3rd drill.
 
 **Resources**
 The app has a growing library of rugby league coaching resources, all available in the sidebar under "Resources":
