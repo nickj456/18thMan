@@ -24,10 +24,14 @@ export async function getActiveAnnouncementForUser(): Promise<ActiveAnnouncement
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (!profile?.role) return null
+
   const { data: announcement } = await supabase
     .from('announcements')
     .select('id, message, link_url, link_label')
     .eq('active', true)
+    .or(`target_roles.is.null,target_roles.cs.{${profile.role}}`)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -76,12 +80,19 @@ export async function createAnnouncement(formData: FormData) {
   const linkLabel = (formData.get('linkLabel') as string)?.trim() || null
   const active = formData.get('active') === 'on'
 
+  // No roles checked, or all of them checked, both mean "everyone" --
+  // stored as null so the read-side query's `target_roles.is.null` branch
+  // covers it without special-casing a full-length array.
+  const checkedRoles = formData.getAll('roles') as string[]
+  const targetRoles = checkedRoles.length === 0 || checkedRoles.length === 3 ? null : checkedRoles
+
   const { error } = await supabase.from('announcements').insert({
     message,
     link_url: linkUrl,
     link_label: linkLabel,
     active,
     created_by: userId,
+    target_roles: targetRoles,
   })
   if (error) throw new Error(error.message)
   revalidatePath('/admin/announcements')

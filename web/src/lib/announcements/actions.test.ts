@@ -31,6 +31,7 @@ const upsertArgs: unknown[][] = []
 const insertMock = vi.fn(async (payload: unknown) => ({ error: state.insertError }))
 const updateEqMock = vi.fn(async (payload: unknown, column: string, value: string) => ({ error: state.updateError }))
 const deleteEqMock = vi.fn(async (column: string, value: string) => ({ error: state.deleteError }))
+const orFilterMock = vi.fn()
 const revalidateMock = vi.fn()
 
 vi.mock('next/cache', () => ({
@@ -48,14 +49,19 @@ vi.mock('@/lib/supabase/server', () => ({
         return {
           select: () => ({
             eq: () => ({
-              order: () => ({
-                limit: () => ({
-                  maybeSingle: async () => {
-                    selectActiveMock()
-                    return { data: state.activeAnnouncement }
-                  },
-                }),
-              }),
+              or: (filter: string) => {
+                orFilterMock(filter)
+                return {
+                  order: () => ({
+                    limit: () => ({
+                      maybeSingle: async () => {
+                        selectActiveMock()
+                        return { data: state.activeAnnouncement }
+                      },
+                    }),
+                  }),
+                }
+              },
             }),
           }),
           insert: (payload: unknown) => insertMock(payload),
@@ -92,10 +98,12 @@ import { getActiveAnnouncementForUser, dismissAnnouncement, createAnnouncement, 
 describe('getActiveAnnouncementForUser', () => {
   beforeEach(() => {
     state.user = { id: 'coach-1' }
+    state.role = 'coach'
     state.activeAnnouncement = null
     state.dismissed = false
     selectActiveMock.mockClear()
     selectDismissalMock.mockClear()
+    orFilterMock.mockClear()
   })
 
   it('returns null when there is no active announcement', async () => {
@@ -106,6 +114,13 @@ describe('getActiveAnnouncementForUser', () => {
 
   it('returns null when there is no authenticated user', async () => {
     state.user = null
+    state.activeAnnouncement = { id: 'ann-1', message: 'Try Coach DNA', link_url: null, link_label: null }
+    const result = await getActiveAnnouncementForUser()
+    expect(result).toBeNull()
+  })
+
+  it('returns null when the caller has no profile role on file', async () => {
+    state.role = null
     state.activeAnnouncement = { id: 'ann-1', message: 'Try Coach DNA', link_url: null, link_label: null }
     const result = await getActiveAnnouncementForUser()
     expect(result).toBeNull()
@@ -122,6 +137,12 @@ describe('getActiveAnnouncementForUser', () => {
     state.dismissed = true
     const result = await getActiveAnnouncementForUser()
     expect(result).toBeNull()
+  })
+
+  it('queries only untargeted announcements or ones targeting the caller\'s own role', async () => {
+    state.role = 'viewer'
+    await getActiveAnnouncementForUser()
+    expect(orFilterMock).toHaveBeenCalledWith('target_roles.is.null,target_roles.cs.{viewer}')
   })
 })
 
@@ -162,9 +183,10 @@ describe('createAnnouncement', () => {
     revalidateMock.mockClear()
   })
 
-  function formData(fields: Record<string, string>): FormData {
+  function formData(fields: Record<string, string>, roles: string[] = []): FormData {
     const fd = new FormData()
     for (const [key, value] of Object.entries(fields)) fd.set(key, value)
+    for (const role of roles) fd.append('roles', role)
     return fd
   }
 
@@ -198,6 +220,7 @@ describe('createAnnouncement', () => {
       link_label: 'Try it',
       active: true,
       created_by: 'admin-1',
+      target_roles: null,
     })
     expect(revalidateMock).toHaveBeenCalledWith('/admin/announcements')
   })
@@ -210,7 +233,23 @@ describe('createAnnouncement', () => {
       link_label: null,
       active: false,
       created_by: 'admin-1',
+      target_roles: null,
     })
+  })
+
+  it('stores target_roles as null (everyone) when no role checkboxes are checked', async () => {
+    await createAnnouncement(formData({ message: 'Try Coach DNA' }, []))
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ target_roles: null }))
+  })
+
+  it('stores target_roles as null (everyone) when all three role checkboxes are checked', async () => {
+    await createAnnouncement(formData({ message: 'Try Coach DNA' }, ['coach', 'admin', 'viewer']))
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ target_roles: null }))
+  })
+
+  it('stores the selected subset of roles when fewer than all three are checked', async () => {
+    await createAnnouncement(formData({ message: 'Try Coach DNA' }, ['coach', 'admin']))
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ target_roles: ['coach', 'admin'] }))
   })
 
   it('surfaces the database error without revalidating', async () => {

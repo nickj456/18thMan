@@ -16,7 +16,7 @@ export default async function AdminAnnouncementsPage() {
 
   const { data: announcements } = await supabase
     .from('announcements')
-    .select('id, message, link_url, link_label, active, created_at')
+    .select('id, message, link_url, link_label, active, target_roles, created_at')
     .order('created_at', { ascending: false })
 
   return (
@@ -45,6 +45,8 @@ export default async function AdminAnnouncementsPage() {
                   <p className="text-sm font-medium text-zinc-200 truncate">{a.message}</p>
                   <p className="text-xs text-zinc-600 mt-0.5">
                     {a.link_url ? `${a.link_label ?? 'Learn more'} → ${a.link_url}` : 'No link'}
+                    {' · '}
+                    {a.target_roles?.length ? a.target_roles.map((r: string) => `${r[0].toUpperCase()}${r.slice(1)}`).join(', ') : 'Everyone'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -109,6 +111,17 @@ export default async function AdminAnnouncementsPage() {
               placeholder="Button text (optional)"
               className="flex-1 text-sm bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
+          </div>
+          <div>
+            <p className="text-xs text-zinc-500 mb-1.5">Show to (leave all unchecked for everyone):</p>
+            <div className="flex gap-4">
+              {(['coach', 'admin', 'viewer'] as const).map(role => (
+                <label key={role} className="flex items-center gap-1.5 text-sm text-zinc-400">
+                  <input type="checkbox" name="roles" value={role} className="rounded border-zinc-700 bg-zinc-800" />
+                  {role[0].toUpperCase()}{role.slice(1)}
+                </label>
+              ))}
+            </div>
           </div>
           <label className="flex items-center gap-2 text-sm text-zinc-400">
             <input type="checkbox" name="active" defaultChecked className="rounded border-zinc-700 bg-zinc-800" />
