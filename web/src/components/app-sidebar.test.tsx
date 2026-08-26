@@ -52,7 +52,7 @@ describe('AppSidebar', () => {
 
   it.each<[UserRole, boolean, boolean]>([
     ['admin', true, true],
-    ['coach', false, true],
+    ['coach', true, true],
     ['viewer', false, false],
   ])('gates Coach DNA and Match Analysis by role (role=%s)', async (role, expectCoachDna, expectMatchAnalysis) => {
     const user = userEvent.setup()
