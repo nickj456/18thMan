@@ -28,9 +28,14 @@ export default async function NewWeeklyFocusPage() {
 
   if (profile?.role !== 'admin') redirect('/weekly-focus')
 
-  // Get the existing global focus for this week to pre-fill -- global is
-  // the primary path now, so it takes priority over a club-specific one
-  // when deciding what to show in the form.
+  // Pre-fill from the admin's OWN club post if one exists for this week --
+  // never the global one, even if a global post already exists, since
+  // silently loading someone else's (or the platform-wide) content into
+  // what looks like "edit my club's focus" is exactly the confusing
+  // cross-contamination bug this comment used to cause (an admin's real
+  // club-specific post looked "removed" because the form showed an
+  // unrelated global entry instead). Only an admin with no club at all
+  // (global-only) ever has the global post as their "existing" content.
   const thisMonday = getMonday(new Date())
   const [globalFocusRes, clubFocusRes, drillsRes] = await Promise.all([
     supabase
@@ -53,10 +58,10 @@ export default async function NewWeeklyFocusPage() {
       .order('title'),
   ])
 
-  const existingGlobal = globalFocusRes.data
   const existingClub = clubFocusRes.data
-  const existing = existingGlobal ?? existingClub
-  const defaultGlobal = Boolean(existingGlobal) || !existingClub
+  const existingGlobal = globalFocusRes.data
+  const existing = profile.club_id ? existingClub : existingGlobal
+  const defaultGlobal = !existingClub
   const drills = (drillsRes.data ?? []) as Pick<Drill, 'id' | 'title' | 'difficulty' | 'preview_image_url' | 'canvas_preview_url'>[]
 
   const weekLabel = new Date(thisMonday).toLocaleDateString('en-GB', {
