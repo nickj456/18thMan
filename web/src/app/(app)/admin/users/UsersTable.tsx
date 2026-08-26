@@ -6,6 +6,7 @@ import { ChevronUp, ChevronDown, ChevronsUpDown, Pencil, Check, X } from 'lucide
 import { UserRoleSelect } from './UserRoleSelect'
 import { DeleteUserButton } from './DeleteUserButton'
 import { SendEmailButton } from './SendEmailButton'
+import { ResetCoachDnaButton } from './ResetCoachDnaButton'
 import { updateAdminNote } from './actions'
 import type { UserRole, SubscriptionTier } from '@/lib/supabase/types'
 
@@ -266,13 +267,14 @@ export function UsersTable({ users, currentUserId }: { users: UserRow[]; current
                 Notes
               </th>
               <th className="px-3 py-3" />
+              <th className="px-3 py-3" />
               <th className="px-5 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800 bg-zinc-900">
             {!sorted.length ? (
               <tr>
-                <td colSpan={cols.length + 4} className="px-5 py-10 text-center text-sm text-zinc-600">No users found</td>
+                <td colSpan={cols.length + 5} className="px-5 py-10 text-center text-sm text-zinc-600">No users found</td>
               </tr>
             ) : (
               sorted.map(profile => (
@@ -332,6 +334,13 @@ export function UsersTable({ users, currentUserId }: { users: UserRow[]; current
                   {/* Send email */}
                   <td className="px-3 py-3.5">
                     <SendEmailButton
+                      userId={profile.id}
+                      displayName={profile.display_name ?? profile.username ?? 'this user'}
+                    />
+                  </td>
+                  {/* Reset Coach DNA data */}
+                  <td className="px-3 py-3.5">
+                    <ResetCoachDnaButton
                       userId={profile.id}
                       displayName={profile.display_name ?? profile.username ?? 'this user'}
                     />

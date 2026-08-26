@@ -49,6 +49,48 @@ export async function deleteUser(targetUserId: string): Promise<{ error?: string
   return {}
 }
 
+export async function resetCoachDnaData(targetUserId: string, reason: string): Promise<{ error?: string }> {
+  const { user } = await requireAdmin()
+
+  const trimmedReason = reason.trim()
+  if (!trimmedReason) return { error: 'A reason is required' }
+
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // Write the audit log first, before any destructive step below, so an audit trail
+  // exists for any reset attempt that got this far even if a later delete/update
+  // fails partway through. A row therefore means "a reset was attempted with this
+  // reason," not "all data was definitely deleted" — there's no status column or
+  // viewing UI to distinguish a fully-succeeded reset from a partially-failed one.
+  const { error: logError } = await serviceClient
+    .from('admin_coach_dna_reset_log')
+    .insert({ admin_id: user.id, coach_id: targetUserId, reason: trimmedReason })
+  if (logError) return { error: logError.message }
+
+  const { error: attemptsError } = await serviceClient.from('assessment_attempts').delete().eq('coach_id', targetUserId)
+  if (attemptsError) return { error: attemptsError.message }
+
+  const { error: feedbackError } = await serviceClient.from('feedback_requests').delete().eq('coach_id', targetUserId)
+  if (feedbackError) return { error: feedbackError.message }
+
+  const { error: profileError } = await serviceClient
+    .from('coach_profiles')
+    .update({
+      ai_summary: null,
+      ai_summary_generated_at: null,
+      primary_profile_type: null,
+      secondary_profile_type: null,
+    })
+    .eq('user_id', targetUserId)
+  if (profileError) return { error: profileError.message }
+
+  revalidatePath('/admin/users')
+  return {}
+}
+
 export async function sendDirectEmail(
   targetUserId: string,
   subject: string,

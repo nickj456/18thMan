@@ -14,6 +14,7 @@ import { isCurrentSummaryShape } from '@/lib/coach-dna/summary-shape'
 import { feedbackRequestEligibility } from '@/lib/coach-dna/feedback-request-status'
 import { hasBlendedFeedback } from '@/lib/coach-dna/blend-status'
 import { CoachDnaOutcomeReveal } from './CoachDnaOutcomeReveal'
+import { retakeEligibility } from '@/lib/coach-dna/retake-eligibility'
 import type { FeedbackType, SelfAssessmentSummary } from '@/lib/supabase/types'
 
 const HOW_IT_WORKS = [
@@ -65,7 +66,7 @@ export default async function CoachDnaPage() {
 
   const { data: completed } = await supabase
     .from('assessment_attempts')
-    .select('id')
+    .select('id, completed_at')
     .eq('coach_id', user.id)
     .eq('assessment_type', 'self_assessment')
     .not('completed_at', 'is', null)
@@ -96,6 +97,8 @@ export default async function CoachDnaPage() {
       }
     }
   }
+
+  const { eligible: retakeEligible, eligibleAt: retakeEligibleAt } = retakeEligibility(completed?.completed_at ?? null)
 
   const { data: feedbackRequests } = await supabase
     .from('feedback_requests')
@@ -261,6 +264,29 @@ export default async function CoachDnaPage() {
                 {hasBlendedFeedback(summary.sourcedCategories) && (
                   <CoachDnaOutcomeReveal attemptId={completed.id} />
                 )}
+                <div className="pt-3 border-t border-zinc-800">
+                  {inProgress ? (
+                    // The coach already started a retake (e.g. clicked "Retake
+                    // assessment" then exited the flow before finishing) --
+                    // send them back to it rather than showing the retake
+                    // button/cooldown message for the now-superseded completed
+                    // attempt.
+                    <form action={async () => {
+                      'use server'
+                      redirect(`/admin/coach-dna/assessment/${inProgress.id}`)
+                    }}>
+                      <Button type="submit" variant="outline" size="sm">Resume assessment</Button>
+                    </form>
+                  ) : retakeEligible ? (
+                    <form action={startAssessment}>
+                      <Button type="submit" variant="outline" size="sm">Retake assessment</Button>
+                    </form>
+                  ) : (
+                    <p className="text-xs text-zinc-500">
+                      You can retake this on {retakeEligibleAt!.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.
+                    </p>
+                  )}
+                </div>
               </div>
             ) : completed ? (
               <Button render={<Link href={`/admin/coach-dna/assessment/${completed.id}/complete`} />}>
