@@ -1,11 +1,13 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Building2, Users, CheckCircle, Clock, Shield } from 'lucide-react'
+import { Building2, Users, CheckCircle, Clock, Shield, Sparkles } from 'lucide-react'
 import { AcceptDeclineButtons } from './AcceptDeclineButtons'
 import { ClubAdminPanel } from './ClubAdminPanel'
 import { GuardianConsentToggle } from './GuardianConsentToggle'
 import { getCurrentSeasonLabel } from '@/lib/season'
+import { CheckoutButton } from '@/components/pricing/CheckoutButton'
+import { ClubCheckoutButton } from '@/components/pricing/ClubCheckoutButton'
 
 export const metadata = { title: 'My Club — 18th Man' }
 export const dynamic = 'force-dynamic'
@@ -183,11 +185,40 @@ export default async function ClubPage({
     return (
       <div className="space-y-6 max-w-2xl">
         <h1 className="app-heading text-2xl">My Club</h1>
-        <div className="flex flex-col items-center gap-3 py-16 rounded-xl border border-zinc-800 text-center">
-          <Building2 size={32} className="text-zinc-700" />
+
+        <div className="flex flex-col items-center gap-2 py-8 text-center">
+          <Building2 size={28} className="text-zinc-700" />
           <p className="text-sm text-zinc-500">You&apos;re not a member of any club yet.</p>
-          <p className="text-xs text-zinc-600">Ask your club admin to share their invite link with you.</p>
+          <p className="text-xs text-zinc-600">Ask your club admin to share their invite link with you — or get started below.</p>
         </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Building2 size={16} className="text-amber-400" />
+              <h2 className="text-sm font-semibold text-zinc-100">Create your own club</h2>
+            </div>
+            <p className="text-xs text-zinc-500">
+              Invite your coaching staff, share drills and sessions privately, and unlock coaching groups and AI session guidance.
+            </p>
+            <ClubCheckoutButton plan="club_monthly" label="Create a club — £24.99/mo" variant="amber" />
+          </div>
+
+          <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-indigo-400" />
+              <h2 className="text-sm font-semibold text-zinc-100">Upgrade to Coach Pro</h2>
+            </div>
+            <p className="text-xs text-zinc-500">
+              Just want more for yourself? Get unlimited drills, PDF export, and unlimited AI coaching chat — no club needed.
+            </p>
+            <CheckoutButton plan="coach_monthly" label="Upgrade — £9.99/mo" variant="primary" />
+          </div>
+        </div>
+
+        <p className="text-xs text-zinc-600 text-center">
+          <Link href="/pricing" className="text-indigo-400 hover:text-indigo-300">See full plans, annual pricing, and savings →</Link>
+        </p>
       </div>
     )
   }
