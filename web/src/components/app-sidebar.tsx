@@ -41,6 +41,7 @@ import {
   Gavel,
   ChevronDown,
   Brain,
+  Megaphone,
   type LucideIcon,
 } from 'lucide-react'
 import {
@@ -129,6 +130,7 @@ const adminItems: NavItem[] = [
   { href: '/admin', label: 'Admin', icon: ShieldCheck, isActive: (p) => p === '/admin' },
   { href: '/game-plans', label: 'Game Plans', icon: ClipboardList, isActive: (p) => p.startsWith('/game-plans') },
   { href: '/admin/users', label: 'Users', icon: Users, isActive: (p) => p.startsWith('/admin/users') },
+  { href: '/admin/announcements', label: 'Announcements', icon: Megaphone, isActive: (p) => p.startsWith('/admin/announcements') },
   { href: '/admin/feedback/safeguarding', label: 'Safeguarding Queue', icon: ShieldAlert, isActive: (p) => p.startsWith('/admin/feedback/safeguarding') },
   { href: '/admin/feedback/disputes', label: 'Response Disputes', icon: Gavel, isActive: (p) => p.startsWith('/admin/feedback/disputes') },
   { href: '/admin/categories', label: 'Categories', icon: Tag, isActive: (p) => p.startsWith('/admin/categories') },

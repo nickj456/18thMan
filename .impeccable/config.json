@@ -74,6 +74,12 @@
         ],
         "createdAt": "2026-08-21T14:49:25.426Z",
         "reason": "next/og ImageResponse (Satori) only accepts literal inline style values; this is the zinc-300 narrative-snippet text token translated to a literal hex for that constraint"
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "p-1.5 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors",
+        "createdAt": "2026-08-26T11:55:11.982Z",
+        "reason": "false positive: bg-red-500/10 only applies on :hover, paired with text-red-400 also only on :hover -- never simultaneously gray-on-color; matches existing ghost-icon-button idiom elsewhere in the app"
       }
     ]
   }

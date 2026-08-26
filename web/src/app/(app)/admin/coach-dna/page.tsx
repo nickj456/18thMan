@@ -192,7 +192,7 @@ export default async function CoachDnaPage() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Coach self-assessment</CardTitle>

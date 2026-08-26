@@ -6,6 +6,8 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { AppSidebar } from '@/components/app-sidebar'
 import { HelpWidget } from '@/components/help/HelpWidget'
 import { PageViewTracker } from '@/components/analytics/PageViewTracker'
+import { AnnouncementModal } from '@/components/AnnouncementModal'
+import { getActiveAnnouncementForUser } from '@/lib/announcements/actions'
 import type { UserRole } from '@/lib/supabase/types'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -14,9 +16,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
-  const [profileResult, notifResult] = await Promise.all([
+  const [profileResult, notifResult, announcement] = await Promise.all([
     supabase.from('profiles').select('display_name, role, avatar_url').eq('id', user.id).single(),
     supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
+    getActiveAnnouncementForUser(),
   ])
 
   const profile = profileResult.data
@@ -47,12 +50,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             )}
           </Link>
         </header>
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 [&>*]:mx-auto">
           {children}
         </main>
       </SidebarInset>
       <HelpWidget />
       <PageViewTracker />
+      <AnnouncementModal announcement={announcement} />
     </SidebarProvider>
   )
 }
