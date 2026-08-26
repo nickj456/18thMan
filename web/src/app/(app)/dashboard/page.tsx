@@ -507,21 +507,36 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  // Weekly focus for the club
+  // Weekly focus -- the coach's own club takes priority; falls back to the
+  // platform-wide (club_id null) focus for coaches without a club, or
+  // whose club hasn't set one for this week.
   let weeklyFocus: { id: string; topic: string; description: string; next_topic: string | null; drill_ids: string[] } | null = null
-  if (profile?.club_id) {
+  {
     const d = new Date()
     const day = d.getDay()
     const diff = d.getDate() - day + (day === 0 ? -6 : 1)
     d.setDate(diff)
     const monday = d.toISOString().split('T')[0]
-    const { data: wf } = await supabase
-      .from('weekly_focuses')
-      .select('id, topic, description, next_topic, drill_ids')
-      .eq('club_id', profile.club_id)
-      .eq('week_start', monday)
-      .maybeSingle()
-    weeklyFocus = wf
+
+    if (profile?.club_id) {
+      const { data: wf } = await supabase
+        .from('weekly_focuses')
+        .select('id, topic, description, next_topic, drill_ids')
+        .eq('club_id', profile.club_id)
+        .eq('week_start', monday)
+        .maybeSingle()
+      weeklyFocus = wf
+    }
+
+    if (!weeklyFocus) {
+      const { data: wf } = await supabase
+        .from('weekly_focuses')
+        .select('id, topic, description, next_topic, drill_ids')
+        .is('club_id', null)
+        .eq('week_start', monday)
+        .maybeSingle()
+      weeklyFocus = wf
+    }
   }
 
   // Onboarding data — fetched in parallel, lightweight
@@ -595,7 +610,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Weekly Focus widget */}
-      {profile?.club_id && <FocusWidget focus={weeklyFocus} />}
+      <FocusWidget focus={weeklyFocus} />
 
       {/* Quick actions ── static, no DB */}
       <QuickActions />

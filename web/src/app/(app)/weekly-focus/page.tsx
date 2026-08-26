@@ -48,28 +48,42 @@ export default async function WeeklyFocusPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.club_id) redirect('/clubs')
-
-  const isAdmin = profile.role === 'admin'
-  const canComment = profile.role === 'coach' || profile.role === 'admin'
+  const isAdmin = profile?.role === 'admin'
+  const canComment = profile?.role === 'coach' || profile?.role === 'admin'
   const thisMonday = getMonday(new Date())
 
-  const [focusRes, clubRes] = await Promise.all([
-    supabase
+  let focus: WeeklyFocus | null = null
+  let clubName = '18th Man'
+
+  if (profile?.club_id) {
+    const [focusRes, clubRes] = await Promise.all([
+      supabase
+        .from('weekly_focuses')
+        .select('*')
+        .eq('club_id', profile.club_id)
+        .eq('week_start', thisMonday)
+        .maybeSingle(),
+      supabase
+        .from('clubs')
+        .select('name')
+        .eq('id', profile.club_id)
+        .single(),
+    ])
+    focus = focusRes.data as WeeklyFocus | null
+    clubName = clubRes.data?.name ?? clubName
+  }
+
+  // No club-specific focus this week (or no club at all) -- fall back to
+  // the platform-wide one, if the admin has published one.
+  if (!focus) {
+    const { data: globalFocus } = await supabase
       .from('weekly_focuses')
       .select('*')
-      .eq('club_id', profile.club_id)
+      .is('club_id', null)
       .eq('week_start', thisMonday)
-      .maybeSingle(),
-    supabase
-      .from('clubs')
-      .select('name')
-      .eq('id', profile.club_id)
-      .single(),
-  ])
-
-  const focus = focusRes.data as WeeklyFocus | null
-  const clubName = clubRes.data?.name ?? 'Your Club'
+      .maybeSingle()
+    focus = globalFocus as WeeklyFocus | null
+  }
 
   // Fetch drills and comments if focus exists
   let drills: Pick<Drill, 'id' | 'title' | 'description' | 'preview_image_url' | 'canvas_preview_url' | 'difficulty'>[] = []

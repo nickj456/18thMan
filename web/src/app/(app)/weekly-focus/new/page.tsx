@@ -27,24 +27,36 @@ export default async function NewWeeklyFocusPage() {
     .single()
 
   if (profile?.role !== 'admin') redirect('/weekly-focus')
-  if (!profile.club_id) redirect('/clubs')
 
-  // Get existing focus for this week to pre-fill
+  // Get the existing global focus for this week to pre-fill -- global is
+  // the primary path now, so it takes priority over a club-specific one
+  // when deciding what to show in the form.
   const thisMonday = getMonday(new Date())
-  const [focusRes, drillsRes] = await Promise.all([
+  const [globalFocusRes, clubFocusRes, drillsRes] = await Promise.all([
     supabase
       .from('weekly_focuses')
       .select('*')
-      .eq('club_id', profile.club_id)
+      .is('club_id', null)
       .eq('week_start', thisMonday)
       .maybeSingle(),
+    profile.club_id
+      ? supabase
+          .from('weekly_focuses')
+          .select('*')
+          .eq('club_id', profile.club_id)
+          .eq('week_start', thisMonday)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
     supabase
       .from('drills')
       .select('id, title, difficulty, preview_image_url, canvas_preview_url')
       .order('title'),
   ])
 
-  const existing = focusRes.data
+  const existingGlobal = globalFocusRes.data
+  const existingClub = clubFocusRes.data
+  const existing = existingGlobal ?? existingClub
+  const defaultGlobal = Boolean(existingGlobal) || !existingClub
   const drills = (drillsRes.data ?? []) as Pick<Drill, 'id' | 'title' | 'difficulty' | 'preview_image_url' | 'canvas_preview_url'>[]
 
   const weekLabel = new Date(thisMonday).toLocaleDateString('en-GB', {
@@ -63,6 +75,29 @@ export default async function NewWeeklyFocusPage() {
       </div>
 
       <form action={async (fd: FormData) => { 'use server'; await createWeeklyFocus(fd) }} className="space-y-8">
+        {/* Global vs club-specific */}
+        <section className="space-y-2">
+          {profile.club_id ? (
+            <label className="flex items-start gap-2.5 text-sm text-zinc-400">
+              <input
+                type="checkbox"
+                name="global"
+                defaultChecked={defaultGlobal}
+                className="mt-0.5 rounded border-zinc-700 bg-zinc-800"
+              />
+              <span>
+                Publish to every coach on the platform, not just your club.
+                <span className="block text-xs text-zinc-600 mt-0.5">Uncheck to set a focus for your own club only.</span>
+              </span>
+            </label>
+          ) : (
+            <>
+              <input type="hidden" name="global" value="on" />
+              <p className="text-xs text-zinc-600">You're not in a club, so this publishes to every coach on the platform.</p>
+            </>
+          )}
+        </section>
+
         {/* Topic */}
         <section className="space-y-2">
           <label htmlFor="topic" className="text-xs font-semibold text-zinc-500 uppercase tracking-widest block">

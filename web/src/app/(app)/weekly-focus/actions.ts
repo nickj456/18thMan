@@ -25,8 +25,7 @@ async function requireAdmin() {
     .single()
 
   if (profile?.role !== 'admin') return { error: 'Admin only' as const }
-  if (!profile.club_id) return { error: 'No club' as const }
-  return { supabase, user, clubId: profile.club_id }
+  return { supabase, user, clubId: profile.club_id as string | null }
 }
 
 export async function createWeeklyFocus(formData: FormData) {
@@ -34,23 +33,54 @@ export async function createWeeklyFocus(formData: FormData) {
   if ('error' in guard) return { error: guard.error }
   const { supabase, user, clubId } = guard
 
+  const isGlobal = formData.get('global') === 'on'
+  if (!isGlobal && !clubId) {
+    return { error: 'You need a club to publish a club-specific focus. Publish globally instead.' }
+  }
+  const targetClubId = isGlobal ? null : clubId
+
   const topic = (formData.get('topic') as string).trim()
   const description = (formData.get('description') as string).trim()
   const next_topic = (formData.get('next_topic') as string | null)?.trim() || null
   const drill_ids = formData.getAll('drill_ids').map(v => v as string).filter(Boolean)
 
   const week_start = getMonday(new Date()).toISOString().split('T')[0]
+  const payload = { topic, description, drill_ids, next_topic, created_by: user.id }
 
-  const { data: focus, error } = await supabase
-    .from('weekly_focuses')
-    .upsert(
-      { club_id: clubId, week_start, topic, description, drill_ids, next_topic, created_by: user.id },
-      { onConflict: 'club_id,week_start' },
-    )
-    .select('id')
-    .single()
+  let focus: { id: string } | null
+  let error: { message: string } | null
 
-  if (error) return { error: error.message }
+  if (isGlobal) {
+    // The "one global focus per week" rule is a partial unique index
+    // (club_id IS NULL), which Postgres's ON CONFLICT can't target through
+    // supabase-js's plain-column onConflict shorthand -- check-then-write
+    // instead of upserting.
+    const { data: existing } = await supabase
+      .from('weekly_focuses')
+      .select('id')
+      .is('club_id', null)
+      .eq('week_start', week_start)
+      .maybeSingle()
+
+    const result = existing
+      ? await supabase.from('weekly_focuses').update(payload).eq('id', existing.id).select('id').single()
+      : await supabase.from('weekly_focuses').insert({ ...payload, club_id: null, week_start }).select('id').single()
+    focus = result.data
+    error = result.error
+  } else {
+    const result = await supabase
+      .from('weekly_focuses')
+      .upsert(
+        { ...payload, club_id: targetClubId, week_start },
+        { onConflict: 'club_id,week_start' },
+      )
+      .select('id')
+      .single()
+    focus = result.data
+    error = result.error
+  }
+
+  if (error || !focus) return { error: error?.message ?? 'Could not save the focus' }
 
   createCampaignAutoDraft('weekly_focus', {
     id: focus.id,
