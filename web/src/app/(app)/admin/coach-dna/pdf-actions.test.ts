@@ -35,6 +35,10 @@ vi.mock('@react-pdf/renderer', () => ({
 vi.mock('@/lib/email', () => ({
   sendCoachDnaSummaryEmail: (...args: unknown[]) => sendEmailMock(...args),
 }))
+const registerPdfFontsMock = vi.fn(async () => {})
+vi.mock('@/lib/coach-dna/pdf-font', () => ({
+  registerPdfFonts: () => registerPdfFontsMock(),
+}))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
@@ -74,12 +78,13 @@ describe('emailSelfAssessmentSummaryPDF', () => {
     state.clubId = null
     state.clubName = null
     state.summary = {
-      ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', pros: [], cons: [] },
+      ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', categories: [] },
       ai_summary_generated_at: '2026-07-01T00:00:00.000Z',
     }
     state.sendResult = { success: true }
     sendEmailMock.mockClear()
     renderToBufferMock.mockClear()
+    registerPdfFontsMock.mockClear()
   })
 
   it('redirects unauthenticated callers to login', async () => {
@@ -112,8 +117,7 @@ describe('emailSelfAssessmentSummaryPDF', () => {
         primaryType: 'teacher',
         secondaryType: null,
         narrative: 'x',
-        pros: [],
-        cons: [{ categorySlug: 'communication', text: 'needs work' }],
+        categories: [{ categorySlug: 'communicator', score: 20, tier: 'focus', text: 'needs work' }],
       },
       ai_summary_generated_at: '2026-07-01T00:00:00.000Z',
     }
@@ -137,6 +141,11 @@ describe('emailSelfAssessmentSummaryPDF', () => {
     state.sendResult = { success: false, error: 'send failed' }
     const result = await emailSelfAssessmentSummaryPDF()
     expect(result).toEqual({ success: false, error: 'send failed' })
+  })
+
+  it('registers PDF fonts before rendering', async () => {
+    await emailSelfAssessmentSummaryPDF()
+    expect(registerPdfFontsMock).toHaveBeenCalledTimes(1)
   })
 
   it('renders the PDF with the real completion timestamp, not render time', async () => {
@@ -185,7 +194,7 @@ describe('emailSelfAssessmentSummaryPDF', () => {
 
   it('falls back to the current time if ai_summary_generated_at is somehow missing', async () => {
     state.summary = {
-      ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', pros: [], cons: [] },
+      ai_summary: { primaryType: 'teacher', secondaryType: null, narrative: 'x', categories: [] },
       ai_summary_generated_at: null,
     }
 

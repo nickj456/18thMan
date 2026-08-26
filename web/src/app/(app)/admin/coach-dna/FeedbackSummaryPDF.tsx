@@ -1,6 +1,6 @@
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Image, Link } from '@react-pdf/renderer'
 import { labelFor } from '@/lib/coach-dna/categories'
-import type { FeedbackSummaryData, FeedbackTypeSummary } from '@/lib/coach-dna/feedback-summary'
+import { feedbackBandLabel, type FeedbackSummaryData, type FeedbackTypeSummary } from '@/lib/coach-dna/feedback-summary'
 
 const E      = '#e8560a'
 const DARK   = '#111827'
@@ -11,49 +11,86 @@ const BORDER = '#e5e7eb'
 const WHITE  = '#ffffff'
 
 const s = StyleSheet.create({
-  page: { backgroundColor: WHITE, paddingBottom: 56, fontSize: 10, fontFamily: 'Helvetica', color: DARK },
+  page: { backgroundColor: WHITE, paddingBottom: 40, fontSize: 9.5, fontFamily: 'Geist', color: DARK },
 
   header: {
     backgroundColor: E,
     paddingHorizontal: 44,
-    paddingTop: 44,
-    paddingBottom: 36,
+    paddingTop: 32,
+    paddingBottom: 24,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
   headerLogoBadge: {
-    width: 54, height: 54, borderRadius: 27, backgroundColor: WHITE,
+    width: 48, height: 48, borderRadius: 24, backgroundColor: WHITE,
     alignItems: 'center', justifyContent: 'center',
   },
-  headerLogo: { width: 36, height: 36 },
-  eyeLabel: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: 'rgba(255,255,255,0.6)', letterSpacing: 3, marginBottom: 10 },
-  title: { fontSize: 26, fontFamily: 'Helvetica-Bold', color: WHITE, letterSpacing: -0.5 },
-  subtitle: { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 6 },
+  headerLogo: { width: 32, height: 32 },
+  eyeLabel: { fontSize: 7, fontFamily: 'Geist', fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 3, marginBottom: 8 },
+  title: { fontFamily: 'Barlow Condensed', fontStyle: 'italic', fontWeight: 800, fontSize: 30, color: WHITE, letterSpacing: -0.5 },
+  subtitle: { fontSize: 10, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
 
-  body: { paddingHorizontal: 44, paddingTop: 32 },
+  body: { paddingHorizontal: 44, paddingTop: 24 },
 
   groupHeading: {
-    fontSize: 8, fontFamily: 'Helvetica-Bold', letterSpacing: 2, marginBottom: 12, marginTop: 28,
-    paddingBottom: 8, borderBottomWidth: 1.5, borderBottomStyle: 'solid', borderBottomColor: E, color: E,
+    fontSize: 8, fontFamily: 'Geist', fontWeight: 700, letterSpacing: 2, marginBottom: 10, marginTop: 18,
+    paddingBottom: 6, borderBottomWidth: 1.5, borderBottomStyle: 'solid', borderBottomColor: E, color: E,
   },
-  responseCount: { fontSize: 9, color: MUTED, marginBottom: 14 },
-  categoryRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, paddingHorizontal: 14, backgroundColor: LIGHT, borderRadius: 5, marginBottom: 6,
+  responseCount: { fontSize: 8.5, color: MUTED, marginBottom: 10 },
+
+  card: {
+    paddingHorizontal: 14, paddingVertical: 10, backgroundColor: LIGHT, borderRadius: 6, marginBottom: 8,
+    borderLeftWidth: 3, borderLeftStyle: 'solid',
   },
-  categoryName: { fontSize: 9.5, color: MID, fontFamily: 'Helvetica-Bold' },
-  categoryRating: { fontSize: 9.5, color: DARK, fontFamily: 'Helvetica-Bold' },
-  notReady: { fontSize: 9.5, color: MUTED, fontStyle: 'italic', paddingVertical: 8 },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' },
+  cardDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  cardLabel: { fontSize: 7.5, fontFamily: 'Geist', fontWeight: 700, letterSpacing: 1.5 },
+  cardMeta: { fontSize: 6.5, color: MUTED, marginLeft: 6 },
+  cardBody: { fontSize: 8.5, color: MID, lineHeight: 1.45 },
+
+  resourceList: { marginTop: 5 },
+  resourceItem: { fontSize: 7.5, color: MUTED, lineHeight: 1.4, marginBottom: 2 },
+
+  notReady: { fontSize: 9, color: MUTED, paddingVertical: 6 },
 
   footer: {
-    position: 'absolute', bottom: 20, left: 44, right: 44,
+    position: 'absolute', bottom: 18, left: 44, right: 44,
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingTop: 8, borderTopWidth: 1, borderTopColor: BORDER, borderTopStyle: 'solid',
   },
-  footerBrand: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: E, letterSpacing: 1.5 },
+  footerBrand: { fontSize: 6.5, fontFamily: 'Geist', fontWeight: 700, color: E, letterSpacing: 1.5 },
   footerMeta: { fontSize: 6.5, color: MUTED },
 })
+
+function FeedbackCategoryCard({ category }: { category: FeedbackTypeSummary['categories'][number] }) {
+  const strong = category.averageRating >= 3.5
+  const color = strong ? '#059669' : '#d97706'
+  return (
+    <View style={[s.card, { borderLeftColor: color }]} wrap={false}>
+      <View style={s.cardHeaderRow}>
+        <View style={[s.cardDot, { backgroundColor: color }]} />
+        <Text style={[s.cardLabel, { color }]}>{labelFor(category.categorySlug).toUpperCase()}</Text>
+        <Text style={s.cardMeta}>{feedbackBandLabel(category.averageRating)} · {category.averageRating.toFixed(1)}/5 · {category.responseCount} response{category.responseCount === 1 ? '' : 's'}</Text>
+      </View>
+      <Text style={s.cardBody}>{category.text}</Text>
+      {category.resources.length > 0 && (
+        <View style={s.resourceList}>
+          {category.resources.map(resource => (
+            <Text key={resource.title} style={s.resourceItem}>
+              {resource.url ? (
+                <Link src={resource.url} style={{ color: E }}>{resource.title}</Link>
+              ) : (
+                <Text>{resource.title}</Text>
+              )}
+              {' — '}{resource.description}
+            </Text>
+          ))}
+        </View>
+      )}
+    </View>
+  )
+}
 
 function FeedbackTypeSection({ heading, summary }: { heading: string; summary: FeedbackTypeSummary }) {
   return (
@@ -65,10 +102,7 @@ function FeedbackTypeSection({ heading, summary }: { heading: string; summary: F
             {summary.responseCount} response{summary.responseCount === 1 ? '' : 's'}
           </Text>
           {summary.categories.map(category => (
-            <View key={category.categorySlug} style={s.categoryRow}>
-              <Text style={s.categoryName}>{labelFor(category.categorySlug)}</Text>
-              <Text style={s.categoryRating}>{category.averageRating.toFixed(1)}/5</Text>
-            </View>
+            <FeedbackCategoryCard key={category.categorySlug} category={category} />
           ))}
         </>
       ) : (
@@ -93,7 +127,7 @@ export function FeedbackSummaryPDF({
 
   return (
     <Document title="Coach DNA — Feedback Summary" author="18th Man Coach DNA">
-      <Page size="A4" style={s.page}>
+      <Page size="A4" orientation="landscape" style={s.page}>
         <View style={s.header}>
           <View>
             <Text style={s.eyeLabel}>COACH DNA</Text>

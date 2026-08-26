@@ -27,7 +27,7 @@ const state: {
   cachedAiSummary: null,
 }
 
-const upsertMock = vi.fn(async (_row: { ai_summary: { pros: { categorySlug: string }[]; sourcedCategories: Record<string, string[]> } }, _opts?: unknown) => ({
+const upsertMock = vi.fn(async (_row: { ai_summary: { categories: { categorySlug: string }[]; sourcedCategories: Record<string, string[]> } }, _opts?: unknown) => ({
   error: state.upsertError,
 }))
 const fetchBlendInputsMock = vi.fn(async (..._args: unknown[]) => state.blendInputs)
@@ -98,8 +98,27 @@ import { CATEGORY_RESOURCES } from '@/lib/coach-dna/resources'
 // Derived from most option weighted 100 to `teacher` and least option weighted
 // 100 to `motivator`: teacher scores high, motivator scores low, others tie at 0
 // and fall back to CATEGORY_ORDER for tie-breaking.
-const EXPECTED_PROS = ['teacher', 'technician', 'developer']
-const EXPECTED_CONS = ['motivator', 'culture-builder', 'organiser']
+const RANKED_SLUGS = ['teacher', 'technician', 'developer', 'game-manager', 'communicator', 'organiser', 'culture-builder', 'motivator']
+const RANKED_TIERS = ['strength', 'strength', 'strength', 'solid', 'solid', 'focus', 'focus', 'focus']
+
+function categoryAiFixture() {
+  // Deliberately bogus/wrong-case/empty categorySlugs on every entry: the
+  // action must ignore them entirely and use the TypeScript-computed
+  // archetype slugs (RANKED_SLUGS, in order) instead.
+  return JSON.stringify({
+    narrative: 'You lead with clarity and patience.',
+    categories: [
+      { categorySlug: 'Teacher', text: 'You explain things well.' },
+      { categorySlug: 'nonsense', text: 'Your instruction is precise and repeatable.' },
+      { categorySlug: '', text: 'You build players up steadily.' },
+      { categorySlug: 'Game Manager', text: 'Your in-game reads are dependable.' },
+      { categorySlug: 'nonsense', text: 'You keep sessions on track.' },
+      { categorySlug: 'Organiser', text: 'Session structure could be tighter.' },
+      { categorySlug: '', text: 'Set the tone more explicitly.' },
+      { categorySlug: 'Motivator', text: 'Say less, say it clearer.' },
+    ],
+  })
+}
 
 describe('generateSelfAssessmentSummary', () => {
   beforeEach(() => {
@@ -114,21 +133,7 @@ describe('generateSelfAssessmentSummary', () => {
       { id: 'opt-2', question_id: 'q1', category_weights_json: { motivator: 100 } },
     ]
     state.optionsError = null
-    // Note the deliberately bogus slugs: the action must ignore them entirely
-    // and use the TypeScript-computed archetype slugs instead.
-    state.aiText = JSON.stringify({
-      narrative: 'You lead with clarity and patience.',
-      pros: [
-        { categorySlug: 'Teacher', text: 'You explain things well.' },
-        { categorySlug: 'nonsense', text: 'Your detail work is sharp.' },
-        { categorySlug: '', text: 'You lift the room.' },
-      ],
-      cons: [
-        { categorySlug: 'Culture Builder', text: 'Set the tone more explicitly.' },
-        { categorySlug: 'nonsense', text: 'Sessions could run tighter.' },
-        { categorySlug: '', text: 'Say less, say it clearer.' },
-      ],
-    })
+    state.aiText = categoryAiFixture()
     state.upsertError = null
     state.blendInputs = {}
     state.cachedAiSummary = null
@@ -205,37 +210,31 @@ describe('generateSelfAssessmentSummary', () => {
   it('uses the computed archetype slugs, not the slugs the model returned', async () => {
     const result = await generateSelfAssessmentSummary('attempt-1')
 
-    expect(result.pros.map(p => p.categorySlug)).toEqual(EXPECTED_PROS)
-    expect(result.cons.map(c => c.categorySlug)).toEqual(EXPECTED_CONS)
+    expect(result.categories.map(c => c.categorySlug)).toEqual(RANKED_SLUGS)
+    expect(result.categories.map(c => c.tier)).toEqual(RANKED_TIERS)
     // The model's prose is kept, zipped on by position.
-    expect(result.pros[0].text).toBe('You explain things well.')
-    expect(result.cons[2].text).toBe('Say less, say it clearer.')
+    expect(result.categories[0].text).toBe('You explain things well.')
+    expect(result.categories[7].text).toBe('Say less, say it clearer.')
 
     const persisted = upsertMock.mock.calls[0][0]
-    expect(persisted.ai_summary.pros.map(p => p.categorySlug)).toEqual(EXPECTED_PROS)
+    expect(persisted.ai_summary.categories.map((c: { categorySlug: string }) => c.categorySlug)).toEqual(RANKED_SLUGS)
   })
 
-  it('attaches the curated resources for each focus area\'s category, never from the model', async () => {
+  it('attaches the curated resources for each focus-tier category, never from the model, and none for strength/solid', async () => {
     const result = await generateSelfAssessmentSummary('attempt-1')
 
-    // EXPECTED_CONS = ['motivator', 'culture-builder', 'organiser']
-    expect(result.cons[0].resources).toEqual(CATEGORY_RESOURCES['motivator'])
-    expect(result.cons[1].resources).toEqual(CATEGORY_RESOURCES['culture-builder'])
-    expect(result.cons[2].resources).toEqual(CATEGORY_RESOURCES['organiser'])
+    // RANKED_SLUGS' focus tier (last 3): organiser, culture-builder, motivator
+    const bySlug = (slug: string) => result.categories.find(c => c.categorySlug === slug)!
+    expect(bySlug('organiser').resources).toEqual(CATEGORY_RESOURCES['organiser'])
+    expect(bySlug('culture-builder').resources).toEqual(CATEGORY_RESOURCES['culture-builder'])
+    expect(bySlug('motivator').resources).toEqual(CATEGORY_RESOURCES['motivator'])
+    expect(bySlug('teacher').resources).toEqual([])
+    expect(bySlug('game-manager').resources).toEqual([])
   })
 
-  it('throws without persisting when the model returns the wrong number of pros', async () => {
+  it('throws without persisting when the model returns the wrong number of categories', async () => {
     const parsed = JSON.parse(state.aiText)
-    parsed.pros = parsed.pros.slice(0, 2)
-    state.aiText = JSON.stringify(parsed)
-
-    await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('Could not generate your summary right now')
-    expect(upsertMock).not.toHaveBeenCalled()
-  })
-
-  it('throws without persisting when the model returns the wrong number of cons', async () => {
-    const parsed = JSON.parse(state.aiText)
-    parsed.cons = [...parsed.cons, { categorySlug: 'teacher', text: 'extra' }]
+    parsed.categories = parsed.categories.slice(0, 7)
     state.aiText = JSON.stringify(parsed)
 
     await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('Could not generate your summary right now')
@@ -358,19 +357,7 @@ describe('ensureFreshSummary', () => {
       { id: 'opt-2', question_id: 'q1', category_weights_json: { motivator: 100 } },
     ]
     state.optionsError = null
-    state.aiText = JSON.stringify({
-      narrative: 'You lead with clarity and patience.',
-      pros: [
-        { categorySlug: 'Teacher', text: 'You explain things well.' },
-        { categorySlug: 'nonsense', text: 'Your detail work is sharp.' },
-        { categorySlug: '', text: 'You lift the room.' },
-      ],
-      cons: [
-        { categorySlug: 'Culture Builder', text: 'Set the tone more explicitly.' },
-        { categorySlug: 'nonsense', text: 'Sessions could run tighter.' },
-        { categorySlug: '', text: 'Say less, say it clearer.' },
-      ],
-    })
+    state.aiText = categoryAiFixture()
     state.upsertError = null
     state.blendInputs = {}
     state.cachedAiSummary = null
@@ -400,8 +387,23 @@ describe('ensureFreshSummary', () => {
       primaryType: 'teacher',
       secondaryType: null,
       narrative: 'old',
+      categories: [
+        { categorySlug: 'teacher', score: 54, tier: 'strength', text: 'old' }, // missing `resources` -> stale shape
+      ],
+      sourcedCategories: { teacher: ['self'], motivator: ['self'] },
+    }
+    const result = await ensureFreshSummary('attempt-1', 'coach-1')
+    expect(result.narrative).toBe('You lead with clarity and patience.')
+    expect(upsertMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('regenerates without throwing when the cached summary has the legacy pros/cons shape (pre-migration)', async () => {
+    state.cachedAiSummary = {
+      primaryType: 'teacher',
+      secondaryType: null,
+      narrative: 'old',
       pros: [{ categorySlug: 'teacher', text: 'old' }],
-      cons: [{ categorySlug: 'motivator', text: 'old' }], // missing `resources` -> stale shape
+      cons: [{ categorySlug: 'motivator', text: 'old' }],
       sourcedCategories: { teacher: ['self'], motivator: ['self'] },
     }
     const result = await ensureFreshSummary('attempt-1', 'coach-1')
@@ -418,8 +420,9 @@ describe('ensureFreshSummary', () => {
       primaryType: 'teacher',
       secondaryType: 'technician',
       narrative: 'cached narrative',
-      pros: [{ categorySlug: 'teacher', text: 'cached' }],
-      cons: [{ categorySlug: 'motivator', text: 'cached', resources: [] }],
+      categories: RANKED_SLUGS.map((categorySlug, i) => ({
+        categorySlug, score: 50, tier: RANKED_TIERS[i], text: 'cached', resources: [],
+      })),
       sourcedCategories: { teacher: ['self'], technician: ['self'], motivator: ['self'], developer: ['self'], 'game-manager': ['self'], communicator: ['self'], organiser: ['self'], 'culture-builder': ['self'] },
     }
     const result = await ensureFreshSummary('attempt-1', 'coach-1')
@@ -430,7 +433,7 @@ describe('ensureFreshSummary', () => {
   it('regenerates when sourcedCategories match but the freshly computed primaryType has drifted', async () => {
     // sourcedCategories below are identical to what a fresh (self-only) computation
     // would produce here -- no category has crossed a blend threshold. But the
-    // cached primaryType ('motivator') no longer matches what the self-scores
+    // cached top-ranked category ('motivator') no longer matches what the self-scores
     // above (teacher scores highest) would compute -- e.g. because ongoing
     // self-only score drift moved the top category after the cache was written.
     // This must still trigger a regeneration, not a false "unchanged" match.
@@ -438,8 +441,8 @@ describe('ensureFreshSummary', () => {
       primaryType: 'motivator',
       secondaryType: null,
       narrative: 'cached narrative',
-      pros: [{ categorySlug: 'motivator', text: 'cached' }],
-      cons: [{ categorySlug: 'organiser', text: 'cached', resources: [] }],
+      categories: ['motivator', 'teacher', 'technician', 'developer', 'game-manager', 'communicator', 'organiser', 'culture-builder']
+        .map((categorySlug, i) => ({ categorySlug, score: 50, tier: RANKED_TIERS[i], text: 'cached', resources: [] })),
       sourcedCategories: { teacher: ['self'], technician: ['self'], motivator: ['self'], developer: ['self'], 'game-manager': ['self'], communicator: ['self'], organiser: ['self'], 'culture-builder': ['self'] },
     }
     const result = await ensureFreshSummary('attempt-1', 'coach-1')
@@ -452,8 +455,9 @@ describe('ensureFreshSummary', () => {
       primaryType: 'teacher',
       secondaryType: null,
       narrative: 'cached narrative',
-      pros: [{ categorySlug: 'teacher', text: 'cached' }],
-      cons: [{ categorySlug: 'motivator', text: 'cached', resources: [] }],
+      categories: RANKED_SLUGS.map((categorySlug, i) => ({
+        categorySlug, score: 50, tier: RANKED_TIERS[i], text: 'cached', resources: [],
+      })),
       sourcedCategories: { teacher: ['self'], technician: ['self'], motivator: ['self'], developer: ['self'], 'game-manager': ['self'], communicator: ['self'], organiser: ['self'], 'culture-builder': ['self'] },
     }
     // New player_voice feedback clears the threshold for `motivator` -- the cache above doesn't reflect this yet.

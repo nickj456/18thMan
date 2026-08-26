@@ -5,11 +5,18 @@ const CATEGORY_ORDER = [
   'game-manager', 'communicator', 'organiser', 'culture-builder',
 ]
 
+export type CategoryTier = 'strength' | 'solid' | 'focus'
+
+export interface CategoryBreakdownEntry {
+  categorySlug: string
+  score: number
+  tier: CategoryTier
+}
+
 export interface ArchetypeResult {
   primaryType: string
   secondaryType: string | null
-  pros: string[]
-  cons: string[]
+  categories: CategoryBreakdownEntry[]
 }
 
 function sortByScoreThenOrder(scores: SelfCategoryScore[]): SelfCategoryScore[] {
@@ -17,6 +24,12 @@ function sortByScoreThenOrder(scores: SelfCategoryScore[]): SelfCategoryScore[] 
     if (b.score !== a.score) return b.score - a.score
     return CATEGORY_ORDER.indexOf(a.categorySlug) - CATEGORY_ORDER.indexOf(b.categorySlug)
   })
+}
+
+function tierForRank(rank: number): CategoryTier {
+  if (rank < 3) return 'strength'
+  if (rank < 5) return 'solid'
+  return 'focus'
 }
 
 export function deriveArchetype(scores: SelfCategoryScore[]): ArchetypeResult {
@@ -27,7 +40,10 @@ export function deriveArchetype(scores: SelfCategoryScore[]): ArchetypeResult {
   return {
     primaryType: primary.categorySlug,
     secondaryType: secondary && primary.score - secondary.score <= 10 ? secondary.categorySlug : null,
-    pros: ranked.slice(0, 3).map(r => r.categorySlug),
-    cons: ranked.slice(-3).reverse().map(r => r.categorySlug),
+    categories: ranked.map((entry, rank) => ({
+      categorySlug: entry.categorySlug,
+      score: entry.score,
+      tier: tierForRank(rank),
+    })),
   }
 }

@@ -1,5 +1,6 @@
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Image, Link } from '@react-pdf/renderer'
 import { labelFor } from '@/lib/coach-dna/categories'
+import { tierLabel } from '@/lib/coach-dna/tier-label'
 import { sourceTagFor, allCategoriesSelfOnly } from '@/lib/coach-dna/source-label'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
@@ -14,96 +15,99 @@ const GREEN  = '#059669'
 const AMBER  = '#d97706'
 
 const s = StyleSheet.create({
-  page: { backgroundColor: WHITE, paddingBottom: 56, fontSize: 10, fontFamily: 'Helvetica', color: DARK },
+  page: { backgroundColor: WHITE, paddingBottom: 40, fontSize: 9.5, fontFamily: 'Geist', color: DARK },
 
   header: {
     backgroundColor: E,
     paddingHorizontal: 44,
-    paddingTop: 44,
-    paddingBottom: 36,
+    paddingTop: 32,
+    paddingBottom: 24,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
   headerLogoBadge: {
-    width: 54, height: 54, borderRadius: 27, backgroundColor: WHITE,
+    width: 48, height: 48, borderRadius: 24, backgroundColor: WHITE,
     alignItems: 'center', justifyContent: 'center',
   },
-  headerLogo: { width: 36, height: 36 },
-  eyeLabel: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: 'rgba(255,255,255,0.6)', letterSpacing: 3, marginBottom: 10 },
-  title: { fontSize: 26, fontFamily: 'Helvetica-Bold', color: WHITE, letterSpacing: -0.5 },
-  subtitle: { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 6 },
+  headerLogo: { width: 32, height: 32 },
+  eyeLabel: { fontSize: 7, fontFamily: 'Geist', fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 3, marginBottom: 8 },
+  title: { fontFamily: 'Barlow Condensed', fontStyle: 'italic', fontWeight: 800, fontSize: 30, color: WHITE, letterSpacing: -0.5 },
+  subtitle: { fontSize: 10, color: 'rgba(255,255,255,0.75)', marginTop: 4 },
 
-  body: { paddingHorizontal: 44, paddingTop: 32 },
+  body: { paddingHorizontal: 44, paddingTop: 24 },
 
-  sectionLabel: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: MUTED, letterSpacing: 2.5, marginBottom: 12 },
+  sectionLabel: { fontSize: 7, fontFamily: 'Geist', fontWeight: 700, color: MUTED, letterSpacing: 2.5, marginBottom: 10 },
   groupHeading: {
-    fontSize: 8, fontFamily: 'Helvetica-Bold', letterSpacing: 2, marginBottom: 12, marginTop: 28,
-    paddingBottom: 8, borderBottomWidth: 1.5, borderBottomStyle: 'solid',
+    fontSize: 8, fontFamily: 'Geist', fontWeight: 700, letterSpacing: 2, marginBottom: 10, marginTop: 18,
+    paddingBottom: 6, borderBottomWidth: 1.5, borderBottomStyle: 'solid',
   },
 
-  detailTable: { borderWidth: 1, borderColor: BORDER, borderStyle: 'solid', borderRadius: 8, marginBottom: 24 },
+  detailTable: { borderWidth: 1, borderColor: BORDER, borderStyle: 'solid', borderRadius: 8, marginBottom: 18 },
   detailRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: BORDER, borderBottomStyle: 'solid' },
   detailRowLast: { flexDirection: 'row' },
   detailKey: {
-    width: 130, paddingVertical: 11, paddingHorizontal: 16, fontSize: 9, color: MUTED,
+    width: 110, paddingVertical: 9, paddingHorizontal: 14, fontSize: 8.5, color: MUTED,
     borderRightWidth: 1, borderRightColor: BORDER, borderRightStyle: 'solid', backgroundColor: LIGHT,
   },
-  detailValue: { flex: 1, paddingVertical: 11, paddingHorizontal: 16, fontSize: 9, fontFamily: 'Helvetica-Bold', color: DARK },
+  detailValue: { flex: 1, paddingVertical: 9, paddingHorizontal: 14, fontSize: 8.5, fontFamily: 'Geist', fontWeight: 700, color: DARK },
 
-  narrative: { fontSize: 10.5, color: MID, lineHeight: 1.6, marginBottom: 8 },
+  narrative: { fontSize: 9.5, color: MID, lineHeight: 1.5, marginBottom: 6 },
 
-  commentBlock: { marginBottom: 16 },
-  commentHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 7 },
-  commentDot: { width: 7, height: 7, borderRadius: 4, marginRight: 8 },
-  commentLabel: { fontSize: 7, fontFamily: 'Helvetica-Bold', letterSpacing: 2 },
-  sourceTag: { fontSize: 6.5, color: MUTED, marginLeft: 8, fontFamily: 'Helvetica' },
-  commentBody: {
-    fontSize: 9.5, color: MID, lineHeight: 1.6, paddingHorizontal: 14, paddingVertical: 12,
-    backgroundColor: LIGHT, borderRadius: 5, borderLeftWidth: 3, borderLeftStyle: 'solid',
+  cardGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  card: {
+    width: '48%', marginRight: '2%', marginBottom: 10, paddingHorizontal: 12, paddingVertical: 10,
+    backgroundColor: LIGHT, borderRadius: 6, borderLeftWidth: 3, borderLeftStyle: 'solid',
   },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' },
+  cardDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  cardLabel: { fontSize: 7, fontFamily: 'Geist', fontWeight: 700, letterSpacing: 1.5 },
+  cardMeta: { fontSize: 6.5, color: MUTED, marginLeft: 6 },
+  cardTag: { fontSize: 6, color: MUTED, marginLeft: 6 },
+  cardBody: { fontSize: 8.5, color: MID, lineHeight: 1.45 },
 
-  resourceList: { marginTop: 6, paddingLeft: 10 },
-  resourceItem: { fontSize: 8, color: MUTED, lineHeight: 1.5, marginBottom: 2 },
-  resourceTitle: { fontFamily: 'Helvetica-Bold', color: MID },
+  resourceList: { marginTop: 5 },
+  resourceItem: { fontSize: 7.5, color: MUTED, lineHeight: 1.4, marginBottom: 2 },
 
   footer: {
-    position: 'absolute', bottom: 20, left: 44, right: 44,
+    position: 'absolute', bottom: 18, left: 44, right: 44,
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingTop: 8, borderTopWidth: 1, borderTopColor: BORDER, borderTopStyle: 'solid',
   },
-  footerBrand: { fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: E, letterSpacing: 1.5 },
+  footerBrand: { fontSize: 6.5, fontFamily: 'Geist', fontWeight: 700, color: E, letterSpacing: 1.5 },
   footerMeta: { fontSize: 6.5, color: MUTED },
 
-  confidential: { marginTop: 20, fontSize: 7.5, color: '#9ca3af', textAlign: 'center' },
+  confidential: { marginTop: 16, fontSize: 7.5, color: '#9ca3af', textAlign: 'center' },
 })
 
-function CommentBlock({
-  label,
-  text,
+function CategoryCard({
+  category,
   color,
-  resources,
-  tag,
+  sourcedCategories,
 }: {
-  label: string
-  text: string
+  category: SelfAssessmentSummary['categories'][number]
   color: string
-  resources?: { title: string; description: string }[]
-  tag?: string | null
+  sourcedCategories: SelfAssessmentSummary['sourcedCategories']
 }) {
+  const tag = sourceTagFor(sourcedCategories, category.categorySlug)
   return (
-    <View style={s.commentBlock} wrap={false}>
-      <View style={s.commentHeaderRow}>
-        <View style={[s.commentDot, { backgroundColor: color }]} />
-        <Text style={[s.commentLabel, { color }]}>{label}</Text>
-        {tag && <Text style={s.sourceTag}>{tag}</Text>}
+    <View style={[s.card, { borderLeftColor: color }]} wrap={false}>
+      <View style={s.cardHeaderRow}>
+        <View style={[s.cardDot, { backgroundColor: color }]} />
+        <Text style={[s.cardLabel, { color }]}>{labelFor(category.categorySlug).toUpperCase()}</Text>
+        <Text style={s.cardMeta}>{tierLabel(category.tier)} · {Math.round(category.score)}/100</Text>
+        {tag && <Text style={s.cardTag}>{tag}</Text>}
       </View>
-      <Text style={[s.commentBody, { borderLeftColor: color }]}>{text}</Text>
-      {resources && resources.length > 0 && (
+      <Text style={s.cardBody}>{category.text}</Text>
+      {category.resources.length > 0 && (
         <View style={s.resourceList}>
-          {resources.map(resource => (
+          {category.resources.map(resource => (
             <Text key={resource.title} style={s.resourceItem}>
-              <Text style={s.resourceTitle}>{resource.title}</Text>
+              {resource.url ? (
+                <Link src={resource.url} style={{ color: E }}>{resource.title}</Link>
+              ) : (
+                <Text>{resource.title}</Text>
+              )}
               {' — '}{resource.description}
             </Text>
           ))}
@@ -127,13 +131,10 @@ export function CoachDnaSummaryPDF({
   clubName?: string | null
 }) {
   const typeLine = `${labelFor(data.primaryType)}${data.secondaryType ? ` / ${labelFor(data.secondaryType)}` : ''} Coach`
-  // "Completed" reflects when the assessment was actually finished, not when
-  // this PDF happens to be rendered/emailed — `today` (below) is only for the
-  // footer's "generated on" stamp.
   const completedLabel = new Date(completedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
-  const allCategorySlugs = [...data.pros, ...data.cons].map(c => c.categorySlug)
+  const allCategorySlugs = data.categories.map(c => c.categorySlug)
   const selfOnly = allCategoriesSelfOnly(data.sourcedCategories, allCategorySlugs)
 
   const rows = [
@@ -146,7 +147,7 @@ export function CoachDnaSummaryPDF({
 
   return (
     <Document title="Coach DNA — Self-Assessment Results" author="18th Man Coach DNA">
-      <Page size="A4" style={s.page}>
+      <Page size="A4" orientation="landscape" style={s.page}>
         <View style={s.header}>
           <View>
             <Text style={s.eyeLabel}>COACH DNA</Text>
@@ -175,27 +176,25 @@ export function CoachDnaSummaryPDF({
           <Text style={s.narrative}>{data.narrative}</Text>
 
           <Text style={[s.groupHeading, { color: GREEN, borderBottomColor: GREEN }]}>STRENGTHS</Text>
-          {data.pros.map(pro => (
-            <CommentBlock
-              key={pro.categorySlug}
-              label={labelFor(pro.categorySlug).toUpperCase()}
-              text={pro.text}
-              color={GREEN}
-              tag={sourceTagFor(data.sourcedCategories, pro.categorySlug)}
-            />
-          ))}
+          <View style={s.cardGrid}>
+            {data.categories.filter(c => c.tier === 'strength').map(category => (
+              <CategoryCard key={category.categorySlug} category={category} color={GREEN} sourcedCategories={data.sourcedCategories} />
+            ))}
+          </View>
+
+          <Text style={[s.groupHeading, { color: MID, borderBottomColor: BORDER }]}>SOLID GROUND</Text>
+          <View style={s.cardGrid}>
+            {data.categories.filter(c => c.tier === 'solid').map(category => (
+              <CategoryCard key={category.categorySlug} category={category} color={MID} sourcedCategories={data.sourcedCategories} />
+            ))}
+          </View>
 
           <Text style={[s.groupHeading, { color: AMBER, borderBottomColor: AMBER }]}>FOCUS AREAS</Text>
-          {data.cons.map(con => (
-            <CommentBlock
-              key={con.categorySlug}
-              label={labelFor(con.categorySlug).toUpperCase()}
-              text={con.text}
-              color={AMBER}
-              resources={con.resources}
-              tag={sourceTagFor(data.sourcedCategories, con.categorySlug)}
-            />
-          ))}
+          <View style={s.cardGrid}>
+            {data.categories.filter(c => c.tier === 'focus').map(category => (
+              <CategoryCard key={category.categorySlug} category={category} color={AMBER} sourcedCategories={data.sourcedCategories} />
+            ))}
+          </View>
 
           {selfOnly && (
             <Text style={s.confidential}>

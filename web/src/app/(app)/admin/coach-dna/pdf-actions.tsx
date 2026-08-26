@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { sendCoachDnaSummaryEmail } from '@/lib/email'
 import { CoachDnaSummaryPDF } from './CoachDnaSummaryPDF'
 import { isCurrentSummaryShape } from '@/lib/coach-dna/summary-shape'
+import { registerPdfFonts } from '@/lib/coach-dna/pdf-font'
 import { LOGO_DATA_URI } from '@/lib/pdf-logo'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
 
@@ -46,6 +47,8 @@ export async function emailSelfAssessmentSummaryPDF(): Promise<{ success: boolea
   }
 
   try {
+    await registerPdfFonts()
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pdfBuffer = await renderToBuffer(
       <CoachDnaSummaryPDF

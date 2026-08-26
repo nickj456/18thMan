@@ -1,8 +1,8 @@
 import { renderToBuffer } from '@react-pdf/renderer'
 import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/service'
 import { requireBlendedAttempt } from '@/lib/coach-dna/require-blended-attempt'
-import { computeFeedbackSummary } from '@/lib/coach-dna/feedback-summary'
+import { ensureFreshFeedbackSummary } from '@/lib/coach-dna/feedback-summary-actions'
+import { registerPdfFonts } from '@/lib/coach-dna/pdf-font'
 import { FeedbackSummaryPDF } from '@/app/(app)/admin/coach-dna/FeedbackSummaryPDF'
 import { LOGO_DATA_URI } from '@/lib/pdf-logo'
 
@@ -22,8 +22,9 @@ export async function GET(
     if (result instanceof Response) return result
     const { user, profile, clubName } = result
 
-    const serviceSupabase = createServiceClient()
-    const feedbackSummary = await computeFeedbackSummary(serviceSupabase, user.id)
+    const feedbackSummary = await ensureFreshFeedbackSummary(user.id)
+
+    await registerPdfFonts()
 
     const pdfBuffer = await renderToBuffer(
       <FeedbackSummaryPDF

@@ -13,8 +13,7 @@ const state: {
     primaryType: string
     secondaryType: string | null
     narrative: string
-    pros: unknown[]
-    cons: unknown[]
+    categories: unknown[]
     sourcedCategories?: Record<string, string[]>
   } | null
   ensureFreshSummaryError: Error | null
@@ -59,10 +58,6 @@ vi.mock('@/lib/supabase/server', () => ({
     },
   }),
 }))
-vi.mock('@/lib/supabase/service', () => ({
-  createServiceClient: () => ({}),
-}))
-
 const ensureFreshSummaryMock = vi.fn(async (_attemptId: string, _coachId: string) => {
   if (state.ensureFreshSummaryError) throw state.ensureFreshSummaryError
   return state.summary
@@ -71,9 +66,9 @@ vi.mock('@/app/(app)/admin/coach-dna/summary-actions', () => ({
   ensureFreshSummary: (attemptId: string, coachId: string) => ensureFreshSummaryMock(attemptId, coachId),
 }))
 
-const computeFeedbackSummaryMock = vi.fn(async (_supabase: unknown, _coachId: string) => state.feedbackSummary)
-vi.mock('@/lib/coach-dna/feedback-summary', () => ({
-  computeFeedbackSummary: (supabase: unknown, coachId: string) => computeFeedbackSummaryMock(supabase, coachId),
+const ensureFreshFeedbackSummaryMock = vi.fn(async (_coachId: string) => state.feedbackSummary)
+vi.mock('@/lib/coach-dna/feedback-summary-actions', () => ({
+  ensureFreshFeedbackSummary: (coachId: string) => ensureFreshFeedbackSummaryMock(coachId),
 }))
 
 const renderToBufferMock = vi.fn(async (_element: unknown) => new Uint8Array([1, 2, 3]))
@@ -85,6 +80,11 @@ vi.mock('@react-pdf/renderer', () => ({
   Text: 'Text',
   View: 'View',
   Image: 'Image',
+}))
+
+const registerPdfFontsMock = vi.fn(async () => {})
+vi.mock('@/lib/coach-dna/pdf-font', () => ({
+  registerPdfFonts: () => registerPdfFontsMock(),
 }))
 
 import { GET } from './route'
@@ -106,7 +106,7 @@ describe('GET /api/coach-dna/feedback-summary-pdf/[attemptId]', () => {
     state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: '2026-08-06T00:00:00.000Z' }
     state.summary = {
       primaryType: 'motivator', secondaryType: null, narrative: '',
-      pros: [], cons: [], sourcedCategories: { motivator: ['self', 'player_voice'] },
+      categories: [], sourcedCategories: { motivator: ['self', 'player_voice'] },
     }
     state.ensureFreshSummaryError = null
     state.feedbackSummary = {
@@ -114,8 +114,9 @@ describe('GET /api/coach-dna/feedback-summary-pdf/[attemptId]', () => {
       peerObservation: { ready: false, responseCount: 0, categories: [] },
     }
     ensureFreshSummaryMock.mockClear()
-    computeFeedbackSummaryMock.mockClear()
+    ensureFreshFeedbackSummaryMock.mockClear()
     renderToBufferMock.mockClear()
+    registerPdfFontsMock.mockClear()
   })
 
   it('returns 401 when there is no authenticated user', async () => {
@@ -148,7 +149,7 @@ describe('GET /api/coach-dna/feedback-summary-pdf/[attemptId]', () => {
     state.summary!.sourcedCategories = { motivator: ['self'] }
     const res = await makeRequest('attempt-1')
     expect(res.status).toBe(404)
-    expect(computeFeedbackSummaryMock).not.toHaveBeenCalled()
+    expect(ensureFreshFeedbackSummaryMock).not.toHaveBeenCalled()
   })
 
   it('returns the PDF with the right headers for a blended profile', async () => {
@@ -159,9 +160,9 @@ describe('GET /api/coach-dna/feedback-summary-pdf/[attemptId]', () => {
     expect(renderToBufferMock).toHaveBeenCalledTimes(1)
   })
 
-  it("calls computeFeedbackSummary with the authenticated caller's own id", async () => {
+  it("calls ensureFreshFeedbackSummary with the authenticated caller's own id", async () => {
     await makeRequest('attempt-1')
-    expect(computeFeedbackSummaryMock).toHaveBeenCalledWith(expect.anything(), 'coach-1')
+    expect(ensureFreshFeedbackSummaryMock).toHaveBeenCalledWith('coach-1')
   })
 
   it('passes the aggregated feedback summary data and club name through to the PDF', async () => {
@@ -175,9 +176,14 @@ describe('GET /api/coach-dna/feedback-summary-pdf/[attemptId]', () => {
     expect(element.props.clubName).toBe('Wigan Warriors')
   })
 
-  it('returns 500 when computeFeedbackSummary throws', async () => {
-    computeFeedbackSummaryMock.mockRejectedValueOnce(new Error('db down'))
+  it('returns 500 when ensureFreshFeedbackSummary throws', async () => {
+    ensureFreshFeedbackSummaryMock.mockRejectedValueOnce(new Error('db down'))
     const res = await makeRequest('attempt-1')
     expect(res.status).toBe(500)
+  })
+
+  it('registers PDF fonts before rendering', async () => {
+    await makeRequest('attempt-1')
+    expect(registerPdfFontsMock).toHaveBeenCalledTimes(1)
   })
 })

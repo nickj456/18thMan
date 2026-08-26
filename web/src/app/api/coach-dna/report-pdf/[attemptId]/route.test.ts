@@ -13,8 +13,7 @@ const state: {
     primaryType: string
     secondaryType: string | null
     narrative: string
-    pros: unknown[]
-    cons: unknown[]
+    categories: unknown[]
     sourcedCategories?: Record<string, string[]>
   } | null
   ensureFreshSummaryError: Error | null
@@ -74,6 +73,11 @@ vi.mock('@react-pdf/renderer', () => ({
   Image: 'Image',
 }))
 
+const registerPdfFontsMock = vi.fn(async () => {})
+vi.mock('@/lib/coach-dna/pdf-font', () => ({
+  registerPdfFonts: () => registerPdfFontsMock(),
+}))
+
 import { GET } from './route'
 
 function makeRequest(attemptId: string) {
@@ -93,11 +97,12 @@ describe('GET /api/coach-dna/report-pdf/[attemptId]', () => {
     state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: '2026-08-06T00:00:00.000Z' }
     state.summary = {
       primaryType: 'motivator', secondaryType: null, narrative: '',
-      pros: [], cons: [], sourcedCategories: { motivator: ['self', 'player_voice'] },
+      categories: [], sourcedCategories: { motivator: ['self', 'player_voice'] },
     }
     state.ensureFreshSummaryError = null
     ensureFreshSummaryMock.mockClear()
     renderToBufferMock.mockClear()
+    registerPdfFontsMock.mockClear()
   })
 
   it('returns 401 when there is no authenticated user', async () => {
@@ -161,5 +166,10 @@ describe('GET /api/coach-dna/report-pdf/[attemptId]', () => {
     state.ensureFreshSummaryError = new Error('groq down')
     const res = await makeRequest('attempt-1')
     expect(res.status).toBe(500)
+  })
+
+  it('registers PDF fonts before rendering', async () => {
+    await makeRequest('attempt-1')
+    expect(registerPdfFontsMock).toHaveBeenCalledTimes(1)
   })
 })

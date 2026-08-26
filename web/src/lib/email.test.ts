@@ -55,12 +55,16 @@ describe('sendCoachDnaSummaryEmail', () => {
     primaryType: 'teacher',
     secondaryType: 'motivator',
     narrative: 'You lead with clarity.',
-    pros: [{ categorySlug: 'teacher', text: 'You explain things well.' }],
-    cons: [{
-      categorySlug: 'organiser',
-      text: 'Sessions could run tighter. Try timeboxing each drill before you start.',
-      resources: [{ title: 'Periodization Training for Sports', description: 'Structuring a season.', url: 'https://openlibrary.org/works/OL1850738W' }],
-    }],
+    categories: [
+      { categorySlug: 'teacher', score: 90, tier: 'strength' as const, text: 'You explain things well.', resources: [] },
+      {
+        categorySlug: 'organiser',
+        score: 20,
+        tier: 'focus' as const,
+        text: 'Sessions could run tighter. Try timeboxing each drill before you start.',
+        resources: [{ title: 'Periodization Training for Sports', description: 'Structuring a season.', url: 'https://openlibrary.org/works/OL1850738W' }],
+      },
+    ],
   }
 
   it('sends the PDF as an attachment to the coach\'s own email', async () => {
@@ -102,7 +106,7 @@ describe('sendCoachDnaSummaryEmail', () => {
 
   it('renders no resource list when a focus area has no curated resources', async () => {
     sendMock.mockResolvedValue({ data: { id: 'msg_678' }, error: null })
-    const summaryWithoutResources = { ...summary, cons: [{ ...summary.cons[0], resources: [] }] }
+    const summaryWithoutResources = { ...summary, categories: [summary.categories[0], { ...summary.categories[1], resources: [] }] }
     await sendCoachDnaSummaryEmail('coach@example.com', summaryWithoutResources, Buffer.from('fake-pdf'))
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
       html: expect.not.stringContaining('Periodization Training for Sports'),
@@ -113,7 +117,7 @@ describe('sendCoachDnaSummaryEmail', () => {
     sendMock.mockResolvedValue({ data: { id: 'msg_901' }, error: null })
     const summaryWithUnlinkedResource = {
       ...summary,
-      cons: [{ ...summary.cons[0], resources: [{ title: 'RFL Coach Education', description: 'Coaching hub.', url: null }] }],
+      categories: [summary.categories[0], { ...summary.categories[1], resources: [{ title: 'RFL Coach Education', description: 'Coaching hub.', url: null }] }],
     }
     await sendCoachDnaSummaryEmail('coach@example.com', summaryWithUnlinkedResource, Buffer.from('fake-pdf'))
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({

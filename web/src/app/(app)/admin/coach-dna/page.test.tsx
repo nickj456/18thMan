@@ -134,8 +134,10 @@ describe('CoachDnaPage', () => {
       primaryType: 'motivator',
       secondaryType: 'technician',
       narrative: 'You build trust fast.',
-      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
       sourcedCategories: { motivator: ['self'] },
     }
 
@@ -221,14 +223,55 @@ describe('CoachDnaPage', () => {
       primaryType: 'motivator',
       secondaryType: 'technician',
       narrative: 'You build trust fast.',
-      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
       sourcedCategories: { motivator: ['self', 'player_voice'] },
     }
 
     render(await CoachDnaPage())
 
-    expect(screen.getByRole('button', { name: /Get Your Report/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Download your Coach DNA report/ })).toBeInTheDocument()
+  })
+
+  it('shows a link to the feedback breakdown page once feedback has blended in', async () => {
+    state.completed = { id: 'attempt-1' }
+    state.ensureFreshSummaryResult = {
+      primaryType: 'motivator',
+      secondaryType: 'technician',
+      narrative: 'You build trust fast.',
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
+      sourcedCategories: { motivator: ['self', 'player_voice'] },
+    }
+
+    render(await CoachDnaPage())
+
+    expect(screen.getByRole('link', { name: 'View feedback breakdown' })).toHaveAttribute(
+      'href',
+      '/admin/coach-dna/feedback/summary',
+    )
+  })
+
+  it('hides the feedback breakdown link for a self-only summary', async () => {
+    state.completed = { id: 'attempt-1' }
+    state.ensureFreshSummaryResult = {
+      primaryType: 'motivator',
+      secondaryType: null,
+      narrative: 'You build trust fast.',
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
+      sourcedCategories: { motivator: ['self'] },
+    }
+
+    render(await CoachDnaPage())
+
+    expect(screen.queryByRole('link', { name: 'View feedback breakdown' })).not.toBeInTheDocument()
   })
 
   it('hides the outcome reveal trigger for a self-only summary', async () => {
@@ -237,14 +280,16 @@ describe('CoachDnaPage', () => {
       primaryType: 'motivator',
       secondaryType: null,
       narrative: 'You build trust fast.',
-      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
       sourcedCategories: { motivator: ['self'] },
     }
 
     render(await CoachDnaPage())
 
-    expect(screen.queryByRole('button', { name: /Get Your Report/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Download your Coach DNA report/ })).not.toBeInTheDocument()
   })
 
   it('still shows the outcome reveal trigger off a fallback-cached summary that is itself already blended', async () => {
@@ -254,15 +299,17 @@ describe('CoachDnaPage', () => {
       primaryType: 'motivator',
       secondaryType: null,
       narrative: 'Cached narrative.',
-      pros: [{ categorySlug: 'communicator', text: 'Great communicator' }],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management', resources: [] }],
+      categories: [
+        { categorySlug: 'communicator', score: 90, tier: 'strength', text: 'Great communicator', resources: [] },
+        { categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management', resources: [] },
+      ],
       sourcedCategories: { motivator: ['self', 'player_voice'] },
     }
 
     render(await CoachDnaPage())
 
     expect(screen.getByText(/You're a Motivator coach/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Get Your Report/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Download your Coach DNA report/ })).toBeInTheDocument()
   })
 
   it('falls back to the plain results button when ensureFreshSummary fails and nothing valid is cached', async () => {
@@ -278,14 +325,13 @@ describe('CoachDnaPage', () => {
   it('falls back to the plain results button when ensureFreshSummary fails and the cached fallback has a stale shape', async () => {
     state.completed = { id: 'attempt-1' }
     state.ensureFreshSummaryError = new Error('groq down')
-    // Missing `resources` on cons marks this as a pre-growth-resources shape --
+    // Missing `resources` on the category marks this as a pre-growth-resources shape --
     // the fallback branch's own isCurrentSummaryShape check must reject it too.
     state.fallbackCachedAiSummary = {
       primaryType: 'motivator',
       secondaryType: null,
       narrative: '',
-      pros: [],
-      cons: [{ categorySlug: 'game-manager', text: 'Work on game management' }],
+      categories: [{ categorySlug: 'game-manager', score: 20, tier: 'focus', text: 'Work on game management' }],
     }
 
     render(await CoachDnaPage())

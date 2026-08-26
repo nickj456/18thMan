@@ -1,6 +1,7 @@
 import { renderToBuffer } from '@react-pdf/renderer'
 import { createClient } from '@/lib/supabase/server'
 import { requireBlendedAttempt } from '@/lib/coach-dna/require-blended-attempt'
+import { registerPdfFonts } from '@/lib/coach-dna/pdf-font'
 import { CoachDnaSummaryPDF } from '@/app/(app)/admin/coach-dna/CoachDnaSummaryPDF'
 import { LOGO_DATA_URI } from '@/lib/pdf-logo'
 
@@ -15,6 +16,8 @@ export async function GET(
     const result = await requireBlendedAttempt(supabase, attemptId)
     if (result instanceof Response) return result
     const { profile, attempt, summary, clubName } = result
+
+    await registerPdfFonts()
 
     const pdfBuffer = await renderToBuffer(
       <CoachDnaSummaryPDF

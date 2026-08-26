@@ -1,6 +1,7 @@
 import type { createServiceClient } from '@/lib/supabase/service'
 import { RESPONDENT_TO_SOURCE } from './blend-inputs'
 import { getSourceThresholds, type ScoreSource } from './config'
+import { resourcesFor } from './resources'
 
 type ServiceClient = ReturnType<typeof createServiceClient>
 
@@ -8,6 +9,10 @@ export interface FeedbackCategorySummary {
   categorySlug: string
   averageRating: number
   responseCount: number
+  /** AI-written interpretation of this category's rating -- left '' by this pure aggregation function, filled in by ensureFreshFeedbackSummary (Task 3). */
+  text: string
+  /** Non-empty when averageRating < 3.5. */
+  resources: { title: string; description: string; url: string | null }[]
 }
 
 export interface FeedbackTypeSummary {
@@ -22,6 +27,11 @@ export interface FeedbackSummaryData {
 }
 
 const EMPTY_TYPE_SUMMARY: FeedbackTypeSummary = { ready: false, responseCount: 0, categories: [] }
+
+/** Plain-language band for a feedback category's average rating -- same 3.5 cutoff that governs resource attachment below. Feedback categories have no rank-based tier (unlike self-assessment's fixed 8 -- a section may clear the anonymity threshold for one category and not another), so this is a simple two-band label, not `tierLabel`. */
+export function feedbackBandLabel(averageRating: number): string {
+  return averageRating >= 3.5 ? 'Strong' : 'Focus area'
+}
 
 /** Cleared, non-excluded external feedback for a coach, aggregated into
  *  simple per-category averages for the downloadable feedback summary PDF --
@@ -106,7 +116,14 @@ export async function computeFeedbackSummary(
       const combined = sources.flatMap(source => bySource.get(source) ?? [])
       const threshold = Math.min(...sources.map(source => getSourceThresholds(slug)[source]))
       if (combined.length >= threshold) {
-        categories.push({ categorySlug: slug, averageRating: average(combined), responseCount: combined.length })
+        const averageRating = average(combined)
+        categories.push({
+          categorySlug: slug,
+          averageRating,
+          responseCount: combined.length,
+          text: '',
+          resources: averageRating < 3.5 ? resourcesFor(slug) : [],
+        })
       }
     }
     const responseIdSet = new Set<string>()
