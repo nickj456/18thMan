@@ -19,7 +19,7 @@ const TIER_CLASSES: Record<EffectiveTier, string> = {
 
 export function TierBadge({ tier }: { tier: EffectiveTier }) {
   return (
-    <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full border', TIER_CLASSES[tier])}>
+    <span title="Subscription tier" className={cn('text-xs font-semibold px-2.5 py-1 rounded-full border', TIER_CLASSES[tier])}>
       {TIER_LABEL[tier]}
     </span>
   )

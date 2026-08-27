@@ -6,6 +6,7 @@ const state: {
   session: { access_token: string } | null
   canCreateDrillResult: { allowed: boolean; count: number; tier: string }
   hasClubAccessResult: boolean
+  effectiveTierResult: string
   insertError: { message: string } | null
   updateError: { message: string } | null
 } = {
@@ -13,12 +14,17 @@ const state: {
   session: { access_token: 'token' },
   canCreateDrillResult: { allowed: true, count: 1, tier: 'free' },
   hasClubAccessResult: false,
+  effectiveTierResult: 'free',
   insertError: null,
   updateError: null,
 }
 
 const insertMock = vi.fn(async (payload: unknown) => ({ data: { id: 'drill-1' }, error: state.insertError }))
 const updateEqMock = vi.fn(async (payload: unknown) => ({ error: state.updateError }))
+// A real vi.fn (not a plain arrow that ignores its argument) so tests can
+// assert exactly which tier value reached the authorization check -- this
+// is what catches a bug where the wrong tier variable gets reused.
+const hasClubAccessMock = vi.fn((_tier: string) => state.hasClubAccessResult)
 
 vi.mock('next/server', () => ({
   after: (_cb: () => unknown) => {},
@@ -30,8 +36,8 @@ vi.mock('@/lib/subscription', () => ({
   canCreateDrill: async () => state.canCreateDrillResult,
   activateTrial: async () => false,
   FREE_DRILL_LIMIT: 20,
-  hasClubAccess: () => state.hasClubAccessResult,
-  getEffectiveTier: async () => 'free',
+  hasClubAccess: (tier: string) => hasClubAccessMock(tier),
+  getEffectiveTier: async () => state.effectiveTierResult,
 }))
 vi.mock('@/lib/email', () => ({
   sendTrialStartEmail: async () => {},
@@ -111,38 +117,52 @@ function baseInput(overrides: Partial<Parameters<typeof saveDrillDesign>[0]> = {
 describe('saveDrillDesign — club visibility authorization', () => {
   beforeEach(() => {
     state.hasClubAccessResult = false
+    state.canCreateDrillResult = { allowed: true, count: 1, tier: 'free' }
     state.insertError = null
     insertMock.mockClear()
+    hasClubAccessMock.mockClear()
   })
 
   it('rejects a club-visibility drill when the caller has no active club subscription', async () => {
     state.hasClubAccessResult = false
+    state.canCreateDrillResult = { allowed: true, count: 1, tier: 'free' }
     const result = await saveDrillDesign(baseInput({ visibility: 'club' }))
     expect(result.error).toMatch(/upgrade/i)
     expect(result.error).toMatch(/club subscription/i)
     expect(insertMock).not.toHaveBeenCalled()
+    // Must be checked against the tier canCreateDrill actually resolved --
+    // not a stale or hardcoded value.
+    expect(hasClubAccessMock).toHaveBeenCalledWith('free')
   })
 
   it('allows a club-visibility drill when the caller has an active club subscription', async () => {
     state.hasClubAccessResult = true
+    // Internally consistent with hasClubAccessResult=true -- a 'free' tier
+    // would never actually have club access in production.
+    state.canCreateDrillResult = { allowed: true, count: 1, tier: 'club' }
     const result = await saveDrillDesign(baseInput({ visibility: 'club' }))
     expect(result.error).toBeUndefined()
     expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ club_id: 'club-1', is_public: false }))
+    expect(hasClubAccessMock).toHaveBeenCalledWith('club')
   })
 
   it('does not run the club-access check for public or private visibility', async () => {
     state.hasClubAccessResult = false
+    state.canCreateDrillResult = { allowed: true, count: 1, tier: 'free' }
     const result = await saveDrillDesign(baseInput({ visibility: 'public', clubId: null }))
     expect(result.error).toBeUndefined()
     expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ club_id: null, is_public: true }))
+    expect(hasClubAccessMock).not.toHaveBeenCalled()
   })
 })
 
 describe('updateDrillDesign — club visibility authorization', () => {
   beforeEach(() => {
     state.hasClubAccessResult = false
+    state.effectiveTierResult = 'free'
     state.updateError = null
     updateEqMock.mockClear()
+    hasClubAccessMock.mockClear()
   })
 
   function updateInput(overrides: Partial<Parameters<typeof updateDrillDesign>[0]> = {}) {
@@ -161,22 +181,29 @@ describe('updateDrillDesign — club visibility authorization', () => {
 
   it('rejects switching a drill to club visibility without an active club subscription', async () => {
     state.hasClubAccessResult = false
+    state.effectiveTierResult = 'free'
     const result = await updateDrillDesign(updateInput({ visibility: 'club' }))
     expect(result.error).toMatch(/upgrade/i)
     expect(updateEqMock).not.toHaveBeenCalled()
+    expect(hasClubAccessMock).toHaveBeenCalledWith('free')
   })
 
   it('allows switching a drill to club visibility with an active club subscription', async () => {
     state.hasClubAccessResult = true
+    // Internally consistent with hasClubAccessResult=true.
+    state.effectiveTierResult = 'club'
     const result = await updateDrillDesign(updateInput({ visibility: 'club' }))
     expect(result.error).toBeUndefined()
     expect(updateEqMock).toHaveBeenCalledWith(expect.objectContaining({ club_id: 'club-1', is_public: false }))
+    expect(hasClubAccessMock).toHaveBeenCalledWith('club')
   })
 
   it('does not run the club-access check when updating to public or private visibility', async () => {
     state.hasClubAccessResult = false
+    state.effectiveTierResult = 'free'
     const result = await updateDrillDesign(updateInput({ visibility: 'public', clubId: null }))
     expect(result.error).toBeUndefined()
     expect(updateEqMock).toHaveBeenCalledWith(expect.objectContaining({ club_id: null, is_public: true }))
+    expect(hasClubAccessMock).not.toHaveBeenCalled()
   })
 })

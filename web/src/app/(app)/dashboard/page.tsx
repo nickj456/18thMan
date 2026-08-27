@@ -580,7 +580,7 @@ export default async function DashboardPage() {
           )}
         </div>
         <div className="flex items-center gap-2 mt-1">
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${roleColour[profile?.role ?? 'viewer']}`}>
+          <span title="Platform role" className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${roleColour[profile?.role ?? 'viewer']}`}>
             {profile?.role ?? 'viewer'}
           </span>
           <TierBadge tier={tier} />

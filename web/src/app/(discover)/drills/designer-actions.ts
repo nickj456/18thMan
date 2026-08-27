@@ -12,6 +12,8 @@ import { canCreateDrill, activateTrial, FREE_DRILL_LIMIT, hasClubAccess, getEffe
 import { sendTrialStartEmail, sendDrillLimitEmail } from '@/lib/email'
 import { createServiceClient } from '@/lib/supabase/service'
 
+const CLUB_VISIBILITY_ERROR = 'Club-private drills require an active club subscription. Upgrade your club to enable this.'
+
 interface SaveDrillDesignInput {
   title: string
   description: string | null
@@ -94,7 +96,7 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
   // (Reuses the `tier` already resolved by canCreateDrill above -- it's the
   // same getEffectiveTier() value, so there's no need for a second query.)
   if (input.visibility === 'club' && !hasClubAccess(tier)) {
-    return { error: 'Club-private drills require an active club subscription. Upgrade your club to enable this.' }
+    return { error: CLUB_VISIBILITY_ERROR }
   }
 
   const canvasPreviewUrl = input.previewDataUrl
@@ -241,7 +243,7 @@ export async function updateDrillDesign(input: UpdateDrillDesignInput): Promise<
   if (input.visibility === 'club') {
     const tier = await getEffectiveTier(supabase, user.id)
     if (!hasClubAccess(tier)) {
-      return { error: 'Club-private drills require an active club subscription. Upgrade your club to enable this.' }
+      return { error: CLUB_VISIBILITY_ERROR }
     }
   }
 

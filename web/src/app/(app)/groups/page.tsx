@@ -18,7 +18,7 @@ export default async function GroupsPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile) redirect('/login')
+  if (!profile) redirect('/dashboard')
 
   // No active Club subscription -- this used to gate on raw club_id
   // presence, which let an abandoned Stripe checkout's placeholder club
@@ -60,6 +60,37 @@ export default async function GroupsPage() {
           >
             <Building2 size={14} />
             Get Club access
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // hasClubAccess alone doesn't mean this coach has a club to organise
+  // groups around -- a trial user or a platform admin can have club
+  // entitlement with profile.club_id still null. Send them to My Club
+  // instead of falling through to club-management logic that assumes
+  // club_id exists.
+  if (!profile.club_id) {
+    return (
+      <div className="space-y-6 max-w-2xl">
+        <h1 className="app-heading text-2xl">My Groups</h1>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-8 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+              <Building2 size={18} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-zinc-100">You have Club access — now join or create a club</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Coaching Groups need a club to organise around. Head to My Club to get set up.</p>
+            </div>
+          </div>
+          <Link
+            href="/clubs"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-primary-foreground text-sm font-medium transition-colors"
+          >
+            <Building2 size={14} />
+            Go to My Club
           </Link>
         </div>
       </div>
