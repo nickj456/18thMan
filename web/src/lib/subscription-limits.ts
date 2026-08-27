@@ -5,4 +5,4 @@
 // code into the client bundle and breaks the production build.
 export const FREE_DRILL_LIMIT = 20
 export const FREE_SESSION_LIMIT = 1
-export const FREE_AI_CHAT_DAILY_LIMIT = 20
+export const FREE_AI_CHAT_DAILY_LIMIT = 5
