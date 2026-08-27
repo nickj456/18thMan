@@ -91,11 +91,10 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
   // authorization boundary. Same class of gap as the 2026-08-26
   // getEffectiveTier fix: don't let an abandoned Stripe checkout's
   // placeholder club grant club-private drills either.
-  if (input.visibility === 'club') {
-    const tier = await getEffectiveTier(supabase, user.id)
-    if (!hasClubAccess(tier)) {
-      return { error: 'Club-private drills require an active club subscription. Upgrade your club to enable this.' }
-    }
+  // (Reuses the `tier` already resolved by canCreateDrill above -- it's the
+  // same getEffectiveTier() value, so there's no need for a second query.)
+  if (input.visibility === 'club' && !hasClubAccess(tier)) {
+    return { error: 'Club-private drills require an active club subscription. Upgrade your club to enable this.' }
   }
 
   const canvasPreviewUrl = input.previewDataUrl

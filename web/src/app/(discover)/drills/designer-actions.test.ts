@@ -172,4 +172,11 @@ describe('updateDrillDesign — club visibility authorization', () => {
     expect(result.error).toBeUndefined()
     expect(updateEqMock).toHaveBeenCalledWith(expect.objectContaining({ club_id: 'club-1', is_public: false }))
   })
+
+  it('does not run the club-access check when updating to public or private visibility', async () => {
+    state.hasClubAccessResult = false
+    const result = await updateDrillDesign(updateInput({ visibility: 'public', clubId: null }))
+    expect(result.error).toBeUndefined()
+    expect(updateEqMock).toHaveBeenCalledWith(expect.objectContaining({ club_id: null, is_public: true }))
+  })
 })
