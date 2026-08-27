@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { DrillDesigner } from '@/components/designer/DrillDesigner'
+import { hasClubAccess, getEffectiveTierCached } from '@/lib/subscription'
 
 export const metadata = { title: 'New Drill — 18th Man' }
 
@@ -21,6 +22,7 @@ export default async function NewDrillPage() {
     const { data: club } = await supabase.from('clubs').select('name').eq('id', clubId).single()
     clubName = club?.name ?? null
   }
+  const tier = await getEffectiveTierCached(user.id)
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -35,6 +37,7 @@ export default async function NewDrillPage() {
         categories={categoriesResult.data ?? []}
         userClubId={clubId}
         userClubName={clubName}
+        hasClubAccess={hasClubAccess(tier)}
       />
     </div>
   )

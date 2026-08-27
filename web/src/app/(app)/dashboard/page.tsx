@@ -6,6 +6,8 @@ import Image from 'next/image'
 import { PenTool, CalendarDays, MessageSquare, Sparkles, ArrowRight, Clock, Users, BookOpen, LayoutList, ChevronRight, Bell, Star, Building2, Users2, MessageCircle, UserPlus, Wand2 } from 'lucide-react'
 import { OnboardingChecklist } from './OnboardingChecklist'
 import { FocusWidget } from '@/components/weekly-focus/FocusWidget'
+import { TierBadge } from '@/components/TierBadge'
+import { getEffectiveTierCached } from '@/lib/subscription'
 
 export const metadata = { title: 'Dashboard — 18th Man' }
 
@@ -507,6 +509,8 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
+  const tier = await getEffectiveTierCached(user.id)
+
   // Weekly focus -- the coach's own club takes priority; falls back to the
   // platform-wide (club_id null) focus for coaches without a club, or
   // whose club hasn't set one for this week.
@@ -575,9 +579,12 @@ export default async function DashboardPage() {
             <p className="text-sm text-zinc-500 mt-1">{profile.club}</p>
           )}
         </div>
-        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize mt-1 ${roleColour[profile?.role ?? 'viewer']}`}>
-          {profile?.role ?? 'viewer'}
-        </span>
+        <div className="flex items-center gap-2 mt-1">
+          <span title="Platform role" className={`text-xs font-semibold px-2.5 py-1 rounded-full border capitalize ${roleColour[profile?.role ?? 'viewer']}`}>
+            {profile?.role ?? 'viewer'}
+          </span>
+          <TierBadge tier={tier} />
+        </div>
       </div>
 
       {/* Notifications banner ── only shown when there are unread items */}
