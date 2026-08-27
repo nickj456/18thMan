@@ -72,7 +72,7 @@ describe('AiChat onError', () => {
   it('still shows the upgrade prompt (not the generic banner) for daily-limit errors', () => {
     renderChat()
 
-    act(() => capturedOnError!({ message: 'Daily limit reached (20 messages). Upgrade your club for unlimited AI chat.' }))
+    act(() => capturedOnError!({ message: 'Daily limit reached (5 messages). Upgrade your club for unlimited AI chat.' }))
 
     expect(screen.getByText(/Upgrade your club for unlimited AI chat/)).toBeInTheDocument()
     expect(screen.queryByText('Something went wrong sending that message. Please try again.')).not.toBeInTheDocument()

@@ -85,11 +85,11 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
     const activated = await activateTrial(supabase, user.id)
     if (activated) {
       tier = 'trial'
+      const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single()
       const userEmail = user.email
+      const trialEnd = new Date()
+      trialEnd.setHours(trialEnd.getHours() + 48)
       after(async () => {
-        const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single()
-        const trialEnd = new Date()
-        trialEnd.setHours(trialEnd.getHours() + 48)
         if (userEmail) await sendTrialStartEmail(userEmail, profile?.display_name ?? '', trialEnd)
       })
     } else {

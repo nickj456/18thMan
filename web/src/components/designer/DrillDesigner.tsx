@@ -460,56 +460,61 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
     </div>
   )
 
+  const upgradeModal = showUpgrade && (
+    <UpgradePrompt
+      modal
+      feature={
+        upgradeMessage?.includes('Club-private drills')
+          ? 'Club-private drills'
+          : upgradeMessage?.includes('Saving a drill requires')
+            ? 'Saving drills'
+            : 'Unlimited drills'
+      }
+      heading={
+        upgradeMessage?.includes('Club-private drills')
+          ? 'Club-private drills are a club feature'
+          : upgradeMessage?.includes('Saving a drill requires')
+            ? 'Saving drills requires an active subscription'
+            : undefined
+      }
+      description={upgradeMessage ?? 'Saving a drill requires an active subscription. Upgrade to Coach Pro or Club to save your drills.'}
+      onDismiss={dismissUpgrade}
+    />
+  )
+
   // ── Mobile layout ────────────────────────────────────────────
   if (isMobile) {
     return (
-      <div className="flex flex-col h-full overflow-y-auto bg-zinc-950">
-        {/* Canvas unavailable notice */}
-        <div className="mx-4 mt-4 flex items-start gap-3 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3">
-          <Monitor size={18} className="text-indigo-400 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-zinc-200">Canvas designer requires a larger screen</p>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              You can save the drill details and video links now — open on a desktop or tablet to add the pitch diagram.
-            </p>
+      <>
+        {upgradeModal}
+        <div className="flex flex-col h-full overflow-y-auto bg-zinc-950">
+          {/* Canvas unavailable notice */}
+          <div className="mx-4 mt-4 flex items-start gap-3 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3">
+            <Monitor size={18} className="text-indigo-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-zinc-200">Canvas designer requires a larger screen</p>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                You can save the drill details and video links now — open on a desktop or tablet to add the pitch diagram.
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col flex-1">
-          <div className="px-4 pt-4 pb-1">
-            <h2 className="font-semibold text-sm text-white">Drill Details</h2>
+          <div className="flex flex-col flex-1">
+            <div className="px-4 pt-4 pb-1">
+              <h2 className="font-semibold text-sm text-white">Drill Details</h2>
+            </div>
+            {formFields}
+            {saveButton}
           </div>
-          {formFields}
-          {saveButton}
         </div>
-      </div>
+      </>
     )
   }
 
   // ── Desktop layout ───────────────────────────────────────────
   return (
     <>
-    {showUpgrade && (
-      <UpgradePrompt
-        modal
-        feature={
-          upgradeMessage?.includes('Club-private drills')
-            ? 'Club-private drills'
-            : upgradeMessage?.includes('Saving a drill requires')
-              ? 'Saving drills'
-              : 'Unlimited drills'
-        }
-        heading={
-          upgradeMessage?.includes('Club-private drills')
-            ? 'Club-private drills are a club feature'
-            : upgradeMessage?.includes('Saving a drill requires')
-              ? 'Saving drills requires an active subscription'
-              : undefined
-        }
-        description={upgradeMessage ?? 'Saving a drill requires an active subscription. Upgrade to Coach Pro or Club to save your drills.'}
-        onDismiss={dismissUpgrade}
-      />
-    )}
+    {upgradeModal}
     <div className={cn("flex h-full overflow-hidden", isFullscreen && "fixed inset-0 z-50 bg-zinc-950")}>
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Canvas area */}

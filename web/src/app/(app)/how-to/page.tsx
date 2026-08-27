@@ -161,7 +161,7 @@ const sections: Section[] = [
     items: [
       {
         q: 'What is the AI coaching assistant?',
-        a: 'The AI coach is a rugby league specialist you can ask anything — technique questions, session ideas, player development advice, rules queries. Free accounts get 20 messages per day.',
+        a: 'The AI coach is a rugby league specialist you can ask anything — technique questions, session ideas, player development advice, rules queries. Free accounts get 5 messages per day.',
       },
       {
         q: 'What is the Community section?',

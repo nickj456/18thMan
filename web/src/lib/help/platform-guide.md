@@ -38,7 +38,7 @@ Three chat modes:
 ## My Club (`/clubs`)
 Each user belongs to one club. Club admins manage membership, invite users, and configure the club.
 - Club-tier benefits: unlimited drills, club-private drills, coaching groups, collaborative sessions, AI guidance, PDF export, unlimited AI chat.
-- New users get a 48-hour full-access trial after creating their 3rd drill.
+- New users get a 48-hour full-access trial the first time they save a drill.
 - Pricing: £19.99/month per club.
 
 ## My Groups (`/groups`)

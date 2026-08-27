@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from 'vitest'
-import { getEffectiveTier, canCreateDrill } from './subscription'
+import { getEffectiveTier, canCreateDrill, canSendAiMessage } from './subscription'
+import { FREE_AI_CHAT_DAILY_LIMIT } from './subscription-limits'
 
 const state: {
   profile: { role: string; club_id: string | null; trial_ends_at: string | null; subscription_tier: string | null } | null
@@ -8,12 +9,14 @@ const state: {
   clubOverride: { enabled: boolean; expires_at: string | null } | null
   club: { subscription_tier: string } | null
   drillCount: number
+  aiMessageCount: number
 } = {
   profile: null,
   userOverride: null,
   clubOverride: null,
   club: null,
   drillCount: 0,
+  aiMessageCount: 0,
 }
 
 function overrideChain(targetType: string) {
@@ -40,6 +43,17 @@ const supabase: any = {
     }
     if (table === 'drills') {
       return { select: () => ({ eq: async () => ({ count: state.drillCount }) }) }
+    }
+    if (table === 'messages') {
+      return {
+        select: () => ({
+          eq: (_col1: string, _val1: string) => ({
+            eq: (_col2: string, _val2: string) => ({
+              gte: async () => ({ count: state.aiMessageCount }),
+            }),
+          }),
+        }),
+      }
     }
     throw new Error(`unexpected table: ${table}`)
   },
@@ -165,5 +179,38 @@ describe('canCreateDrill', () => {
     const result = await canCreateDrill(supabase, 'user-1')
     expect(result.allowed).toBe(true)
     expect(result.tier).toBe('club')
+  })
+})
+
+describe('canSendAiMessage', () => {
+  beforeEach(() => {
+    state.profile = { role: 'coach', club_id: null, trial_ends_at: null, subscription_tier: null }
+    state.userOverride = null
+    state.clubOverride = null
+    state.club = null
+    state.aiMessageCount = 0
+  })
+
+  it('allows a free-tier user under the daily AI message limit, returning the current count', async () => {
+    state.aiMessageCount = FREE_AI_CHAT_DAILY_LIMIT - 1
+    const result = await canSendAiMessage(supabase, 'user-1')
+    expect(result.allowed).toBe(true)
+    expect(result.tier).toBe('free')
+    expect(result.count).toBe(state.aiMessageCount)
+  })
+
+  it('blocks a free-tier user at or over the daily AI message limit', async () => {
+    state.aiMessageCount = FREE_AI_CHAT_DAILY_LIMIT
+    const result = await canSendAiMessage(supabase, 'user-1')
+    expect(result.allowed).toBe(false)
+    expect(result.count).toBe(FREE_AI_CHAT_DAILY_LIMIT)
+  })
+
+  it('always allows a non-free tier regardless of message count', async () => {
+    const future = new Date(Date.now() + 60_000).toISOString()
+    state.profile = { role: 'coach', club_id: null, trial_ends_at: future, subscription_tier: null }
+    state.aiMessageCount = FREE_AI_CHAT_DAILY_LIMIT + 100
+    const result = await canSendAiMessage(supabase, 'user-1')
+    expect(result).toEqual({ allowed: true, tier: 'trial', count: 0 })
   })
 })

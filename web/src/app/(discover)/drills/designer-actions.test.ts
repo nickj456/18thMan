@@ -119,7 +119,7 @@ function baseInput(overrides: Partial<Parameters<typeof saveDrillDesign>[0]> = {
 describe('saveDrillDesign — club visibility authorization', () => {
   beforeEach(() => {
     state.hasClubAccessResult = false
-    state.canCreateDrillResult = { allowed: true, count: 1, tier: 'free' }
+    state.canCreateDrillResult = { allowed: true, count: 1, tier: 'coach' }
     state.activateTrialResult = false
     state.insertError = null
     insertMock.mockClear()
@@ -129,14 +129,14 @@ describe('saveDrillDesign — club visibility authorization', () => {
 
   it('rejects a club-visibility drill when the caller has no active club subscription', async () => {
     state.hasClubAccessResult = false
-    state.canCreateDrillResult = { allowed: true, count: 1, tier: 'free' }
+    state.canCreateDrillResult = { allowed: true, count: 1, tier: 'coach' }
     const result = await saveDrillDesign(baseInput({ visibility: 'club' }))
     expect(result.error).toMatch(/upgrade/i)
     expect(result.error).toMatch(/club subscription/i)
     expect(insertMock).not.toHaveBeenCalled()
     // Must be checked against the tier canCreateDrill actually resolved --
     // not a stale or hardcoded value.
-    expect(hasClubAccessMock).toHaveBeenCalledWith('free')
+    expect(hasClubAccessMock).toHaveBeenCalledWith('coach')
   })
 
   it('allows a club-visibility drill when the caller has an active club subscription', async () => {
@@ -152,7 +152,7 @@ describe('saveDrillDesign — club visibility authorization', () => {
 
   it('does not run the club-access check for public or private visibility', async () => {
     state.hasClubAccessResult = false
-    state.canCreateDrillResult = { allowed: true, count: 1, tier: 'free' }
+    state.canCreateDrillResult = { allowed: true, count: 1, tier: 'coach' }
     const result = await saveDrillDesign(baseInput({ visibility: 'public', clubId: null }))
     expect(result.error).toBeUndefined()
     expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ club_id: null, is_public: true }))
@@ -217,6 +217,7 @@ describe('updateDrillDesign — club visibility authorization', () => {
     state.updateError = null
     updateEqMock.mockClear()
     hasClubAccessMock.mockClear()
+    activateTrialMock.mockClear()
   })
 
   function updateInput(overrides: Partial<Parameters<typeof updateDrillDesign>[0]> = {}) {
@@ -259,5 +260,8 @@ describe('updateDrillDesign — club visibility authorization', () => {
     expect(result.error).toBeUndefined()
     expect(updateEqMock).toHaveBeenCalledWith(expect.objectContaining({ club_id: null, is_public: true }))
     expect(hasClubAccessMock).not.toHaveBeenCalled()
+    // Editing an existing drill is never gated by drill-count/save-tier --
+    // this must never trigger the free-tier auto-trial activation.
+    expect(activateTrialMock).not.toHaveBeenCalled()
   })
 })

@@ -145,7 +145,7 @@ export async function canCreateDrill(
   return { allowed: false, tier, count }
 }
 
-/** True if the user can send another AI chat message today (free tier: max 20/day) */
+/** True if the user can send another AI chat message today (free tier: max FREE_AI_CHAT_DAILY_LIMIT/day) */
 export async function canSendAiMessage(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any>,
@@ -159,8 +159,9 @@ export async function canSendAiMessage(
 
   const { count } = await supabase
     .from('messages')
-    .select('id', { count: 'exact', head: true })
+    .select('id, conversations!inner(type)', { count: 'exact', head: true })
     .eq('sender_id', userId)
+    .eq('conversations.type', 'ai')
     .gte('created_at', today.toISOString())
 
   const msgCount = count ?? 0
