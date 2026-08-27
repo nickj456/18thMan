@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DrillDesigner } from '@/components/designer/DrillDesigner'
+import { hasClubAccess, getEffectiveTierCached } from '@/lib/subscription'
 import type { DrillCategory } from '@/lib/supabase/types'
 import type { CanvasState } from '@/components/designer/types'
 
@@ -40,6 +41,7 @@ export default async function EditDrillPage({
     const { data: club } = await supabase.from('clubs').select('name').eq('id', userClubId).single()
     userClubName = club?.name ?? null
   }
+  const tier = await getEffectiveTierCached(user.id)
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col -mx-4 sm:-mx-6 lg:-mx-8 -my-6">
@@ -51,6 +53,7 @@ export default async function EditDrillPage({
           categories={categories}
           userClubId={userClubId}
           userClubName={userClubName}
+          hasClubAccess={hasClubAccess(tier)}
           initialDrill={{
             id: drill.id,
             title: drill.title,

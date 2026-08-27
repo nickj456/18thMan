@@ -60,9 +60,10 @@ interface DrillDesignerProps {
   initialDrill?: InitialDrill
   userClubId?: string | null
   userClubName?: string | null
+  hasClubAccess: boolean
 }
 
-export function DrillDesigner({ categories, initialDrill, userClubId, userClubName }: DrillDesignerProps) {
+export function DrillDesigner({ categories, initialDrill, userClubId, userClubName, hasClubAccess }: DrillDesignerProps) {
   const router = useRouter()
   const stageRef = useRef<Konva.Stage | null>(null)
   const isEditing = !!initialDrill
@@ -365,15 +366,24 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
 
       <div className="space-y-1.5">
         <Label className="text-xs">Visibility</Label>
-        <Select value={visibility} onValueChange={(v) => setVisibility(v as DrillVisibility)}>
+        <Select
+          value={visibility}
+          onValueChange={(v) => {
+            if (v === 'club' && !hasClubAccess) {
+              toast.error('Upgrade to Club to make drills club-private.')
+              return
+            }
+            setVisibility(v as DrillVisibility)
+          }}
+        >
           <SelectTrigger className="h-8 text-sm w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="min-w-[var(--radix-select-trigger-width)]">
             <SelectItem value="public">🌐 Public</SelectItem>
-            {userClubId && (
-              <SelectItem value="club">🔒 {userClubName ?? 'My Club'} only</SelectItem>
-            )}
+            <SelectItem value="club" className={!hasClubAccess ? 'text-muted-foreground' : undefined}>
+              🔒 {userClubName ?? 'My Club'} only{!hasClubAccess ? ' — Club only' : ''}
+            </SelectItem>
             <SelectItem value="private">👁 Only me</SelectItem>
           </SelectContent>
         </Select>
