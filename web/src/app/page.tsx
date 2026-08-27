@@ -1500,10 +1500,10 @@ export default async function LandingPage() {
                 </div>
                 <div style={{ height: '1px', background: 'var(--border-subtle)', marginBottom: '1.5rem' }} />
                 {[
-                  'Up to 20 drills',
+                  'Drill designer — try free, saving unlocks a 48h trial',
                   'Public drill library',
                   'Up to 3 session plans',
-                  'AI coaching chat (20/day)',
+                  'AI coaching chat (5/day)',
                   'Community access',
                   'Public profile page',
                 ].map(f => (

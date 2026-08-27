@@ -14,7 +14,7 @@ export const getEffectiveTierCached = cache(async (userId: string): Promise<Effe
   return getEffectiveTier(supabase, userId)
 })
 
-export { FREE_DRILL_LIMIT, FREE_SESSION_LIMIT, FREE_AI_CHAT_DAILY_LIMIT } from './subscription-limits'
+export { FREE_SESSION_LIMIT, FREE_AI_CHAT_DAILY_LIMIT } from './subscription-limits'
 import { FREE_SESSION_LIMIT, FREE_AI_CHAT_DAILY_LIMIT } from './subscription-limits'
 
 /**

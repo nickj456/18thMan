@@ -399,7 +399,7 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
         {limitHit && (
           <UpgradePrompt
             feature="AI coaching chat"
-            description="You've reached the 20 messages/day limit on the free plan. Upgrade your club for unlimited AI chat."
+            description="You've reached the 5 messages/day limit on the free plan. Upgrade your club for unlimited AI chat."
           />
         )}
         {squadGroups && squadGroups.length > 0 && !squadInjected && (

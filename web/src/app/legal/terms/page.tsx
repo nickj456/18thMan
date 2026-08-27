@@ -61,7 +61,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-base font-semibold text-[#e8e4dc] mb-3">5. Subscriptions and payments</h2>
             <ul className="space-y-2 list-disc pl-5">
-              <li>The free tier is free forever and includes up to 20 drills and 20 AI messages per day.</li>
+              <li>The free tier is free forever and includes unlimited use of the drill designer (saving a drill starts a one-time 48-hour trial) and 5 AI coaching messages per day.</li>
               <li>Club tier features (coaching groups, PDF export, unlimited drills) require a paid subscription.</li>
               <li>Subscriptions are billed monthly or annually. Prices are shown at the point of purchase.</li>
               <li>You may cancel at any time. Access continues until the end of your billing period — no refunds for unused time.</li>

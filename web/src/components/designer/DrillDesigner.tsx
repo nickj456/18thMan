@@ -492,9 +492,21 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
     {showUpgrade && (
       <UpgradePrompt
         modal
-        feature={upgradeMessage?.includes('Club-private drills') ? 'Club-private drills' : 'Unlimited drills'}
-        heading={upgradeMessage?.includes('Club-private drills') ? 'Club-private drills are a club feature' : undefined}
-        description={upgradeMessage ?? "You've created 20 drills — the free limit. Upgrade your club subscription to create unlimited drills."}
+        feature={
+          upgradeMessage?.includes('Club-private drills')
+            ? 'Club-private drills'
+            : upgradeMessage?.includes('Saving a drill requires')
+              ? 'Saving drills'
+              : 'Unlimited drills'
+        }
+        heading={
+          upgradeMessage?.includes('Club-private drills')
+            ? 'Club-private drills are a club feature'
+            : upgradeMessage?.includes('Saving a drill requires')
+              ? 'Saving drills requires an active subscription'
+              : undefined
+        }
+        description={upgradeMessage ?? 'Saving a drill requires an active subscription. Upgrade to Coach Pro or Club to save your drills.'}
         onDismiss={dismissUpgrade}
       />
     )}

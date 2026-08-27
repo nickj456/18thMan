@@ -84,9 +84,9 @@ This is separate from `profiles.role` (admin/coach/viewer, above) — a tier is 
 
 | | **Free** | **Trial** (48h, one-time) | **Coach Pro** — £9.99/mo · £89/yr | **Club** — £24.99/mo · £219/yr (per club, covers every coach in it) |
 |---|---|---|---|---|
-| Drills created | Up to 20 | Unlimited | Unlimited | Unlimited |
+| Drills created | Unlimited to try — first save starts a 48h trial | Unlimited | Unlimited | Unlimited |
 | Session plans | 1 | Unlimited | Unlimited | Unlimited |
-| AI coaching chat | 20 msgs/day | Unlimited | Unlimited | Unlimited |
+| AI coaching chat | 5 msgs/day | Unlimited | Unlimited | Unlimited |
 | Public drill library | ✅ | ✅ | ✅ | ✅ |
 | Community access | ✅ | ✅ | ✅ | ✅ |
 | PDF export | ❌ | ✅ | ✅ | ✅ |
@@ -100,7 +100,7 @@ This is separate from `profiles.role` (admin/coach/viewer, above) — a tier is 
 1. `role = 'admin'` → always `'club'`, no paywall, regardless of payment.
 2. A `feature_overrides` row for the user or their club (admin-set escape hatch) — can force `'club'` or `'free'`.
 3. `profiles.club_id` is set → `'club'` (membership alone grants it; club creation itself is gated behind the Stripe checkout in `/api/stripe/club-checkout`).
-4. `profiles.trial_ends_at` is in the future → `'trial'` (same access as Club). Auto-granted once, 48 hours, triggered when a free-tier coach creates their 3rd drill (`designer-actions.ts`).
+4. `profiles.trial_ends_at` is in the future → `'trial'` (same access as Club). Auto-granted once, 48 hours, triggered when a free-tier coach attempts to save their first drill (`designer-actions.ts`).
 5. `profiles.subscription_tier = 'coach'` → `'coach'`.
 6. Otherwise → `'free'`.
 

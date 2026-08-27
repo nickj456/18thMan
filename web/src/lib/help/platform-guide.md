@@ -30,7 +30,7 @@ Build and manage training sessions.
 
 ## Coach Chat (`/chat`)
 Three chat modes:
-- **AI Coach** (`/chat/ai`) — rugby league specialist. Free users get 20 messages/day; Club tier is unlimited.
+- **AI Coach** (`/chat/ai`) — rugby league specialist. Free users get 5 messages/day; Club tier is unlimited.
 - **S&C Specialist** (`/chat/sc`) — strength and conditioning programs.
 - **Community** (`/chat/community`) — shared forum threads for all coaches.
 - **Direct Messages** (`/chat/dm`) — private 1:1 messages with other coaches.
@@ -72,9 +72,9 @@ Update account preferences, notification settings, and connected accounts.
 Edit your public coaching profile — display name, bio, club, coaching level, avatar, and social links.
 
 ## Subscriptions & Billing
-- Free tier: 20 drills, unlimited sessions, 20 AI messages/day, community access.
+- Free tier: unlimited drill designer use (saving starts a one-time 48h trial), unlimited sessions, 5 AI messages/day, community access.
 - Club tier (£19.99/month): everything unlimited, coaching groups, collaborative sessions, AI guidance, PDF export.
-- Trial: 48-hour full Club access, triggered automatically after your 3rd drill.
+- Trial: 48-hour full Club access, triggered automatically the first time a free-tier coach tries to save a drill.
 - To upgrade: visit `/clubs` and ask your club admin, or go to `/settings`.
 
 ## Resources

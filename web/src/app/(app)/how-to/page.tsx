@@ -177,7 +177,7 @@ const sections: Section[] = [
     items: [
       {
         q: 'What do I get for free?',
-        a: 'Up to 20 drills, unlimited access to the public drill library, unlimited session planning, 20 AI coaching messages per day, full community access, and your profile page.',
+        a: 'Unlimited use of the drill designer (saving your first drill starts a one-time 48-hour trial with full access), unlimited access to the public drill library, unlimited session planning, 5 AI coaching messages per day, full community access, and your profile page.',
       },
       {
         q: 'What does the club subscription unlock?',
@@ -185,7 +185,7 @@ const sections: Section[] = [
       },
       {
         q: 'What is the 48-hour trial?',
-        a: 'After you create your 3rd drill, 18th Man automatically unlocks all premium features for 48 hours so you can experience the full platform before committing. No credit card required.',
+        a: 'When you try to save your first drill, 18th Man automatically unlocks all premium features for 48 hours so you can experience the full platform before committing. No credit card required.',
       },
     ],
   },

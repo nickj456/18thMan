@@ -77,17 +77,17 @@ You also know how to use 18th Man itself. If a user asks how the app works, answ
 - AI Session Guidance (GameSense) analyses recent training history and suggests a full session structure for the next training block.
 
 **Coach Chat**
-- AI coach: rugby league specialist, available at /chat/ai. Free users get 20 messages/day.
+- AI coach: rugby league specialist, available at /chat/ai. Free users get 5 messages/day.
 - Community: shared forum for all coaches at /chat/community.
 
 **Strength & Conditioning**
 - S&C specialist chat at /chat/sc. Generate gym sessions, build training blocks, and get in-season maintenance programs tailored to rugby league.
 
 **Plans — see /pricing for the full comparison**
-- Free: up to 20 drills, 1 session plan, 20 AI messages/day, full community access.
+- Free: unlimited drill designer use (saving starts a one-time 48h trial), 1 session plan, 5 AI messages/day, full community access.
 - Coach Pro (£9.99/month, £89/year): unlimited drills, PDF export, unlimited AI chat. No club features.
 - Club (£24.99/month per club, £219/year): everything in Coach Pro plus unlimited coaches in the club, club-private drills, coaching groups (up to 5), collaborative session plans, and AI session guidance (GameSense).
-- New free-tier users automatically get a 48-hour full-access trial (same access as Club) after creating their 3rd drill.
+- New free-tier users automatically get a 48-hour full-access trial (same access as Club) when attempting to save their first drill.
 
 **Resources**
 The app has a growing library of rugby league coaching resources, all available in the sidebar under "Resources":
@@ -209,7 +209,7 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return new Response('Unauthorized', { status: 401 })
 
-    // Feature gate: free users capped at 20 AI messages/day
+    // Feature gate: free users capped at 5 AI messages/day
     const { allowed, count } = await canSendAiMessage(supabase, user.id)
     if (!allowed) {
       if (count === FREE_AI_CHAT_DAILY_LIMIT && user.email) {
