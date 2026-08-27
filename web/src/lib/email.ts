@@ -218,14 +218,14 @@ export async function sendTrialExpiredEmail(to: string, displayName: string): Pr
   `))
 }
 
-/** Sent when a free user hits the 20-drill limit */
+/** Sent when a free-tier coach is blocked from saving a drill because their one-time trial has already been used */
 export async function sendDrillLimitEmail(to: string, displayName: string): Promise<EmailResult> {
-  return send(to, "You've created 20 drills — unlock unlimited", layout(`
-    ${heading("You've built a serious drill library.")}
-    ${para('20 drills created — you\'ve hit the free limit.')}
+  return send(to, "Ready to save more drills? Unlock unlimited", layout(`
+    ${heading("You've built something worth keeping.")}
+    ${para("Saving a drill now needs an active subscription — your one-time 48-hour trial has already been used.")}
     ${divider()}
     ${greeting(displayName)}
-    ${para("That's a lot of drills. Upgrade your club subscription to create unlimited drills, plus unlock:")}
+    ${para("Upgrade your club subscription to save unlimited drills, plus unlock:")}
     ${featureList([
       'Unlimited drills',
       'Coaching groups',

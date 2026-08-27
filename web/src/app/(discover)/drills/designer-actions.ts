@@ -8,11 +8,12 @@ import type { DrillDifficulty, DrillVisibility } from '@/lib/supabase/types'
 import type { CanvasState } from '@/components/designer/types'
 import { generateDrillGuideFromYoutube } from './youtube-actions'
 import { extractYouTubeId, youtubeThumbnail, fetchChannelInfo } from '@/lib/youtube'
-import { canCreateDrill, activateTrial, FREE_DRILL_LIMIT, hasClubAccess, getEffectiveTier } from '@/lib/subscription'
+import { canCreateDrill, activateTrial, hasClubAccess, getEffectiveTier } from '@/lib/subscription'
 import { sendTrialStartEmail, sendDrillLimitEmail } from '@/lib/email'
 import { createServiceClient } from '@/lib/supabase/service'
 
 const CLUB_VISIBILITY_ERROR = 'Club-private drills require an active club subscription. Upgrade your club to enable this.'
+const SAVE_REQUIRES_UPGRADE_ERROR = 'Saving a drill requires an active subscription. Upgrade to Coach Pro or Club to save your drills.'
 
 interface SaveDrillDesignInput {
   title: string
@@ -70,31 +71,43 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
   ])
   if (!user || !session) return { error: 'Not authenticated' }
 
-  // Feature gate: free tier limited to 20 drills
-  const { allowed, count, tier } = await canCreateDrill(supabase, user.id)
-  if (!allowed) {
-    // Send a one-time nudge email when they first hit the limit
-    if (count === FREE_DRILL_LIMIT) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('display_name')
-        .eq('id', user.id)
-        .single()
+  const drillGate = await canCreateDrill(supabase, user.id)
+  let tier = drillGate.tier
+
+  if (!drillGate.allowed) {
+    // Free tier can no longer create a new saved drill outright (Task 2).
+    // The first time this happens for a given coach, auto-activate their
+    // one-time 48-hour trial -- this is the same grant that used to fire
+    // in the background after the 3rd saved drill; that trigger can never
+    // happen now, since a genuinely free coach can't reach a 3rd saved
+    // drill -- and let THIS save go through as a trial save. Only a coach
+    // who has already used and outlived that trial is actually blocked.
+    const activated = await activateTrial(supabase, user.id)
+    if (activated) {
+      tier = 'trial'
+      const userEmail = user.email
+      after(async () => {
+        const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single()
+        const trialEnd = new Date()
+        trialEnd.setHours(trialEnd.getHours() + 48)
+        if (userEmail) await sendTrialStartEmail(userEmail, profile?.display_name ?? '', trialEnd)
+      })
+    } else {
+      const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', user.id).single()
       const email = user.email
       if (email) {
         after(async () => { await sendDrillLimitEmail(email, profile?.display_name ?? '') })
       }
+      return { error: SAVE_REQUIRES_UPGRADE_ERROR }
     }
-    return { error: `You've reached the free limit of ${FREE_DRILL_LIMIT} drills. Upgrade your club to create unlimited drills.` }
   }
 
   // Never trust a client-submitted 'club' visibility on its own -- the UI
   // already prevents selecting it without access, but this is the real
-  // authorization boundary. Same class of gap as the 2026-08-26
-  // getEffectiveTier fix: don't let an abandoned Stripe checkout's
-  // placeholder club grant club-private drills either.
-  // (Reuses the `tier` already resolved by canCreateDrill above -- it's the
-  // same getEffectiveTier() value, so there's no need for a second query.)
+  // authorization boundary. Uses the resolved `tier` above, which may have
+  // just been upgraded to 'trial' by the block above -- a coach whose very
+  // first save just activated their trial can immediately save into a
+  // club-private drill if they picked that visibility.
   if (input.visibility === 'club' && !hasClubAccess(tier)) {
     return { error: CLUB_VISIBILITY_ERROR }
   }
@@ -177,22 +190,6 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
             },
           }))
         )
-      }
-    })
-  }
-
-  // Trial trigger: activate 48-hour trial after the user creates their 3rd drill
-  if (count + 1 === 3 && tier === 'free') {
-    const accessToken = session.access_token
-    const userEmail = user.email
-    after(async () => {
-      const bg = createBackgroundClient(accessToken)
-      const activated = await activateTrial(bg, user.id)
-      if (activated && userEmail) {
-        const { data: profile } = await bg.from('profiles').select('display_name').eq('id', user.id).single()
-        const trialEnd = new Date()
-        trialEnd.setHours(trialEnd.getHours() + 48)
-        await sendTrialStartEmail(userEmail, profile?.display_name ?? '', trialEnd)
       }
     })
   }

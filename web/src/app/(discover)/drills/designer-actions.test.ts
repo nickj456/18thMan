@@ -5,6 +5,7 @@ const state: {
   user: { id: string; email: string } | null
   session: { access_token: string } | null
   canCreateDrillResult: { allowed: boolean; count: number; tier: string }
+  activateTrialResult: boolean
   hasClubAccessResult: boolean
   effectiveTierResult: string
   insertError: { message: string } | null
@@ -13,6 +14,7 @@ const state: {
   user: { id: 'coach-1', email: 'coach@example.com' },
   session: { access_token: 'token' },
   canCreateDrillResult: { allowed: true, count: 1, tier: 'free' },
+  activateTrialResult: false,
   hasClubAccessResult: false,
   effectiveTierResult: 'free',
   insertError: null,
@@ -25,6 +27,7 @@ const updateEqMock = vi.fn(async (payload: unknown) => ({ error: state.updateErr
 // assert exactly which tier value reached the authorization check -- this
 // is what catches a bug where the wrong tier variable gets reused.
 const hasClubAccessMock = vi.fn((_tier: string) => state.hasClubAccessResult)
+const activateTrialMock = vi.fn(async () => state.activateTrialResult)
 
 vi.mock('next/server', () => ({
   after: (_cb: () => unknown) => {},
@@ -34,8 +37,7 @@ vi.mock('next/cache', () => ({
 }))
 vi.mock('@/lib/subscription', () => ({
   canCreateDrill: async () => state.canCreateDrillResult,
-  activateTrial: async () => false,
-  FREE_DRILL_LIMIT: 20,
+  activateTrial: () => activateTrialMock(),
   hasClubAccess: (tier: string) => hasClubAccessMock(tier),
   getEffectiveTier: async () => state.effectiveTierResult,
 }))
@@ -118,9 +120,11 @@ describe('saveDrillDesign — club visibility authorization', () => {
   beforeEach(() => {
     state.hasClubAccessResult = false
     state.canCreateDrillResult = { allowed: true, count: 1, tier: 'free' }
+    state.activateTrialResult = false
     state.insertError = null
     insertMock.mockClear()
     hasClubAccessMock.mockClear()
+    activateTrialMock.mockClear()
   })
 
   it('rejects a club-visibility drill when the caller has no active club subscription', async () => {
@@ -153,6 +157,56 @@ describe('saveDrillDesign — club visibility authorization', () => {
     expect(result.error).toBeUndefined()
     expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ club_id: null, is_public: true }))
     expect(hasClubAccessMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('saveDrillDesign — free-tier save gate', () => {
+  beforeEach(() => {
+    state.hasClubAccessResult = false
+    state.canCreateDrillResult = { allowed: true, count: 1, tier: 'free' }
+    state.activateTrialResult = false
+    state.insertError = null
+    insertMock.mockClear()
+    hasClubAccessMock.mockClear()
+    activateTrialMock.mockClear()
+  })
+
+  it('activates a one-time trial and lets the save through on a free-tier coach\'s first save attempt', async () => {
+    state.canCreateDrillResult = { allowed: false, count: 0, tier: 'free' }
+    state.activateTrialResult = true
+    const result = await saveDrillDesign(baseInput({ visibility: 'private', clubId: null }))
+    expect(result.error).toBeUndefined()
+    expect(result.drillId).toBe('drill-1')
+    expect(activateTrialMock).toHaveBeenCalledTimes(1)
+    expect(insertMock).toHaveBeenCalled()
+  })
+
+  it('rejects the save when the free-tier coach has already used their one-time trial', async () => {
+    state.canCreateDrillResult = { allowed: false, count: 0, tier: 'free' }
+    state.activateTrialResult = false
+    const result = await saveDrillDesign(baseInput({ visibility: 'private', clubId: null }))
+    expect(result.error).toMatch(/upgrade/i)
+    expect(result.error).toMatch(/subscription/i)
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it('does not attempt to activate a trial when canCreateDrill already allows the save', async () => {
+    state.canCreateDrillResult = { allowed: true, count: 5, tier: 'club' }
+    const result = await saveDrillDesign(baseInput({ visibility: 'private', clubId: null }))
+    expect(result.error).toBeUndefined()
+    expect(activateTrialMock).not.toHaveBeenCalled()
+  })
+
+  it('uses the freshly-activated trial tier, not the stale free tier, for the same save\'s club-visibility check', async () => {
+    state.canCreateDrillResult = { allowed: false, count: 0, tier: 'free' }
+    state.activateTrialResult = true
+    state.hasClubAccessResult = true
+    const result = await saveDrillDesign(baseInput({ visibility: 'club', clubId: 'club-1' }))
+    expect(result.error).toBeUndefined()
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ club_id: 'club-1', is_public: false }))
+    // The critical assertion: hasClubAccess must be called with 'trial'
+    // (the tier this save just activated), never the original 'free'.
+    expect(hasClubAccessMock).toHaveBeenCalledWith('trial')
   })
 })
 
