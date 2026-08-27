@@ -15,7 +15,7 @@ export const getEffectiveTierCached = cache(async (userId: string): Promise<Effe
 })
 
 export { FREE_DRILL_LIMIT, FREE_SESSION_LIMIT, FREE_AI_CHAT_DAILY_LIMIT } from './subscription-limits'
-import { FREE_DRILL_LIMIT, FREE_SESSION_LIMIT, FREE_AI_CHAT_DAILY_LIMIT } from './subscription-limits'
+import { FREE_SESSION_LIMIT, FREE_AI_CHAT_DAILY_LIMIT } from './subscription-limits'
 
 /**
  * Returns the effective subscription tier for a user.
@@ -117,7 +117,15 @@ async function getActiveOverride(
   return data.enabled
 }
 
-/** True if the user can create another drill (free tier: max 20) */
+/**
+ * True if the user can create a NEW saved drill. Free tier can never save
+ * a new drill outright -- the designer itself stays fully open to every
+ * tier, but saving one requires a paid tier or the one-time auto-trial
+ * (see saveDrillDesign in designer-actions.ts, which activates that trial
+ * on a free-tier coach's first save attempt and lets that save through as
+ * a trial save). Editing an EXISTING drill (updateDrillDesign) is not
+ * gated by this at all.
+ */
 export async function canCreateDrill(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any>,
@@ -134,7 +142,7 @@ export async function canCreateDrill(
   const count = countResult.count ?? 0
 
   if (tier !== 'free') return { allowed: true, tier, count }
-  return { allowed: count < FREE_DRILL_LIMIT, tier, count }
+  return { allowed: false, tier, count }
 }
 
 /** True if the user can send another AI chat message today (free tier: max 20/day) */

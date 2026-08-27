@@ -1,17 +1,19 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from 'vitest'
-import { getEffectiveTier } from './subscription'
+import { getEffectiveTier, canCreateDrill } from './subscription'
 
 const state: {
   profile: { role: string; club_id: string | null; trial_ends_at: string | null; subscription_tier: string | null } | null
   userOverride: { enabled: boolean; expires_at: string | null } | null
   clubOverride: { enabled: boolean; expires_at: string | null } | null
   club: { subscription_tier: string } | null
+  drillCount: number
 } = {
   profile: null,
   userOverride: null,
   clubOverride: null,
   club: null,
+  drillCount: 0,
 }
 
 function overrideChain(targetType: string) {
@@ -35,6 +37,9 @@ const supabase: any = {
     }
     if (table === 'clubs') {
       return { select: () => ({ eq: () => ({ single: async () => ({ data: state.club }) }) }) }
+    }
+    if (table === 'drills') {
+      return { select: () => ({ eq: async () => ({ count: state.drillCount }) }) }
     }
     throw new Error(`unexpected table: ${table}`)
   },
@@ -123,5 +128,42 @@ describe('getEffectiveTier', () => {
     state.club = { subscription_tier: 'free' }
     state.clubOverride = { enabled: true, expires_at: null }
     expect(await getEffectiveTier(supabase, 'user-1')).toBe('club')
+  })
+})
+
+describe('canCreateDrill', () => {
+  beforeEach(() => {
+    state.profile = { role: 'coach', club_id: null, trial_ends_at: null, subscription_tier: null }
+    state.userOverride = null
+    state.clubOverride = null
+    state.club = null
+    state.drillCount = 0
+  })
+
+  it('never allows a free-tier coach to create a new drill, even with zero existing drills', async () => {
+    const result = await canCreateDrill(supabase, 'user-1')
+    expect(result).toEqual({ allowed: false, tier: 'free', count: 0 })
+  })
+
+  it('still blocks a free-tier coach who already has drills saved from before this change', async () => {
+    state.drillCount = 15
+    const result = await canCreateDrill(supabase, 'user-1')
+    expect(result.allowed).toBe(false)
+    expect(result.count).toBe(15)
+  })
+
+  it('allows unlimited drill creation on an active trial', async () => {
+    const future = new Date(Date.now() + 60_000).toISOString()
+    state.profile = { role: 'coach', club_id: null, trial_ends_at: future, subscription_tier: null }
+    const result = await canCreateDrill(supabase, 'user-1')
+    expect(result).toEqual({ allowed: true, tier: 'trial', count: 0 })
+  })
+
+  it('allows unlimited drill creation on an active club subscription', async () => {
+    state.profile = { role: 'coach', club_id: 'club-1', trial_ends_at: null, subscription_tier: null }
+    state.club = { subscription_tier: 'club' }
+    const result = await canCreateDrill(supabase, 'user-1')
+    expect(result.allowed).toBe(true)
+    expect(result.tier).toBe('club')
   })
 })
