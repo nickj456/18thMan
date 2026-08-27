@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { Users2, Plus, Clock, ArrowRight, Building2, Shield } from 'lucide-react'
+import { Users2, Plus, Clock, ArrowRight, Building2, Shield, Lock } from 'lucide-react'
+import { hasClubAccess, getEffectiveTierCached } from '@/lib/subscription'
 import { GroupAcceptDeclineButtons } from './GroupAcceptDeclineButtons'
 
 export const metadata = { title: 'My Groups — 18th Man' }
@@ -17,16 +18,48 @@ export default async function GroupsPage() {
     .eq('id', user.id)
     .single()
 
-  // No club yet — prompt to join one first
-  if (!profile?.club_id) {
+  if (!profile) redirect('/login')
+
+  // No active Club subscription -- this used to gate on raw club_id
+  // presence, which let an abandoned Stripe checkout's placeholder club
+  // through (see the 2026-08-26 getEffectiveTier fix). hasClubAccess is
+  // the only correct signal. Shows what Coaching Groups actually offers
+  // instead of a bare empty state -- visible, not hidden.
+  const tier = await getEffectiveTierCached(user.id)
+  if (!hasClubAccess(tier)) {
     return (
       <div className="space-y-6 max-w-2xl">
         <h1 className="app-heading text-2xl">My Groups</h1>
-        <div className="flex flex-col items-center gap-3 py-16 rounded-xl border border-zinc-800 text-center">
-          <Building2 size={32} className="text-zinc-700" />
-          <p className="text-sm text-zinc-500">You need to be a member of a club before joining groups.</p>
-          <Link href="/clubs" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-            Go to My Club →
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-8 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+              <Lock size={18} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-zinc-100">Coaching Groups is a Club feature</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">Organise your coaching staff into groups and share drills and sessions privately.</p>
+            </div>
+          </div>
+          <ul className="space-y-2 text-sm text-zinc-400">
+            <li className="flex items-start gap-2">
+              <Shield size={14} className="text-zinc-600 mt-0.5 shrink-0" />
+              Share drills and sessions with your coaching staff only
+            </li>
+            <li className="flex items-start gap-2">
+              <Shield size={14} className="text-zinc-600 mt-0.5 shrink-0" />
+              Up to 5 groups per club
+            </li>
+            <li className="flex items-start gap-2">
+              <Shield size={14} className="text-zinc-600 mt-0.5 shrink-0" />
+              Collaborative session plans within each group
+            </li>
+          </ul>
+          <Link
+            href="/clubs"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-primary-foreground text-sm font-medium transition-colors"
+          >
+            <Building2 size={14} />
+            Get Club access
           </Link>
         </div>
       </div>
