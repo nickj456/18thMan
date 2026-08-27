@@ -8,7 +8,7 @@ import type { DrillDifficulty, DrillVisibility } from '@/lib/supabase/types'
 import type { CanvasState } from '@/components/designer/types'
 import { generateDrillGuideFromYoutube } from './youtube-actions'
 import { extractYouTubeId, youtubeThumbnail, fetchChannelInfo } from '@/lib/youtube'
-import { canCreateDrill, activateTrial, FREE_DRILL_LIMIT } from '@/lib/subscription'
+import { canCreateDrill, activateTrial, FREE_DRILL_LIMIT, hasClubAccess, getEffectiveTier } from '@/lib/subscription'
 import { sendTrialStartEmail, sendDrillLimitEmail } from '@/lib/email'
 import { createServiceClient } from '@/lib/supabase/service'
 
@@ -84,6 +84,18 @@ export async function saveDrillDesign(input: SaveDrillDesignInput): Promise<Save
       }
     }
     return { error: `You've reached the free limit of ${FREE_DRILL_LIMIT} drills. Upgrade your club to create unlimited drills.` }
+  }
+
+  // Never trust a client-submitted 'club' visibility on its own -- the UI
+  // already prevents selecting it without access, but this is the real
+  // authorization boundary. Same class of gap as the 2026-08-26
+  // getEffectiveTier fix: don't let an abandoned Stripe checkout's
+  // placeholder club grant club-private drills either.
+  if (input.visibility === 'club') {
+    const tier = await getEffectiveTier(supabase, user.id)
+    if (!hasClubAccess(tier)) {
+      return { error: 'Club-private drills require an active club subscription. Upgrade your club to enable this.' }
+    }
   }
 
   const canvasPreviewUrl = input.previewDataUrl
@@ -226,6 +238,13 @@ export async function updateDrillDesign(input: UpdateDrillDesignInput): Promise<
     supabase.auth.getSession(),
   ])
   if (!user || !session) return { error: 'Not authenticated' }
+
+  if (input.visibility === 'club') {
+    const tier = await getEffectiveTier(supabase, user.id)
+    if (!hasClubAccess(tier)) {
+      return { error: 'Club-private drills require an active club subscription. Upgrade your club to enable this.' }
+    }
+  }
 
   const canvasPreviewUrl = input.previewDataUrl
     ? (await uploadCanvasPreview(supabase, user.id, input.previewDataUrl)) ?? input.existingCanvasPreviewUrl
