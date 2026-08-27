@@ -31,7 +31,12 @@ This spec covers two features as the proving ground — **Coaching Groups** (`/g
 
 New component `web/src/components/TierBadge.tsx`:
 - Props: `{ tier: EffectiveTier }` (`'free' | 'trial' | 'coach' | 'club'`).
-- Renders a small pill, one color per tier (reusing the existing color-pill pattern already on the dashboard's role badge): Free = zinc/muted, Trial = amber, Coach Pro = indigo, Club = emerald.
+- **Colors follow DESIGN.md's One Accent Rule** — ember orange is the only color allowed to signal "this matters"; a second accent hue per tier (the original amber/indigo/emerald draft) would violate it. Tiers are differentiated by *treatment* instead, the same way the existing button variants (primary/outline/ghost) differentiate meaning through fill rather than hue:
+  - Free: quiet neutral pill — muted-foreground text, muted-surface/transparent background, hairline border. No orange; this is the baseline, nothing to signal.
+  - Trial: ember-orange outline — transparent fill, ember text and border. Active but temporary.
+  - Coach Pro: ember-orange low-opacity fill (`bg-ember/10 text-ember border-ember/20`) — the same low-opacity-fill pattern already used for other pills elsewhere in the app, just on the brand color instead of a borrowed one.
+  - Club: ember-orange solid fill (`bg-ember text-white`) — matches the primary-button treatment exactly; the most prominent tier gets the same visual weight as a primary CTA.
+- Plain text, no icons — matches the existing role badge's minimalism and DESIGN.md's "used sparingly and deliberately, never as decoration" rule.
 - Label text: `'free'` → "Free", `'trial'` → "Trial", `'coach'` → "Coach Pro" (never bare "Coach" — that word is reserved for the role badge), `'club'` → "Club".
 
 Placement for this pass: dashboard header, directly beside the existing role badge (`web/src/app/(app)/dashboard/page.tsx`) — both badges stay, now clearly two different things sitting side by side. `dashboard/page.tsx` already computes `getEffectiveTier` nowhere yet; it will call `getEffectiveTierCached(user.id)` alongside its existing profile fetch.
