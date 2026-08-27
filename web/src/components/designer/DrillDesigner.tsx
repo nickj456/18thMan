@@ -60,13 +60,14 @@ interface DrillDesignerProps {
   initialDrill?: InitialDrill
   userClubId?: string | null
   userClubName?: string | null
+  hasClubAccess: boolean
 }
 
-export function DrillDesigner({ categories, initialDrill, userClubId, userClubName }: DrillDesignerProps) {
+export function DrillDesigner({ categories, initialDrill, userClubId, userClubName, hasClubAccess }: DrillDesignerProps) {
   const router = useRouter()
   const stageRef = useRef<Konva.Stage | null>(null)
   const isEditing = !!initialDrill
-  const { show: showUpgrade, checkError, dismiss: dismissUpgrade } = useUpgradePrompt()
+  const { show: showUpgrade, message: upgradeMessage, checkError, dismiss: dismissUpgrade } = useUpgradePrompt()
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -99,6 +100,11 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
     ? (initialDrill.club_id ? 'club' : initialDrill.is_public ? 'public' : 'private')
     : 'public'
   const [visibility, setVisibility] = useState<DrillVisibility>(initialVisibility)
+
+  // hasClubAccess alone isn't enough -- a trial user or admin can have club
+  // entitlement with no club to attach it to. Only treat Club visibility as
+  // actually usable when both hold.
+  const canUseClub = hasClubAccess && !!userClubId
 
   const [isPending, startTransition] = useTransition()
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -365,15 +371,28 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
 
       <div className="space-y-1.5">
         <Label className="text-xs">Visibility</Label>
-        <Select value={visibility} onValueChange={(v) => setVisibility(v as DrillVisibility)}>
+        <Select
+          value={visibility}
+          onValueChange={(v) => {
+            if (v === 'club' && !canUseClub) {
+              toast.error(
+                hasClubAccess
+                  ? 'Join or create a club to make drills club-private.'
+                  : 'Upgrade to Club to make drills club-private.'
+              )
+              return
+            }
+            setVisibility(v as DrillVisibility)
+          }}
+        >
           <SelectTrigger className="h-8 text-sm w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="min-w-[var(--radix-select-trigger-width)]">
             <SelectItem value="public">🌐 Public</SelectItem>
-            {userClubId && (
-              <SelectItem value="club">🔒 {userClubName ?? 'My Club'} only</SelectItem>
-            )}
+            <SelectItem value="club" className={!canUseClub ? 'text-muted-foreground' : undefined}>
+              {canUseClub ? `🔒 ${userClubName ?? 'My Club'} only` : '🔒 Club only'}
+            </SelectItem>
             <SelectItem value="private">👁 Only me</SelectItem>
           </SelectContent>
         </Select>
@@ -473,8 +492,9 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
     {showUpgrade && (
       <UpgradePrompt
         modal
-        feature="Unlimited drills"
-        description="You've created 20 drills — the free limit. Upgrade your club subscription to create unlimited drills."
+        feature={upgradeMessage?.includes('Club-private drills') ? 'Club-private drills' : 'Unlimited drills'}
+        heading={upgradeMessage?.includes('Club-private drills') ? 'Club-private drills are a club feature' : undefined}
+        description={upgradeMessage ?? "You've created 20 drills — the free limit. Upgrade your club subscription to create unlimited drills."}
         onDismiss={dismissUpgrade}
       />
     )}

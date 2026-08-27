@@ -7,6 +7,8 @@ import { useState } from 'react'
 interface UpgradePromptProps {
   feature: string
   description?: string
+  /** Overrides the default "{feature} is a club feature" heading -- use when `feature` doesn't read naturally as the subject of that sentence (e.g. a specific error case with its own wording). */
+  heading?: string
   /** If true, renders as a dismissible modal overlay */
   modal?: boolean
   onDismiss?: () => void
@@ -16,9 +18,9 @@ interface UpgradePromptProps {
  * Inline upgrade prompt — shown when a free-tier user tries to access a gated feature.
  * Pass modal=true to wrap it in a full-screen overlay.
  */
-export function UpgradePrompt({ feature, description, modal, onDismiss }: UpgradePromptProps) {
+export function UpgradePrompt({ feature, description, heading, modal, onDismiss }: UpgradePromptProps) {
   const card = (
-    <div className="relative rounded-xl border border-amber-500/30 bg-amber-500/5 p-6 space-y-4">
+    <div className="relative rounded-xl border border-primary/30 bg-primary/5 p-6 space-y-4">
       {modal && onDismiss && (
         <button
           onClick={onDismiss}
@@ -30,11 +32,11 @@ export function UpgradePrompt({ feature, description, modal, onDismiss }: Upgrad
       )}
 
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-          <Lock size={16} className="text-amber-400" />
+        <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+          <Lock size={16} className="text-primary" />
         </div>
         <div>
-          <h3 className="font-semibold text-sm text-white">{feature} is a club feature</h3>
+          <h3 className="font-semibold text-sm text-white">{heading ?? `${feature} is a club feature`}</h3>
           <p className="text-sm text-zinc-400 mt-0.5">
             {description ?? `${feature} is available on the club subscription. Upgrade to unlock it for your whole coaching staff.`}
           </p>
@@ -44,7 +46,7 @@ export function UpgradePrompt({ feature, description, modal, onDismiss }: Upgrad
       <div className="flex flex-col sm:flex-row gap-2 pt-1">
         <Link
           href="/pricing"
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-sm font-medium transition-colors"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 text-primary-foreground text-sm font-medium transition-colors"
         >
           <Sparkles size={13} />
           See club plans
@@ -78,14 +80,21 @@ export function UpgradePrompt({ feature, description, modal, onDismiss }: Upgrad
  */
 export function useUpgradePrompt() {
   const [show, setShow] = useState(false)
+  const [message, setMessage] = useState<string | undefined>(undefined)
 
   function checkError(error: string | undefined) {
     if (error?.includes('Upgrade') || error?.includes('club subscription')) {
+      setMessage(error)
       setShow(true)
       return true
     }
     return false
   }
 
-  return { show, checkError, dismiss: () => setShow(false) }
+  return {
+    show,
+    message,
+    checkError,
+    dismiss: () => { setShow(false); setMessage(undefined) },
+  }
 }
