@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { FREE_SESSION_LIMIT, FREE_AI_CHAT_DAILY_LIMIT } from '@/lib/subscription-limits'
 
 type Plan = {
   name: string
@@ -32,8 +33,8 @@ function buildPlans(yearly: boolean): Plan[] {
       items: [
         'Drill designer — try free, saving unlocks a 48h trial',
         'Public drill library',
-        'Up to 3 session plans',
-        'AI coaching chat (5/day)',
+        `Up to ${FREE_SESSION_LIMIT} session plan${FREE_SESSION_LIMIT === 1 ? '' : 's'}`,
+        `AI coaching chat (${FREE_AI_CHAT_DAILY_LIMIT}/day)`,
         'Community access',
         'Public profile page',
       ],
