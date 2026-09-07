@@ -2,6 +2,20 @@
 
 ## Ship
 
+**Landing page pricing card hardcodes "Up to 3 session plans" for Free — actual limit is 1**
+**Priority:** P2
+`/document-release` on 2026-09-07 (landing redesign, v1.12.0.0) found
+`web/src/components/landing/PricingSection.tsx` lists `'Up to 3 session plans'`
+as a Free-tier bullet, but `FREE_SESSION_LIMIT` in `web/src/lib/subscription-limits.ts`
+is `1`, and `/pricing` (`web/src/app/pricing/page.tsx`) correctly derives its
+Free-tier bullet from that constant. This is a pre-existing bug carried over
+verbatim from the old homepage (confirmed present on `main` before the
+redesign, at the equivalent spot in the old `page.tsx`) — the redesign didn't
+introduce it, just relocated the same hardcoded string into the new
+`PricingSection.tsx`. A coach who signs up expecting 3 session plans off the
+homepage copy hits the cap at 1. Fix: derive the bullet from
+`FREE_SESSION_LIMIT` the same way `/pricing` does, instead of a literal string.
+
 **Set up Playwright E2E coverage for browser-only flows**
 **Priority:** P2
 Coverage audit on 2026-07-06 (v1.8.0.3) found 9 code paths that need a real
