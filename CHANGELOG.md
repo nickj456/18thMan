@@ -2,6 +2,11 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.12.0.0] - 2026-09-07
+
+### Added
+- **Redesigned homepage.** The public landing page has been rebuilt to a new ember/near-black visual style: a hero with a rotated drill-designer mock and an animated coaching arrow, a live scoreboard (real coach/drill/session-plan counts, not placeholders), a scrolling feature marquee, three consolidated feature pillars plus compact extras, an AI-chat preview, a founder quote panel, and a monthly/yearly pricing toggle. Copy, pricing and existing links (sign in/up, dashboard, Coaching Eye) are unchanged — only the layout and visual design moved.
+
 ## [1.11.0.0] - 2026-08-17
 
 ### Added

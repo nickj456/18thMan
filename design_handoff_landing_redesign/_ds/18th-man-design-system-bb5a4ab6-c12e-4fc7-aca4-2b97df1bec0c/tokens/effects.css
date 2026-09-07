@@ -1,0 +1,16 @@
+:root {
+  /* ── Elevation — flat by default; shadow only on floating overlays ──── */
+  --ring-hairline: inset 0 0 0 1px var(--border-hairline);
+  --shadow-overlay: 0 8px 24px rgba(0,0,0,0.35);
+  --shadow-floating: 0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(232,86,10,0.08);
+  --focus-ring: 0 0 0 3px color-mix(in oklch, var(--ring-color) 50%, transparent);
+
+  /* ── Blur (landing nav, floating overlays) ───────────────────────── */
+  --blur-nav: 12px;
+  --blur-overlay: 8px;
+
+  /* ── Motion ───────────────────────────────────────────────────────── */
+  --ease-standard: cubic-bezier(.22,.6,.36,1); /* @kind other */
+  --duration-fast: 0.15s; /* @kind other */
+  --duration-base: 0.8s; /* @kind other */
+}

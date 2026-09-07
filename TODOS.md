@@ -2,6 +2,57 @@
 
 ## Ship
 
+**Landing page pricing card hardcodes "Up to 3 session plans" for Free — actual limit is 1**
+**Priority:** P2
+`/document-release` on 2026-09-07 (landing redesign, v1.12.0.0) found
+`web/src/components/landing/PricingSection.tsx` lists `'Up to 3 session plans'`
+as a Free-tier bullet, but `FREE_SESSION_LIMIT` in `web/src/lib/subscription-limits.ts`
+is `1`, and `/pricing` (`web/src/app/pricing/page.tsx`) correctly derives its
+Free-tier bullet from that constant. This is a pre-existing bug carried over
+verbatim from the old homepage (confirmed present on `main` before the
+redesign, at the equivalent spot in the old `page.tsx`) — the redesign didn't
+introduce it, just relocated the same hardcoded string into the new
+`PricingSection.tsx`. A coach who signs up expecting 3 session plans off the
+homepage copy hits the cap at 1. Fix: derive the bullet from
+`FREE_SESSION_LIMIT` the same way `/pricing` does, instead of a literal string.
+
+**"Match Analyst desktop app" isn't in CLAUDE.md's Subscription Tiers table or `/pricing`'s feature lists**
+**Priority:** P3
+`/document-release` on 2026-09-07 (landing redesign, v1.12.0.0) found that
+Match Analyst access is genuinely gated in code — `web/src/app/analyst/page.tsx`
+sets `canDownload = isInClub || tier !== 'free'`, and the new homepage
+`PricingSection.tsx` now advertises "Match Analyst desktop app" as a Coach
+Pro/Club perk (bullet + footer line), matching that gate correctly. But
+`COACH_FEATURES`/`CLUB_FEATURES` in `web/src/app/pricing/page.tsx` — the
+designated source of truth per CLAUDE.md's "Keeping this in sync" note — never
+lists it, and it's not a row in CLAUDE.md's Subscription Tiers & Feature
+Access table either. Pre-existing gap (the gating predates this branch), but
+now that the homepage prominently sells it, `/pricing` undersells its own
+paid tiers. Add it to both.
+
+**New `PricingSection.tsx` (monthly/yearly toggle) has no test file**
+**Priority:** P3
+`/document-release` on 2026-09-07 (landing redesign, v1.12.0.0) found
+`web/src/components/landing/PricingSection.tsx` (214 lines, stateful toggle)
+shipped with no `PricingSection.test.tsx`, while sibling components in the
+same directory (`DownloadForm.tsx`, `MobileMenu.tsx`) both have one. Per
+CLAUDE.md/TESTING.md's "write a corresponding test for new functions"
+convention. Worth covering: monthly vs. yearly price/label swap, and that all
+three plan cards render with their CTAs.
+
+**Document the new `get_landing_stats()` anon-accessible RPC in CLAUDE.md's Security section**
+**Priority:** P4
+`/document-release` on 2026-09-07 (landing redesign, v1.12.0.0) added
+`web/supabase/migrations/129_landing_stats_rpc.sql`: a `SECURITY DEFINER`
+function granted to `anon` and `authenticated` that bypasses RLS on
+`profiles`/`drills`/`session_plans` to return three aggregate counts for the
+homepage scoreboard. The migration's own comment explains the scoping (counts
+only, no row-level data), and it looks fine, but CLAUDE.md's Security section
+already tracks this exact class of thing (the `clubs`/`products` anon-access
+carve-outs) — this RPC should get the same one-line treatment there so the
+next SECURITY DEFINER function added to the schema has a documented pattern
+to match against, rather than each one being a one-off judgment call.
+
 **Set up Playwright E2E coverage for browser-only flows**
 **Priority:** P2
 Coverage audit on 2026-07-06 (v1.8.0.3) found 9 code paths that need a real
