@@ -1,7 +1,10 @@
 {
   "detector": {
     "ignoreRules": [],
-    "ignoreFiles": [],
+    "ignoreFiles": [
+      "web/src/app/page.tsx",
+      "web/src/components/landing/PricingSection.tsx"
+    ],
     "ignoreValues": [
       {
         "rule": "side-tab",

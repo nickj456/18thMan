@@ -1,0 +1,19 @@
+@import "tokens/fonts.css";
+@import "tokens/colors.css";
+@import "tokens/typography.css";
+@import "tokens/spacing.css";
+@import "tokens/effects.css";
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--surface-page); color: var(--text-primary); font-family: var(--font-sans); }
+
+.app-heading {
+  font-family: var(--font-display);
+  font-weight: var(--text-display-weight);
+  font-style: var(--text-display-style);
+  letter-spacing: var(--text-display-tracking);
+  text-transform: var(--text-display-transform);
+}
+
+a { color: var(--accent); }
+a:hover { color: var(--ember-orange-dim); }

@@ -1,0 +1,58 @@
+:root {
+  /* ── Base brand palette (hex, as specified) ───────────────────── */
+  --brand-orange: #E8560A;
+  --brand-charcoal: #0F1219;
+  --brand-black: #050608;
+  --brand-off-white: #F4F4F2;
+  --brand-steel-grey: #62666D;
+  --brand-dark-grey: #242830;
+
+  /* ── Base palette (oklch, matches shipped app tokens exactly) ─── */
+  --ember-orange: oklch(0.62 0.2 42);
+  --ember-orange-dim: oklch(0.52 0.17 38);
+  --near-black-warm: oklch(0.13 0.004 260);
+  --warm-white: oklch(0.95 0.005 60);
+  --card-surface: oklch(0.17 0.004 260);
+  --muted-surface: oklch(0.22 0.004 260);
+  --muted-foreground: oklch(0.58 0.005 60);
+  --hairline-border: oklch(1 0 0 / 8%);
+  --sidebar-surface: oklch(0.15 0.005 260);
+  --destructive-red: oklch(0.704 0.191 22.216);
+
+  /* ── Semantic aliases — dark theme (deliberate default) ───────── */
+  --surface-page: var(--near-black-warm);
+  --surface-card: var(--card-surface);
+  --surface-muted: var(--muted-surface);
+  --surface-sidebar: var(--sidebar-surface);
+  --text-primary: var(--warm-white);
+  --text-secondary: var(--muted-foreground);
+  --border-hairline: var(--hairline-border);
+  --accent: var(--ember-orange);
+  --accent-foreground: oklch(1 0 0);
+  --ring-color: var(--ember-orange);
+  --destructive: var(--destructive-red);
+
+  /* Landing / Persuade-mode surfaces use flatter near-blacks */
+  --lp-bg: #07080d;
+  --lp-surface: #0d0f16;
+  --lp-surface-2: #12151e;
+  --lp-border: rgba(255,255,255,0.06);
+  --lp-text: #e8e4dc;
+  --lp-text-muted: #918d88;
+  --lp-text-dim: #7a7773;
+}
+
+/* ── Light theme — remaps the same neutral scale, never a second palette ── */
+.light {
+  --surface-page: oklch(0.98 0.001 264);
+  --surface-card: oklch(1 0 0);
+  --surface-muted: oklch(0.94 0.002 264);
+  --surface-sidebar: oklch(0.96 0.002 264);
+  --text-primary: oklch(0.145 0 0);
+  --text-secondary: oklch(0.48 0 0);
+  --border-hairline: oklch(0.87 0.002 264);
+  --accent: var(--ember-orange);
+  --accent-foreground: oklch(1 0 0);
+  --ring-color: var(--ember-orange);
+  --destructive: oklch(0.577 0.245 27.325);
+}

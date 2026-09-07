@@ -4,11 +4,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 
 const SECTION_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Community', href: '#community' },
+  { label: 'Platform', href: '#features' },
+  { label: 'How it works', href: '#how' },
   { label: 'Pricing', href: '#pricing' },
-  { label: 'Services', href: '#services' },
+  { label: 'Coaching Eye', href: '#services' },
 ]
 
 export function MobileMenu({ signedIn }: { signedIn: boolean }) {
@@ -46,16 +45,13 @@ export function MobileMenu({ signedIn }: { signedIn: boolean }) {
               {label}
             </a>
           ))}
-          <Link href="/analyst" className="mobile-nav-item" onClick={() => setOpen(false)}>
-            Analyst
-          </Link>
           {signedIn ? (
             <Link href="/dashboard" className="mobile-nav-item mobile-nav-item-accent" onClick={() => setOpen(false)}>
-              Go to App →
+              Go to dashboard →
             </Link>
           ) : (
             <Link href="/login" className="mobile-nav-item mobile-nav-item-accent" onClick={() => setOpen(false)}>
-              Sign In
+              Sign in
             </Link>
           )}
         </div>
