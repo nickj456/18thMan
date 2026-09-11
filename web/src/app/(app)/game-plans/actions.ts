@@ -6,7 +6,10 @@ import { createClient } from '@/lib/supabase/server'
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
-import { GROQ_TEXT_HEAVY } from '@/lib/ai/groq-models'
+import {
+  GROQ_TEXT_HEAVY, GROQ_CONDENSE, GROQ_NOTES_BUDGET_CHARS,
+  GROQ_CONDENSE_INPUT_BUDGET_TOKENS, GROQ_CHARS_PER_TOKEN,
+} from '@/lib/ai/groq-models'
 import type { GamePlanDetailLevel, GamePlanAiPlan } from '@/lib/supabase/types'
 
 
@@ -78,6 +81,88 @@ Return ONLY valid JSON matching this exact structure (no markdown, no extra text
     "quote": "A relevant motivational quote about teamwork, effort, or performance"
   }
 }`
+
+
+const CONDENSE_SYSTEM = `You condense a rugby league coach's tactical notes so they fit an AI context limit.
+
+Rules:
+- Keep EVERY distinct tactical instruction, named play (any word in CAPS), player name, position and specific number.
+- Drop only repetition, filler and restatement.
+- Return plain prose. No preamble, no markdown, no bullet characters.
+- UK English.`
+
+/**
+ * Shrinks a coach's notes so the generation request fits Groq's ceiling.
+ *
+ * Groq rejects an oversized request outright with "Request too large" rather
+ * than throttling it, so no amount of retrying clears it. Long notes have to
+ * be shrunk BEFORE generation.
+ *
+ * Two constraints shape this. Reading the notes costs tokens whether or not we
+ * shorten them, and the condense pass has its own per-minute ceiling. So it
+ * condenses the LARGEST fields first and stops as soon as the total fits,
+ * leaving smaller fields untouched at full fidelity. If the budget runs out
+ * before the total fits, it says so rather than silently truncating the
+ * coach's tactical detail.
+ */
+async function condenseNotes(
+  fields: [string, string | null][],
+  groq: ReturnType<typeof createGroq>,
+): Promise<{ fields: [string, string | null][]; fits: boolean; totalChars: number }> {
+  const result: [string, string | null][] = fields.map(([label, text]) => [label, text])
+  let totalChars = result.reduce((sum, [, text]) => sum + (text?.length ?? 0), 0)
+
+  // Largest first: each call costs the same to read regardless of how much it
+  // saves, so spend the budget where it removes the most characters.
+  const bySizeDesc = result
+    .map((_, i) => i)
+    .filter(i => (result[i][1]?.length ?? 0) > 0)
+    .sort((a, b) => (result[b][1]?.length ?? 0) - (result[a][1]?.length ?? 0))
+
+  let spentTokens = 0
+  const targets: { index: number; label: string; text: string; target: number }[] = []
+
+  for (const i of bySizeDesc) {
+    if (totalChars <= GROQ_NOTES_BUDGET_CHARS) break
+    const text = result[i][1]
+    if (!text) continue
+    const cost = Math.ceil(text.length / GROQ_CHARS_PER_TOKEN)
+    if (spentTokens + cost > GROQ_CONDENSE_INPUT_BUDGET_TOKENS) break
+    // Aim for a quarter of the original; that is where the savings come from.
+    const target = Math.max(400, Math.floor(text.length / 4))
+    targets.push({ index: i, label: result[i][0], text, target })
+    spentTokens += cost
+    totalChars -= text.length - target
+  }
+
+  if (targets.length === 0) {
+    return { fields: result, fits: totalChars <= GROQ_NOTES_BUDGET_CHARS, totalChars }
+  }
+
+  // Safe to run together: the combined input is capped above, and this model
+  // sits in a different bucket from the one generation will use.
+  const condensed = await Promise.all(targets.map(async ({ label, text, target }) => {
+    const { text: out } = await generateText({
+      model: groq(GROQ_CONDENSE),
+      system: CONDENSE_SYSTEM,
+      prompt: `Condense these ${label.toUpperCase()} notes to under ${target} characters:` + '\n' + '\n' + text,
+      maxOutputTokens: 700,
+    })
+    return out.trim()
+  }))
+
+  let actual = result.reduce((sum, [, text]) => sum + (text?.length ?? 0), 0)
+  targets.forEach(({ index, text }, n) => {
+    const out = condensed[n]
+    // A condense pass that returned nothing, or grew the field, is worse than
+    // leaving it alone.
+    const replacement = out.length > 0 && out.length < text.length ? out : text
+    result[index] = [result[index][0], replacement]
+    actual -= text.length - replacement.length
+  })
+
+  return { fields: result, fits: actual <= GROQ_NOTES_BUDGET_CHARS, totalChars: actual }
+}
 
 async function getAuthenticatedAdmin() {
   const supabase = await createClient()
@@ -197,6 +282,57 @@ export async function generateGamePlan(id: string): Promise<{ error?: string }> 
       })
     : null
 
+  // Named plays are extracted from the ORIGINAL notes, before any condensing,
+  // so a condense pass can never drop one.
+  const originalNotesText = [
+    gamePlan.defence, gamePlan.attack, gamePlan.structure, gamePlan.aims,
+    gamePlan.backs, gamePlan.forwards, gamePlan.half_backs, gamePlan.moves,
+  ].filter(Boolean).join(' ')
+  const namedPlays = [...new Set(
+    [...originalNotesText.matchAll(/'([A-Z][A-Z]+)'/g)].map(m => m[1])
+  )]
+
+  let noteFields: [string, string | null][] = [
+    ['Defence', gamePlan.defence],
+    ['Attack', gamePlan.attack],
+    ['Structure', gamePlan.structure],
+    ['Aims', gamePlan.aims],
+    ['Backs guidance', gamePlan.backs],
+    ['Forwards guidance', gamePlan.forwards],
+    ['Half backs guidance', gamePlan.half_backs],
+    ['Moves & set plays', gamePlan.moves],
+  ]
+
+  const notesChars = noteFields.reduce((sum, [, text]) => sum + (text?.length ?? 0), 0)
+  const groq = createGroq()
+
+  if (notesChars > GROQ_NOTES_BUDGET_CHARS) {
+    let outcome
+    try {
+      outcome = await condenseNotes(noteFields, groq)
+    } catch (condenseError) {
+      const message = condenseError instanceof Error ? condenseError.message : String(condenseError)
+      console.error('[game-plans] condensing notes failed:', message)
+      return {
+        error: `These notes are too long to process (${notesChars.toLocaleString()} characters). `
+          + 'Shortening the longest sections and generating again should work.',
+      }
+    }
+    console.log(`[game-plans] condensed notes ${notesChars} -> ${outcome.totalChars} chars for ${id}`)
+    if (!outcome.fits) {
+      // Say so rather than truncating: losing a coach's tactical detail without
+      // telling them is worse than not generating.
+      return {
+        error: `These notes are too long to process (${notesChars.toLocaleString()} characters, `
+          + `and about ${GROQ_NOTES_BUDGET_CHARS.toLocaleString()} is the most that fits). `
+          + 'Shortening the longest sections and generating again should work.',
+      }
+    }
+    noteFields = outcome.fields
+  }
+
+  const moveNotes = noteFields.find(([label]) => label === 'Moves & set plays')?.[1]
+
   const userMessage = [
     'Create a game plan for the following match:',
     '',
@@ -207,34 +343,19 @@ export async function generateGamePlan(id: string): Promise<{ error?: string }> 
     '',
     "COACH'S TACTICAL NOTES:",
     '',
-    `Defence: ${gamePlan.defence ?? 'No specific notes provided'}`,
-    `Attack: ${gamePlan.attack ?? 'No specific notes provided'}`,
-    `Structure: ${gamePlan.structure ?? 'No specific notes provided'}`,
-    `Aims: ${gamePlan.aims ?? 'No specific notes provided'}`,
-    `Backs guidance: ${gamePlan.backs ?? 'No specific notes provided'}`,
-    `Forwards guidance: ${gamePlan.forwards ?? 'No specific notes provided'}`,
-    `Half backs guidance: ${gamePlan.half_backs ?? 'No specific notes provided'}`,
-    gamePlan.moves ? `Moves & set plays: ${gamePlan.moves}` : '',
+    ...noteFields
+      .filter(([label]) => label !== 'Moves & set plays')
+      .map(([label, text]) => `${label}: ${text ?? 'No specific notes provided'}`),
+    moveNotes ? `Moves & set plays: ${moveNotes}` : '',
     '',
-    ...(() => {
-      const allText = [
-        gamePlan.defence, gamePlan.attack, gamePlan.structure, gamePlan.aims,
-        gamePlan.backs, gamePlan.forwards, gamePlan.half_backs, gamePlan.moves,
-      ].filter(Boolean).join(' ')
-      const namedPlays = [...new Set(
-        [...allText.matchAll(/'([A-Z][A-Z]+)'/g)].map(m => m[1])
-      )]
-      if (namedPlays.length === 0) return []
-      return [
-        `NAMED PLAYS — you MUST reference these by their exact name in the relevant sections: ${namedPlays.join(', ')}`,
-        'Do not explain what they are — just use the name as coaches and players already know them.',
-      ]
-    })(),
+    ...(namedPlays.length === 0 ? [] : [
+      `NAMED PLAYS - you MUST reference these by their exact name in the relevant sections: ${namedPlays.join(', ')}`,
+      'Do not explain what they are - just use the name as coaches and players already know them.',
+    ]),
   ].filter(line => line !== null).join('\n')
 
   let aiPlan: GamePlanAiPlan
   try {
-    const groq = createGroq()
     const { text } = await generateText({
       model: groq(GROQ_TEXT_HEAVY),
       system: GAME_PLAN_SYSTEM_PROMPT,
@@ -247,6 +368,18 @@ export async function generateGamePlan(id: string): Promise<{ error?: string }> 
     // hand the coach something they can act on instead.
     const message = genError instanceof Error ? genError.message : String(genError)
     console.error('[game-plans] generation failed:', message)
+    // "Request too large" is a hard rejection, not a transient one, so telling
+    // the coach to retry would be false advice. Rate limits DO clear, so those
+    // get retry wording. Provider text is never echoed: it carries the org id.
+    if (/too large|reduce your message size/i.test(message)) {
+      return {
+        error: 'Even after shortening, these notes are too long to process in one go. '
+          + 'Try trimming the longest sections and generating again.',
+      }
+    }
+    if (/rate limit|429/i.test(message)) {
+      return { error: 'The AI is busy right now. Wait about 30 seconds and generate again.' }
+    }
     return { error: 'Could not generate this game plan right now. Please try again.' }
   }
 

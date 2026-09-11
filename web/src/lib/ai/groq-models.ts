@@ -27,6 +27,42 @@ export const GROQ_TEXT_FAST = 'openai/gpt-oss-20b'
 /** Safety classification. Purpose-built for policy screening; fails closed. */
 export const GROQ_SAFEGUARD = 'openai/gpt-oss-safeguard-20b'
 
+/**
+ * Condensing long user input before it reaches a generation model.
+ *
+ * Deliberately NOT the same id as GROQ_TEXT_HEAVY: every model id gets its own
+ * rate-limit bucket, so running the condense pass here leaves the generation
+ * model's full budget intact for the request that follows.
+ *
+ * Two candidates were rejected by measurement. groq/compound-mini advertises
+ * 70,000 TPM but routes internally to llama-3.3-70b-versatile and inherits a
+ * shared 12,000 TPM ceiling on it. The qwen3 models reject even a 1,300-token
+ * request with "Request too large".
+ */
+export const GROQ_CONDENSE = GROQ_TEXT_FAST
+
+/**
+ * Input tokens the condense pass may spend, out of GROQ_CONDENSE's 8,000/min.
+ * The remainder covers the condensed output, which bills against the same
+ * bucket. Exceeding it means the condense pass itself starts 429ing, so the
+ * pass condenses the largest fields first and stops when the budget runs out.
+ */
+export const GROQ_CONDENSE_INPUT_BUDGET_TOKENS = 6000
+
+/** Groq bills roughly one token per four characters of English prose. */
+export const GROQ_CHARS_PER_TOKEN = 4
+
+/**
+ * Characters of user-supplied notes that fit in one GROQ_TEXT_HEAVY request.
+ *
+ * Measured against the game plan prompt: system + scaffolding costs 515
+ * tokens, notes cost ~0.25 tokens/char, and the JSON response needs ~1,300
+ * reserved against the same 8,000 budget. Beyond this, Groq rejects the
+ * request outright with "Request too large" -- a hard failure, not a
+ * transient rate limit, so retrying never helps. Condense first instead.
+ */
+export const GROQ_NOTES_BUDGET_CHARS = 24000
+
 /** Every id the app is allowed to send to Groq. */
 export const ALLOWED_GROQ_MODELS = [
   GROQ_TEXT_HEAVY,
