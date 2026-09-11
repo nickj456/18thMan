@@ -23,14 +23,19 @@ vi.mock('@/lib/supabase/server', () => ({
     }),
   }),
 }))
+let capturedModelId: string | undefined
 vi.mock('@ai-sdk/groq', () => ({
-  createGroq: () => () => 'mock-model',
+  createGroq: () => (modelId: string) => {
+    capturedModelId = modelId
+    return { modelId }
+  },
 }))
 vi.mock('ai', () => ({
   generateText: async () => ({ text: state.aiText }),
 }))
 
 import { generatePosts } from './actions'
+import { GROQ_TEXT_HEAVY, DECOMMISSIONED_GROQ_MODELS } from '@/lib/ai/groq-models'
 
 describe('generatePosts', () => {
   beforeEach(() => {
@@ -66,5 +71,15 @@ describe('generatePosts', () => {
     expect(await generatePosts('topic', 'tip', ['x'])).toEqual({
       error: 'Generation failed. Please try again.',
     })
+  })
+
+  it('never sends a decommissioned Groq model id', async () => {
+    state.user = { id: 'admin-1' }
+    state.role = 'admin'
+    state.aiText = '{"x":"post"}'
+    await generatePosts('tip', 'topic', ['x'])
+
+    expect(capturedModelId).toBe(GROQ_TEXT_HEAVY)
+    expect(DECOMMISSIONED_GROQ_MODELS as readonly string[]).not.toContain(capturedModelId)
   })
 })

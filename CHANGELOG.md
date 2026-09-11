@@ -2,6 +2,24 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.11.0.1] - 2026-09-11
+
+### Fixed
+- **AI features work again.** Groq retired the Llama models the app was calling, so anything that asked the AI for help returned "The model does not exist or you do not have access to it" instead of an answer. Seven features were affected: generating a game plan, drafting Game Sense session guidance and training blocks, tagging a podcast, importing a drill from a YouTube video, drafting social posts in the content engine, and the automated safeguarding check on coach feedback comments. All now run on Groq's current models.
+- **Safeguarding comments stop piling up in the moderation queue.** The automated screen on free-text coach feedback fails closed by design, so while the model was missing every comment was held for manual review. It now screens again on a model built for safety classification, so only genuine concerns get held.
+- **YouTube drill import produces a usable guide again.** Importing a drill from a video was returning malformed output roughly a third of the time on long transcripts. The guide is now generated against a strict schema, so a partial response fails cleanly instead of producing a broken drill.
+- **A group's AI session guidance rotates through focus areas properly.** The rotation key was taken from the AI's own wording, so if it answered "Line Speed (Defence)" instead of "Line Speed" the group would be handed the same focus area again every time. It now uses the app's own list.
+- **A malformed AI game plan no longer breaks the page permanently.** The generated plan is checked against its expected shape before being saved. Previously a valid-looking but incomplete response was stored anyway, and every later visit to that game plan (and its PDF) failed until it was regenerated.
+- **AI errors no longer expose internal account details.** When a generation failed, the provider's raw error — including the organisation id and rate-limit internals — was shown directly in the error toast. Coaches now get a plain retry message; the detail goes to the server log.
+- **Long tactical notes generate a game plan again.** A plan with a lot of notes was rejected outright by the AI provider, and the error said to try again when retrying could never work. Notes beyond what fits in one request are now condensed first, longest sections only, so the shorter ones keep every word. If they still will not fit, the app says so and tells you roughly how much is too much instead of quietly dropping detail.
+
+### Changed
+- Every Groq model the app uses is now defined in one place, with a test that fails the build if a retired model id is ever used again. The previous outage broke eight separate call sites because each one named its model by hand.
+- The AI models behind YouTube drill import and group session guidance were swapped: the video import, which has by far the largest input, now uses the larger model, and session guidance, which is already schema-constrained, uses the smaller one.
+
+### Removed
+- Deleted an unused game-plan generation endpoint left behind when that work moved into a server action.
+
 ## [1.11.0.0] - 2026-08-17
 
 ### Added

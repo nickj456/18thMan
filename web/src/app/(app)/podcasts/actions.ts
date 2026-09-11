@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
+import { GROQ_TEXT_FAST } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { fetchLinkPreview } from '@/lib/link-preview'
@@ -98,7 +99,7 @@ async function generatePodcastAI(podcastId: string, title: string, description: 
     ].filter(Boolean).join('\n\n')
 
     const { text } = await generateText({
-      model: groq('llama-3.1-8b-instant'),
+      model: groq(GROQ_TEXT_FAST),
       prompt: `You are a rugby league coaching assistant. Given the following podcast title and description, return a JSON object with exactly one field:
 - "tags": an array of 5-12 lowercase tag strings covering tactics, skills, age groups, and coaching concepts discussed (e.g. "defensive shape", "set plays", "u14s", "line speed", "conditioning").
 

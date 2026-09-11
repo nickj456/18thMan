@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { generateText, Output } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
+import { GROQ_TEXT_FAST } from '@/lib/ai/groq-models'
 
 const groq = createGroq()
 import { z } from 'zod'
@@ -140,7 +141,7 @@ Generate a complete Game Sense session plan for this focus area following the 6-
 
   try {
     const { experimental_output: object } = await generateText({
-      model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
+      model: groq(GROQ_TEXT_FAST),
       output: Output.object({ schema: SuggestionSchema }),
       system: GAME_SENSE_SYSTEM,
       prompt,
@@ -151,8 +152,12 @@ Generate a complete Game Sense session plan for this focus area following the 6-
       .from('group_training_history')
       .insert({
         group_id: groupId,
-        focus_area: object.focus_area,
-        category: object.category,
+        // Rotation key comes from the TypeScript-computed area, never the
+        // model's echo of it. A model that appends the category (observed:
+        // "Line Speed (Defence)") would never match usedAreas again and the
+        // group would be handed the same focus area forever.
+        focus_area: nextArea.area,
+        category: nextArea.category,
         suggestion: object,
         used: false,
       })
@@ -165,7 +170,8 @@ Generate a complete Game Sense session plan for this focus area following the 6-
     return { success: true, id: saved.id, suggestion: object }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    return { error: `AI generation failed: ${message}` }
+    console.error('[ai-guidance] generation failed:', message)
+    return { error: 'Could not generate a session suggestion right now. Please try again.' }
   }
 }
 

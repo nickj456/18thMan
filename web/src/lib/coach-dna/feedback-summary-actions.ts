@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
+import { GROQ_TEXT_HEAVY } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { labelFor } from './categories'
@@ -83,7 +84,7 @@ ${categoriesNeedingText.map(({ category: c }) => `${labelFor(c.categorySlug)}: $
 Respond with ONLY a valid JSON object, no markdown fences, no explanation. "categories" must contain exactly ${categoriesNeedingText.length} entries, in the same order as the list above. Shape:
 {"categories":[{"categorySlug":"...","text":"..."}]}`
 
-  const { text } = await generateText({ model: groq('openai/gpt-oss-120b'), prompt })
+  const { text } = await generateText({ model: groq(GROQ_TEXT_HEAVY), prompt })
 
   const start = text.indexOf('{')
   const end = text.lastIndexOf('}')
