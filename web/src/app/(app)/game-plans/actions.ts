@@ -5,7 +5,38 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
+import { z } from 'zod'
+import { GROQ_TEXT_HEAVY } from '@/lib/ai/groq-models'
 import type { GamePlanDetailLevel, GamePlanAiPlan } from '@/lib/supabase/types'
+
+
+/**
+ * Runtime shape check for the model's game plan. `JSON.parse` returns `any`, so
+ * casting to GamePlanAiPlan was a compile-time promise the model never made:
+ * valid-JSON-but-wrong-shape used to be persisted with status 'generated', and
+ * GamePlanView/GamePlanPDF then threw on every subsequent load of that plan --
+ * a permanent 500 fixable only by editing the row. Parse, don't cast.
+ */
+const GamePlanAiSectionSchema = z.object({
+  positions: z.string().optional(),
+  role: z.string().optional(),
+  points: z.array(z.string()),
+})
+
+const GamePlanAiPlanSchema = z.object({
+  teamFocus: z.object({
+    intro: z.string(),
+    keyMessages: z.array(z.string()),
+  }),
+  forwards: GamePlanAiSectionSchema,
+  backs: GamePlanAiSectionSchema,
+  halfBacks: GamePlanAiSectionSchema,
+  finalReminders: z.object({
+    closing: z.string(),
+    points: z.array(z.string()),
+    quote: z.string(),
+  }),
+})
 
 const GAME_PLAN_SYSTEM_PROMPT = `You are a rugby league head coach writing a game plan for your players.
 
@@ -205,14 +236,18 @@ export async function generateGamePlan(id: string): Promise<{ error?: string }> 
   try {
     const groq = createGroq()
     const { text } = await generateText({
-      model: groq('llama-3.3-70b-versatile'),
+      model: groq(GROQ_TEXT_HEAVY),
       system: GAME_PLAN_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
     })
     const cleaned = text.trim().replace(/^```json\s*/, '').replace(/\s*```$/, '')
-    aiPlan = JSON.parse(cleaned) as GamePlanAiPlan
+    aiPlan = GamePlanAiPlanSchema.parse(JSON.parse(cleaned))
   } catch (genError) {
-    return { error: genError instanceof Error ? genError.message : 'AI generation failed' }
+    // Provider errors leak the org id and rate-limit internals; log them, and
+    // hand the coach something they can act on instead.
+    const message = genError instanceof Error ? genError.message : String(genError)
+    console.error('[game-plans] generation failed:', message)
+    return { error: 'Could not generate this game plan right now. Please try again.' }
   }
 
   const { error: dbError } = await supabase

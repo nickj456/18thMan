@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { GROQ_TEXT_HEAVY, DECOMMISSIONED_GROQ_MODELS } from '../ai/groq-models'
 
 const state: {
   fresh: {
@@ -182,7 +183,7 @@ describe('ensureFreshFeedbackSummary', () => {
     state.aiText = JSON.stringify({ categories: [{ categorySlug: 'teacher', text: 'x' }] })
     await ensureFreshFeedbackSummary('coach-1')
 
-    expect(capturedModelId).toBe('openai/gpt-oss-120b')
-    expect(capturedModelId).not.toBe('llama-3.3-70b-versatile')
+    expect(capturedModelId).toBe(GROQ_TEXT_HEAVY)
+    expect(DECOMMISSIONED_GROQ_MODELS as readonly string[]).not.toContain(capturedModelId)
   })
 })
