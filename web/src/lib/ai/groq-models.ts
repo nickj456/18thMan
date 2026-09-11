@@ -6,8 +6,8 @@
  * time — not at build time, not in typecheck. In September 2026 the entire
  * Llama family (`llama-3.3-70b-versatile`, `llama-3.1-8b-instant`,
  * `meta-llama/llama-4-scout-17b-16e-instruct`) went away and silently broke
- * eight separate features at once, because every call site had its own
- * hardcoded string.
+ * seven features across eight call sites at once, because every call site had
+ * its own hardcoded string.
  *
  * Never write a model id inline at a call site. Import one of these constants
  * instead — `groq-models.test.ts` scans the source tree and fails the build if
