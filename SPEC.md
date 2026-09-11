@@ -116,5 +116,5 @@ purchases              — id, user_id (nullable), guest_email (nullable — one
 - **Frontend**: Next.js (App Router), Tailwind CSS, shadcn/ui
 - **Auth & DB**: Supabase (Postgres + Auth + Realtime)
 - **Drill Designer**: React Konva
-- **AI Chat**: Vercel AI SDK + AI Gateway
+- **AI**: Vercel AI SDK — Groq (`@ai-sdk/groq`) for the coaching chat and the rest of the app's AI, Vercel AI Gateway for the Anthropic calls, OpenAI direct for the help widget only. Groq model ids live only in `web/src/lib/ai/groq-models.ts` (see CLAUDE.md → Architecture Rules → AI)
 - **Deployment**: Vercel
