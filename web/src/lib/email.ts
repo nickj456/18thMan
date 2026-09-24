@@ -178,14 +178,14 @@ export async function sendTrialStartEmail(to: string, displayName: string, trial
   `))
 }
 
-/** Sent 24 hours before trial expiry */
+/** Sent by the daily trial-expiry cron when a trial has under 24 hours left */
 export async function sendTrialExpiryWarningEmail(to: string, displayName: string): Promise<EmailResult> {
-  return send(to, '24 hours left on your 18th Man trial', layout(`
-    ${heading('24 hours left on your trial.')}
-    ${para('Your premium access expires tomorrow.')}
+  return send(to, 'Less than 24 hours left on your 18th Man trial', layout(`
+    ${heading('Your trial ends soon.')}
+    ${para('Your premium access expires within the next day.')}
     ${divider()}
     ${greeting(displayName)}
-    ${para("Your 18th Man trial ends in <strong style=\"color:#e8560a;\">24 hours</strong>. After that, these features will be locked:")}
+    ${para("Your 18th Man trial ends in <strong style=\"color:#e8560a;\">less than 24 hours</strong>. After that, these features will be locked:")}
     ${featureList([
       'Coaching groups',
       'AI session guidance (GameSense)',
