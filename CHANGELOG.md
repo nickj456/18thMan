@@ -2,6 +2,12 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.12.1.0] - 2026-09-25
+
+### Fixed
+- **Trial reminder emails now actually send.** Coaches on the 48-hour trial now get the "less than 24 hours left" warning and the "your trial has ended" email. The daily job that sends them was only checking a one-hour slice of each day, so almost no trial user ever received either email.
+- Coaches who pay for Coach Pro or join a paid club during their trial no longer get warned that their access is about to lock, or told it has ended.
+
 ## [1.11.0.0] - 2026-08-17
 
 ### Added
