@@ -2,7 +2,7 @@
 
 All notable changes to 18th Man are documented here.
 
-## [1.11.0.1] - 2026-09-11
+## [1.12.1.1] - 2026-09-25
 
 ### Fixed
 - **AI features work again.** Groq retired the Llama models the app was calling, so anything that asked the AI for help returned "The model does not exist or you do not have access to it" instead of an answer. Seven features were affected: generating a game plan, drafting Game Sense session guidance and training blocks, tagging a podcast, importing a drill from a YouTube video, drafting social posts in the content engine, and the automated safeguarding check on coach feedback comments. All now run on Groq's current models.
@@ -19,6 +19,12 @@ All notable changes to 18th Man are documented here.
 
 ### Removed
 - Deleted an unused game-plan generation endpoint left behind when that work moved into a server action.
+
+## [1.12.1.0] - 2026-09-25
+
+### Fixed
+- **Trial reminder emails now actually send.** Coaches on the 48-hour trial now get the "less than 24 hours left" warning and the "your trial has ended" email. The daily job that sends them was only checking a one-hour slice of each day, so almost no trial user ever received either email.
+- Coaches who pay for Coach Pro or join a paid club during their trial no longer get warned that their access is about to lock, or told it has ended.
 
 ## [1.11.0.0] - 2026-08-17
 
