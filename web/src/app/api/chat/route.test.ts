@@ -1,9 +1,10 @@
 // @vitest-environment node
 import { describe, it, expect, vi } from 'vitest'
+import { GROQ_TEXT_HEAVY, DECOMMISSIONED_GROQ_MODELS } from '@/lib/ai/groq-models'
 
 /**
  * Regression test for the Groq model outage on 2026-08-18: Groq deprecated
- * `llama-3.3-70b-versatile` (404 model_not_found), which streamText threw on
+ * the entire Llama family (404 model_not_found), which streamText threw on
  * for every request, silently killing the AI chat feature end-to-end.
  */
 
@@ -59,7 +60,7 @@ describe('POST /api/chat', () => {
     const res = await POST(req)
 
     expect(res.status).toBe(200)
-    expect(capturedModelId).toBe('openai/gpt-oss-120b')
-    expect(capturedModelId).not.toBe('llama-3.3-70b-versatile')
+    expect(capturedModelId).toBe(GROQ_TEXT_HEAVY)
+    expect(DECOMMISSIONED_GROQ_MODELS as readonly string[]).not.toContain(capturedModelId)
   })
 })

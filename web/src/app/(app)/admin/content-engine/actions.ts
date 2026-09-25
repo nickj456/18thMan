@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
+import { GROQ_TEXT_HEAVY } from '@/lib/ai/groq-models'
 
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
 import { createClient } from '@/lib/supabase/server'
@@ -62,7 +63,7 @@ Respond with ONLY a valid JSON object. No markdown fences, no explanation, no pr
 {"x":"post text","facebook":"post text"}`
 
     const { text } = await generateText({
-      model: groq('llama-3.3-70b-versatile'),
+      model: groq(GROQ_TEXT_HEAVY),
       prompt,
     })
 

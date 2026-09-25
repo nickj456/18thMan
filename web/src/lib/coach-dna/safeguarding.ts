@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
+import { GROQ_SAFEGUARD } from '@/lib/ai/groq-models'
 
 const groq = createGroq({ apiKey: process.env.GROQ_API_KEY })
 
@@ -22,7 +23,15 @@ Does this text contain anything inappropriate directed at or involving a minor (
 Respond with ONLY the single word "FLAG" or "CLEAR" — no other text.`
 
   try {
-    const { text: result } = await generateText({ model: groq('llama-3.3-70b-versatile'), prompt })
+    // reasoningFormat is pinned rather than left to the provider default: if
+    // Groq ever defaults gpt-oss to 'raw', the model's analysis lands inline in
+    // `text`, the exact-match below stops matching, and this fail-closed screen
+    // silently flags every comment.
+    const { text: result } = await generateText({
+      model: groq(GROQ_SAFEGUARD),
+      prompt,
+      providerOptions: { groq: { reasoningFormat: 'parsed' } },
+    })
     return result.trim().toUpperCase() !== 'CLEAR'
   } catch {
     return true

@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
+import { GROQ_TEXT_HEAVY } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { labelFor } from '@/lib/coach-dna/categories'
@@ -87,7 +88,7 @@ Do not invent scores or claim data you were not given. Do not mention "self-asse
 Respond with ONLY a valid JSON object, no markdown fences, no explanation. "categories" must contain exactly 8 entries, in the same order as the list above. Shape:
 {"narrative":"one paragraph, 2-4 sentences summarizing the overall picture","categories":[{"categorySlug":"...","text":"..."}]}`
 
-  const { text } = await generateText({ model: groq('openai/gpt-oss-120b'), prompt })
+  const { text } = await generateText({ model: groq(GROQ_TEXT_HEAVY), prompt })
 
   const start = text.indexOf('{')
   const end = text.lastIndexOf('}')

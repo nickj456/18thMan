@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { GROQ_TEXT_HEAVY, DECOMMISSIONED_GROQ_MODELS } from '../../../../lib/ai/groq-models'
 
 const state: {
   user: { id: string } | null
@@ -198,13 +199,13 @@ describe('generateSelfAssessmentSummary', () => {
   })
 
   it('never sends a deprecated/decommissioned Groq model id', async () => {
-    // Regression test: Groq deprecated `llama-3.3-70b-versatile` (404
+    // Regression test: Groq deprecated the entire Llama family (404
     // model_not_found), which broke every summary generation until fixed --
     // matches the same regression test already in src/app/api/chat/route.test.ts.
     await generateSelfAssessmentSummary('attempt-1')
 
-    expect(capturedModelId).toBe('openai/gpt-oss-120b')
-    expect(capturedModelId).not.toBe('llama-3.3-70b-versatile')
+    expect(capturedModelId).toBe(GROQ_TEXT_HEAVY)
+    expect(DECOMMISSIONED_GROQ_MODELS as readonly string[]).not.toContain(capturedModelId)
   })
 
   it('uses the computed archetype slugs, not the slugs the model returned', async () => {

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { generateText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
+import { GROQ_TEXT_HEAVY } from '@/lib/ai/groq-models'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import type { BlockSessionPlan } from '@/lib/supabase/types'
@@ -141,7 +142,7 @@ Respond with ONLY a valid JSON object matching this exact structure (no markdown
 }`
 
   const { text } = await generateText({
-    model: groq('llama-3.3-70b-versatile'),
+    model: groq(GROQ_TEXT_HEAVY),
     system: GAME_SENSE_SYSTEM,
     prompt,
   })

@@ -94,6 +94,42 @@ and only requiring an explicit override for the prefix-matching items
 the boilerplate. Pre-existing pattern from before this session, not a bug —
 deferred as a cleanup, not a ship blocker.
 
+## AI Models
+
+**Two spellings of claude-haiku-4.5 — one of them must be 404ing**
+**Priority:** P0
+Adversarial review on 2026-09-11 (`/ship`, v1.11.0.1) found the same model
+written two ways across four call sites:
+`gateway('anthropic/claude-haiku-4.5')` at `admin/wellbeing/actions.ts:203`
+and `sessions/actions.ts:207`, versus `gateway('anthropic/claude-haiku-4-5')`
+at `analyst/progression/actions.tsx:111` and `:173`. One pair is wrong and is
+failing at the AI Gateway. Verify which spelling the Gateway accepts, fix the
+other two, then extend the centralisation in `lib/ai/groq-models.ts` to cover
+Gateway and OpenAI ids so the `groq-models.test.ts` guard catches this class
+for every provider, not just Groq. Same bug class the Groq outage was.
+
+**Seven features now share one 8,000 TPM Groq bucket**
+**Priority:** P1
+Measured on 2026-09-11: every Groq model on this account is capped at 8,000
+tokens/min and 1,000 req/min on `on_demand`. One real AI-chat turn through
+`api/chat/route.ts` used 3,500 tokens (44% of the minute budget, 474 of them
+reasoning tokens). `GROQ_TEXT_HEAVY` now serves six call sites, so an admin
+generating a GameSense block can 429 a paying coach mid-chat. Before the Llama
+retirement this load was spread over three separate buckets. Options: spread
+sites across models (each id has its own bucket), set `maxOutputTokens` and add
+retry-with-backoff, or upgrade to Groq Dev Tier. The last is a spend decision.
+
+**`saveDrillYoutube` writes a client-supplied guide without re-validating it**
+**Priority:** P1
+`drills/youtube-actions.ts:128,139` — `saveDrillYoutube` is a `'use server'`
+action whose `guide` argument is typed `z.infer<typeof GuideSchema>` but never
+re-parsed server-side before the `drills.ai_guide` DB write. A TypeScript type
+is not a runtime boundary and a server action argument is client-controlled.
+`GuideSchema` already exists in the same file; `GuideSchema.parse(guide)` is a
+one-liner. Pre-existing, deliberately left out of the v1.11.0.1 diff to keep
+that change scoped to the model outage.
+
+
 ## Completed
 
 **Race condition let two concurrent submissions from the same device both pass `feedback_responses` dedup check**

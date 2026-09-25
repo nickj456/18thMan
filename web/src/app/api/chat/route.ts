@@ -1,6 +1,7 @@
 import { after } from 'next/server'
 import { streamText } from 'ai'
 import { createGroq } from '@ai-sdk/groq'
+import { GROQ_TEXT_HEAVY } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { canSendAiMessage, FREE_AI_CHAT_DAILY_LIMIT } from '@/lib/subscription'
 import { sendUpgradeNudgeEmail } from '@/lib/email'
@@ -251,7 +252,7 @@ export async function POST(req: Request) {
     }))
 
     const result = streamText({
-      model: groq('openai/gpt-oss-120b'),
+      model: groq(GROQ_TEXT_HEAVY),
       system: getSystemPrompt(context),
       messages: history,
       onFinish: async ({ text }) => {

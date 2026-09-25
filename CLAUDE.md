@@ -18,7 +18,7 @@ Rugby league coaching platform. Full spec in [SPEC.md](SPEC.md).
 | Styling | Tailwind CSS + shadcn/ui |
 | Auth & DB | Supabase (Postgres + Auth + Realtime) |
 | Drill Designer | React Konva |
-| AI Chat | Vercel AI SDK v6 + AI Gateway |
+| AI | Vercel AI SDK v6 — Groq (`@ai-sdk/groq`) for app AI, AI Gateway for the Anthropic calls, OpenAI direct for the help widget only |
 | Deployment | Vercel |
 
 ---
@@ -41,11 +41,26 @@ Rugby league coaching platform. Full spec in [SPEC.md](SPEC.md).
 - **Types**: generate types from Supabase schema (`supabase gen types typescript`) and use them throughout
 - Never use `@vercel/postgres` or `@vercel/kv` — they are sunset
 
-### AI Chat
-- Use **Vercel AI Gateway** with model strings like `'anthropic/claude-sonnet-4-6'` — never hardcode provider API keys
-- Use `vercel env pull` to get OIDC credentials locally
+### AI
+
+Three providers. Groq is the default; the other two are deliberate exceptions, so don't add a fourth without a reason.
+
+- **Groq** (`@ai-sdk/groq`, `createGroq()`) — the default for app AI. 10 call sites: the coaching chat (`web/src/app/api/chat/route.ts`), game plans, Game Sense group guidance and training blocks, YouTube drill import, podcast tagging, the content engine, and the Coach DNA summary, feedback-summary and safeguarding paths. Four of those pass `{ apiKey: process.env.GROQ_API_KEY }` explicitly and six rely on the env default — either is fine.
+- **Vercel AI Gateway** (`gateway('anthropic/claude-…')`) — the 5 Anthropic calls in `admin/wellbeing/actions.ts`, `analyst/progression/actions.tsx` and `sessions/actions.ts`. Never hardcode an Anthropic API key; use `vercel env pull` to get OIDC credentials locally.
+- **OpenAI direct** (`@ai-sdk/openai`, `createOpenAI()`) — one call site only: the help widget at `web/src/app/api/help-chat/route.ts` on `gpt-4o-mini`. Don't copy this pattern into new code.
+
+**Never write a Groq model id inline at a call site.** Import a constant from `@/lib/ai/groq-models` — `GROQ_TEXT_HEAVY` (long-form and structured output), `GROQ_TEXT_FAST` (short, latency-sensitive extraction), `GROQ_SAFEGUARD` (safety classification). `ALLOWED_GROQ_MODELS` is the allowlist those three form; `DECOMMISSIONED_GROQ_MODELS` is the denylist of ids Groq has retired. That module is the single source of truth for every Groq model id in the app.
+
+Why the rule exists: Groq retires hosted models on short notice, and the API only fails at call time — never at `next build`, never in typecheck. In September 2026 the whole Llama family went away and broke seven features across eight call sites. An earlier partial fix had repointed only the ones anyone noticed at the time, so the rest stayed broken for weeks — each call site named its own model by hand, so nothing tied them together.
+
+`web/src/lib/ai/groq-models.test.ts` is the guard. It runs under `npm test` (and CI), not `next build`. It walks `web/src` and fails if a retired id appears anywhere outside `lib/ai/`, if a model id is hardcoded at a `groq(...)` call, or if a constant exported from `groq-models.ts` itself is not in the allowlist — so a dead id added inside that module fails too. It also pins six call sites to their intended tier constant, so silently downgrading the chat to the fast model fails the suite.
+
+When Groq retires a model: add the id to `DECOMMISSIONED_GROQ_MODELS`, repoint the affected constant at a live one, update the tier table in `groq-models.test.ts` if a call site should move tiers, and let the test confirm nothing else still names it. `curl -H "Authorization: Bearer $GROQ_API_KEY" https://api.groq.com/openai/v1/models` lists what the account can actually serve.
+
 - Stream all AI responses — never block on `generateText` for user-facing chat
 - Render all AI-generated text using **AI Elements** (`<Message>` / `<MessageResponse>`) — never render raw markdown as `{text}`
+- Validate structured AI output at runtime (zod, or `Output.object` for a strict `json_schema`) before persisting it — `JSON.parse(...) as SomeType` lets a valid-looking but incomplete response poison the row forever
+- Never return a provider error message to the user. Groq and Gateway errors carry the organisation id and rate-limit internals — log them server-side and show a plain retry message
 
 ### Styling
 - Use **shadcn/ui** components — don't build core UI controls from scratch
@@ -166,7 +181,7 @@ components/
   session/
 lib/
   supabase/         — client, server, middleware helpers
-  ai/               — AI SDK setup
+  ai/               — client.ts, plus groq-models.ts (the only place a Groq model id may be written) and groq-model-scan.ts (its build guard)
 supabase/
   migrations/
   seed.sql
