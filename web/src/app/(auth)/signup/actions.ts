@@ -38,5 +38,5 @@ export async function signup(formData: FormData) {
 
   await sendWelcomeEmail(email, username)
 
-  redirect('/signup?success=check-email')
+  redirect(`/signup?success=check-email${nextParam}`)
 }

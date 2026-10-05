@@ -1,13 +1,15 @@
 import Link from 'next/link'
 import { signup } from './actions'
 import { loginWithOAuth } from '../login/actions'
+import { isSafeRedirectPath } from '@/lib/redirect-safety'
 
 export default async function SignupPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string; success?: string; next?: string }>
 }) {
-  const { error, success, next } = await searchParams
+  const { error, success, next: rawNext } = await searchParams
+  const next = isSafeRedirectPath(rawNext) ? rawNext : undefined
 
   if (success === 'check-email') {
     return (
@@ -40,7 +42,7 @@ export default async function SignupPage({
           <p>Didn&apos;t get it? Check your spam folder.</p>
           <p>
             Already confirmed?{' '}
-            <Link href="/login" style={{ color: '#e8560a', fontWeight: 600, textDecoration: 'none' }}>
+            <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} style={{ color: '#e8560a', fontWeight: 600, textDecoration: 'none' }}>
               Sign in →
             </Link>
           </p>
@@ -276,7 +278,7 @@ export default async function SignupPage({
 
       <p className="auth-footer">
         Already have an account?{' '}
-        <Link href="/login">Sign in</Link>
+        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}>Sign in</Link>
       </p>
     </>
   )

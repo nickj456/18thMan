@@ -74,6 +74,18 @@ describe('signup', () => {
     ).rejects.toThrow(/^REDIRECT:\/signup\?error=.*&next=%2Fcoach-dna$/)
   })
 
+  it('carries a safe next param onto the check-email screen', async () => {
+    await expect(
+      signup(formData({ email: 'coach@example.com', password: 'secret123', username: 'coachsmith', next: '/coach-dna' })),
+    ).rejects.toThrow(/^REDIRECT:\/signup\?success=check-email&next=%2Fcoach-dna$/)
+  })
+
+  it('leaves the check-email redirect bare when next is unsafe', async () => {
+    await expect(
+      signup(formData({ email: 'coach@example.com', password: 'secret123', username: 'coachsmith', next: '//evil.com' })),
+    ).rejects.toThrow(/^REDIRECT:\/signup\?success=check-email$/)
+  })
+
   it('omits the next param from emailRedirectTo when next is unsafe', async () => {
     await expect(
       signup(formData({ email: 'coach@example.com', password: 'secret123', username: 'coachsmith', next: '//evil.com' })),
