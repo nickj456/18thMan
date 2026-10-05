@@ -45,7 +45,7 @@ a peer-observation question against a self-assessment attempt.
 **Priority:** P4
 Maintainability review on 2026-08-06 (`/ship`, v1.10.0.0) found the
 "get user → redirect /login → fetch profile role → redirect /dashboard" block
-duplicated across 5 files under `admin/coach-dna/`. Low risk today (each copy
+duplicated across 5 files under `coach-dna/` (formerly `admin/coach-dna/`). Low risk today (each copy
 is identical and correct), but any future change to the admin gate needs to
 touch all 5. This pattern likely repeats across other `admin/*` routes too —
 worth a repo-wide sweep, not just this feature, if tackled.
