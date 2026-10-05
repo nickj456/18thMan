@@ -127,9 +127,9 @@ describe('getActiveAnnouncementForUser', () => {
   })
 
   it('returns the active announcement when the user has not dismissed it', async () => {
-    state.activeAnnouncement = { id: 'ann-1', message: 'Try Coach DNA', link_url: '/admin/coach-dna', link_label: 'Try it' }
+    state.activeAnnouncement = { id: 'ann-1', message: 'Try Coach DNA', link_url: '/coach-dna', link_label: 'Try it' }
     const result = await getActiveAnnouncementForUser()
-    expect(result).toEqual({ id: 'ann-1', message: 'Try Coach DNA', linkUrl: '/admin/coach-dna', linkLabel: 'Try it' })
+    expect(result).toEqual({ id: 'ann-1', message: 'Try Coach DNA', linkUrl: '/coach-dna', linkLabel: 'Try it' })
   })
 
   it('returns null when the user has already dismissed the active announcement', async () => {
@@ -210,13 +210,13 @@ describe('createAnnouncement', () => {
   it('inserts a trimmed message with optional link fields, the creator, and revalidates', async () => {
     await createAnnouncement(formData({
       message: '  Try Coach DNA  ',
-      linkUrl: '/admin/coach-dna',
+      linkUrl: '/coach-dna',
       linkLabel: 'Try it',
       active: 'on',
     }))
     expect(insertMock).toHaveBeenCalledWith({
       message: 'Try Coach DNA',
-      link_url: '/admin/coach-dna',
+      link_url: '/coach-dna',
       link_label: 'Try it',
       active: true,
       created_by: 'admin-1',

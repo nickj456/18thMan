@@ -28,8 +28,8 @@ export default async function AssessmentQuestionPage({
     .select('id, coach_id, completed_at')
     .eq('id', attemptId)
     .single()
-  if (!attempt || attempt.coach_id !== user.id) redirect('/admin/coach-dna')
-  if (attempt.completed_at) redirect(`/admin/coach-dna/assessment/${attemptId}/complete`)
+  if (!attempt || attempt.coach_id !== user.id) redirect('/coach-dna')
+  if (attempt.completed_at) redirect(`/coach-dna/assessment/${attemptId}/complete`)
 
   const { data: orderedQuestions } = await supabase
     .from('assessment_questions')
@@ -52,7 +52,7 @@ export default async function AssessmentQuestionPage({
   const progress = getQuestionProgress(questions, answeredIds)
   const currentQuestionId = q && questions.some(quest => quest.id === q) ? q : progress.nextQuestion?.id
 
-  if (!currentQuestionId) redirect(`/admin/coach-dna/assessment/${attemptId}/complete`)
+  if (!currentQuestionId) redirect(`/coach-dna/assessment/${attemptId}/complete`)
 
   const position = questions.findIndex(quest => quest.id === currentQuestionId) + 1
   const previousQuestionId = getPreviousQuestionId(questions, currentQuestionId)
@@ -71,20 +71,20 @@ export default async function AssessmentQuestionPage({
     .select('id, option_text')
     .eq('question_id', currentQuestionId)
 
-  if (!question) redirect('/admin/coach-dna')
+  if (!question) redirect('/coach-dna')
 
   return (
     <div className="space-y-6 max-w-2xl">
       {previousQuestionId ? (
         <Link
-          href={`/admin/coach-dna/assessment/${attemptId}?q=${previousQuestionId}`}
+          href={`/coach-dna/assessment/${attemptId}?q=${previousQuestionId}`}
           className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors"
         >
           <ArrowLeft size={12} /> Back
         </Link>
       ) : (
         <Link
-          href="/admin/coach-dna"
+          href="/coach-dna"
           className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors"
         >
           <ArrowLeft size={12} /> Exit

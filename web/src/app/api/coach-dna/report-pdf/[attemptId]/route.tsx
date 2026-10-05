@@ -2,7 +2,7 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import { createClient } from '@/lib/supabase/server'
 import { requireBlendedAttempt } from '@/lib/coach-dna/require-blended-attempt'
 import { registerPdfFonts } from '@/lib/coach-dna/pdf-font'
-import { CoachDnaSummaryPDF } from '@/app/(app)/admin/coach-dna/CoachDnaSummaryPDF'
+import { CoachDnaSummaryPDF } from '@/app/(app)/coach-dna/CoachDnaSummaryPDF'
 import { LOGO_DATA_URI } from '@/lib/pdf-logo'
 
 export async function GET(

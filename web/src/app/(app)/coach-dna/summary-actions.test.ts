@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { GROQ_TEXT_HEAVY, DECOMMISSIONED_GROQ_MODELS } from '../../../../lib/ai/groq-models'
+import { GROQ_TEXT_HEAVY, DECOMMISSIONED_GROQ_MODELS } from '../../../lib/ai/groq-models'
 
 const state: {
   user: { id: string } | null
@@ -176,7 +176,7 @@ describe('generateSelfAssessmentSummary', () => {
 
   it('rejects an attempt that does not belong to the caller', async () => {
     state.attempt = { id: 'attempt-1', coach_id: 'someone-else', completed_at: '2026-08-06T00:00:00.000Z' }
-    await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('REDIRECT:/admin/coach-dna')
+    await expect(generateSelfAssessmentSummary('attempt-1')).rejects.toThrow('REDIRECT:/coach-dna')
   })
 
   it('rejects an attempt that is not yet completed', async () => {

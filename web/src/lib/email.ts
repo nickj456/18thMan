@@ -597,7 +597,7 @@ export async function sendCoachDnaSummaryEmail(
     ${para('Focus areas:')}
     ${focusBlocks}
     ${selfOnly ? para('This reflects your self-assessment only, and will update as player and peer feedback comes in.') : ''}
-    ${ctaButton('View your full results', `${SITE_URL}/admin/coach-dna`)}
+    ${ctaButton('View your full results', `${SITE_URL}/coach-dna`)}
     ${sign()}
   `)
 
@@ -681,7 +681,7 @@ export async function sendFeedbackThresholdReachedEmail(
     ${divider()}
     ${greeting(esc(coachDisplayName))}
     ${para(`Your <strong style="color:#ffffff;">${esc(typeLabel)}</strong> feedback request has reached enough responses to show results.`)}
-    ${ctaButton('View your feedback requests', `${SITE_URL}/admin/coach-dna/feedback`)}
+    ${ctaButton('View your feedback requests', `${SITE_URL}/coach-dna/feedback`)}
     ${sign()}
   `)
 

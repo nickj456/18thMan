@@ -1,4 +1,4 @@
-// web/src/app/(app)/admin/coach-dna/page.tsx
+// web/src/app/(app)/coach-dna/page.tsx
 import Link from 'next/link'
 import Image from 'next/image'
 import { redirect, unstable_rethrow } from 'next/navigation'
@@ -255,7 +255,7 @@ export default async function CoachDnaPage() {
                   )}
                 </div>
                 <Link
-                  href={`/admin/coach-dna/assessment/${completed.id}/complete`}
+                  href={`/coach-dna/assessment/${completed.id}/complete`}
                   className="group inline-flex items-center gap-1 text-sm text-orange-400 hover:text-orange-300"
                 >
                   View full breakdown
@@ -263,7 +263,7 @@ export default async function CoachDnaPage() {
                 </Link>
                 {hasBlendedFeedback(summary.sourcedCategories) && (
                   <Link
-                    href="/admin/coach-dna/feedback/summary"
+                    href="/coach-dna/feedback/summary"
                     className="group inline-flex items-center gap-1 text-sm text-orange-400 hover:text-orange-300"
                   >
                     View feedback breakdown
@@ -282,7 +282,7 @@ export default async function CoachDnaPage() {
                     // attempt.
                     <form action={async () => {
                       'use server'
-                      redirect(`/admin/coach-dna/assessment/${inProgress.id}`)
+                      redirect(`/coach-dna/assessment/${inProgress.id}`)
                     }}>
                       <Button type="submit" variant="outline" size="sm">Resume assessment</Button>
                     </form>
@@ -298,13 +298,13 @@ export default async function CoachDnaPage() {
                 </div>
               </div>
             ) : completed ? (
-              <Button render={<Link href={`/admin/coach-dna/assessment/${completed.id}/complete`} />}>
+              <Button render={<Link href={`/coach-dna/assessment/${completed.id}/complete`} />}>
                 View your results
               </Button>
             ) : inProgress ? (
               <form action={async () => {
                 'use server'
-                redirect(`/admin/coach-dna/assessment/${inProgress.id}`)
+                redirect(`/coach-dna/assessment/${inProgress.id}`)
               }}>
                 <Button type="submit">Resume assessment</Button>
               </form>
@@ -339,7 +339,7 @@ export default async function CoachDnaPage() {
                     ))}
                   </ul>
                 </div>
-                <Button render={<Link href="/admin/coach-dna/feedback" />}>
+                <Button render={<Link href="/coach-dna/feedback" />}>
                   View feedback requests
                 </Button>
               </div>
@@ -353,7 +353,7 @@ export default async function CoachDnaPage() {
                     {feedbackRequests.length} feedback {feedbackRequests.length === 1 ? 'request has' : 'requests have'} expired without a new one started.
                   </p>
                 </div>
-                <Button render={<Link href="/admin/coach-dna/feedback" />}>
+                <Button render={<Link href="/coach-dna/feedback" />}>
                   View feedback requests
                 </Button>
               </div>
@@ -410,7 +410,7 @@ export default async function CoachDnaPage() {
                   </div>
                 )}
                 <Link
-                  href="/admin/coach-dna/feedback"
+                  href="/coach-dna/feedback"
                   className="group inline-flex items-center gap-1 text-sm text-orange-400 hover:text-orange-300"
                 >
                   View feedback requests

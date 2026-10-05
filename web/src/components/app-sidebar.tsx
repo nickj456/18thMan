@@ -97,10 +97,10 @@ const analysisItems: NavItem[] = [
     roles: ['coach', 'admin'],
   },
   {
-    href: '/admin/coach-dna',
+    href: '/coach-dna',
     label: 'Coach DNA',
     icon: Brain,
-    isActive: (p) => p.startsWith('/admin/coach-dna'),
+    isActive: (p) => p.startsWith('/coach-dna'),
     roles: ['coach', 'admin'],
   },
 ]

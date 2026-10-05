@@ -23,7 +23,7 @@ export function buildGuidance(params: {
     return [{
       heading: 'Request feedback',
       body: 'Request feedback from your players, parents, or a fellow coach to see how your self-view compares.',
-      href: '/admin/coach-dna/feedback',
+      href: '/coach-dna/feedback',
       linkLabel: 'Request feedback',
     }]
   }
@@ -32,7 +32,7 @@ export function buildGuidance(params: {
     return [{
       heading: 'Almost there',
       body: "You're close — a few more responses will unlock your full blended picture.",
-      href: '/admin/coach-dna/feedback',
+      href: '/coach-dna/feedback',
       linkLabel: 'View feedback requests',
     }]
   }
@@ -72,7 +72,7 @@ export function buildGuidance(params: {
   return [{
     heading: 'Coach DNA',
     body: 'Head back to your Coach DNA hub for the latest on your assessment and feedback.',
-    href: '/admin/coach-dna',
+    href: '/coach-dna',
     linkLabel: 'Back to Coach DNA',
   }]
 }

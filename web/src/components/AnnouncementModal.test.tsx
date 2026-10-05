@@ -26,13 +26,13 @@ describe('AnnouncementModal', () => {
   })
 
   it('shows a link button using the given label and url', () => {
-    render(<AnnouncementModal announcement={{ id: 'ann-1', message: 'Try Coach DNA', linkUrl: '/admin/coach-dna', linkLabel: 'Try it' }} />)
+    render(<AnnouncementModal announcement={{ id: 'ann-1', message: 'Try Coach DNA', linkUrl: '/coach-dna', linkLabel: 'Try it' }} />)
     const link = screen.getByRole('button', { name: 'Try it' })
-    expect(link).toHaveAttribute('href', '/admin/coach-dna')
+    expect(link).toHaveAttribute('href', '/coach-dna')
   })
 
   it('falls back to a default label when linkLabel is not given', () => {
-    render(<AnnouncementModal announcement={{ id: 'ann-1', message: 'Try Coach DNA', linkUrl: '/admin/coach-dna', linkLabel: null }} />)
+    render(<AnnouncementModal announcement={{ id: 'ann-1', message: 'Try Coach DNA', linkUrl: '/coach-dna', linkLabel: null }} />)
     expect(screen.getByRole('button', { name: 'Learn more' })).toBeInTheDocument()
   })
 
@@ -55,7 +55,7 @@ describe('AnnouncementModal', () => {
 
   it('also dismisses the announcement when the link button is clicked, so it does not reappear', async () => {
     const user = userEvent.setup()
-    render(<AnnouncementModal announcement={{ id: 'ann-1', message: 'Try Coach DNA', linkUrl: '/admin/coach-dna', linkLabel: 'Try it' }} />)
+    render(<AnnouncementModal announcement={{ id: 'ann-1', message: 'Try Coach DNA', linkUrl: '/coach-dna', linkLabel: 'Try it' }} />)
 
     await user.click(screen.getByRole('button', { name: 'Try it' }))
 

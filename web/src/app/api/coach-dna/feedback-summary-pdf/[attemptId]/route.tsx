@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireBlendedAttempt } from '@/lib/coach-dna/require-blended-attempt'
 import { ensureFreshFeedbackSummary } from '@/lib/coach-dna/feedback-summary-actions'
 import { registerPdfFonts } from '@/lib/coach-dna/pdf-font'
-import { FeedbackSummaryPDF } from '@/app/(app)/admin/coach-dna/FeedbackSummaryPDF'
+import { FeedbackSummaryPDF } from '@/app/(app)/coach-dna/FeedbackSummaryPDF'
 import { LOGO_DATA_URI } from '@/lib/pdf-logo'
 
 export async function GET(

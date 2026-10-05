@@ -92,7 +92,7 @@ describe('sendCoachDnaSummaryEmail', () => {
     sendMock.mockResolvedValue({ data: { id: 'msg_012' }, error: null })
     await sendCoachDnaSummaryEmail('coach@example.com', summary, Buffer.from('fake-pdf'))
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
-      html: expect.stringContaining('/admin/coach-dna'),
+      html: expect.stringContaining('/coach-dna'),
     }))
   })
 
@@ -166,7 +166,7 @@ describe('sendFeedbackThresholdReachedEmail', () => {
     sendMock.mockResolvedValue({ data: { id: 'msg_666' }, error: null })
     await sendFeedbackThresholdReachedEmail('coach@example.com', 'Alex', 'peer_observation')
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
-      html: expect.stringContaining('/admin/coach-dna/feedback'),
+      html: expect.stringContaining('/coach-dna/feedback'),
     }))
   })
 })

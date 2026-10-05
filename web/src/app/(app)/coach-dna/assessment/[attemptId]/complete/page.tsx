@@ -1,4 +1,4 @@
-// web/src/app/(app)/admin/coach-dna/assessment/[attemptId]/complete/page.tsx
+// web/src/app/(app)/coach-dna/assessment/[attemptId]/complete/page.tsx
 import { redirect, unstable_rethrow } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -72,7 +72,7 @@ export default async function AssessmentCompletePage({
     .select('id, coach_id, completed_at')
     .eq('id', attemptId)
     .single()
-  if (!attempt || attempt.coach_id !== user.id || !attempt.completed_at) redirect('/admin/coach-dna')
+  if (!attempt || attempt.coach_id !== user.id || !attempt.completed_at) redirect('/coach-dna')
 
   let summary: SelfAssessmentSummary
   let generationFailed = false
@@ -174,7 +174,7 @@ export default async function AssessmentCompletePage({
           </div>
 
           <div className="flex items-center gap-3 pt-2">
-            <Button render={<Link href="/admin/coach-dna" />}>Back to Coach DNA</Button>
+            <Button render={<Link href="/coach-dna" />}>Back to Coach DNA</Button>
             <EmailSummaryButton />
           </div>
         </CardContent>

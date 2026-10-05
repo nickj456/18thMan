@@ -1,11 +1,11 @@
-// web/src/app/(app)/admin/coach-dna/actions.ts
+// web/src/app/(app)/coach-dna/actions.ts
 'use server'
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { retakeEligibility } from '@/lib/coach-dna/retake-eligibility'
 
-async function requireAdmin() {
+async function requireCoach() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -15,7 +15,7 @@ async function requireAdmin() {
 }
 
 export async function startAssessment() {
-  const { supabase, userId } = await requireAdmin()
+  const { supabase, userId } = await requireCoach()
 
   const { data: lastCompleted, error: lastCompletedError } = await supabase
     .from('assessment_attempts')
@@ -47,7 +47,7 @@ export async function startAssessment() {
     .limit(1)
     .maybeSingle()
 
-  if (existingInProgress) redirect(`/admin/coach-dna/assessment/${existingInProgress.id}`)
+  if (existingInProgress) redirect(`/coach-dna/assessment/${existingInProgress.id}`)
 
   const { data: attempt, error } = await supabase
     .from('assessment_attempts')
@@ -57,5 +57,5 @@ export async function startAssessment() {
 
   if (error || !attempt) throw new Error(error?.message ?? 'Failed to start assessment')
 
-  redirect(`/admin/coach-dna/assessment/${attempt.id}`)
+  redirect(`/coach-dna/assessment/${attempt.id}`)
 }

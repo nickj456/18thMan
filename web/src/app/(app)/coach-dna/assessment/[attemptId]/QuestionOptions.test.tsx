@@ -92,7 +92,7 @@ describe('QuestionOptions', () => {
 
   it('does not swallow a NEXT_REDIRECT-style throw from a successful save as a user-facing error', async () => {
     const redirectError = new Error('NEXT_REDIRECT') as Error & { digest: string }
-    redirectError.digest = 'NEXT_REDIRECT;push;/admin/coach-dna/assessment/attempt-1?q=q2;307;'
+    redirectError.digest = 'NEXT_REDIRECT;push;/coach-dna/assessment/attempt-1?q=q2;307;'
     answerQuestionMock.mockRejectedValue(redirectError)
 
     const user = userEvent.setup()

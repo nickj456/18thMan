@@ -62,7 +62,7 @@ const ensureFreshSummaryMock = vi.fn(async (_attemptId: string, _coachId: string
   if (state.ensureFreshSummaryError) throw state.ensureFreshSummaryError
   return state.summary
 })
-vi.mock('@/app/(app)/admin/coach-dna/summary-actions', () => ({
+vi.mock('@/app/(app)/coach-dna/summary-actions', () => ({
   ensureFreshSummary: (attemptId: string, coachId: string) => ensureFreshSummaryMock(attemptId, coachId),
 }))
 

@@ -135,14 +135,14 @@ describe('answerQuestion', () => {
 
     await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('REDIRECT:')
 
-    expect(revalidateMock).toHaveBeenCalledWith('/admin/coach-dna/assessment/attempt-1')
+    expect(revalidateMock).toHaveBeenCalledWith('/coach-dna/assessment/attempt-1')
   })
 
   it('redirects to the next unanswered question when the attempt is incomplete', async () => {
     state.answeredQuestionIds = ['q1']
 
     await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow(
-      'REDIRECT:/admin/coach-dna/assessment/attempt-1?q=q2',
+      'REDIRECT:/coach-dna/assessment/attempt-1?q=q2',
     )
   })
 
@@ -150,7 +150,7 @@ describe('answerQuestion', () => {
     state.answeredQuestionIds = ['q1', 'q2', 'q3']
 
     await expect(answerQuestion('attempt-1', 'q3', 'opt-most', 'opt-least')).rejects.toThrow(
-      'REDIRECT:/admin/coach-dna/assessment/attempt-1/complete',
+      'REDIRECT:/coach-dna/assessment/attempt-1/complete',
     )
     expect(updateMock).toHaveBeenCalledWith({ completed_at: expect.any(String) })
   })
@@ -159,7 +159,7 @@ describe('answerQuestion', () => {
     state.attempt = { id: 'attempt-1', coach_id: 'someone-else', completed_at: null }
 
     await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow(
-      'REDIRECT:/admin/coach-dna',
+      'REDIRECT:/coach-dna',
     )
     expect(upsertMock).not.toHaveBeenCalled()
   })
@@ -168,7 +168,7 @@ describe('answerQuestion', () => {
     state.attempt = { id: 'attempt-1', coach_id: 'coach-1', completed_at: '2026-08-01T00:00:00.000Z' }
 
     await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow(
-      'REDIRECT:/admin/coach-dna/assessment/attempt-1/complete',
+      'REDIRECT:/coach-dna/assessment/attempt-1/complete',
     )
     expect(upsertMock).not.toHaveBeenCalled()
   })
@@ -189,7 +189,7 @@ describe('answerQuestion', () => {
     // file's existing 'saves both picks in one upsert' test pattern) — this
     // only proves the role check let the call reach the upsert.
     await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow(
-      'REDIRECT:/admin/coach-dna/assessment/attempt-1?q=q2',
+      'REDIRECT:/coach-dna/assessment/attempt-1?q=q2',
     )
     expect(upsertMock).toHaveBeenCalled()
   })
@@ -204,7 +204,7 @@ describe('answerQuestion', () => {
   it('redirects to Coach DNA home when the attempt does not exist', async () => {
     state.attempt = null
 
-    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('REDIRECT:/admin/coach-dna')
+    await expect(answerQuestion('attempt-1', 'q1', 'opt-most', 'opt-least')).rejects.toThrow('REDIRECT:/coach-dna')
     expect(upsertMock).not.toHaveBeenCalled()
   })
 
@@ -250,7 +250,7 @@ describe('answerQuestion', () => {
     state.incompleteQuestionIds = ['q3']
 
     await expect(answerQuestion('attempt-1', 'q2', 'opt-most', 'opt-least')).rejects.toThrow(
-      'REDIRECT:/admin/coach-dna/assessment/attempt-1?q=q3',
+      'REDIRECT:/coach-dna/assessment/attempt-1?q=q3',
     )
     expect(updateMock).not.toHaveBeenCalled()
   })

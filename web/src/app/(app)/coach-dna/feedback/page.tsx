@@ -39,7 +39,7 @@ export default async function FeedbackRequestsPage() {
           <h1 className="app-heading text-2xl">Feedback Requests</h1>
           <p className="text-sm text-zinc-500 mt-0.5">Player, parent, and peer feedback on your coaching.</p>
         </div>
-        <Button render={<Link href="/admin/coach-dna/feedback/new" />}>New request</Button>
+        <Button render={<Link href="/coach-dna/feedback/new" />}>New request</Button>
       </div>
 
       <FeedbackRequestsList requests={rows} siteUrl={siteUrl} />

@@ -52,7 +52,7 @@ export async function generateSelfAssessmentSummary(attemptId: string): Promise<
     .select('id, coach_id, completed_at')
     .eq('id', attemptId)
     .single()
-  if (!attempt || attempt.coach_id !== user.id) redirect('/admin/coach-dna')
+  if (!attempt || attempt.coach_id !== user.id) redirect('/coach-dna')
   if (!attempt.completed_at) throw new Error('This attempt is not completed yet')
 
   // `category_weights_json` is revoked from the `authenticated` role (migration
