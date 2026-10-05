@@ -407,7 +407,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         <div className="space-y-1.5">
           <Label htmlFor="youtube" className="text-xs flex items-center gap-1.5">
             YouTube
-            <span className="text-[10px] text-indigo-400 font-normal">Primary — AI guide</span>
+            <span className="text-[10px] text-primary font-normal">Primary — AI guide</span>
           </Label>
           <Input
             id="youtube"
@@ -490,7 +490,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         <div className="flex flex-col h-full overflow-y-auto bg-zinc-950">
           {/* Canvas unavailable notice */}
           <div className="mx-4 mt-4 flex items-start gap-3 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3">
-            <Monitor size={18} className="text-indigo-400 mt-0.5 shrink-0" />
+            <Monitor size={18} className="text-primary mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-medium text-zinc-200">Canvas designer requires a larger screen</p>
               <p className="text-xs text-zinc-500 mt-0.5">
@@ -553,7 +553,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
               <button
                 onClick={handleSave}
                 disabled={isPending}
-                className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-500 transition-colors border border-indigo-500 disabled:opacity-50"
+                className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/80 transition-colors border border-primary disabled:opacity-50"
                 title="Save drill"
               >
                 {isPending ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
@@ -582,7 +582,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
               onClick={() => setShowTimeline(v => !v)}
               className={`flex items-center gap-1.5 text-[11px] px-2 py-1 rounded transition-colors border ${
                 showTimeline
-                  ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/25'
+                  ? 'bg-primary/15 text-primary border-primary/30 hover:bg-primary/25'
                   : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white hover:bg-zinc-700'
               }`}
             >

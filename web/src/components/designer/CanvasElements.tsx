@@ -7,7 +7,7 @@ import type { CanvasElement } from './types'
 // ── Shared handle styles ─────────────────────────────────────────────────────
 const HANDLE_RADIUS = 7
 const HANDLE_FILL = '#fff'
-const HANDLE_STROKE = '#6366f1'
+const HANDLE_STROKE = '#e8560a'   // ember, matching the app's one accent
 const HANDLE_STROKE_WIDTH = 2
 
 // ── Player icon sizing ───────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ function RugbyBall({ el, selected, onSelect, onChange }: ElementProps) {
           ctx.fillStrokeShape(shape)
         }}
         fill='#f5f5f0'
-        stroke={selected ? '#6366f1' : '#1a1a1a'}
+        stroke={selected ? '#e8560a' : '#1a1a1a'}
         strokeWidth={selected ? 2 : 1.5}
       />
 
