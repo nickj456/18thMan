@@ -25,7 +25,7 @@ export default async function NewDrillPage() {
   const tier = await getEffectiveTierCached(user.id)
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="-m-6 flex h-[calc(100dvh-3rem)] flex-col overflow-hidden">
       <header className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">
         <a href="/drills" className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">
           ← Drills

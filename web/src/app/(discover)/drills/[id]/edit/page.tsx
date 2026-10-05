@@ -44,7 +44,7 @@ export default async function EditDrillPage({
   const tier = await getEffectiveTierCached(user.id)
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col -mx-4 sm:-mx-6 lg:-mx-8 -my-6">
+    <div className="-m-6 flex h-[calc(100dvh-3rem)] flex-col overflow-hidden">
       <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 border-b border-zinc-800 bg-zinc-950 shrink-0">
         <h1 className="text-sm font-semibold">Editing: {drill.title}</h1>
       </div>
