@@ -9,7 +9,7 @@ vi.mock('resend', () => ({
   })),
 }))
 
-import { sendDirectEmailHtml, sendCoachDnaSummaryEmail, sendFeedbackThresholdReachedEmail } from './email'
+import { sendDirectEmailHtml, sendCoachDnaSummaryEmail, sendFeedbackThresholdReachedEmail, sendWelcomeEmail } from './email'
 
 describe('sendDirectEmailHtml', () => {
   beforeEach(() => {
@@ -88,11 +88,11 @@ describe('sendCoachDnaSummaryEmail', () => {
     }))
   })
 
-  it('includes a CTA link back to the results page on-site', async () => {
+  it('links the results CTA through login so expired sessions land back on Coach DNA', async () => {
     sendMock.mockResolvedValue({ data: { id: 'msg_012' }, error: null })
     await sendCoachDnaSummaryEmail('coach@example.com', summary, Buffer.from('fake-pdf'))
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
-      html: expect.stringContaining('/coach-dna'),
+      html: expect.stringContaining('/login?next=%2Fcoach-dna"'),
     }))
   })
 
@@ -162,11 +162,39 @@ describe('sendFeedbackThresholdReachedEmail', () => {
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ to: 'coach@example.com' }))
   })
 
-  it('includes a CTA link back to the feedback requests page', async () => {
+  it('links the feedback CTA through login back to the feedback requests page', async () => {
     sendMock.mockResolvedValue({ data: { id: 'msg_666' }, error: null })
     await sendFeedbackThresholdReachedEmail('coach@example.com', 'Alex', 'peer_observation')
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({
-      html: expect.stringContaining('/coach-dna/feedback'),
+      html: expect.stringContaining('/login?next=%2Fcoach-dna%2Ffeedback"'),
     }))
+  })
+})
+
+describe('sendWelcomeEmail', () => {
+  beforeEach(() => {
+    sendMock.mockReset()
+    sendMock.mockResolvedValue({ data: { id: 'msg_777' }, error: null })
+  })
+
+  function sentHtml(): string {
+    return sendMock.mock.calls[0][0].html
+  }
+
+  it('escapes the signup username so it cannot inject HTML', async () => {
+    await sendWelcomeEmail('victim@example.com', '<a href=//evil.co>Verify</a>')
+    expect(sentHtml()).toContain('Hi &lt;a href=//evil.co&gt;Verify&lt;/a&gt;,')
+    expect(sentHtml()).not.toContain('<a href=//evil.co>')
+  })
+
+  it('falls back to "Coach" when the name is empty', async () => {
+    await sendWelcomeEmail('coach@example.com', '')
+    expect(sentHtml()).toContain('Hi Coach,')
+  })
+
+  it('links the dashboard button to the real site URL', async () => {
+    await sendWelcomeEmail('coach@example.com', 'Alex')
+    expect(sentHtml()).toMatch(/href="https?:\/\/[^"]+\/dashboard"/)
+    expect(sentHtml()).not.toContain('${SITE_URL}')
   })
 })
