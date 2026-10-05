@@ -7,6 +7,7 @@ import { PitchBackgroundLayer } from './PitchBackground'
 import { CanvasElements } from './CanvasElements'
 import { Toolbar } from './Toolbar'
 import { CANVAS_WIDTH, CANVAS_HEIGHT, DRAW_TOOLS, type CanvasElement, type CanvasState, type ToolType } from './types'
+import { toolForKey } from './tools'
 import { nanoid } from 'nanoid'
 
 // ── Kick arc preview — shown while dragging to draw ──────────────────────────
@@ -164,18 +165,33 @@ export function DrillCanvas({
   // Keyboard shortcuts
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement).tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      // Leave typing alone: form fields, the label textarea, native selects,
+      // Base UI comboboxes/listboxes and any open dialog own their own keys.
+      const target = e.target as HTMLElement
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) return
+      if (target.closest?.('[role="combobox"],[role="listbox"],[role="dialog"]')) return
+
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedId) handleDelete()
+        return
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         e.preventDefault()
         onUndo()
+        return
       }
       if (e.key === 'Escape') {
         onSelectId(null)
         onToolChange('select')
+        return
+      }
+      // Single-key tool shortcuts (V select, A attacker, R run, ...) defined in tools.tsx
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
+        const tool = toolForKey(e.key)
+        if (tool) {
+          e.preventDefault()
+          onToolChange(tool)
+        }
       }
     }
     window.addEventListener('keydown', handleKey)

@@ -1,59 +1,17 @@
 'use client'
 
+import { Eraser, RotateCw, Trash2, Undo2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { ToolType, PitchBackground } from './types'
-import {
-  MousePointer2,
-  Circle,
-  Shield,
-  Triangle,
-  MoveRight,
-  Minus,
-  MoreHorizontal,
-  Square,
-  Type,
-  Trash2,
-  Undo2,
-  Eraser,
-  RotateCw,
-  TrendingUp,
-  RectangleVertical,
-  RectangleHorizontal,
-  Flag,
-  Dot,
-  AlignJustify,
-} from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import type { PitchBackground, ToolType } from './types'
+import { PITCH_OPTIONS, PitchGlyph, TOOL_GROUPS, TOOL_META, TOOL_SHORTCUTS, ToolGlyph } from './tools'
 
-const TOOLS: { id: ToolType; label: string; icon: React.ReactNode; color?: string }[] = [
-  { id: 'select',        label: 'Select',  icon: <MousePointer2 size={15} /> },
-  { id: 'attacker',      label: 'Attack',  icon: <Circle size={15} />,              color: 'text-red-400' },
-  { id: 'defender',      label: 'Defend',  icon: <Shield size={15} />,              color: 'text-blue-400' },
-  { id: 'cone',          label: 'Cone',    icon: <Triangle size={15} />,            color: 'text-amber-400' },
-  { id: 'ball',          label: 'Ball',    icon: <Circle size={12} />,              color: 'text-orange-400' },
-  { id: 'tackle-bag',    label: 'T.Bag',   icon: <RectangleVertical size={15} />,   color: 'text-red-300' },
-  { id: 'tackle-shield', label: 'Shield',  icon: <RectangleHorizontal size={15} />, color: 'text-blue-300' },
-  { id: 'flag',          label: 'Flag',    icon: <Flag size={15} />,                color: 'text-green-400' },
-  { id: 'disc',          label: 'Disc',    icon: <Dot size={15} />,                 color: 'text-amber-300' },
-  { id: 'agility-ladder',label: 'Ladder',  icon: <AlignJustify size={15} />,        color: 'text-indigo-400' },
-  { id: 'arrow',         label: 'Run',     icon: <MoveRight size={15} />,           color: 'text-green-400' },
-  { id: 'line',          label: 'Pass',    icon: <Minus size={15} />,               color: 'text-zinc-300' },
-  { id: 'dotted',        label: 'Dotted',  icon: <MoreHorizontal size={15} />,      color: 'text-zinc-400' },
-  { id: 'kick',          label: 'Kick',    icon: <TrendingUp size={15} />,          color: 'text-amber-400' },
-  { id: 'zone',          label: 'Zone',    icon: <Square size={15} />,              color: 'text-red-300' },
-  { id: 'text',          label: 'Label',   icon: <Type size={15} /> },
-]
+type PlayerSize = 'sm' | 'md' | 'lg'
 
-const BACKGROUNDS: { id: PitchBackground; label: string }[] = [
-  { id: 'full',   label: 'Full' },
-  { id: 'half',   label: 'Half' },
-  { id: 'blank',  label: 'Grid' },
-  { id: 'ingoal', label: 'In-Goal' },
-]
-
-const SIZES: { id: 'sm' | 'md' | 'lg'; label: string }[] = [
-  { id: 'sm', label: 'S' },
-  { id: 'md', label: 'M' },
-  { id: 'lg', label: 'L' },
+const SIZES: { id: PlayerSize; label: string; name: string }[] = [
+  { id: 'sm', label: 'S', name: 'Small players' },
+  { id: 'md', label: 'M', name: 'Medium players' },
+  { id: 'lg', label: 'L', name: 'Large players' },
 ]
 
 interface ToolbarProps {
@@ -63,14 +21,74 @@ interface ToolbarProps {
   onBackgroundChange: (bg: PitchBackground) => void
   pitchFlipped: boolean
   onFlipPitch: () => void
-  playerSize: 'sm' | 'md' | 'lg'
-  onPlayerSizeChange: (size: 'sm' | 'md' | 'lg') => void
+  playerSize: PlayerSize
+  onPlayerSizeChange: (size: PlayerSize) => void
   hasSelection: boolean
   onDelete: () => void
   onUndo: () => void
   onClear: () => void
   canUndo: boolean
   hasElements: boolean
+}
+
+// One look for every rail control: flat at rest, muted surface on hover, and an
+// ember ring plus tint when active so the piece colours stay legible on top.
+const railButton =
+  'flex h-8 items-center justify-center rounded-md text-muted-foreground transition-colors ' +
+  'hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ' +
+  'disabled:pointer-events-none disabled:opacity-30'
+const railActive = 'bg-primary/15 text-foreground ring-1 ring-inset ring-primary'
+
+function Kbd({ children }: { children: string }) {
+  const text = children.length === 1 ? children.toUpperCase() : children
+  return (
+    <kbd
+      data-slot="kbd"
+      className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-sm bg-background/15 px-1 font-mono text-[10px] font-medium"
+    >
+      {text}
+    </kbd>
+  )
+}
+
+interface RailButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
+  label: string
+  shortcut?: string
+  /** Pass a boolean for toggle buttons; leave undefined for plain actions. */
+  active?: boolean
+  children: React.ReactNode
+}
+
+function RailButton({ label, shortcut, active, className, children, ...props }: RailButtonProps) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type="button"
+            aria-label={label}
+            aria-pressed={active}
+            className={cn(railButton, active && railActive, className)}
+            {...props}
+          />
+        }
+      >
+        {children}
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={10}>
+        {label}
+        {shortcut && <Kbd>{shortcut}</Kbd>}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+function GroupLabel({ children }: { children: string }) {
+  return (
+    <h3 className="px-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      {children}
+    </h3>
+  )
 }
 
 export function Toolbar({
@@ -82,116 +100,119 @@ export function Toolbar({
   onUndo, onClear,
   canUndo, hasElements,
 }: ToolbarProps) {
-
   return (
-    <div className="flex flex-col gap-3 w-[58px] bg-zinc-900 border-r border-zinc-800 py-3 px-1.5 shrink-0 overflow-y-auto">
-      {/* Draw tools */}
-      <div className="flex flex-col gap-0.5">
-        {TOOLS.map((tool) => (
-          <button
-            key={tool.id}
-            title={tool.label}
-            onClick={() => onToolChange(tool.id)}
-            className={cn(
-              'flex flex-col items-center gap-0.5 rounded-md py-1.5 px-1 text-[9px] leading-tight transition-colors w-full',
-              tool.color ?? 'text-zinc-400',
-              activeTool === tool.id
-                ? 'bg-indigo-600 text-white'
-                : 'hover:bg-zinc-800'
-            )}
-          >
-            {tool.icon}
-            <span>{tool.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Pitch backgrounds + flip */}
-      <div className="border-t border-zinc-800 pt-2 flex flex-col gap-0.5">
-        <span className="text-[8px] text-zinc-600 text-center mb-0.5 uppercase tracking-wide">Pitch</span>
-        {BACKGROUNDS.map((bg) => (
-          <button
-            key={bg.id}
-            title={bg.label}
-            onClick={() => onBackgroundChange(bg.id)}
-            className={cn(
-              'rounded-md py-1 px-1 text-[9px] leading-tight text-center transition-colors',
-              background === bg.id
-                ? 'bg-zinc-700 text-white'
-                : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-            )}
-          >
-            {bg.label}
-          </button>
-        ))}
-        <button
-          title="Rotate pitch to vertical"
-          onClick={onFlipPitch}
-          className={cn(
-            'flex flex-col items-center gap-0.5 rounded-md py-1 px-1 text-[9px] leading-tight text-center transition-colors mt-0.5',
-            pitchFlipped
-              ? 'bg-zinc-700 text-white'
-              : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
-          )}
+    <TooltipProvider delay={250}>
+      <nav
+        aria-label="Drill designer tools"
+        className="flex w-[92px] shrink-0 flex-col border-r border-border bg-card px-2 py-2"
+      >
+        {/* The palette scrolls when the timeline shortens the rail; the edit actions below never do. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [scrollbar-width:thin]">
+        <RailButton
+          label={TOOL_META.select.label}
+          shortcut={TOOL_SHORTCUTS.select}
+          active={activeTool === 'select'}
+          onClick={() => onToolChange('select')}
         >
-          <RotateCw size={12} />
-          <span>Vertical</span>
-        </button>
-      </div>
+          <ToolGlyph tool="select" />
+        </RailButton>
 
-      {/* Player size — always visible, sets default for new placements */}
-      <div className="border-t border-zinc-800 pt-2 flex flex-col gap-0.5">
-        <span className="text-[8px] text-zinc-600 text-center mb-0.5 uppercase tracking-wide">Players</span>
-        {SIZES.map((sz) => (
-          <button
-            key={sz.id}
-            title={`${sz.id === 'sm' ? 'Small' : sz.id === 'md' ? 'Medium' : 'Large'} player icon`}
-            onClick={() => onPlayerSizeChange(sz.id)}
-            className={cn(
-              'rounded-md py-1 px-1 text-[9px] text-center font-medium transition-colors',
-              playerSize === sz.id
-                ? 'bg-indigo-600 text-white'
-                : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+        {TOOL_GROUPS.map((group) => (
+          <section key={group.id} aria-label={group.label} className="flex flex-col gap-1">
+            <GroupLabel>{group.label}</GroupLabel>
+            <div className="grid grid-cols-2 gap-1">
+              {group.tools.map((tool) => (
+                <RailButton
+                  key={tool}
+                  label={TOOL_META[tool].label}
+                  shortcut={TOOL_SHORTCUTS[tool]}
+                  active={activeTool === tool}
+                  onClick={() => onToolChange(tool)}
+                >
+                  <ToolGlyph tool={tool} />
+                </RailButton>
+              ))}
+            </div>
+
+            {group.id === 'players' && (
+              <div
+                role="radiogroup"
+                aria-label="Player size"
+                className="grid grid-cols-3 gap-0.5 rounded-md bg-muted/50 p-0.5"
+              >
+                {SIZES.map((sz) => (
+                  <Tooltip key={sz.id}>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={playerSize === sz.id}
+                          aria-label={sz.name}
+                          onClick={() => onPlayerSizeChange(sz.id)}
+                          className={cn(
+                            'h-6 rounded-[5px] font-mono text-[11px] font-medium text-muted-foreground transition-colors',
+                            'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
+                            playerSize === sz.id && 'bg-background text-foreground ring-1 ring-inset ring-border',
+                          )}
+                        />
+                      }
+                    >
+                      {sz.label}
+                    </TooltipTrigger>
+                    <TooltipContent side="right" sideOffset={10}>{sz.name}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
             )}
-          >
-            {sz.label}
-          </button>
+          </section>
         ))}
-      </div>
 
-      {/* Actions */}
-      <div className="mt-auto border-t border-zinc-800 pt-2 flex flex-col gap-0.5">
-        <button
-          title="Undo (Ctrl+Z)"
-          onClick={onUndo}
-          disabled={!canUndo}
-          className="flex flex-col items-center gap-0.5 rounded-md py-1.5 px-1 text-[9px] text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 disabled:opacity-25 transition-colors"
-        >
-          <Undo2 size={14} />
-          <span>Undo</span>
-        </button>
-
-        <button
-          title="Clear canvas"
-          onClick={onClear}
-          disabled={!hasElements}
-          className="flex flex-col items-center gap-0.5 rounded-md py-1.5 px-1 text-[9px] text-zinc-400 hover:bg-zinc-800 hover:text-amber-300 disabled:opacity-25 transition-colors"
-        >
-          <Eraser size={14} />
-          <span>Clear</span>
-        </button>
-
-        {hasSelection && (
-          <button
-            title="Delete selected (Del)"
-            onClick={onDelete}
-            className="flex flex-col items-center gap-0.5 rounded-md py-1.5 px-1 text-[9px] text-red-400 hover:bg-red-900/30 transition-colors"
+        <section aria-label="Pitch" className="flex flex-col gap-1">
+          <GroupLabel>Pitch</GroupLabel>
+          <div className="grid grid-cols-2 gap-1">
+            {PITCH_OPTIONS.map((opt) => (
+              <RailButton
+                key={opt.id}
+                label={opt.label}
+                active={background === opt.id}
+                onClick={() => onBackgroundChange(opt.id)}
+              >
+                <PitchGlyph pitch={opt.id} />
+              </RailButton>
+            ))}
+          </div>
+          <RailButton
+            label={pitchFlipped ? 'Vertical pitch (click for horizontal)' : 'Rotate pitch to vertical'}
+            active={pitchFlipped}
+            onClick={onFlipPitch}
+            className="h-7"
           >
-            <Trash2 size={14} />
-            <span>Delete</span>
-          </button>
-        )}
-      </div>
-    </div>
+            <RotateCw size={16} aria-hidden />
+          </RailButton>
+        </section>
+        </div>
+
+        <div className="mt-2 flex shrink-0 flex-col gap-1 border-t border-border pt-2">
+          <div className="grid grid-cols-2 gap-1">
+            <RailButton label="Undo" shortcut="Ctrl+Z" onClick={onUndo} disabled={!canUndo}>
+              <Undo2 size={17} aria-hidden />
+            </RailButton>
+            <RailButton
+              label="Delete selected"
+              shortcut="Del"
+              onClick={onDelete}
+              disabled={!hasSelection}
+              className="hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 size={17} aria-hidden />
+            </RailButton>
+          </div>
+          <RailButton label="Clear canvas" onClick={onClear} disabled={!hasElements} className="h-7">
+            <Eraser size={16} aria-hidden />
+          </RailButton>
+        </div>
+      </nav>
+    </TooltipProvider>
   )
 }
