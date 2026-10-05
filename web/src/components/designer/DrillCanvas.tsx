@@ -374,7 +374,7 @@ export function DrillCanvas({
         hasElements={state.elements.length > 0}
       />
 
-      <div ref={containerRef} className="flex-1 overflow-auto bg-zinc-950 flex items-center justify-center p-4">
+      <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto bg-zinc-950 p-4">
         <div style={{
           position: 'relative',
           width: CANVAS_WIDTH * scale,
@@ -486,23 +486,23 @@ export function DrillCanvas({
             </Layer>
           </Stage>
         </div>
-      </div>
 
-      {/* Status bar */}
-      <div className="absolute bottom-2 left-16 flex gap-3 text-[11px] text-zinc-500 pointer-events-none select-none">
-        <span>{attackers} att · {defenders} def · {state.elements.length} total</span>
-        {activeTool !== 'select' && isDraw && (
-          <span className="text-zinc-400">{isTouch ? 'Drag to draw · Apple Pencil supported' : 'Click and drag to draw · Esc to cancel'}</span>
-        )}
-        {activeTool !== 'select' && !isDraw && !editingText && (
-          <span className="text-zinc-400">{isTouch ? 'Tap canvas to place' : 'Click canvas to place · Esc to cancel'}</span>
-        )}
-        {selectedId && !editingText && (
-          <span className="text-zinc-400">Del to delete · double-click text to edit</span>
-        )}
-        {editingText && (
-          <span className="text-zinc-400">Type your label · Enter or click away to save · Esc to cancel</span>
-        )}
+        {/* Status bar: pinned inside the canvas area so it never overlaps the rail */}
+        <div className="pointer-events-none absolute bottom-2 left-3 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground select-none">
+          <span>{attackers} att · {defenders} def · {state.elements.length} total</span>
+          {activeTool !== 'select' && isDraw && (
+            <span className="text-foreground/80">{isTouch ? 'Drag to draw · Apple Pencil supported' : 'Click and drag to draw · Esc to cancel'}</span>
+          )}
+          {activeTool !== 'select' && !isDraw && !editingText && (
+            <span className="text-foreground/80">{isTouch ? 'Tap canvas to place' : 'Click canvas to place · Esc to cancel'}</span>
+          )}
+          {selectedId && !editingText && (
+            <span className="text-foreground/80">Del to delete · double-click text to edit</span>
+          )}
+          {editingText && (
+            <span className="text-foreground/80">Type your label · Enter or click away to save · Esc to cancel</span>
+          )}
+        </div>
       </div>
     </div>
   )
