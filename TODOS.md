@@ -180,19 +180,32 @@ Escaped the trailing hyphen in `[a-z0-9_-]+` → `[a-z0-9_\-]+`, which
 Chromium's stricter `pattern`-attribute validation was rejecting, silently
 disabling native client-side validation on the signup form.
 
-## Drill designer — deferred from /design-review (2026-10-06)
+## Drill designer
 
-Design review on `feat/designer-toolbar-revamp` fixed 12 findings (toolbar rebuilt
-as a grouped palette, one ember accent, semantic tokens, collapsible details
-panel, timeline/command bar on shared buttons, undo-history crash). Left for
-later, all low impact:
+**Player-size S/M/L buttons are 22px wide**
+**Priority:** P3
+Found by /design-review on 2026-10-06 (Toolbar.tsx). Desktop-only control, now 28px
+tall but still narrow for touch; widening the rail or stacking the three would fix it.
 
-- **Player-size S/M/L buttons are 22×24px** (Toolbar.tsx). Desktop-only control,
-  but under the 28px comfort line; widening the rail or stacking them would fix it.
-- **Timeline ruler seeking is mouse-only** (Timeline.tsx). Keyframe markers are
-  now keyboard-reachable buttons; the ruler/track still seek via onMouseDown only.
-- **Clear canvas uses `window.confirm`** (DrillDesigner.tsx). Swap for the shadcn
-  AlertDialog and add a test for both confirm/cancel paths.
-- **PNG export and the saved preview include selection handles** if a piece is
-  selected at save time (DrillDesigner.tsx handleSave/handleDownloadPng). Clear the
-  selection before `toDataURL`, or render handles on a non-exported layer.
+**Timeline ruler seeking is mouse-only**
+**Priority:** P3
+Found by /design-review on 2026-10-06 (Timeline.tsx). Keyframe markers are keyboard-
+reachable buttons; the ruler/track still seeks via onMouseDown only. Switch to pointer
+events with setPointerCapture and expose the ruler as role=slider with arrow keys.
+
+**Clear canvas uses window.confirm**
+**Priority:** P3
+Found by /design-review on 2026-10-06 (DrillDesigner.tsx). Swap for the shadcn
+AlertDialog and add a test for both the confirm and cancel paths.
+
+**PNG export and the saved preview include selection handles**
+**Priority:** P3
+Found by /design-review on 2026-10-06 (DrillDesigner.tsx handleSave / handleDownloadPng)
+if a piece is selected at save time. Clear the selection before toDataURL, or render
+handles on a non-exported layer.
+
+**Details panel flashes open then closed on tablets at load**
+**Priority:** P4
+Found by /ship adversarial review on 2026-10-06 (DrillDesigner.tsx getWideServer). The
+server snapshot assumes a wide screen, so tablets render the panel for one frame before
+the media query closes it. A cookie or CSS-only default would remove the jump.

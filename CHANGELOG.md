@@ -2,6 +2,27 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.13.0.0] - 2026-10-06
+
+### Added
+- **Keyboard shortcuts in the drill designer.** Press V for Select, A for an attacker, D for a defender, C for a cone, B for the ball, F for a flag, R to draw a run, P a pass, K a kick, Z a zone and T a label. Every tool's tooltip shows its key. Shortcuts stay out of the way while you type in the drill details, a menu or a dialog.
+- **A details panel you can hide.** The drill-details column collapses from the bar under the canvas, and on tablets it starts hidden so the pitch gets the width (about twice as wide at 1024px). Save moves into the bar whenever the panel is hidden, and if you save without a title the panel opens and puts the cursor in the field.
+- **Unsaved-work warning.** Leaving the designer with unsaved changes, by a link, the back button or closing the tab, now asks first.
+
+### Changed
+- **The designer toolbar is a grouped palette.** Tools sit under Players, Equipment, Movement, Mark-up and Pitch in a two-column grid, and each tile is drawn as the piece it places (a red attacker, a blue defender, a cone, a ball, a bag, a shield, a flag, a disc, a ladder, run/pass/kick lines, a zone). Names live in tooltips on desktop and appear under the tiles on touch devices. Player size sits under Players, and Undo, Delete and Clear stay pinned at the bottom so they never scroll out of view when the timeline is open.
+- **One accent colour.** The indigo and amber highlights across the designer (active tool, player size, Animate toggle, fullscreen Save, keyframes, playhead, selection handles) all use the app's ember orange now. The timeline, command bar and preview window use the same buttons and dialog as the rest of the app, and light mode works throughout the designer.
+- **Clearer details form.** The Visibility menu shows "Public", "Only me" or your club's name with an icon instead of the raw setting, and both designer pages share one header in the app's heading style, with a proper back link.
+- Pieces respond to the mouse only in Select mode, so starting a line on top of a player no longer drags the player too. Press V or Esc to move pieces.
+- Undo and Clear are disabled while an animation is playing.
+
+### Fixed
+- **Drawing a line over a player no longer crashes the designer.** Starting a run, pass or kick on top of a piece pushed two history entries at once and the page died with "Cannot read properties of undefined". Undo history is now one consistent value.
+- The designer page was 96px taller than the window, so the bar under the canvas and the timeline fell below the fold on a 900px-tall screen.
+- Pressing Esc while drawing a line now cancels the line, as the hint always said.
+- Ctrl+Z undoes with Caps Lock on, and Shift+Cmd+Z no longer undoes a second time.
+- The animation preview can be closed with Escape and is announced as a dialog to screen readers; keyframe markers are reachable by keyboard.
+
 ## [1.12.1.1] - 2026-09-25
 
 ### Fixed
