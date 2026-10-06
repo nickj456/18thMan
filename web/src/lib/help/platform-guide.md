@@ -10,14 +10,16 @@ Browse all drills. Filter by category, difficulty, age group, and player count u
 - Rate and comment on drills from the detail page.
 - For specific drill content and recommendations, visit /drills directly.
 
-## Drill Designer (`/drills/new`)
-Build your own drills on an interactive pitch canvas.
-- Choose a pitch background: full pitch, half pitch, in-goal, or blank.
-- Place attackers, defenders, cones, balls, arrows, lines, zones, and text labels.
+## Drill Designer (`/drills/new`, or `/drills/[id]/edit` for an existing drill)
+Build your own drills on an interactive pitch canvas. The tool palette on the left is grouped into Players (attacker, defender, plus the S/M/L player size), Equipment (cone, ball, tackle bag, tackle shield, flag, marker disc, agility ladder), Movement (run, pass, dotted line, kick), Mark-up (zone, label) and Pitch. Undo, Delete and Clear sit at the bottom of the palette. The bar under the canvas holds PNG download, Animate (a keyframe timeline, with Preview & Export), Show/Hide details and Fullscreen.
+- Choose a pitch background under Pitch: full pitch, half pitch, grid, or in-goal area. The rotate button turns the pitch vertical.
+- Keyboard shortcuts: V select, A attacker, D defender, C cone, B ball, F flag, R run, P pass, K kick, Z zone, T label (tackle bag, tackle shield, marker disc, agility ladder and dotted line have no key). Ctrl+Z (Cmd+Z on Mac) undoes, Delete or Backspace removes the selected piece, and Esc cancels a line you are drawing, clears the selection and returns to Select. On desktop, a tool's tooltip shows its key. Shortcuts work while the pitch or palette has focus; after typing in the details form or using the timeline, the bar under the canvas, a menu or a dialog, click the pitch to use them again.
+- Pieces can only be dragged in Select mode (press V or Esc). With a drawing tool active, dragging over a player draws the line instead of moving the player.
+- The Drill Details panel on the right can be hidden with "Hide details" in the bar under the canvas. It starts hidden when the window is narrower than 1280px (most tablets), and while it is hidden Save sits in that bar. On screens narrower than 768px the canvas is unavailable and only the details form is shown.
 - Set drill metadata: title, category, difficulty, age group, player count.
 - Paste a YouTube URL to attach a video — an AI coaching guide is auto-generated.
-- Visibility: Public (everyone), Club only (club members), Private (you only).
-- Save drafts and return to edit later.
+- Visibility: Public (everyone), "<your club> only" (club members; needs Club access and a club), or Only me (just you).
+- Save the drill and come back to edit it later from its page. Clicking a link away from the designer, closing the tab or refreshing with unsaved changes asks you to confirm first.
 
 ## Session Planner (`/sessions`)
 Build and manage training sessions.

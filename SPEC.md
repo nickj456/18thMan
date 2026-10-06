@@ -46,7 +46,7 @@ Rugby league coaching platform for coaches to design drills, plan sessions, and 
 - Agility Ladder is resizable — drag a corner handle to stretch it; rungs recount automatically
 - Fullscreen mode — expands canvas to fill the browser window; floating Save button stays accessible
 - Persistent player icon size — set S/M/L once; all subsequent placements use that size; changing size also resizes the currently selected player
-- Undo/redo, save as drill, export PNG/PDF
+- Undo, save as drill, export PNG/PDF
 - Desktop-first, tablet-accessible
 
 ### Session Planner

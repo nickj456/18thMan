@@ -129,6 +129,46 @@ is not a runtime boundary and a server action argument is client-controlled.
 one-liner. Pre-existing, deliberately left out of the v1.11.0.1 diff to keep
 that change scoped to the model outage.
 
+## Help widget
+
+**Help-widget knowledge base quotes stale prices and tier limits**
+**Priority:** P1
+Found during the 1.13.0.0 docs sync (2026-10-06). `web/src/lib/help/platform-guide.md`
+is read at runtime by `api/help-chat/route.ts` and quoted to users. It says Club is
+£19.99/mo (pricing page: £24.99), that the free tier has unlimited session plans
+(`FREE_SESSION_LIMIT = 1`), that PDF export needs Club (Coach Pro has it), and it does
+not mention Coach Pro at all. Bring it in line with the tier table in CLAUDE.md and add
+it to the "keep in sync" list there alongside the chat SYSTEM_PROMPT.
+
+## Drill designer
+
+**Player-size S/M/L buttons are 22px wide**
+**Priority:** P3
+Found by /design-review on 2026-10-06 (Toolbar.tsx). Desktop-only control, now 28px
+tall but still narrow for touch; widening the rail or stacking the three would fix it.
+
+**Timeline ruler seeking is mouse-only**
+**Priority:** P3
+Found by /design-review on 2026-10-06 (Timeline.tsx). Keyframe markers are keyboard-
+reachable buttons; the ruler/track still seeks via onMouseDown only. Switch to pointer
+events with setPointerCapture and expose the ruler as role=slider with arrow keys.
+
+**Clear canvas uses window.confirm**
+**Priority:** P3
+Found by /design-review on 2026-10-06 (DrillDesigner.tsx). Swap for the shadcn
+AlertDialog and add a test for both the confirm and cancel paths.
+
+**PNG export and the saved preview include selection handles**
+**Priority:** P3
+Found by /design-review on 2026-10-06 (DrillDesigner.tsx handleSave / handleDownloadPng)
+if a piece is selected at save time. Clear the selection before toDataURL, or render
+handles on a non-exported layer.
+
+**Details panel flashes open then closed on tablets at load**
+**Priority:** P4
+Found by /ship adversarial review on 2026-10-06 (DrillDesigner.tsx getWideServer). The
+server snapshot assumes a wide screen, so tablets render the panel for one frame before
+the media query closes it. A cookie or CSS-only default would remove the jump.
 
 ## Completed
 

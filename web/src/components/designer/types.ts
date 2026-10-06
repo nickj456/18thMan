@@ -18,6 +18,8 @@ export type ToolType =
   | 'zone'
   | 'text'
 
+export type PlayerSize = 'sm' | 'md' | 'lg'
+
 export interface CanvasElement {
   id: string
   type: ToolType
@@ -25,7 +27,7 @@ export interface CanvasElement {
   y: number
   label?: string
   color?: string
-  size?: 'sm' | 'md' | 'lg'
+  size?: PlayerSize
   // Lines / Arrows — absolute canvas coords for start and end
   x1?: number
   y1?: number

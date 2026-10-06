@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useRef, useCallback, useTransition, useEffect } from 'react'
+import { useState, useRef, useCallback, useMemo, useTransition, useEffect, useSyncExternalStore } from 'react'
 import type Konva from 'konva'
 import { DrillCanvas } from './DrillCanvas'
 import { Timeline, FPS } from './Timeline'
 import { AnimationPreview } from './AnimationPreview'
 import { type CanvasState, type CanvasElement, type ToolType, type Keyframe } from './types'
+import { type HistoryState, canUndo, createHistory, currentState, pushHistory, undoHistory } from './history'
+import { useUnsavedChangesGuard } from './useUnsavedChangesGuard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -15,7 +17,7 @@ import type { DrillCategory, DrillVisibility } from '@/lib/supabase/types'
 import { saveDrillDesign, updateDrillDesign } from '@/app/(discover)/drills/designer-actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, Monitor, Timer, Video, ImageDown, Maximize2, Minimize2 } from 'lucide-react'
+import { Loader2, Save, Monitor, Clapperboard, Video, ImageDown, Maximize2, Minimize2, Globe, Users, Lock, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { UpgradePrompt, useUpgradePrompt } from '@/components/ui/UpgradePrompt'
 
@@ -35,7 +37,22 @@ const PLAYER_COUNTS = [
 ]
 
 const INITIAL_STATE: CanvasState = { background: 'full', elements: [] }
-const MAX_HISTORY = 50
+
+// The details panel defaults open on wide screens and closed on tablets / narrow
+// desktops, tracking the viewport until the coach toggles it by hand.
+const WIDE_QUERY = '(min-width: 1280px)'
+// One MediaQueryList, shared by subscribe and getSnapshot: getSnapshot runs on every
+// render, and the designer renders every animation frame during playback.
+let wideMq: MediaQueryList | null = null
+const getWideMq = () => (wideMq ??= window.matchMedia(WIDE_QUERY))
+function subscribeWide(onChange: () => void) {
+  const mq = getWideMq()
+  mq.addEventListener('change', onChange)
+  return () => mq.removeEventListener('change', onChange)
+}
+const getWide = () => getWideMq().matches
+const getWideServer = () => true
+const noop = () => {}
 
 interface InitialDrill {
   id: string
@@ -69,6 +86,9 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   const isEditing = !!initialDrill
   const { show: showUpgrade, message: upgradeMessage, checkError, dismiss: dismissUpgrade } = useUpgradePrompt()
   const [isMobile, setIsMobile] = useState(false)
+  const isWide = useSyncExternalStore(subscribeWide, getWide, getWideServer)
+  const [detailsOverride, setDetailsOverride] = useState<boolean | null>(null)
+  const showDetails = detailsOverride ?? isWide
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -78,9 +98,8 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   }, [])
 
   const startState = initialDrill?.canvas_json ?? INITIAL_STATE
-  const [history, setHistory] = useState<CanvasState[]>([startState])
-  const [historyIndex, setHistoryIndex] = useState(0)
-  const canvasState = history[historyIndex]
+  const [history, setHistory] = useState<HistoryState>(() => createHistory(startState))
+  const canvasState = currentState(history)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [activeTool, setActiveTool] = useState<ToolType>('select')
@@ -179,6 +198,18 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
     })
   }
 
+  const keyframeCount = (canvasState.keyframes ?? []).length
+
+  // Unsaved-work guard: compare everything the save would persist against what
+  // the designer opened with. Memoised because the designer renders every
+  // animation frame during playback and none of these change then.
+  const snapshot = useMemo(
+    () => JSON.stringify({ title, description, categoryId, difficulty, ageGroup, playerCount, youtubeUrl, tiktokUrl, facebookUrl, visibility, canvas: canvasState }),
+    [title, description, categoryId, difficulty, ageGroup, playerCount, youtubeUrl, tiktokUrl, facebookUrl, visibility, canvasState],
+  )
+  const [initialSnapshot] = useState(snapshot)
+  const allowNavigation = useUnsavedChangesGuard(snapshot !== initialSnapshot)
+
   // During playback show interpolated state; otherwise show editable state
   const displayState: CanvasState = isPlaying
     ? { ...canvasState, elements: getInterpolatedElements(currentFrame) }
@@ -233,16 +264,14 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
     setIsPlaying(v => !v)
   }
 
+  // Entries and cursor move together in one updater, so two pushes in the same
+  // tick (drag-end + draw mouse-up) can never leave the cursor past the end.
   const pushState = useCallback((next: CanvasState) => {
-    setHistory((prev) => {
-      const truncated = prev.slice(0, historyIndex + 1)
-      return [...truncated, next].slice(-MAX_HISTORY)
-    })
-    setHistoryIndex((i) => Math.min(i + 1, MAX_HISTORY - 1))
-  }, [historyIndex])
+    setHistory((prev) => pushHistory(prev, next))
+  }, [])
 
   const handleUndo = useCallback(() => {
-    setHistoryIndex((i) => Math.max(i - 1, 0))
+    setHistory((prev) => undoHistory(prev))
   }, [])
 
   const handleClear = useCallback(() => {
@@ -263,7 +292,15 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   }
 
   function handleSave() {
-    if (!title.trim()) { toast.error('Please enter a drill title'); return }
+    if (!title.trim()) {
+      toast.error('Please enter a drill title')
+      // On tablets the details panel starts closed; open it and put the cursor in the
+      // field so the coach can see what's missing instead of a dead-end error.
+      setIsFullscreen(false)
+      setDetailsOverride(true)
+      requestAnimationFrame(() => document.getElementById('title')?.focus())
+      return
+    }
     const hasVideo = !!(youtubeUrl.trim() || tiktokUrl.trim() || facebookUrl.trim())
     if (!isMobile && canvasState.elements.length === 0 && !hasVideo) { toast.error('Add at least one element to the canvas, or include a video link'); return }
 
@@ -291,16 +328,24 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         if (!checkError(result.error)) toast.error(result.error)
       } else {
         toast.success(isEditing ? 'Drill updated!' : 'Drill saved!')
+        allowNavigation()
         router.push(`/drills/${result.drillId}`)
       }
     })
   }
 
   // ── Shared form fields ──────────────────────────────────────
+  const visibilityOptions: Record<DrillVisibility, { label: string; Icon: typeof Globe }> = {
+    public:  { label: 'Public', Icon: Globe },
+    club:    { label: canUseClub ? `${userClubName ?? 'My club'} only` : 'Club only', Icon: Users },
+    private: { label: 'Only me', Icon: Lock },
+  }
+  const { label: visibilityLabel, Icon: VisibilityIcon } = visibilityOptions[visibility]
+
   const formFields = (
     <div className="flex flex-col gap-4 p-4 flex-1">
       <div className="space-y-1.5">
-        <Label htmlFor="title" className="text-xs">Title <span className="text-red-400">*</span></Label>
+        <Label htmlFor="title" className="text-xs">Title <span className="text-destructive">*</span></Label>
         <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. 3v2 Attack Drill" className="h-8 text-sm" />
       </div>
@@ -385,29 +430,40 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
             setVisibility(v as DrillVisibility)
           }}
         >
-          <SelectTrigger className="h-8 text-sm w-full">
-            <SelectValue />
+          <SelectTrigger className="h-8 w-full text-sm" aria-label="Visibility">
+            {/* Base UI's SelectValue echoes the raw value ("public"), so render the label ourselves */}
+            <span className="flex items-center gap-1.5 text-sm">
+              <VisibilityIcon className="size-3.5 text-muted-foreground" aria-hidden />
+              {visibilityLabel}
+            </span>
           </SelectTrigger>
-          <SelectContent className="min-w-[var(--radix-select-trigger-width)]">
-            <SelectItem value="public">🌐 Public</SelectItem>
-            <SelectItem value="club" className={!canUseClub ? 'text-muted-foreground' : undefined}>
-              {canUseClub ? `🔒 ${userClubName ?? 'My Club'} only` : '🔒 Club only'}
+          <SelectContent>
+            <SelectItem value="public">
+              <Globe aria-hidden />
+              {visibilityOptions.public.label}
             </SelectItem>
-            <SelectItem value="private">👁 Only me</SelectItem>
+            <SelectItem value="club" className={!canUseClub ? 'text-muted-foreground' : undefined}>
+              <Users aria-hidden />
+              {visibilityOptions.club.label}
+            </SelectItem>
+            <SelectItem value="private">
+              <Lock aria-hidden />
+              {visibilityOptions.private.label}
+            </SelectItem>
           </SelectContent>
         </Select>
         {visibility === 'club' && (
-          <p className="text-[11px] text-zinc-500">Only members of your club can see this drill</p>
+          <p className="text-xs text-muted-foreground">Only members of your club can see this drill</p>
         )}
       </div>
 
-      <div className="space-y-3 pt-1 border-t border-zinc-800">
-        <p className="text-xs font-medium text-zinc-400">Video Links</p>
+      <div className="space-y-3 pt-1 border-t border-border">
+        <p className="text-xs font-medium text-muted-foreground">Video Links</p>
 
         <div className="space-y-1.5">
           <Label htmlFor="youtube" className="text-xs flex items-center gap-1.5">
             YouTube
-            <span className="text-[10px] text-indigo-400 font-normal">Primary — AI guide</span>
+            <span className="font-mono text-[10px] font-medium tracking-wider text-muted-foreground uppercase">Primary · AI guide</span>
           </Label>
           <Input
             id="youtube"
@@ -417,7 +473,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
             className="h-8 text-sm"
           />
           {youtubeUrl.trim() && (
-            <p className="text-[11px] text-zinc-500">AI coaching guide generated on save</p>
+            <p className="text-xs text-muted-foreground">AI coaching guide generated on save</p>
           )}
         </div>
 
@@ -447,13 +503,13 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   )
 
   const saveButton = (
-    <div className="p-4 border-t border-zinc-800">
+    <div className="p-4 border-t border-border">
       <Button onClick={handleSave} disabled={isPending} className="w-full gap-2">
         {isPending ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
         {isPending ? (youtubeUrl.trim() ? 'Generating guide…' : 'Saving…') : isEditing ? 'Update Drill' : 'Save Drill'}
       </Button>
       {!isMobile && (
-        <p className="text-[11px] text-zinc-600 text-center mt-2">
+        <p className="mt-2 text-center font-mono text-xs text-muted-foreground tabular-nums">
           {canvasState.elements.length} element{canvasState.elements.length !== 1 ? 's' : ''} on canvas
         </p>
       )}
@@ -487,13 +543,13 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
     return (
       <>
         {upgradeModal}
-        <div className="flex flex-col h-full overflow-y-auto bg-zinc-950">
+        <div className="flex flex-col h-full overflow-y-auto bg-background">
           {/* Canvas unavailable notice */}
-          <div className="mx-4 mt-4 flex items-start gap-3 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3">
-            <Monitor size={18} className="text-indigo-400 mt-0.5 shrink-0" />
+          <div className="mx-4 mt-4 flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3">
+            <Monitor size={18} className="text-primary mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-zinc-200">Canvas designer requires a larger screen</p>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-sm font-medium">Canvas designer requires a larger screen</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 You can save the drill details and video links now — open on a desktop or tablet to add the pitch diagram.
               </p>
             </div>
@@ -501,7 +557,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
 
           <div className="flex flex-col flex-1">
             <div className="px-4 pt-4 pb-1">
-              <h2 className="font-semibold text-sm text-white">Drill Details</h2>
+              <h2 className="font-semibold text-sm">Drill Details</h2>
             </div>
             {formFields}
             {saveButton}
@@ -515,7 +571,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   return (
     <>
     {upgradeModal}
-    <div className={cn("flex h-full overflow-hidden", isFullscreen && "fixed inset-0 z-50 bg-zinc-950")}>
+    <div className={cn("flex h-full overflow-hidden", isFullscreen && "fixed inset-0 z-50 bg-background")}>
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Canvas area */}
         <div className="flex flex-1 min-h-0 overflow-hidden relative">
@@ -523,80 +579,85 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
             state={displayState}
             selectedId={isPlaying ? null : selectedId}
             activeTool={isPlaying ? 'select' : activeTool}
-            onStateChange={isPlaying ? () => {} : pushState}
-            onSelectId={isPlaying ? () => {} : setSelectedId}
-            onToolChange={isPlaying ? () => {} : setActiveTool}
-            onUndo={handleUndo}
-            onClear={handleClear}
-            canUndo={historyIndex > 0}
+            onStateChange={isPlaying ? noop : pushState}
+            onSelectId={isPlaying ? noop : setSelectedId}
+            onToolChange={isPlaying ? noop : setActiveTool}
+            onUndo={isPlaying ? noop : handleUndo}
+            onClear={isPlaying ? noop : handleClear}
+            canUndo={!isPlaying && canUndo(history)}
+            locked={isPlaying}
             stageRef={stageRef}
           />
           {isPlaying && (
             <div className="absolute inset-0 pointer-events-none flex items-end justify-center pb-4">
-              <div className="flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 text-[11px] text-amber-400 font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <div className="flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 font-mono text-xs text-white backdrop-blur-sm tabular-nums">
+                <span className="size-1.5 animate-pulse rounded-full bg-primary" />
                 Playing · {(currentFrame / FPS).toFixed(1)}s
               </div>
             </div>
           )}
         </div>
 
-        {/* Timeline toggle bar */}
-        <div className="flex items-center justify-between px-3 h-8 bg-zinc-900 border-t border-zinc-800 shrink-0">
-          <span className="text-[11px] text-zinc-600">
-            {(canvasState.keyframes ?? []).length > 0
-              ? `${(canvasState.keyframes ?? []).length} keyframe${(canvasState.keyframes ?? []).length !== 1 ? 's' : ''}`
+        {/* Canvas command bar */}
+        <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-t border-border bg-card px-3">
+          <span className="min-w-0 truncate font-mono text-xs text-muted-foreground tabular-nums">
+            {keyframeCount > 0
+              ? `${keyframeCount} keyframe${keyframeCount !== 1 ? 's' : ''}`
               : 'No keyframes'}
           </span>
-          <div className="flex items-center gap-2">
-            {isFullscreen && (
-              <button
-                onClick={handleSave}
-                disabled={isPending}
-                className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-500 transition-colors border border-indigo-500 disabled:opacity-50"
-                title="Save drill"
-              >
-                {isPending ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
-                Save
-              </button>
+          <div className="flex items-center gap-1.5">
+            {(isFullscreen || !showDetails) && (
+              <Button size="sm" onClick={handleSave} disabled={isPending}>
+                {isPending ? <Loader2 className="animate-spin" /> : <Save />}
+                {isPending ? 'Saving…' : isEditing ? 'Update' : 'Save'}
+              </Button>
             )}
-            <button
+            <Button
+              size="sm"
+              variant="outline"
               onClick={handleDownloadPng}
               disabled={canvasState.elements.length === 0}
-              className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors border border-zinc-700 disabled:opacity-30"
               title="Download canvas as PNG"
             >
-              <ImageDown size={11} />
+              <ImageDown />
               PNG
-            </button>
-            {(canvasState.keyframes ?? []).length >= 2 && (
-              <button
-                onClick={() => setShowPreview(true)}
-                className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 hover:text-amber-300 transition-colors border border-amber-500/20"
-              >
-                <Video size={11} />
+            </Button>
+            {keyframeCount >= 2 && (
+              <Button size="sm" variant="outline" onClick={() => setShowPreview(true)}>
+                <Video />
                 Preview & Export
-              </button>
+              </Button>
             )}
-            <button
+            <Button
+              size="sm"
+              variant="outline"
+              aria-pressed={showTimeline}
               onClick={() => setShowTimeline(v => !v)}
-              className={`flex items-center gap-1.5 text-[11px] px-2 py-1 rounded transition-colors border ${
-                showTimeline
-                  ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/25'
-                  : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white hover:bg-zinc-700'
-              }`}
+              className={cn(showTimeline && 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary')}
             >
-              <Timer size={11} />
-              {showTimeline ? 'Hide Timeline' : 'Animate'}
-            </button>
-            <button
+              <Clapperboard />
+              {showTimeline ? 'Hide timeline' : 'Animate'}
+            </Button>
+            {!isFullscreen && (
+              <Button
+                size="sm"
+                variant="outline"
+                aria-pressed={showDetails}
+                onClick={() => setDetailsOverride(!showDetails)}
+              >
+                {showDetails ? <PanelRightClose /> : <PanelRightOpen />}
+                {showDetails ? 'Hide details' : 'Show details'}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => setIsFullscreen(v => !v)}
-              className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded transition-colors border bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white hover:bg-zinc-700"
               title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
             >
-              {isFullscreen ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
+              {isFullscreen ? <Minimize2 /> : <Maximize2 />}
               {isFullscreen ? 'Exit' : 'Fullscreen'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -615,10 +676,10 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         )}
       </div>
 
-      {!isFullscreen && <aside className="w-72 border-l border-zinc-800 bg-zinc-900 flex flex-col shrink-0">
-        <div className="p-4 border-b border-zinc-800 shrink-0">
-          <h2 className="font-semibold text-sm text-white">Drill Details</h2>
-          <p className="text-xs text-zinc-500 mt-0.5">Fill in before saving</p>
+      {!isFullscreen && showDetails && <aside className="w-72 border-l border-border bg-card flex flex-col shrink-0">
+        <div className="p-4 border-b border-border shrink-0">
+          <h2 className="font-semibold text-sm">Drill Details</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Fill in before saving</p>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto">
           {formFields}

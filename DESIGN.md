@@ -116,6 +116,7 @@ The palette is a warm near-black neutral scale with exactly one accent — ember
 - **Display** (800, condensed, italic, uppercase, `-0.01em` tracking): page and section headings (`.app-heading`). Used for structure, never for body copy.
 - **Body** (400, `0.875rem`, 1.5 line-height): default UI text, descriptions, chat content.
 - **Label/Mono** (Geist Mono, `0.8rem`): stats, IDs, durations, code blocks, anything measured or machine-facing — per project convention, never used for prose.
+- **Micro-label** (500, `10px`, uppercase, `tracking-wider`, muted-foreground; Geist for words, Geist Mono when the label is a measured value or a status tag such as timeline ruler ticks or the "Editing" chip): section labels inside dense tool chrome only — the sidebar's "RUGBY LEAGUE" tag, drill-designer rail group headers, timeline ruler and status chips. The one step below the 12px caption floor; it is always uppercase, never a sentence, and never carries content.
 
 ### Named Rules
 **The Condensed-For-Structure Rule.** Barlow Condensed only appears in headings and the AI-prose H1–H3 accent color. It never appears in body copy, buttons, or form labels — those stay on Geist.

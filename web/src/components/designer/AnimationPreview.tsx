@@ -1,9 +1,16 @@
 'use client'
 
 import { Player } from '@remotion/player'
-import { X } from 'lucide-react'
 import type { CanvasState } from './types'
+import { FPS } from './Timeline'
 import { DrillAnimationComp, COMP_WIDTH, COMP_HEIGHT } from './DrillAnimationComp'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface AnimationPreviewProps {
   canvasJson: CanvasState
@@ -13,48 +20,35 @@ interface AnimationPreviewProps {
 
 export function AnimationPreview({ canvasJson, drillTitle, onClose }: AnimationPreviewProps) {
   const duration = canvasJson.duration ?? 90
+  const keyframes = (canvasJson.keyframes ?? []).length
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div
-        className="relative bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
-        style={{ width: 940, maxWidth: '95vw' }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
-          <div>
-            <p className="text-sm font-semibold text-white">{drillTitle ?? 'Drill Animation'}</p>
-            <p className="text-[11px] text-zinc-500">
-              {(canvasJson.keyframes ?? []).length} keyframes · {(duration / 30).toFixed(1)}s · 30fps
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors"
-          >
-            <X size={14} />
-          </button>
-        </div>
+    // The shared Dialog brings focus trapping, Escape-to-close, backdrop click
+    // and a labelled close button, which the hand-rolled overlay lacked.
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="w-[940px] max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-[95vw]">
+        <DialogHeader className="border-b border-border px-4 py-3 pr-12 text-left">
+          <DialogTitle className="text-sm font-semibold">{drillTitle ?? 'Drill animation'}</DialogTitle>
+          <DialogDescription className="font-mono text-xs text-muted-foreground tabular-nums">
+            {keyframes} keyframe{keyframes !== 1 ? 's' : ''} · {(duration / FPS).toFixed(1)}s · {FPS}fps
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Player */}
-        <div className="p-4 flex items-center justify-center bg-zinc-950">
+        <div className="flex items-center justify-center bg-background p-4">
           <Player
             component={DrillAnimationComp}
             inputProps={{ canvasJson, drillTitle }}
             durationInFrames={duration}
             compositionWidth={COMP_WIDTH}
             compositionHeight={COMP_HEIGHT}
-            fps={30}
+            fps={FPS}
             style={{ width: '100%', maxWidth: 900 }}
             controls
             loop
             autoPlay
           />
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

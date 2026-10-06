@@ -80,6 +80,12 @@
         "value": "p-1.5 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-colors",
         "createdAt": "2026-08-26T11:55:11.982Z",
         "reason": "false positive: bg-red-500/10 only applies on :hover, paired with text-red-400 also only on :hover -- never simultaneously gray-on-color; matches existing ghost-icon-button idiom elsewhere in the app"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "10px",
+        "createdAt": "2026-10-06T06:37:51.965Z",
+        "reason": "Micro-label step documented in DESIGN.md typography (matches existing app-sidebar 'RUGBY LEAGUE' 10px uppercase tag); design-review session 2026-10-06"
       }
     ]
   }

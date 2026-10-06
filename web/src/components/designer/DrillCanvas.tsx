@@ -6,7 +6,9 @@ import type Konva from 'konva'
 import { PitchBackgroundLayer } from './PitchBackground'
 import { CanvasElements } from './CanvasElements'
 import { Toolbar } from './Toolbar'
-import { CANVAS_WIDTH, CANVAS_HEIGHT, DRAW_TOOLS, type CanvasElement, type CanvasState, type ToolType } from './types'
+import { CANVAS_WIDTH, CANVAS_HEIGHT, DRAW_TOOLS, type CanvasElement, type CanvasState, type PlayerSize, type ToolType } from './types'
+import { TOOL_COLORS } from './tools'
+import { resolveDesignerKey } from './keyboard'
 import { nanoid } from 'nanoid'
 
 // ── Kick arc preview — shown while dragging to draw ──────────────────────────
@@ -60,29 +62,30 @@ function KickPreview({ x1, y1, x2, y2, color }: { x1: number; y1: number; x2: nu
   )
 }
 
-function makeElement(tool: ToolType, x: number, y: number, count: number, size: 'sm' | 'md' | 'lg' = 'md'): CanvasElement {
+// Piece colours come from TOOL_COLORS so the rail glyphs always match what lands on the pitch.
+export function makeElement(tool: ToolType, x: number, y: number, count: number, size: PlayerSize = 'md'): CanvasElement {
   const base = { id: nanoid(), type: tool, x, y }
   switch (tool) {
-    case 'attacker': return { ...base, color: '#ef4444', label: String(count), size }
-    case 'defender': return { ...base, color: '#3b82f6', label: String(count), size }
-    case 'cone':     return { ...base, color: '#f59e0b' }
-    case 'ball':     return { ...base, color: '#92400e' }
-    case 'tackle-bag':    return { ...base, color: '#ef4444' }
-    case 'tackle-shield': return { ...base, color: '#3b82f6' }
-    case 'flag':          return { ...base, color: '#22c55e' }
-    case 'disc':          return { ...base, color: '#f59e0b' }
+    case 'attacker': return { ...base, color: TOOL_COLORS.attacker, label: String(count), size }
+    case 'defender': return { ...base, color: TOOL_COLORS.defender, label: String(count), size }
+    case 'cone':     return { ...base, color: TOOL_COLORS.cone }
+    case 'ball':     return { ...base, color: '#92400e' } // stored but unused: the ball is always drawn white
+    case 'tackle-bag':    return { ...base, color: TOOL_COLORS['tackle-bag'] }
+    case 'tackle-shield': return { ...base, color: TOOL_COLORS['tackle-shield'] }
+    case 'flag':          return { ...base, color: TOOL_COLORS.flag }
+    case 'disc':          return { ...base, color: TOOL_COLORS.disc }
     case 'agility-ladder':
-      return { ...base, color: '#6366f1', width: 40, height: 160 }
+      return { ...base, color: TOOL_COLORS['agility-ladder'], width: 40, height: 160 }
     case 'zone':     return { ...base, x, y, color: 'rgba(239,68,68,0.15)', width: 120, height: 80 }
     case 'text':     return { ...base, label: 'Label', color: '#ffffff' }
     default:         return base
   }
 }
 
-function defaultLineColor(tool: ToolType) {
-  if (tool === 'arrow') return '#22c55e'
-  if (tool === 'kick')  return '#fbbf24'
-  return '#a3a3a3'
+export function defaultLineColor(tool: ToolType) {
+  if (tool === 'arrow') return TOOL_COLORS.arrow
+  if (tool === 'kick')  return TOOL_COLORS.kick
+  return TOOL_COLORS.line
 }
 
 interface DrawingState {
@@ -113,6 +116,8 @@ interface DrillCanvasProps {
   onUndo: () => void
   onClear: () => void
   canUndo: boolean
+  /** True while an animation plays: editing actions are shown disabled, not just ignored. */
+  locked?: boolean
   stageRef: React.RefObject<Konva.Stage | null>
 }
 
@@ -126,16 +131,18 @@ export function DrillCanvas({
   onUndo,
   onClear,
   canUndo,
+  locked = false,
   stageRef,
 }: DrillCanvasProps) {
   const attackerCount = useRef(0)
   const defenderCount = useRef(0)
-  const [defaultPlayerSize, setDefaultPlayerSize] = useState<'sm' | 'md' | 'lg'>('md')
+  const [defaultPlayerSize, setDefaultPlayerSize] = useState<PlayerSize>('md')
   const [drawingEl, setDrawingEl] = useState<DrawingState | null>(null)
   // Store all editing data directly — don't look up from state.elements (timing issues)
   const [editingText, setEditingText] = useState<EditingText | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
 
   // Fit canvas to available container space on desktop
@@ -161,37 +168,16 @@ export function DrillCanvas({
     }
   }, [editingText?.id])
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement).tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedId) handleDelete()
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        e.preventDefault()
-        onUndo()
-      }
-      if (e.key === 'Escape') {
-        onSelectId(null)
-        onToolChange('select')
-      }
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  })
-
   // Works for mouse, touch, and Apple Pencil — getPointerPosition() normalises all three.
   // In 3D mode we inverse the Konva Group transform so newly-placed elements land at
   // the correct canvas-logical position (the Group handles hit-testing for existing
   // elements automatically via its own inverse transform).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function getPos(e: Konva.KonvaEventObject<any>) {
+  const getPos = useCallback((e: Konva.KonvaEventObject<any>) => {
     const pos = e.target.getStage()?.getPointerPosition() ?? null
     if (!pos) return null
     return { x: pos.x / scale, y: pos.y / scale }
-  }
+  }, [scale])
 
   // ── Click/Tap-to-place (non-draw tools) ──────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -217,7 +203,7 @@ export function DrillCanvas({
       // Set editing data directly — don't look up from state (parent hasn't re-rendered yet)
       setEditingText({ id: el.id, x: el.x, y: el.y, label: 'Label', color: '#ffffff' })
     }
-  }, [activeTool, state, onStateChange, onSelectId])
+  }, [activeTool, state, onStateChange, onSelectId, defaultPlayerSize, getPos])
 
   // ── Drag-to-draw (arrow / line / dotted) ─────────────────────────────────
   const handleMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -232,14 +218,14 @@ export function DrillCanvas({
       color: defaultLineColor(activeTool),
     })
     onSelectId(null)
-  }, [activeTool, onSelectId])
+  }, [activeTool, onSelectId, getPos])
 
   const handleMouseMove = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
     if (!drawingEl) return
     const pos = getPos(e)
     if (!pos) return
     setDrawingEl((d) => d ? { ...d, x2: pos.x, y2: pos.y } : null)
-  }, [drawingEl])
+  }, [drawingEl, getPos])
 
   const handleMouseUp = useCallback(() => {
     if (!drawingEl) return
@@ -275,7 +261,7 @@ export function DrillCanvas({
       color: defaultLineColor(activeTool),
     })
     onSelectId(null)
-  }, [activeTool, onSelectId])
+  }, [activeTool, onSelectId, getPos])
 
   const handleTouchMove = useCallback((e: Konva.KonvaEventObject<TouchEvent>) => {
     if (!drawingEl) return
@@ -283,7 +269,7 @@ export function DrillCanvas({
     const pos = getPos(e)
     if (!pos) return
     setDrawingEl((d) => d ? { ...d, x2: pos.x, y2: pos.y } : null)
-  }, [drawingEl])
+  }, [drawingEl, getPos])
 
   function handleElementChange(updated: CanvasElement) {
     onStateChange({
@@ -292,7 +278,7 @@ export function DrillCanvas({
     })
   }
 
-  function handlePlayerSizeChange(size: 'sm' | 'md' | 'lg') {
+  function handlePlayerSizeChange(size: PlayerSize) {
     setDefaultPlayerSize(size)
     if (selectedId) {
       const el = state.elements.find(e => e.id === selectedId)
@@ -303,10 +289,45 @@ export function DrillCanvas({
   }
 
   function handleDelete() {
-    if (!selectedId) return
+    // The selection can outlive its piece (e.g. after an undo); don't spend a history slot on a no-op.
+    if (!selectedId || !state.elements.some((el) => el.id === selectedId)) return
     onStateChange({ ...state, elements: state.elements.filter((el) => el.id !== selectedId) })
     onSelectId(null)
   }
+
+  // Keyboard shortcuts. The guards live in keyboard.ts (unit-tested); the listener is
+  // registered once and reads the latest handlers through a ref, so it isn't torn
+  // down and re-added on every playback frame.
+  const keyHandlerRef = useRef<(e: KeyboardEvent) => void>(() => {})
+  useEffect(() => {
+    keyHandlerRef.current = (e: KeyboardEvent) => {
+      const action = resolveDesignerKey(e, rootRef.current)
+      if (!action) return
+      switch (action.type) {
+        case 'delete':
+          handleDelete()
+          return
+        case 'undo':
+          e.preventDefault()
+          onUndo()
+          return
+        case 'cancel':
+          setDrawingEl(null)
+          onSelectId(null)
+          onToolChange('select')
+          return
+        case 'tool':
+          e.preventDefault()
+          onToolChange(action.tool)
+          return
+      }
+    }
+  })
+  useEffect(() => {
+    const listener = (e: KeyboardEvent) => keyHandlerRef.current(e)
+    window.addEventListener('keydown', listener)
+    return () => window.removeEventListener('keydown', listener)
+  }, [])
 
   function startTextEdit(id: string) {
     const el = state.elements.find((e) => e.id === id)
@@ -340,7 +361,7 @@ export function DrillCanvas({
   const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div ref={rootRef} className="flex flex-1 overflow-hidden">
       <Toolbar
         activeTool={activeTool}
         onToolChange={onToolChange}
@@ -350,15 +371,15 @@ export function DrillCanvas({
         onFlipPitch={() => onStateChange({ ...state, pitchFlipped: !state.pitchFlipped })}
         playerSize={defaultPlayerSize}
         onPlayerSizeChange={handlePlayerSizeChange}
-        hasSelection={!!selectedId}
+        hasSelection={!locked && !!selectedId}
         onDelete={handleDelete}
         onUndo={onUndo}
         onClear={onClear}
         canUndo={canUndo}
-        hasElements={state.elements.length > 0}
+        hasElements={!locked && state.elements.length > 0}
       />
 
-      <div ref={containerRef} className="flex-1 overflow-auto bg-zinc-950 flex items-center justify-center p-4">
+      <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto bg-background p-4">
         <div style={{
           position: 'relative',
           width: CANVAS_WIDTH * scale,
@@ -378,7 +399,7 @@ export function DrillCanvas({
                 minWidth: 80,
                 fontSize: 15,
                 fontWeight: 'bold',
-                fontFamily: 'sans-serif',
+                fontFamily: 'var(--font-sans)',
                 color: editingText.color,
                 background: 'rgba(0,0,0,0.75)',
                 border: '1px dashed rgba(255,255,255,0.6)',
@@ -428,7 +449,9 @@ export function DrillCanvas({
             <Layer>
               <PitchBackgroundLayer type={state.background} flipped={state.pitchFlipped} />
             </Layer>
-            <Layer>
+            {/* Pieces only take pointer events in Select mode: a draw or placement
+                gesture that starts on top of a piece must not also drag it. */}
+            <Layer listening={activeTool === 'select'}>
                 <CanvasElements
                   elements={state.elements}
                   selectedId={selectedId}
@@ -470,23 +493,23 @@ export function DrillCanvas({
             </Layer>
           </Stage>
         </div>
-      </div>
 
-      {/* Status bar */}
-      <div className="absolute bottom-2 left-16 flex gap-3 text-[11px] text-zinc-500 pointer-events-none select-none">
-        <span>{attackers} att · {defenders} def · {state.elements.length} total</span>
-        {activeTool !== 'select' && isDraw && (
-          <span className="text-zinc-400">{isTouch ? 'Drag to draw · Apple Pencil supported' : 'Click and drag to draw · Esc to cancel'}</span>
-        )}
-        {activeTool !== 'select' && !isDraw && !editingText && (
-          <span className="text-zinc-400">{isTouch ? 'Tap canvas to place' : 'Click canvas to place · Esc to cancel'}</span>
-        )}
-        {selectedId && !editingText && (
-          <span className="text-zinc-400">Del to delete · double-click text to edit</span>
-        )}
-        {editingText && (
-          <span className="text-zinc-400">Type your label · Enter or click away to save · Esc to cancel</span>
-        )}
+        {/* Status bar: pinned inside the canvas area so it never overlaps the rail */}
+        <div className="pointer-events-none absolute bottom-2 left-3 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground select-none">
+          <span>{attackers} att · {defenders} def · {state.elements.length} total</span>
+          {activeTool !== 'select' && isDraw && (
+            <span className="text-foreground/80">{isTouch ? 'Drag to draw · Apple Pencil supported' : 'Click and drag to draw · Esc to cancel'}</span>
+          )}
+          {activeTool !== 'select' && !isDraw && !editingText && (
+            <span className="text-foreground/80">{isTouch ? 'Tap canvas to place' : 'Click canvas to place · Esc to cancel'}</span>
+          )}
+          {selectedId && !editingText && (
+            <span className="text-foreground/80">Del to delete · double-click text to edit</span>
+          )}
+          {editingText && (
+            <span className="text-foreground/80">Type your label · Enter or click away to save · Esc to cancel</span>
+          )}
+        </div>
       </div>
     </div>
   )

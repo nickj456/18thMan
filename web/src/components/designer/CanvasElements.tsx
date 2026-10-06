@@ -2,17 +2,17 @@
 
 import { Circle, Ellipse, Rect, Arrow, Line, Text, Group, Shape } from 'react-konva'
 import type Konva from 'konva'
-import type { CanvasElement } from './types'
+import type { CanvasElement, PlayerSize } from './types'
 
 // ── Shared handle styles ─────────────────────────────────────────────────────
 const HANDLE_RADIUS = 7
 const HANDLE_FILL = '#fff'
-const HANDLE_STROKE = '#6366f1'
+const HANDLE_STROKE = '#e8560a'   // ember, matching the app's one accent
 const HANDLE_STROKE_WIDTH = 2
 
 // ── Player icon sizing ───────────────────────────────────────────────────────
-const PLAYER_RADIUS: Record<'sm' | 'md' | 'lg', number> = { sm: 13, md: 18, lg: 24 }
-const PLAYER_FONT:   Record<'sm' | 'md' | 'lg', number> = { sm: 10, md: 13, lg: 16 }
+const PLAYER_RADIUS: Record<PlayerSize, number> = { sm: 13, md: 18, lg: 24 }
+const PLAYER_FONT:   Record<PlayerSize, number> = { sm: 10, md: 13, lg: 16 }
 
 // ── Rugby league ball (Steeden-style) ────────────────────────────────────────
 function RugbyBall({ el, selected, onSelect, onChange }: ElementProps) {
@@ -39,7 +39,7 @@ function RugbyBall({ el, selected, onSelect, onChange }: ElementProps) {
           ctx.fillStrokeShape(shape)
         }}
         fill='#f5f5f0'
-        stroke={selected ? '#6366f1' : '#1a1a1a'}
+        stroke={selected ? HANDLE_STROKE : '#1a1a1a'}
         strokeWidth={selected ? 2 : 1.5}
       />
 
