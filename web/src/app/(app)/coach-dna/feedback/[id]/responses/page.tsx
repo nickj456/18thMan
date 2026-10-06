@@ -17,7 +17,7 @@ export default async function FeedbackResponsesPage({ params }: { params: Promis
     .select('id, coach_id, feedback_type')
     .eq('id', id)
     .single()
-  if (!request || request.coach_id !== user.id) redirect('/admin/coach-dna/feedback')
+  if (!request || request.coach_id !== user.id) redirect('/coach-dna/feedback')
 
   // RLS (093) already scopes this to held_for_review = false responses on
   // the coach's own request -- no manual filter needed beyond the request id.

@@ -118,7 +118,7 @@ function divider(): string {
 }
 
 function greeting(name: string): string {
-  return para(`Hi ${name || 'Coach'},`)
+  return para(`Hi ${esc(name) || 'Coach'},`)
 }
 
 function sign(): string {
@@ -151,7 +151,7 @@ export async function sendWelcomeEmail(to: string, displayName: string): Promise
       'Explore the drill library — see what other coaches have shared',
       'Try the AI coaching chat — ask it anything about technique or session planning',
     ])}
-    ${ctaButton('Go to your dashboard', '${SITE_URL}/dashboard')}
+    ${ctaButton('Go to your dashboard', `${SITE_URL}/dashboard`)}
     ${sign()}
   `))
 }
@@ -597,7 +597,7 @@ export async function sendCoachDnaSummaryEmail(
     ${para('Focus areas:')}
     ${focusBlocks}
     ${selfOnly ? para('This reflects your self-assessment only, and will update as player and peer feedback comes in.') : ''}
-    ${ctaButton('View your full results', `${SITE_URL}/admin/coach-dna`)}
+    ${ctaButton('View your full results', `${SITE_URL}/login?next=${encodeURIComponent('/coach-dna')}`)}
     ${sign()}
   `)
 
@@ -655,7 +655,7 @@ export function buildClubAddedEmailHtml(displayName: string, clubName: string, a
     ${heading(`You're now part of ${esc(clubName)}.`)}
     ${para(`${esc(addedByName)} has added you to the club.`)}
     ${divider()}
-    ${greeting(esc(displayName))}
+    ${greeting(displayName)}
     ${para(`You've been added to <strong style="color:#ffffff;">${esc(clubName)}</strong> on 18th Man. Here's what club membership gives you access to:`)}
     ${featureList([
       'Club drills — exclusive plays and moves shared within your club',
@@ -679,9 +679,9 @@ export async function sendFeedbackThresholdReachedEmail(
   const html = layout(`
     ${heading('New feedback is ready to view.')}
     ${divider()}
-    ${greeting(esc(coachDisplayName))}
+    ${greeting(coachDisplayName)}
     ${para(`Your <strong style="color:#ffffff;">${esc(typeLabel)}</strong> feedback request has reached enough responses to show results.`)}
-    ${ctaButton('View your feedback requests', `${SITE_URL}/admin/coach-dna/feedback`)}
+    ${ctaButton('View your feedback requests', `${SITE_URL}/login?next=${encodeURIComponent('/coach-dna/feedback')}`)}
     ${sign()}
   `)
 
@@ -712,7 +712,7 @@ export function buildGroupAddedEmailHtml(displayName: string, groupName: string,
     ${heading(`You've been added to ${esc(groupName)}.`)}
     ${para(`${esc(addedByName)} has added you to this coaching group.`)}
     ${divider()}
-    ${greeting(esc(displayName))}
+    ${greeting(displayName)}
     ${para(`You're now part of the <strong style="color:#ffffff;">${esc(groupName)}</strong> coaching group at ${esc(clubName)}. Open the app to see shared session plans, drills, and group activity.`)}
     ${ctaButton('View your group', `${SITE_URL}/groups`)}
     ${sign()}
@@ -752,7 +752,7 @@ export async function sendDirectEmailHtml(
   const html = layout(`
     ${heading(esc(subject))}
     ${divider()}
-    ${greeting(esc(displayName))}
+    ${greeting(displayName)}
     <div style="color:#a1a1aa;font-size:15px;line-height:1.6;">${bodyHtml}</div>
     ${sign()}
   `)

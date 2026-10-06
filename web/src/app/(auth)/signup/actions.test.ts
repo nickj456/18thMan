@@ -37,13 +37,13 @@ describe('signup', () => {
 
   it('includes a safe next param in emailRedirectTo', async () => {
     await expect(
-      signup(formData({ email: 'coach@example.com', password: 'secret123', username: 'coachsmith', next: '/admin/coach-dna' })),
+      signup(formData({ email: 'coach@example.com', password: 'secret123', username: 'coachsmith', next: '/coach-dna' })),
     ).rejects.toThrow('REDIRECT:/signup?success=check-email')
 
     expect(signUpMock).toHaveBeenCalledWith(
       expect.objectContaining({
         options: expect.objectContaining({
-          emailRedirectTo: expect.stringContaining('/auth/callback?next=%2Fadmin%2Fcoach-dna'),
+          emailRedirectTo: expect.stringContaining('/auth/callback?next=%2Fcoach-dna'),
         }),
       }),
     )
@@ -69,9 +69,21 @@ describe('signup', () => {
         email: 'coach@example.com',
         password: 'secret123',
         username: 'a'.repeat(33),
-        next: '/admin/coach-dna',
+        next: '/coach-dna',
       })),
-    ).rejects.toThrow(/^REDIRECT:\/signup\?error=.*&next=%2Fadmin%2Fcoach-dna$/)
+    ).rejects.toThrow(/^REDIRECT:\/signup\?error=.*&next=%2Fcoach-dna$/)
+  })
+
+  it('carries a safe next param onto the check-email screen', async () => {
+    await expect(
+      signup(formData({ email: 'coach@example.com', password: 'secret123', username: 'coachsmith', next: '/coach-dna' })),
+    ).rejects.toThrow(/^REDIRECT:\/signup\?success=check-email&next=%2Fcoach-dna$/)
+  })
+
+  it('leaves the check-email redirect bare when next is unsafe', async () => {
+    await expect(
+      signup(formData({ email: 'coach@example.com', password: 'secret123', username: 'coachsmith', next: '//evil.com' })),
+    ).rejects.toThrow(/^REDIRECT:\/signup\?success=check-email$/)
   })
 
   it('omits the next param from emailRedirectTo when next is unsafe', async () => {

@@ -148,7 +148,7 @@ describe('CoachDnaPage', () => {
     expect(screen.getByText(/Game Manager/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'View full breakdown' })).toHaveAttribute(
       'href',
-      '/admin/coach-dna/assessment/attempt-1/complete'
+      '/coach-dna/assessment/attempt-1/complete'
     )
     // ensureFreshSummary must always be called with the authenticated caller's
     // own id (user.id), never e.g. attempt.coach_id -- a security-critical
@@ -258,7 +258,7 @@ describe('CoachDnaPage', () => {
 
     expect(screen.getByRole('link', { name: 'View feedback breakdown' })).toHaveAttribute(
       'href',
-      '/admin/coach-dna/feedback/summary',
+      '/coach-dna/feedback/summary',
     )
   })
 
@@ -382,7 +382,7 @@ describe('CoachDnaPage', () => {
     expect(screen.getByText(/Peer Observation/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'View feedback requests' })).toHaveAttribute(
       'href',
-      '/admin/coach-dna/feedback'
+      '/coach-dna/feedback'
     )
   })
 

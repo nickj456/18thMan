@@ -108,7 +108,7 @@ describe('startAssessment', () => {
     // startAssessment redirects to the new attempt on success, so the mocked
     // redirect() throw is the expected outcome here, not a plain return —
     // this only proves the role check let the call reach the insert.
-    await expect(startAssessment()).rejects.toThrow('REDIRECT:/admin/coach-dna/assessment/attempt-1')
+    await expect(startAssessment()).rejects.toThrow('REDIRECT:/coach-dna/assessment/attempt-1')
     expect(insertMock).toHaveBeenCalled()
   })
 
@@ -134,14 +134,14 @@ describe('startAssessment', () => {
   })
 
   it('creates an attempt and redirects to the assessment for a valid admin', async () => {
-    await expect(startAssessment()).rejects.toThrow('REDIRECT:/admin/coach-dna/assessment/attempt-1')
+    await expect(startAssessment()).rejects.toThrow('REDIRECT:/coach-dna/assessment/attempt-1')
     expect(insertMock).toHaveBeenCalledWith({ coach_id: 'coach-1', assessment_type: 'self_assessment', version: 1 })
   })
 
   it('allows a first-time start with no prior completed attempt', async () => {
     state.lastCompletedAt = null
 
-    await expect(startAssessment()).rejects.toThrow('REDIRECT:/admin/coach-dna/assessment/attempt-1')
+    await expect(startAssessment()).rejects.toThrow('REDIRECT:/coach-dna/assessment/attempt-1')
     expect(insertMock).toHaveBeenCalled()
   })
 
@@ -159,7 +159,7 @@ describe('startAssessment', () => {
     fourMonthsAgo.setMonth(fourMonthsAgo.getMonth() - 4)
     state.lastCompletedAt = fourMonthsAgo.toISOString()
 
-    await expect(startAssessment()).rejects.toThrow('REDIRECT:/admin/coach-dna/assessment/attempt-1')
+    await expect(startAssessment()).rejects.toThrow('REDIRECT:/coach-dna/assessment/attempt-1')
     expect(insertMock).toHaveBeenCalled()
   })
 
@@ -176,7 +176,7 @@ describe('startAssessment', () => {
     state.lastCompletedAt = fourMonthsAgo.toISOString()
     state.existingInProgress = { id: 'in-progress-1' }
 
-    await expect(startAssessment()).rejects.toThrow('REDIRECT:/admin/coach-dna/assessment/in-progress-1')
+    await expect(startAssessment()).rejects.toThrow('REDIRECT:/coach-dna/assessment/in-progress-1')
     expect(insertMock).not.toHaveBeenCalled()
   })
 })

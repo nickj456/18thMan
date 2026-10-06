@@ -18,8 +18,8 @@ async function requireOwnAttempt(attemptId: string) {
     .eq('id', attemptId)
     .single()
 
-  if (!attempt || attempt.coach_id !== user.id) redirect('/admin/coach-dna')
-  if (attempt.completed_at) redirect(`/admin/coach-dna/assessment/${attemptId}/complete`)
+  if (!attempt || attempt.coach_id !== user.id) redirect('/coach-dna')
+  if (attempt.completed_at) redirect(`/coach-dna/assessment/${attemptId}/complete`)
   return { supabase, userId: user.id }
 }
 
@@ -79,7 +79,7 @@ export async function answerQuestion(
   // Bust the client Router Cache for this route so navigating "Back" to a
   // question already visited earlier in the session re-fetches the freshly
   // saved answer instead of reusing the stale pre-answer render.
-  revalidatePath(`/admin/coach-dna/assessment/${attemptId}`)
+  revalidatePath(`/coach-dna/assessment/${attemptId}`)
 
   if (progress.isComplete) {
     const { error: completeError } = await supabase
@@ -87,8 +87,8 @@ export async function answerQuestion(
       .update({ completed_at: new Date().toISOString() })
       .eq('id', attemptId)
     if (completeError) throw new Error(completeError.message)
-    redirect(`/admin/coach-dna/assessment/${attemptId}/complete`)
+    redirect(`/coach-dna/assessment/${attemptId}/complete`)
   }
 
-  redirect(`/admin/coach-dna/assessment/${attemptId}?q=${progress.nextQuestion!.id}`)
+  redirect(`/coach-dna/assessment/${attemptId}?q=${progress.nextQuestion!.id}`)
 }

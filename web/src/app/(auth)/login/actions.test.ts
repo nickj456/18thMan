@@ -45,8 +45,8 @@ describe('login', () => {
 
   it('redirects to the safe next path on success', async () => {
     await expect(
-      login(formData({ email: 'coach@example.com', password: 'secret123', next: '/admin/coach-dna' })),
-    ).rejects.toThrow('REDIRECT:/admin/coach-dna')
+      login(formData({ email: 'coach@example.com', password: 'secret123', next: '/coach-dna' })),
+    ).rejects.toThrow('REDIRECT:/coach-dna')
   })
 
   it('falls back to /dashboard when next is missing', async () => {
@@ -64,8 +64,8 @@ describe('login', () => {
   it('preserves a safe next through the error-redirect path', async () => {
     state.signInError = { message: 'Invalid credentials' }
     await expect(
-      login(formData({ email: 'coach@example.com', password: 'wrong', next: '/admin/coach-dna' })),
-    ).rejects.toThrow(/next=%2Fadmin%2Fcoach-dna/)
+      login(formData({ email: 'coach@example.com', password: 'wrong', next: '/coach-dna' })),
+    ).rejects.toThrow(/next=%2Fcoach-dna/)
   })
 
   it('does not add a next param to the error redirect when next is unsafe', async () => {
@@ -84,13 +84,13 @@ describe('loginWithOAuth', () => {
   })
 
   it('includes a safe next param in the OAuth redirectTo URL', async () => {
-    await expect(loginWithOAuth('google', formData({ next: '/admin/coach-dna' }))).rejects.toThrow(
+    await expect(loginWithOAuth('google', formData({ next: '/coach-dna' }))).rejects.toThrow(
       'REDIRECT:https://accounts.google.com/o/oauth2/auth?foo=bar',
     )
     expect(signInWithOAuthMock).toHaveBeenCalledWith(
       expect.objectContaining({
         options: expect.objectContaining({
-          redirectTo: expect.stringContaining('next=%2Fadmin%2Fcoach-dna'),
+          redirectTo: expect.stringContaining('next=%2Fcoach-dna'),
         }),
       }),
     )

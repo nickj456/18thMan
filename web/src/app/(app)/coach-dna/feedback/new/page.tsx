@@ -49,7 +49,7 @@ export default async function NewFeedbackRequestPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/admin/coach-dna/feedback" className="text-sm text-orange-400 hover:text-orange-300">
+            <Link href="/coach-dna/feedback" className="text-sm text-orange-400 hover:text-orange-300">
               Back to feedback requests
             </Link>
           </CardContent>

@@ -1,6 +1,6 @@
 import type { createClient } from '@/lib/supabase/server'
 import type { SelfAssessmentSummary } from '@/lib/supabase/types'
-import { ensureFreshSummary } from '@/app/(app)/admin/coach-dna/summary-actions'
+import { ensureFreshSummary } from '@/app/(app)/coach-dna/summary-actions'
 import { hasBlendedFeedback } from '@/lib/coach-dna/blend-status'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>

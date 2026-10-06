@@ -1,4 +1,4 @@
-// web/src/app/(app)/admin/coach-dna/assessment/[attemptId]/complete/loading.tsx
+// web/src/app/(app)/coach-dna/assessment/[attemptId]/complete/loading.tsx
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Sparkles } from 'lucide-react'

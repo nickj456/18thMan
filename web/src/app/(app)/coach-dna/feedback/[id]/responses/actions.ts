@@ -26,6 +26,6 @@ export async function raiseDispute(feedbackResponseId: string, reason: string) {
   if (error?.code === '23505') return { error: "You've already disputed this response." }
   if (error) return { error: 'Could not raise a dispute for this response.' }
 
-  revalidatePath('/admin/coach-dna/feedback')
+  revalidatePath('/coach-dna/feedback')
   return { success: true }
 }

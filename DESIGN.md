@@ -161,7 +161,7 @@ Rounded corners scale from a `0.625rem` (10px) base radius: `sm` (6px) for compa
 ### Hexagon Motif (signature)
 A recurring hex-grid background texture (thin ember-orange strokes at low opacity) and hexagonal icon badges (ember fill/stroke at partial opacity) on marketing surfaces. Functions as 18th Man's visual signature the way a team crest would — reserved for Persuade-mode surfaces (landing page, marketing), not reused as a generic app-UI container shape.
 
-**Scoped exception:** The Coach DNA page (`/admin/coach-dna`) hero banner uses the hex/DNA-helix marketing graphic (`coach-dna-hero.png`) as a deliberate one-off brand moment, since Coach DNA is itself a named product feature with its own promotional identity. This is not a precedent — no other in-app surface should reach for the hex motif on the strength of this exception.
+**Scoped exception:** The Coach DNA page (`/coach-dna`) hero banner uses the hex/DNA-helix marketing graphic (`coach-dna-hero.png`) as a deliberate one-off brand moment, since Coach DNA is itself a named product feature with its own promotional identity. This is not a precedent — no other in-app surface should reach for the hex motif on the strength of this exception.
 
 ## Do's and Don'ts
 
