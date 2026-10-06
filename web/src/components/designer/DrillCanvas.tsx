@@ -162,52 +162,16 @@ export function DrillCanvas({
     }
   }, [editingText?.id])
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      // Leave typing alone: form fields, the label textarea, native selects,
-      // Base UI comboboxes/listboxes and any open dialog own their own keys.
-      const target = e.target as HTMLElement
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) return
-      if (target.closest?.('[role="combobox"],[role="listbox"],[role="dialog"]')) return
-
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedId) handleDelete()
-        return
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        e.preventDefault()
-        onUndo()
-        return
-      }
-      if (e.key === 'Escape') {
-        onSelectId(null)
-        onToolChange('select')
-        return
-      }
-      // Single-key tool shortcuts (V select, A attacker, R run, ...) defined in tools.tsx
-      if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
-        const tool = toolForKey(e.key)
-        if (tool) {
-          e.preventDefault()
-          onToolChange(tool)
-        }
-      }
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  })
-
   // Works for mouse, touch, and Apple Pencil — getPointerPosition() normalises all three.
   // In 3D mode we inverse the Konva Group transform so newly-placed elements land at
   // the correct canvas-logical position (the Group handles hit-testing for existing
   // elements automatically via its own inverse transform).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function getPos(e: Konva.KonvaEventObject<any>) {
+  const getPos = useCallback((e: Konva.KonvaEventObject<any>) => {
     const pos = e.target.getStage()?.getPointerPosition() ?? null
     if (!pos) return null
     return { x: pos.x / scale, y: pos.y / scale }
-  }
+  }, [scale])
 
   // ── Click/Tap-to-place (non-draw tools) ──────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -233,7 +197,7 @@ export function DrillCanvas({
       // Set editing data directly — don't look up from state (parent hasn't re-rendered yet)
       setEditingText({ id: el.id, x: el.x, y: el.y, label: 'Label', color: '#ffffff' })
     }
-  }, [activeTool, state, onStateChange, onSelectId])
+  }, [activeTool, state, onStateChange, onSelectId, defaultPlayerSize, getPos])
 
   // ── Drag-to-draw (arrow / line / dotted) ─────────────────────────────────
   const handleMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -248,14 +212,14 @@ export function DrillCanvas({
       color: defaultLineColor(activeTool),
     })
     onSelectId(null)
-  }, [activeTool, onSelectId])
+  }, [activeTool, onSelectId, getPos])
 
   const handleMouseMove = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
     if (!drawingEl) return
     const pos = getPos(e)
     if (!pos) return
     setDrawingEl((d) => d ? { ...d, x2: pos.x, y2: pos.y } : null)
-  }, [drawingEl])
+  }, [drawingEl, getPos])
 
   const handleMouseUp = useCallback(() => {
     if (!drawingEl) return
@@ -291,7 +255,7 @@ export function DrillCanvas({
       color: defaultLineColor(activeTool),
     })
     onSelectId(null)
-  }, [activeTool, onSelectId])
+  }, [activeTool, onSelectId, getPos])
 
   const handleTouchMove = useCallback((e: Konva.KonvaEventObject<TouchEvent>) => {
     if (!drawingEl) return
@@ -299,7 +263,7 @@ export function DrillCanvas({
     const pos = getPos(e)
     if (!pos) return
     setDrawingEl((d) => d ? { ...d, x2: pos.x, y2: pos.y } : null)
-  }, [drawingEl])
+  }, [drawingEl, getPos])
 
   function handleElementChange(updated: CanvasElement) {
     onStateChange({
@@ -323,6 +287,42 @@ export function DrillCanvas({
     onStateChange({ ...state, elements: state.elements.filter((el) => el.id !== selectedId) })
     onSelectId(null)
   }
+
+  // Keyboard shortcuts (declared after handleDelete, which it calls)
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      // Leave typing alone: form fields, the label textarea, native selects,
+      // Base UI comboboxes/listboxes and any open dialog own their own keys.
+      const target = e.target as HTMLElement
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) return
+      if (target.closest?.('[role="combobox"],[role="listbox"],[role="dialog"]')) return
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedId) handleDelete()
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault()
+        onUndo()
+        return
+      }
+      if (e.key === 'Escape') {
+        onSelectId(null)
+        onToolChange('select')
+        return
+      }
+      // Single-key tool shortcuts (V select, A attacker, R run, ...) defined in tools.tsx
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
+        const tool = toolForKey(e.key)
+        if (tool) {
+          e.preventDefault()
+          onToolChange(tool)
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  })
 
   function startTextEdit(id: string) {
     const el = state.elements.find((e) => e.id === id)
@@ -444,7 +444,9 @@ export function DrillCanvas({
             <Layer>
               <PitchBackgroundLayer type={state.background} flipped={state.pitchFlipped} />
             </Layer>
-            <Layer>
+            {/* Pieces only take pointer events in Select mode: a draw or placement
+                gesture that starts on top of a piece must not also drag it. */}
+            <Layer listening={activeTool === 'select'}>
                 <CanvasElements
                   elements={state.elements}
                   selectedId={selectedId}

@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useRef, useCallback, useTransition, useEffect } from 'react'
+import { useState, useRef, useCallback, useTransition, useEffect, useSyncExternalStore } from 'react'
 import type Konva from 'konva'
 import { DrillCanvas } from './DrillCanvas'
 import { Timeline, FPS } from './Timeline'
 import { AnimationPreview } from './AnimationPreview'
 import { type CanvasState, type CanvasElement, type ToolType, type Keyframe } from './types'
+import { type HistoryState, canUndo, createHistory, currentState, pushHistory, undoHistory } from './history'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -35,7 +36,17 @@ const PLAYER_COUNTS = [
 ]
 
 const INITIAL_STATE: CanvasState = { background: 'full', elements: [] }
-const MAX_HISTORY = 50
+
+// The details panel defaults open on wide screens and closed on tablets / narrow
+// desktops, tracking the viewport until the coach toggles it by hand.
+const WIDE_QUERY = '(min-width: 1280px)'
+function subscribeWide(onChange: () => void) {
+  const mq = window.matchMedia(WIDE_QUERY)
+  mq.addEventListener('change', onChange)
+  return () => mq.removeEventListener('change', onChange)
+}
+const getWide = () => window.matchMedia(WIDE_QUERY).matches
+const getWideServer = () => true
 
 interface InitialDrill {
   id: string
@@ -69,21 +80,20 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   const isEditing = !!initialDrill
   const { show: showUpgrade, message: upgradeMessage, checkError, dismiss: dismissUpgrade } = useUpgradePrompt()
   const [isMobile, setIsMobile] = useState(false)
+  const isWide = useSyncExternalStore(subscribeWide, getWide, getWideServer)
+  const [detailsOverride, setDetailsOverride] = useState<boolean | null>(null)
+  const showDetails = detailsOverride ?? isWide
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
     check()
-    // Tablets and narrow desktops start with the details panel closed so the
-    // canvas gets the width; the coach can reopen it from the command bar.
-    if (window.innerWidth < 1280) setShowDetails(false)
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
 
   const startState = initialDrill?.canvas_json ?? INITIAL_STATE
-  const [history, setHistory] = useState<CanvasState[]>([startState])
-  const [historyIndex, setHistoryIndex] = useState(0)
-  const canvasState = history[historyIndex]
+  const [history, setHistory] = useState<HistoryState>(() => createHistory(startState))
+  const canvasState = currentState(history)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [activeTool, setActiveTool] = useState<ToolType>('select')
@@ -111,7 +121,6 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
 
   const [isPending, startTransition] = useTransition()
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [showDetails, setShowDetails] = useState(true)
 
   // Timeline state
   const [showTimeline, setShowTimeline] = useState(false)
@@ -239,16 +248,14 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
     setIsPlaying(v => !v)
   }
 
+  // Entries and cursor move together in one updater, so two pushes in the same
+  // tick (drag-end + draw mouse-up) can never leave the cursor past the end.
   const pushState = useCallback((next: CanvasState) => {
-    setHistory((prev) => {
-      const truncated = prev.slice(0, historyIndex + 1)
-      return [...truncated, next].slice(-MAX_HISTORY)
-    })
-    setHistoryIndex((i) => Math.min(i + 1, MAX_HISTORY - 1))
-  }, [historyIndex])
+    setHistory((prev) => pushHistory(prev, next))
+  }, [])
 
   const handleUndo = useCallback(() => {
-    setHistoryIndex((i) => Math.max(i - 1, 0))
+    setHistory((prev) => undoHistory(prev))
   }, [])
 
   const handleClear = useCallback(() => {
@@ -552,7 +559,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
             onToolChange={isPlaying ? () => {} : setActiveTool}
             onUndo={handleUndo}
             onClear={handleClear}
-            canUndo={historyIndex > 0}
+            canUndo={canUndo(history)}
             stageRef={stageRef}
           />
           {isPlaying && (
@@ -567,7 +574,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
 
         {/* Canvas command bar */}
         <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-t border-border bg-card px-3">
-          <span className="font-mono text-xs text-muted-foreground tabular-nums">
+          <span className="min-w-0 truncate font-mono text-xs text-muted-foreground tabular-nums">
             {keyframeCount > 0
               ? `${keyframeCount} keyframe${keyframeCount !== 1 ? 's' : ''}`
               : 'No keyframes'}
@@ -610,7 +617,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
                 size="sm"
                 variant="outline"
                 aria-pressed={showDetails}
-                onClick={() => setShowDetails(v => !v)}
+                onClick={() => setDetailsOverride(!showDetails)}
               >
                 {showDetails ? <PanelRightClose /> : <PanelRightOpen />}
                 {showDetails ? 'Hide details' : 'Show details'}
