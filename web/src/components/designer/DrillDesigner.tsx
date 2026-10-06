@@ -15,7 +15,7 @@ import type { DrillCategory, DrillVisibility } from '@/lib/supabase/types'
 import { saveDrillDesign, updateDrillDesign } from '@/app/(discover)/drills/designer-actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, Monitor, Clapperboard, Video, ImageDown, Maximize2, Minimize2, Globe, Users, Lock } from 'lucide-react'
+import { Loader2, Save, Monitor, Clapperboard, Video, ImageDown, Maximize2, Minimize2, Globe, Users, Lock, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { UpgradePrompt, useUpgradePrompt } from '@/components/ui/UpgradePrompt'
 
@@ -73,6 +73,9 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
     check()
+    // Tablets and narrow desktops start with the details panel closed so the
+    // canvas gets the width; the coach can reopen it from the command bar.
+    if (window.innerWidth < 1280) setShowDetails(false)
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
@@ -108,6 +111,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
 
   const [isPending, startTransition] = useTransition()
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showDetails, setShowDetails] = useState(true)
 
   // Timeline state
   const [showTimeline, setShowTimeline] = useState(false)
@@ -569,7 +573,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
               : 'No keyframes'}
           </span>
           <div className="flex items-center gap-1.5">
-            {isFullscreen && (
+            {(isFullscreen || !showDetails) && (
               <Button size="sm" onClick={handleSave} disabled={isPending}>
                 {isPending ? <Loader2 className="animate-spin" /> : <Save />}
                 {isPending ? 'Saving…' : isEditing ? 'Update' : 'Save'}
@@ -601,6 +605,17 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
               <Clapperboard />
               {showTimeline ? 'Hide timeline' : 'Animate'}
             </Button>
+            {!isFullscreen && (
+              <Button
+                size="sm"
+                variant="outline"
+                aria-pressed={showDetails}
+                onClick={() => setShowDetails(v => !v)}
+              >
+                {showDetails ? <PanelRightClose /> : <PanelRightOpen />}
+                {showDetails ? 'Hide details' : 'Show details'}
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
@@ -628,7 +643,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         )}
       </div>
 
-      {!isFullscreen && <aside className="w-72 border-l border-zinc-800 bg-zinc-900 flex flex-col shrink-0">
+      {!isFullscreen && showDetails && <aside className="w-72 border-l border-zinc-800 bg-zinc-900 flex flex-col shrink-0">
         <div className="p-4 border-b border-zinc-800 shrink-0">
           <h2 className="font-semibold text-sm text-white">Drill Details</h2>
           <p className="text-xs text-zinc-500 mt-0.5">Fill in before saving</p>
