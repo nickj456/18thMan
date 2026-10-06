@@ -129,6 +129,17 @@ is not a runtime boundary and a server action argument is client-controlled.
 one-liner. Pre-existing, deliberately left out of the v1.11.0.1 diff to keep
 that change scoped to the model outage.
 
+## Help widget
+
+**Help-widget knowledge base quotes stale prices and tier limits**
+**Priority:** P1
+Found during the 1.13.0.0 docs sync (2026-10-06). `web/src/lib/help/platform-guide.md`
+is read at runtime by `api/help-chat/route.ts` and quoted to users. It says Club is
+£19.99/mo (pricing page: £24.99), that the free tier has unlimited session plans
+(`FREE_SESSION_LIMIT = 1`), that PDF export needs Club (Coach Pro has it), and it does
+not mention Coach Pro at all. Bring it in line with the tier table in CLAUDE.md and add
+it to the "keep in sync" list there alongside the chat SYSTEM_PROMPT.
+
 ## Drill designer
 
 **Player-size S/M/L buttons are 22px wide**
