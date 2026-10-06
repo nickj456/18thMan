@@ -15,6 +15,7 @@ All notable changes to 18th Man are documented here.
 - **Clearer details form.** The Visibility menu shows "Public", "Only me" or your club's name with an icon instead of the raw setting, and both designer pages share one header in the app's heading style, with a proper back link.
 - Pieces respond to the mouse only in Select mode, so starting a line on top of a player no longer drags the player too. Press V or Esc to move pieces.
 - Undo, Delete and Clear are disabled while an animation is playing.
+- Builds and deployments run on Node.js 24. Vercel retired Node.js 20 on 1 October 2026 and every deployment since then had failed before building.
 
 ### Fixed
 - **Drawing a line over a player no longer crashes the designer.** Starting a run, pass or kick on top of a piece pushed two history entries at once and the page died with "Cannot read properties of undefined". Undo history is now one consistent value.
