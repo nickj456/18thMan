@@ -73,6 +73,8 @@ When Groq retires a model: add the id to `DECOMMISSIONED_GROQ_MODELS`, repoint t
 - Use **React Konva** for the canvas — don't substitute another canvas library
 - Desktop-first layout; ensure tablet usability
 - Canvas state stored as `canvas_json` (JSONB) in the `drills` table
+- Tool palette data lives in `components/designer/tools.tsx` (`TOOL_META`, `TOOL_GROUPS`, `TOOL_SHORTCUTS`, the glyphs) — `Toolbar.tsx` only renders it. To add a tool: extend `ToolType` in `types.ts` (the exhaustive `TOOL_META` record then fails typecheck until it has a label), put it in exactly one `TOOL_GROUPS` entry, give it a glyph, and add it to `ALL_TOOLS` in `tools.test.ts`, which checks grouping and shortcut uniqueness only for the tools in that list
+- Undo history is the pure reducer in `components/designer/history.ts` (`pushHistory` / `undoHistory` / `currentState`): entries and cursor are one value. Never split them into separate `useState` slots — two pushes in one tick (a Konva drag-end plus a draw-tool mouse-up) desynced them and crashed the page (fixed in v1.13.0.0)
 
 ### Security
 - **Never fetch a user-supplied URL directly.** Any server-side fetch of a URL a user gave us (link previews, etc.) must go through `web/src/lib/ssrf.ts`, which validates the resolved IP — and every redirect hop — against private/internal ranges (including IPv4-mapped IPv6). See [TESTING.md](TESTING.md) for the guard's test coverage.
@@ -165,19 +167,21 @@ app/
   (auth)/           — login, signup, password reset
   (app)/            — authenticated routes
     dashboard/
-    drills/
-    drills/[id]/
-    drills/new/       — drill designer
     sessions/
     chat/
-    profile/[username]/
     admin/
+  (discover)/       — drill library, drill designer, public profiles
+    drills/
+    drills/[id]/
+    drills/[id]/edit/ — drill designer (edit an existing drill)
+    drills/new/       — drill designer (new drill)
+    profile/[username]/
   api/              — route handlers (webhooks, public APIs only)
 components/
   ui/               — shadcn/ui components
   drills/
   chat/
-  designer/
+  designer/         — React Konva drill designer; tools.tsx (palette data + glyphs), keyboard.ts (shortcuts), history.ts (undo reducer), useUnsavedChangesGuard.ts
   session/
 lib/
   supabase/         — client, server, middleware helpers
