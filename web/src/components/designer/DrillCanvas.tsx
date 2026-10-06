@@ -374,7 +374,7 @@ export function DrillCanvas({
         hasElements={state.elements.length > 0}
       />
 
-      <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto bg-zinc-950 p-4">
+      <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto bg-background p-4">
         <div style={{
           position: 'relative',
           width: CANVAS_WIDTH * scale,
@@ -394,7 +394,7 @@ export function DrillCanvas({
                 minWidth: 80,
                 fontSize: 15,
                 fontWeight: 'bold',
-                fontFamily: 'sans-serif',
+                fontFamily: 'var(--font-sans)',
                 color: editingText.color,
                 background: 'rgba(0,0,0,0.75)',
                 border: '1px dashed rgba(255,255,255,0.6)',
@@ -488,7 +488,7 @@ export function DrillCanvas({
         </div>
 
         {/* Status bar: pinned inside the canvas area so it never overlaps the rail */}
-        <div className="pointer-events-none absolute bottom-2 left-3 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground select-none">
+        <div className="pointer-events-none absolute bottom-2 left-3 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground select-none">
           <span>{attackers} att · {defenders} def · {state.elements.length} total</span>
           {activeTool !== 'select' && isDraw && (
             <span className="text-foreground/80">{isTouch ? 'Drag to draw · Apple Pencil supported' : 'Click and drag to draw · Esc to cancel'}</span>

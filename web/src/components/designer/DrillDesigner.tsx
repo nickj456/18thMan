@@ -421,17 +421,17 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
           </SelectContent>
         </Select>
         {visibility === 'club' && (
-          <p className="text-[11px] text-zinc-500">Only members of your club can see this drill</p>
+          <p className="text-xs text-muted-foreground">Only members of your club can see this drill</p>
         )}
       </div>
 
-      <div className="space-y-3 pt-1 border-t border-zinc-800">
-        <p className="text-xs font-medium text-zinc-400">Video Links</p>
+      <div className="space-y-3 pt-1 border-t border-border">
+        <p className="text-xs font-medium text-muted-foreground">Video Links</p>
 
         <div className="space-y-1.5">
           <Label htmlFor="youtube" className="text-xs flex items-center gap-1.5">
             YouTube
-            <span className="text-[10px] text-primary font-normal">Primary — AI guide</span>
+            <span className="font-mono text-[10px] font-medium tracking-wider text-primary uppercase">Primary · AI guide</span>
           </Label>
           <Input
             id="youtube"
@@ -441,7 +441,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
             className="h-8 text-sm"
           />
           {youtubeUrl.trim() && (
-            <p className="text-[11px] text-zinc-500">AI coaching guide generated on save</p>
+            <p className="text-xs text-muted-foreground">AI coaching guide generated on save</p>
           )}
         </div>
 
@@ -471,13 +471,13 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   )
 
   const saveButton = (
-    <div className="p-4 border-t border-zinc-800">
+    <div className="p-4 border-t border-border">
       <Button onClick={handleSave} disabled={isPending} className="w-full gap-2">
         {isPending ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
         {isPending ? (youtubeUrl.trim() ? 'Generating guide…' : 'Saving…') : isEditing ? 'Update Drill' : 'Save Drill'}
       </Button>
       {!isMobile && (
-        <p className="text-[11px] text-zinc-600 text-center mt-2">
+        <p className="mt-2 text-center font-mono text-xs text-muted-foreground tabular-nums">
           {canvasState.elements.length} element{canvasState.elements.length !== 1 ? 's' : ''} on canvas
         </p>
       )}
@@ -511,13 +511,13 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
     return (
       <>
         {upgradeModal}
-        <div className="flex flex-col h-full overflow-y-auto bg-zinc-950">
+        <div className="flex flex-col h-full overflow-y-auto bg-background">
           {/* Canvas unavailable notice */}
-          <div className="mx-4 mt-4 flex items-start gap-3 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3">
+          <div className="mx-4 mt-4 flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3">
             <Monitor size={18} className="text-primary mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-zinc-200">Canvas designer requires a larger screen</p>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-sm font-medium">Canvas designer requires a larger screen</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 You can save the drill details and video links now — open on a desktop or tablet to add the pitch diagram.
               </p>
             </div>
@@ -525,7 +525,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
 
           <div className="flex flex-col flex-1">
             <div className="px-4 pt-4 pb-1">
-              <h2 className="font-semibold text-sm text-white">Drill Details</h2>
+              <h2 className="font-semibold text-sm">Drill Details</h2>
             </div>
             {formFields}
             {saveButton}
@@ -539,7 +539,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   return (
     <>
     {upgradeModal}
-    <div className={cn("flex h-full overflow-hidden", isFullscreen && "fixed inset-0 z-50 bg-zinc-950")}>
+    <div className={cn("flex h-full overflow-hidden", isFullscreen && "fixed inset-0 z-50 bg-background")}>
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Canvas area */}
         <div className="flex flex-1 min-h-0 overflow-hidden relative">
@@ -643,10 +643,10 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         )}
       </div>
 
-      {!isFullscreen && showDetails && <aside className="w-72 border-l border-zinc-800 bg-zinc-900 flex flex-col shrink-0">
-        <div className="p-4 border-b border-zinc-800 shrink-0">
-          <h2 className="font-semibold text-sm text-white">Drill Details</h2>
-          <p className="text-xs text-zinc-500 mt-0.5">Fill in before saving</p>
+      {!isFullscreen && showDetails && <aside className="w-72 border-l border-border bg-card flex flex-col shrink-0">
+        <div className="p-4 border-b border-border shrink-0">
+          <h2 className="font-semibold text-sm">Drill Details</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Fill in before saving</p>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto">
           {formFields}

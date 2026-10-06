@@ -151,7 +151,7 @@ export function Toolbar({
                           aria-label={sz.name}
                           onClick={() => onPlayerSizeChange(sz.id)}
                           className={cn(
-                            'h-6 rounded-[5px] font-mono text-[11px] font-medium text-muted-foreground transition-colors',
+                            'h-6 rounded-[5px] font-mono text-xs font-medium text-muted-foreground transition-colors',
                             'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
                             playerSize === sz.id && 'bg-background text-foreground ring-1 ring-inset ring-border',
                           )}

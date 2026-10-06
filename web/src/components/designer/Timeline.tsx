@@ -193,7 +193,7 @@ export function Timeline({
             <div className="flex h-7 items-center">
               <div className="h-full w-20 shrink-0 border-r border-border" />
               <div className="flex h-full items-center px-3">
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   Add elements to the canvas to animate them
                 </span>
               </div>
@@ -205,7 +205,7 @@ export function Timeline({
                 <div key={el.id} className="flex h-7 shrink-0 border-b border-border/50">
                   {/* Label */}
                   <div className="flex w-20 shrink-0 items-center border-r border-border px-2">
-                    <span className="truncate text-[11px] text-muted-foreground">{elementLabel(el)}</span>
+                    <span className="truncate text-xs text-muted-foreground">{elementLabel(el)}</span>
                   </div>
                   {/* Track */}
                   <div
@@ -253,7 +253,7 @@ export function Timeline({
           {elements.length > MAX_ROWS && (
             <div className="flex h-6 items-center">
               <div className="h-full w-20 shrink-0 border-r border-border" />
-              <span className="px-3 text-[11px] text-muted-foreground">
+              <span className="px-3 text-xs text-muted-foreground">
                 +{elements.length - MAX_ROWS} more (all animated)
               </span>
             </div>
