@@ -15,7 +15,7 @@ import type { DrillCategory, DrillVisibility } from '@/lib/supabase/types'
 import { saveDrillDesign, updateDrillDesign } from '@/app/(discover)/drills/designer-actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, Monitor, Timer, Video, ImageDown, Maximize2, Minimize2 } from 'lucide-react'
+import { Loader2, Save, Monitor, Clapperboard, Video, ImageDown, Maximize2, Minimize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { UpgradePrompt, useUpgradePrompt } from '@/components/ui/UpgradePrompt'
 
@@ -178,6 +178,8 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
       return { ...el, ...interpolated }
     })
   }
+
+  const keyframeCount = (canvasState.keyframes ?? []).length
 
   // During playback show interpolated state; otherwise show editable state
   const displayState: CanvasState = isPlaying
@@ -533,70 +535,63 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
           />
           {isPlaying && (
             <div className="absolute inset-0 pointer-events-none flex items-end justify-center pb-4">
-              <div className="flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 text-[11px] text-amber-400 font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <div className="flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 font-mono text-xs text-white backdrop-blur-sm tabular-nums">
+                <span className="size-1.5 animate-pulse rounded-full bg-primary" />
                 Playing · {(currentFrame / FPS).toFixed(1)}s
               </div>
             </div>
           )}
         </div>
 
-        {/* Timeline toggle bar */}
-        <div className="flex items-center justify-between px-3 h-8 bg-zinc-900 border-t border-zinc-800 shrink-0">
-          <span className="text-[11px] text-zinc-600">
-            {(canvasState.keyframes ?? []).length > 0
-              ? `${(canvasState.keyframes ?? []).length} keyframe${(canvasState.keyframes ?? []).length !== 1 ? 's' : ''}`
+        {/* Canvas command bar */}
+        <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-t border-border bg-card px-3">
+          <span className="font-mono text-xs text-muted-foreground tabular-nums">
+            {keyframeCount > 0
+              ? `${keyframeCount} keyframe${keyframeCount !== 1 ? 's' : ''}`
               : 'No keyframes'}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {isFullscreen && (
-              <button
-                onClick={handleSave}
-                disabled={isPending}
-                className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/80 transition-colors border border-primary disabled:opacity-50"
-                title="Save drill"
-              >
-                {isPending ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
-                Save
-              </button>
+              <Button size="sm" onClick={handleSave} disabled={isPending}>
+                {isPending ? <Loader2 className="animate-spin" /> : <Save />}
+                {isPending ? 'Saving…' : isEditing ? 'Update' : 'Save'}
+              </Button>
             )}
-            <button
+            <Button
+              size="sm"
+              variant="outline"
               onClick={handleDownloadPng}
               disabled={canvasState.elements.length === 0}
-              className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors border border-zinc-700 disabled:opacity-30"
               title="Download canvas as PNG"
             >
-              <ImageDown size={11} />
+              <ImageDown />
               PNG
-            </button>
-            {(canvasState.keyframes ?? []).length >= 2 && (
-              <button
-                onClick={() => setShowPreview(true)}
-                className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 hover:text-amber-300 transition-colors border border-amber-500/20"
-              >
-                <Video size={11} />
+            </Button>
+            {keyframeCount >= 2 && (
+              <Button size="sm" variant="outline" onClick={() => setShowPreview(true)}>
+                <Video />
                 Preview & Export
-              </button>
+              </Button>
             )}
-            <button
+            <Button
+              size="sm"
+              variant="outline"
+              aria-pressed={showTimeline}
               onClick={() => setShowTimeline(v => !v)}
-              className={`flex items-center gap-1.5 text-[11px] px-2 py-1 rounded transition-colors border ${
-                showTimeline
-                  ? 'bg-primary/15 text-primary border-primary/30 hover:bg-primary/25'
-                  : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white hover:bg-zinc-700'
-              }`}
+              className={cn(showTimeline && 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary')}
             >
-              <Timer size={11} />
-              {showTimeline ? 'Hide Timeline' : 'Animate'}
-            </button>
-            <button
+              <Clapperboard />
+              {showTimeline ? 'Hide timeline' : 'Animate'}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => setIsFullscreen(v => !v)}
-              className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded transition-colors border bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white hover:bg-zinc-700"
               title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
             >
-              {isFullscreen ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
+              {isFullscreen ? <Minimize2 /> : <Maximize2 />}
               {isFullscreen ? 'Exit' : 'Fullscreen'}
-            </button>
+            </Button>
           </div>
         </div>
 

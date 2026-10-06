@@ -2,7 +2,10 @@
 
 import { useRef, useCallback } from 'react'
 import { Play, Pause, Plus, Trash2, ChevronDown } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import type { CanvasState, CanvasElement } from './types'
+import { TOOL_META } from './tools'
 
 export const FPS = 30
 
@@ -15,18 +18,17 @@ export const DURATION_OPTIONS = [
   { label: '20s', frames: 600 },
 ]
 
+const HEADER_HEIGHT = 36
+const RULER_HEIGHT = 24
+const ROW_HEIGHT = 28
+const MAX_ROWS = 6
+
 function elementLabel(el: CanvasElement): string {
   switch (el.type) {
-    case 'attacker': return `Att ${el.label ?? ''}`
-    case 'defender': return `Def ${el.label ?? ''}`
-    case 'cone':     return 'Cone'
-    case 'ball':     return 'Ball'
-    case 'arrow':    return 'Arrow'
-    case 'line':     return 'Line'
-    case 'dotted':   return 'Dotted'
-    case 'zone':     return 'Zone'
-    case 'text':     return el.label ?? 'Text'
-    default:         return 'Element'
+    case 'attacker': return `Att ${el.label ?? ''}`.trim()
+    case 'defender': return `Def ${el.label ?? ''}`.trim()
+    case 'text':     return el.label ?? 'Label'
+    default:         return TOOL_META[el.type]?.label ?? 'Element'
   }
 }
 
@@ -88,107 +90,110 @@ export function Timeline({
 
   const elements = state.elements
 
-  // Dynamic height: header (36) + ruler (24) + element rows (28 each, min 1 shown) + clamp
-  const rowCount = Math.max(1, Math.min(elements.length, 6))
-  const panelHeight = 36 + 24 + rowCount * 28 + (elements.length > 6 ? 24 : 0)
+  // Header + ruler + one row per element (at least one, at most six) + the overflow notice
+  const rowCount = Math.max(1, Math.min(elements.length, MAX_ROWS))
+  const panelHeight = HEADER_HEIGHT + RULER_HEIGHT + rowCount * ROW_HEIGHT + (elements.length > MAX_ROWS ? RULER_HEIGHT : 0)
 
   return (
     <div
-      className="border-t border-zinc-800 bg-zinc-950 flex flex-col shrink-0"
+      role="region"
+      aria-label="Animation timeline"
+      className="flex shrink-0 flex-col border-t border-border bg-background"
       style={{ height: panelHeight }}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 h-9 border-b border-zinc-800 shrink-0">
-        <button
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-3">
+        <Button
+          size="icon-xs"
+          variant="ghost"
+          aria-label={isPlaying ? 'Pause' : 'Play'}
           onClick={onTogglePlay}
-          className="w-6 h-6 flex items-center justify-center rounded hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-          title={isPlaying ? 'Pause' : 'Play'}
         >
-          {isPlaying ? <Pause size={11} /> : <Play size={11} />}
-        </button>
-        <span className="text-[11px] font-mono text-zinc-500 tabular-nums">
+          {isPlaying ? <Pause /> : <Play />}
+        </Button>
+        <span className="font-mono text-xs text-muted-foreground tabular-nums">
           {currentSeconds}s / {totalSeconds}s
         </span>
-        <span className="text-[10px] font-mono text-zinc-700">f{currentFrame}</span>
-        <div className="w-px h-3.5 bg-zinc-800 mx-1" />
+        <span className="font-mono text-[10px] text-muted-foreground/60 tabular-nums">f{currentFrame}</span>
+        <div className="mx-1 h-3.5 w-px bg-border" />
         {/* Duration selector */}
         <div className="relative flex items-center">
           <select
+            aria-label="Animation duration"
             value={duration}
             onChange={e => onDurationChange(Number(e.target.value))}
-            className="appearance-none bg-zinc-900 border border-zinc-700 text-zinc-400 text-[10px] rounded px-1.5 pr-4 py-0.5 leading-none cursor-pointer hover:border-zinc-600 hover:text-white transition-colors focus:outline-none"
-            title="Animation duration"
+            className="h-6 cursor-pointer appearance-none rounded-md border border-input bg-transparent pr-6 pl-2 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
           >
             {DURATION_OPTIONS.map(opt => (
               <option key={opt.frames} value={opt.frames}>{opt.label}</option>
             ))}
           </select>
-          <ChevronDown size={9} className="absolute right-1 text-zinc-600 pointer-events-none" />
+          <ChevronDown size={11} aria-hidden className="pointer-events-none absolute right-1.5 text-muted-foreground" />
         </div>
         <div className="flex-1" />
         <div className="flex items-center gap-1.5">
           {hasKeyframeAtCurrent && (
-            <button
+            <Button
+              size="xs"
+              variant="ghost"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => onDeleteKeyframe(currentFrame)}
-              className="flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded text-red-400 hover:bg-red-400/10 transition-colors"
             >
-              <Trash2 size={10} />
-              Delete
-            </button>
+              <Trash2 />
+              Delete keyframe
+            </Button>
           )}
-          <button
+          <Button
+            size="xs"
+            variant={hasKeyframeAtCurrent ? 'outline' : 'secondary'}
             onClick={onAddKeyframe}
-            className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded font-medium transition-colors ${
-              hasKeyframeAtCurrent
-                ? 'text-amber-400 bg-amber-400/15 hover:bg-amber-400/25'
-                : 'text-zinc-300 bg-zinc-800 hover:bg-zinc-700'
-            }`}
+            className={cn(hasKeyframeAtCurrent && 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary')}
           >
-            <Plus size={10} />
-            {hasKeyframeAtCurrent ? 'Update' : 'Add Keyframe'}
-          </button>
+            <Plus />
+            {hasKeyframeAtCurrent ? 'Update keyframe' : 'Add keyframe'}
+          </Button>
         </div>
       </div>
 
       {/* Timeline tracks */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden">
         {/* Ruler row */}
-        <div className="flex shrink-0 h-6 border-b border-zinc-800">
-          <div className="w-[72px] shrink-0 border-r border-zinc-800 flex items-center px-2">
-            <span className="text-[9px] text-zinc-700 uppercase tracking-widest">Time</span>
+        <div className="flex h-6 shrink-0 border-b border-border">
+          <div className="flex w-20 shrink-0 items-center border-r border-border px-2">
+            <span className="text-[10px] font-medium tracking-wider text-muted-foreground/70 uppercase">Time</span>
           </div>
           <div
             ref={rulerRef}
-            className="flex-1 relative bg-zinc-900/40 cursor-crosshair overflow-hidden"
+            className="relative flex-1 cursor-crosshair overflow-hidden bg-muted/30"
             onMouseDown={handleTrackMouseDown}
           >
             {markers.map(f => (
               <div
                 key={f}
-                className="absolute top-0 flex flex-col items-center pointer-events-none"
+                className="pointer-events-none absolute top-0 flex flex-col items-center"
                 style={{ left: frameToPercent(f) }}
               >
-                <div className="w-px h-3 bg-zinc-700" />
-                <span className="text-[9px] text-zinc-600 leading-none mt-px whitespace-nowrap">
+                <div className="h-2.5 w-px bg-border" />
+                <span className="mt-px font-mono text-[10px] leading-none whitespace-nowrap text-muted-foreground/70 tabular-nums">
                   {(f / FPS).toFixed(f % 30 === 0 ? 0 : 1)}s
                 </span>
               </div>
             ))}
             {/* Playhead on ruler */}
             <div
-              className="absolute top-0 bottom-0 w-px bg-amber-400/80 pointer-events-none"
+              className="pointer-events-none absolute top-0 bottom-0 w-px bg-primary"
               style={{ left: frameToPercent(currentFrame) }}
             />
           </div>
         </div>
 
         {/* Element rows */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto">
           {elements.length === 0 ? (
-            <div className="flex h-8 items-center">
-              <div className="w-[72px] shrink-0 border-r border-zinc-800 h-full" />
-              <div className="px-3 flex items-center h-full">
-                <span className="text-[10px] text-zinc-700">
+            <div className="flex h-7 items-center">
+              <div className="h-full w-20 shrink-0 border-r border-border" />
+              <div className="flex h-full items-center px-3">
+                <span className="text-[11px] text-muted-foreground">
                   Add elements to the canvas to animate them
                 </span>
               </div>
@@ -197,39 +202,45 @@ export function Timeline({
             elements.map((el) => {
               const elKfs = keyframes.filter(k => k.elementStates[el.id])
               return (
-                <div key={el.id} className="flex h-[28px] border-b border-zinc-900 shrink-0">
+                <div key={el.id} className="flex h-7 shrink-0 border-b border-border/50">
                   {/* Label */}
-                  <div className="w-[72px] shrink-0 border-r border-zinc-800 flex items-center px-2">
-                    <span className="text-[10px] text-zinc-500 truncate">{elementLabel(el)}</span>
+                  <div className="flex w-20 shrink-0 items-center border-r border-border px-2">
+                    <span className="truncate text-[11px] text-muted-foreground">{elementLabel(el)}</span>
                   </div>
                   {/* Track */}
                   <div
-                    className="flex-1 relative cursor-crosshair overflow-hidden"
+                    className="relative flex-1 cursor-crosshair overflow-hidden"
                     onMouseDown={handleTrackMouseDown}
                   >
                     {/* Track baseline */}
-                    <div className="absolute inset-y-0 left-0 right-0 flex items-center pointer-events-none">
-                      <div className="w-full h-px bg-zinc-800" />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 left-0 flex items-center">
+                      <div className="h-px w-full bg-border" />
                     </div>
 
-                    {/* Keyframe diamonds */}
+                    {/* Keyframe diamonds: real buttons so they can be reached by keyboard */}
                     {elKfs.map(kf => (
-                      <div
+                      <button
                         key={kf.time}
-                        className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rotate-45 cursor-pointer z-10 border transition-all ${
+                        type="button"
+                        aria-label={`Keyframe at ${(kf.time / FPS).toFixed(2)}s`}
+                        aria-current={kf.time === currentFrame ? 'true' : undefined}
+                        className={cn(
+                          'absolute top-1/2 z-10 size-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 border transition-transform',
+                          'before:absolute before:-inset-2 before:content-[""]',
+                          'focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none',
                           kf.time === currentFrame
-                            ? 'bg-amber-400 border-amber-300 shadow-[0_0_5px_rgba(251,191,36,0.6)]'
-                            : 'bg-zinc-500 border-zinc-400 hover:bg-white hover:border-white hover:scale-125'
-                        }`}
+                            ? 'border-primary bg-primary'
+                            : 'border-muted-foreground bg-muted-foreground/60 hover:scale-125 hover:border-foreground hover:bg-foreground',
+                        )}
                         style={{ left: frameToPercent(kf.time) }}
+                        onMouseDown={(e) => e.stopPropagation()}
                         onClick={(e) => { e.stopPropagation(); onFrameChange(kf.time) }}
-                        title={`Keyframe at ${(kf.time / FPS).toFixed(2)}s (f${kf.time})`}
                       />
                     ))}
 
                     {/* Playhead line */}
                     <div
-                      className="absolute top-0 bottom-0 w-px bg-amber-400/30 pointer-events-none"
+                      className="pointer-events-none absolute top-0 bottom-0 w-px bg-primary/40"
                       style={{ left: frameToPercent(currentFrame) }}
                     />
                   </div>
@@ -239,11 +250,11 @@ export function Timeline({
           )}
 
           {/* Overflow notice */}
-          {state.elements.length > 6 && (
+          {elements.length > MAX_ROWS && (
             <div className="flex h-6 items-center">
-              <div className="w-[72px] shrink-0 border-r border-zinc-800 h-full" />
-              <span className="px-3 text-[10px] text-zinc-700">
-                +{state.elements.length - 6} more (all animated)
+              <div className="h-full w-20 shrink-0 border-r border-border" />
+              <span className="px-3 text-[11px] text-muted-foreground">
+                +{elements.length - MAX_ROWS} more (all animated)
               </span>
             </div>
           )}
