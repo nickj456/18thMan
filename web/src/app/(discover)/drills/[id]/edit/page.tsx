@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DrillDesigner } from '@/components/designer/DrillDesigner'
@@ -45,9 +47,20 @@ export default async function EditDrillPage({
 
   return (
     <div className="-m-6 flex h-[calc(100dvh-3rem)] flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 border-b border-zinc-800 bg-zinc-950 shrink-0">
-        <h1 className="text-sm font-semibold">Editing: {drill.title}</h1>
-      </div>
+      <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-card px-4">
+        <Link
+          href={`/drills/${id}`}
+          className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          Back to drill
+        </Link>
+        <span aria-hidden className="text-muted-foreground/50">/</span>
+        <h1 className="app-heading min-w-0 truncate text-base leading-none">{drill.title}</h1>
+        <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+          Editing
+        </span>
+      </header>
       <div className="flex-1 overflow-hidden">
         <DrillDesigner
           categories={categories}

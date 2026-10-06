@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { DrillDesigner } from '@/components/designer/DrillDesigner'
@@ -26,12 +28,16 @@ export default async function NewDrillPage() {
 
   return (
     <div className="-m-6 flex h-[calc(100dvh-3rem)] flex-col overflow-hidden">
-      <header className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">
-        <a href="/drills" className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">
-          ← Drills
-        </a>
-        <span className="text-zinc-700">/</span>
-        <h1 className="text-sm font-semibold text-white">New Drill</h1>
+      <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-card px-4">
+        <Link
+          href="/drills"
+          className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          Drills
+        </Link>
+        <span aria-hidden className="text-muted-foreground/50">/</span>
+        <h1 className="app-heading text-base leading-none">New Drill</h1>
       </header>
       <DrillDesigner
         categories={categoriesResult.data ?? []}
