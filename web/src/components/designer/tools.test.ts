@@ -11,10 +11,12 @@ const ALL_TOOLS: ToolType[] = [
 const ALL_PITCHES: PitchBackground[] = ['full', 'half', 'blank', 'ingoal']
 
 describe('tool palette data', () => {
-  it('gives every tool a label and a description', () => {
+  it('gives every tool a label, a description and a short touch label that fits a tile', () => {
     for (const tool of ALL_TOOLS) {
       expect(TOOL_META[tool].label.length, tool).toBeGreaterThan(0)
       expect(TOOL_META[tool].description.length, tool).toBeGreaterThan(0)
+      expect(TOOL_META[tool].short.length, tool).toBeGreaterThan(0)
+      expect(TOOL_META[tool].short.length, tool + ' short label too long for a 42px tile').toBeLessThanOrEqual(6)
     }
   })
 

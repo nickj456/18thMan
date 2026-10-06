@@ -31,27 +31,29 @@ export const TOOL_COLORS = {
 
 export interface ToolMeta {
   label: string
+  /** Shown under the tile on touch devices (no hover, so no tooltip). Six characters or fewer. */
+  short: string
   /** Tooltip body: what clicking or dragging on the canvas does. */
   description: string
 }
 
 export const TOOL_META: Record<ToolType, ToolMeta> = {
-  select:           { label: 'Select',         description: 'Select and move pieces' },
-  attacker:         { label: 'Attacker',       description: 'Click the pitch to place an attacking player' },
-  defender:         { label: 'Defender',       description: 'Click the pitch to place a defending player' },
-  cone:             { label: 'Cone',           description: 'Click the pitch to place a cone' },
-  ball:             { label: 'Ball',           description: 'Click the pitch to place the ball' },
-  'tackle-bag':     { label: 'Tackle bag',     description: 'Click the pitch to place a tackle bag' },
-  'tackle-shield':  { label: 'Tackle shield',  description: 'Click the pitch to place a tackle shield' },
-  flag:             { label: 'Flag',           description: 'Click the pitch to place a flag or pole' },
-  disc:             { label: 'Marker disc',    description: 'Click the pitch to place a flat marker' },
-  'agility-ladder': { label: 'Agility ladder', description: 'Click the pitch to place a resizable ladder' },
-  arrow:            { label: 'Run',            description: 'Drag to draw a running line' },
-  line:             { label: 'Pass',           description: 'Drag to draw a pass' },
-  dotted:           { label: 'Dotted line',    description: 'Drag to draw a dotted line' },
-  kick:             { label: 'Kick',           description: 'Drag to draw a kick arc' },
-  zone:             { label: 'Zone',           description: 'Click the pitch to mark out an area' },
-  text:             { label: 'Label',          description: 'Click the pitch to add a text label' },
+  select:           { label: 'Select', short: 'Select',        description: 'Select and move pieces' },
+  attacker:         { label: 'Attacker', short: 'Attack',      description: 'Click the pitch to place an attacking player' },
+  defender:         { label: 'Defender', short: 'Defend',      description: 'Click the pitch to place a defending player' },
+  cone:             { label: 'Cone', short: 'Cone',          description: 'Click the pitch to place a cone' },
+  ball:             { label: 'Ball', short: 'Ball',          description: 'Click the pitch to place the ball' },
+  'tackle-bag':     { label: 'Tackle bag', short: 'Bag',    description: 'Click the pitch to place a tackle bag' },
+  'tackle-shield':  { label: 'Tackle shield', short: 'Shield', description: 'Click the pitch to place a tackle shield' },
+  flag:             { label: 'Flag', short: 'Flag',          description: 'Click the pitch to place a flag or pole' },
+  disc:             { label: 'Marker disc', short: 'Disc',   description: 'Click the pitch to place a flat marker' },
+  'agility-ladder': { label: 'Agility ladder', short: 'Ladder', description: 'Click the pitch to place a resizable ladder' },
+  arrow:            { label: 'Run', short: 'Run',           description: 'Drag to draw a running line' },
+  line:             { label: 'Pass', short: 'Pass',          description: 'Drag to draw a pass' },
+  dotted:           { label: 'Dotted line', short: 'Dotted',   description: 'Drag to draw a dotted line' },
+  kick:             { label: 'Kick', short: 'Kick',          description: 'Drag to draw a kick arc' },
+  zone:             { label: 'Zone', short: 'Zone',          description: 'Click the pitch to mark out an area' },
+  text:             { label: 'Label', short: 'Label',         description: 'Click the pitch to add a text label' },
 }
 
 export interface ToolGroup {
@@ -93,11 +95,11 @@ export function toolForKey(key: string): ToolType | null {
   return null
 }
 
-export const PITCH_OPTIONS: { id: PitchBackground; label: string }[] = [
-  { id: 'full',   label: 'Full pitch' },
-  { id: 'half',   label: 'Half pitch' },
-  { id: 'blank',  label: 'Grid' },
-  { id: 'ingoal', label: 'In-goal area' },
+export const PITCH_OPTIONS: { id: PitchBackground; label: string; short: string }[] = [
+  { id: 'full',   label: 'Full pitch',   short: 'Full' },
+  { id: 'half',   label: 'Half pitch',   short: 'Half' },
+  { id: 'blank',  label: 'Grid',         short: 'Grid' },
+  { id: 'ingoal', label: 'In-goal area', short: 'In-goal' },
 ]
 
 // ── Glyphs ────────────────────────────────────────────────────────────────────

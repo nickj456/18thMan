@@ -72,6 +72,13 @@ describe('Toolbar', () => {
     expect(props.onBackgroundChange).toHaveBeenCalledWith('blank')
   })
 
+  it('renders a short touch label under every tile (CSS shows it on coarse pointers only)', () => {
+    setup()
+    expect(screen.getByRole('button', { name: 'Tackle bag' })).toHaveTextContent('Bag')
+    expect(screen.getByRole('button', { name: 'Marker disc' })).toHaveTextContent('Disc')
+    expect(screen.getByRole('button', { name: 'In-goal area' })).toHaveTextContent('In-goal')
+  })
+
   it('toggles pitch orientation', async () => {
     const props = setup({ pitchFlipped: true })
     const rotate = screen.getByRole('button', { name: /vertical/i })

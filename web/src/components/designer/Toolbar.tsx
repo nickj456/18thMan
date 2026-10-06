@@ -32,8 +32,10 @@ interface ToolbarProps {
 
 // One look for every rail control: flat at rest, muted surface on hover, and an
 // ember ring plus tint when active so the piece colours stay legible on top.
+// On touch devices (no hover, so no tooltips) the tiles grow to fit a short name.
 const railButton =
   'flex h-8 items-center justify-center rounded-md text-muted-foreground transition-colors ' +
+  'pointer-coarse:h-11 pointer-coarse:flex-col pointer-coarse:gap-0.5 ' +
   'hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 ' +
   'disabled:pointer-events-none disabled:opacity-30'
 const railActive = 'bg-primary/15 text-foreground ring-1 ring-inset ring-primary'
@@ -52,6 +54,8 @@ function Kbd({ children }: { children: string }) {
 
 interface RailButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   label: string
+  /** Short name shown under the glyph on touch devices only. */
+  short?: string
   /** Second tooltip line: what the tool does on the pitch. */
   description?: string
   shortcut?: string
@@ -60,7 +64,7 @@ interface RailButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElem
   children: React.ReactNode
 }
 
-function RailButton({ label, description, shortcut, active, className, children, ...props }: RailButtonProps) {
+function RailButton({ label, short, description, shortcut, active, className, children, ...props }: RailButtonProps) {
   return (
     <Tooltip>
       <TooltipTrigger
@@ -75,6 +79,11 @@ function RailButton({ label, description, shortcut, active, className, children,
         }
       >
         {children}
+        {short && (
+          <span aria-hidden className="hidden text-[10px] leading-none pointer-coarse:block">
+            {short}
+          </span>
+        )}
       </TooltipTrigger>
       <TooltipContent side="right" sideOffset={10} className={description ? 'flex-col items-start gap-0.5' : undefined}>
         <span className="flex items-center">
@@ -110,12 +119,13 @@ export const Toolbar = memo(function Toolbar({
     <TooltipProvider delay={250}>
       <nav
         aria-label="Drill designer tools"
-        className="flex w-[92px] shrink-0 flex-col border-r border-border bg-card px-2 py-2"
+        className="flex w-[92px] shrink-0 flex-col border-r border-border bg-card px-2 py-2 pointer-coarse:w-[108px]"
       >
         {/* The palette scrolls when the timeline shortens the rail; the edit actions below never do. */}
         <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto [scrollbar-width:thin]">
         <RailButton
           label={TOOL_META.select.label}
+          short={TOOL_META.select.short}
           shortcut={TOOL_SHORTCUTS.select}
           active={activeTool === 'select'}
           onClick={() => onToolChange('select')}
@@ -131,6 +141,7 @@ export const Toolbar = memo(function Toolbar({
                 <RailButton
                   key={tool}
                   label={TOOL_META[tool].label}
+                  short={TOOL_META[tool].short}
                   description={TOOL_META[tool].description}
                   shortcut={TOOL_SHORTCUTS[tool]}
                   active={activeTool === tool}
@@ -193,6 +204,7 @@ export const Toolbar = memo(function Toolbar({
               <RailButton
                 key={opt.id}
                 label={opt.label}
+                short={opt.short}
                 active={background === opt.id}
                 onClick={() => onBackgroundChange(opt.id)}
               >
@@ -202,6 +214,7 @@ export const Toolbar = memo(function Toolbar({
           </div>
           <RailButton
             label={pitchFlipped ? 'Vertical pitch (click for horizontal)' : 'Rotate pitch to vertical'}
+            short="Rotate"
             active={pitchFlipped}
             onClick={onFlipPitch}
             className="h-7"
@@ -213,11 +226,12 @@ export const Toolbar = memo(function Toolbar({
 
         <div className="mt-2 flex shrink-0 flex-col gap-1 border-t border-border pt-2">
           <div className="grid grid-cols-2 gap-1">
-            <RailButton label="Undo" shortcut="Ctrl+Z" onClick={onUndo} disabled={!canUndo}>
+            <RailButton label="Undo" short="Undo" shortcut="Ctrl+Z" onClick={onUndo} disabled={!canUndo}>
               <Undo2 size={17} aria-hidden />
             </RailButton>
             <RailButton
               label="Delete selected"
+              short="Delete"
               shortcut="Del"
               onClick={onDelete}
               disabled={!hasSelection}
@@ -226,7 +240,7 @@ export const Toolbar = memo(function Toolbar({
               <Trash2 size={17} aria-hidden />
             </RailButton>
           </div>
-          <RailButton label="Clear canvas" onClick={onClear} disabled={!hasElements} className="h-7">
+          <RailButton label="Clear canvas" short="Clear" onClick={onClear} disabled={!hasElements} className="h-7">
             <Eraser size={16} aria-hidden />
           </RailButton>
         </div>

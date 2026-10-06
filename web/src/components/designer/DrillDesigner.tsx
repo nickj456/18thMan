@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useRef, useCallback, useTransition, useEffect, useSyncExternalStore } from 'react'
+import { useState, useRef, useCallback, useMemo, useTransition, useEffect, useSyncExternalStore } from 'react'
 import type Konva from 'konva'
 import { DrillCanvas } from './DrillCanvas'
 import { Timeline, FPS } from './Timeline'
 import { AnimationPreview } from './AnimationPreview'
 import { type CanvasState, type CanvasElement, type ToolType, type Keyframe } from './types'
 import { type HistoryState, canUndo, createHistory, currentState, pushHistory, undoHistory } from './history'
+import { useUnsavedChangesGuard } from './useUnsavedChangesGuard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -199,6 +200,16 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
 
   const keyframeCount = (canvasState.keyframes ?? []).length
 
+  // Unsaved-work guard: compare everything the save would persist against what
+  // the designer opened with. Memoised because the designer renders every
+  // animation frame during playback and none of these change then.
+  const snapshot = useMemo(
+    () => JSON.stringify({ title, description, categoryId, difficulty, ageGroup, playerCount, youtubeUrl, tiktokUrl, facebookUrl, visibility, canvas: canvasState }),
+    [title, description, categoryId, difficulty, ageGroup, playerCount, youtubeUrl, tiktokUrl, facebookUrl, visibility, canvasState],
+  )
+  const [initialSnapshot] = useState(snapshot)
+  const allowNavigation = useUnsavedChangesGuard(snapshot !== initialSnapshot)
+
   // During playback show interpolated state; otherwise show editable state
   const displayState: CanvasState = isPlaying
     ? { ...canvasState, elements: getInterpolatedElements(currentFrame) }
@@ -317,6 +328,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         if (!checkError(result.error)) toast.error(result.error)
       } else {
         toast.success(isEditing ? 'Drill updated!' : 'Drill saved!')
+        allowNavigation()
         router.push(`/drills/${result.drillId}`)
       }
     })
