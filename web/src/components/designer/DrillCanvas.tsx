@@ -6,8 +6,9 @@ import type Konva from 'konva'
 import { PitchBackgroundLayer } from './PitchBackground'
 import { CanvasElements } from './CanvasElements'
 import { Toolbar } from './Toolbar'
-import { CANVAS_WIDTH, CANVAS_HEIGHT, DRAW_TOOLS, type CanvasElement, type CanvasState, type ToolType } from './types'
-import { toolForKey } from './tools'
+import { CANVAS_WIDTH, CANVAS_HEIGHT, DRAW_TOOLS, type CanvasElement, type CanvasState, type PlayerSize, type ToolType } from './types'
+import { TOOL_COLORS } from './tools'
+import { resolveDesignerKey } from './keyboard'
 import { nanoid } from 'nanoid'
 
 // ── Kick arc preview — shown while dragging to draw ──────────────────────────
@@ -61,29 +62,30 @@ function KickPreview({ x1, y1, x2, y2, color }: { x1: number; y1: number; x2: nu
   )
 }
 
-function makeElement(tool: ToolType, x: number, y: number, count: number, size: 'sm' | 'md' | 'lg' = 'md'): CanvasElement {
+// Piece colours come from TOOL_COLORS so the rail glyphs always match what lands on the pitch.
+export function makeElement(tool: ToolType, x: number, y: number, count: number, size: PlayerSize = 'md'): CanvasElement {
   const base = { id: nanoid(), type: tool, x, y }
   switch (tool) {
-    case 'attacker': return { ...base, color: '#ef4444', label: String(count), size }
-    case 'defender': return { ...base, color: '#3b82f6', label: String(count), size }
-    case 'cone':     return { ...base, color: '#f59e0b' }
-    case 'ball':     return { ...base, color: '#92400e' }
-    case 'tackle-bag':    return { ...base, color: '#ef4444' }
-    case 'tackle-shield': return { ...base, color: '#3b82f6' }
-    case 'flag':          return { ...base, color: '#22c55e' }
-    case 'disc':          return { ...base, color: '#f59e0b' }
+    case 'attacker': return { ...base, color: TOOL_COLORS.attacker, label: String(count), size }
+    case 'defender': return { ...base, color: TOOL_COLORS.defender, label: String(count), size }
+    case 'cone':     return { ...base, color: TOOL_COLORS.cone }
+    case 'ball':     return { ...base, color: '#92400e' } // stored but unused: the ball is always drawn white
+    case 'tackle-bag':    return { ...base, color: TOOL_COLORS['tackle-bag'] }
+    case 'tackle-shield': return { ...base, color: TOOL_COLORS['tackle-shield'] }
+    case 'flag':          return { ...base, color: TOOL_COLORS.flag }
+    case 'disc':          return { ...base, color: TOOL_COLORS.disc }
     case 'agility-ladder':
-      return { ...base, color: '#6366f1', width: 40, height: 160 }
+      return { ...base, color: TOOL_COLORS['agility-ladder'], width: 40, height: 160 }
     case 'zone':     return { ...base, x, y, color: 'rgba(239,68,68,0.15)', width: 120, height: 80 }
     case 'text':     return { ...base, label: 'Label', color: '#ffffff' }
     default:         return base
   }
 }
 
-function defaultLineColor(tool: ToolType) {
-  if (tool === 'arrow') return '#22c55e'
-  if (tool === 'kick')  return '#fbbf24'
-  return '#a3a3a3'
+export function defaultLineColor(tool: ToolType) {
+  if (tool === 'arrow') return TOOL_COLORS.arrow
+  if (tool === 'kick')  return TOOL_COLORS.kick
+  return TOOL_COLORS.line
 }
 
 interface DrawingState {
@@ -131,12 +133,13 @@ export function DrillCanvas({
 }: DrillCanvasProps) {
   const attackerCount = useRef(0)
   const defenderCount = useRef(0)
-  const [defaultPlayerSize, setDefaultPlayerSize] = useState<'sm' | 'md' | 'lg'>('md')
+  const [defaultPlayerSize, setDefaultPlayerSize] = useState<PlayerSize>('md')
   const [drawingEl, setDrawingEl] = useState<DrawingState | null>(null)
   // Store all editing data directly — don't look up from state.elements (timing issues)
   const [editingText, setEditingText] = useState<EditingText | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
 
   // Fit canvas to available container space on desktop
@@ -272,7 +275,7 @@ export function DrillCanvas({
     })
   }
 
-  function handlePlayerSizeChange(size: 'sm' | 'md' | 'lg') {
+  function handlePlayerSizeChange(size: PlayerSize) {
     setDefaultPlayerSize(size)
     if (selectedId) {
       const el = state.elements.find(e => e.id === selectedId)
@@ -283,46 +286,45 @@ export function DrillCanvas({
   }
 
   function handleDelete() {
-    if (!selectedId) return
+    // The selection can outlive its piece (e.g. after an undo); don't spend a history slot on a no-op.
+    if (!selectedId || !state.elements.some((el) => el.id === selectedId)) return
     onStateChange({ ...state, elements: state.elements.filter((el) => el.id !== selectedId) })
     onSelectId(null)
   }
 
-  // Keyboard shortcuts (declared after handleDelete, which it calls)
+  // Keyboard shortcuts. The guards live in keyboard.ts (unit-tested); the listener is
+  // registered once and reads the latest handlers through a ref, so it isn't torn
+  // down and re-added on every playback frame.
+  const keyHandlerRef = useRef<(e: KeyboardEvent) => void>(() => {})
   useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      // Leave typing alone: form fields, the label textarea, native selects,
-      // Base UI comboboxes/listboxes and any open dialog own their own keys.
-      const target = e.target as HTMLElement
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) return
-      if (target.closest?.('[role="combobox"],[role="listbox"],[role="dialog"]')) return
-
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedId) handleDelete()
-        return
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        e.preventDefault()
-        onUndo()
-        return
-      }
-      if (e.key === 'Escape') {
-        onSelectId(null)
-        onToolChange('select')
-        return
-      }
-      // Single-key tool shortcuts (V select, A attacker, R run, ...) defined in tools.tsx
-      if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) {
-        const tool = toolForKey(e.key)
-        if (tool) {
+    keyHandlerRef.current = (e: KeyboardEvent) => {
+      const action = resolveDesignerKey(e, rootRef.current)
+      if (!action) return
+      switch (action.type) {
+        case 'delete':
+          handleDelete()
+          return
+        case 'undo':
           e.preventDefault()
-          onToolChange(tool)
-        }
+          onUndo()
+          return
+        case 'cancel':
+          setDrawingEl(null)
+          onSelectId(null)
+          onToolChange('select')
+          return
+        case 'tool':
+          e.preventDefault()
+          onToolChange(action.tool)
+          return
       }
     }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
   })
+  useEffect(() => {
+    const listener = (e: KeyboardEvent) => keyHandlerRef.current(e)
+    window.addEventListener('keydown', listener)
+    return () => window.removeEventListener('keydown', listener)
+  }, [])
 
   function startTextEdit(id: string) {
     const el = state.elements.find((e) => e.id === id)
@@ -356,7 +358,7 @@ export function DrillCanvas({
   const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div ref={rootRef} className="flex flex-1 overflow-hidden">
       <Toolbar
         activeTool={activeTool}
         onToolChange={onToolChange}

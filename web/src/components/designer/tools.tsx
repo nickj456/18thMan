@@ -204,13 +204,13 @@ export function ToolGlyph({ tool }: { tool: ToolType }) {
     case 'line':
       return (
         <Svg>
-          <path d="M4 18 L20 6" stroke={TOOL_COLORS.line} strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M4 18 L20 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
         </Svg>
       )
     case 'dotted':
       return (
         <Svg>
-          <path d="M4 18 L20 6" stroke={TOOL_COLORS.dotted} strokeWidth="2.2" strokeLinecap="round" strokeDasharray="2.4 3.4" />
+          <path d="M4 18 L20 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeDasharray="2.4 3.4" />
         </Svg>
       )
     case 'kick':

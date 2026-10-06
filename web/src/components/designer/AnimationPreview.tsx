@@ -2,6 +2,7 @@
 
 import { Player } from '@remotion/player'
 import type { CanvasState } from './types'
+import { FPS } from './Timeline'
 import { DrillAnimationComp, COMP_WIDTH, COMP_HEIGHT } from './DrillAnimationComp'
 import {
   Dialog,
@@ -29,7 +30,7 @@ export function AnimationPreview({ canvasJson, drillTitle, onClose }: AnimationP
         <DialogHeader className="border-b border-border px-4 py-3 pr-12 text-left">
           <DialogTitle className="text-sm font-semibold">{drillTitle ?? 'Drill animation'}</DialogTitle>
           <DialogDescription className="font-mono text-xs text-muted-foreground tabular-nums">
-            {keyframes} keyframe{keyframes !== 1 ? 's' : ''} · {(duration / 30).toFixed(1)}s · 30fps
+            {keyframes} keyframe{keyframes !== 1 ? 's' : ''} · {(duration / FPS).toFixed(1)}s · {FPS}fps
           </DialogDescription>
         </DialogHeader>
 
@@ -40,7 +41,7 @@ export function AnimationPreview({ canvasJson, drillTitle, onClose }: AnimationP
             durationInFrames={duration}
             compositionWidth={COMP_WIDTH}
             compositionHeight={COMP_HEIGHT}
-            fps={30}
+            fps={FPS}
             style={{ width: '100%', maxWidth: 900 }}
             controls
             loop

@@ -40,13 +40,18 @@ const INITIAL_STATE: CanvasState = { background: 'full', elements: [] }
 // The details panel defaults open on wide screens and closed on tablets / narrow
 // desktops, tracking the viewport until the coach toggles it by hand.
 const WIDE_QUERY = '(min-width: 1280px)'
+// One MediaQueryList, shared by subscribe and getSnapshot: getSnapshot runs on every
+// render, and the designer renders every animation frame during playback.
+let wideMq: MediaQueryList | null = null
+const getWideMq = () => (wideMq ??= window.matchMedia(WIDE_QUERY))
 function subscribeWide(onChange: () => void) {
-  const mq = window.matchMedia(WIDE_QUERY)
+  const mq = getWideMq()
   mq.addEventListener('change', onChange)
   return () => mq.removeEventListener('change', onChange)
 }
-const getWide = () => window.matchMedia(WIDE_QUERY).matches
+const getWide = () => getWideMq().matches
 const getWideServer = () => true
+const noop = () => {}
 
 interface InitialDrill {
   id: string
@@ -276,7 +281,15 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   }
 
   function handleSave() {
-    if (!title.trim()) { toast.error('Please enter a drill title'); return }
+    if (!title.trim()) {
+      toast.error('Please enter a drill title')
+      // On tablets the details panel starts closed; open it and put the cursor in the
+      // field so the coach can see what's missing instead of a dead-end error.
+      setIsFullscreen(false)
+      setDetailsOverride(true)
+      requestAnimationFrame(() => document.getElementById('title')?.focus())
+      return
+    }
     const hasVideo = !!(youtubeUrl.trim() || tiktokUrl.trim() || facebookUrl.trim())
     if (!isMobile && canvasState.elements.length === 0 && !hasVideo) { toast.error('Add at least one element to the canvas, or include a video link'); return }
 
@@ -438,7 +451,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
         <div className="space-y-1.5">
           <Label htmlFor="youtube" className="text-xs flex items-center gap-1.5">
             YouTube
-            <span className="font-mono text-[10px] font-medium tracking-wider text-primary uppercase">Primary · AI guide</span>
+            <span className="font-mono text-[10px] font-medium tracking-wider text-muted-foreground uppercase">Primary · AI guide</span>
           </Label>
           <Input
             id="youtube"
@@ -554,12 +567,12 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
             state={displayState}
             selectedId={isPlaying ? null : selectedId}
             activeTool={isPlaying ? 'select' : activeTool}
-            onStateChange={isPlaying ? () => {} : pushState}
-            onSelectId={isPlaying ? () => {} : setSelectedId}
-            onToolChange={isPlaying ? () => {} : setActiveTool}
-            onUndo={handleUndo}
-            onClear={handleClear}
-            canUndo={canUndo(history)}
+            onStateChange={isPlaying ? noop : pushState}
+            onSelectId={isPlaying ? noop : setSelectedId}
+            onToolChange={isPlaying ? noop : setActiveTool}
+            onUndo={isPlaying ? noop : handleUndo}
+            onClear={isPlaying ? noop : handleClear}
+            canUndo={!isPlaying && canUndo(history)}
             stageRef={stageRef}
           />
           {isPlaying && (

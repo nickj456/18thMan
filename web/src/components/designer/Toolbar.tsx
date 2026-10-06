@@ -1,12 +1,11 @@
 'use client'
 
+import { memo } from 'react'
 import { Eraser, RotateCw, Trash2, Undo2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import type { PitchBackground, ToolType } from './types'
+import type { PitchBackground, PlayerSize, ToolType } from './types'
 import { PITCH_OPTIONS, PitchGlyph, TOOL_GROUPS, TOOL_META, TOOL_SHORTCUTS, ToolGlyph } from './tools'
-
-type PlayerSize = 'sm' | 'md' | 'lg'
 
 const SIZES: { id: PlayerSize; label: string; name: string }[] = [
   { id: 'sm', label: 'S', name: 'Small players' },
@@ -53,13 +52,15 @@ function Kbd({ children }: { children: string }) {
 
 interface RailButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   label: string
+  /** Second tooltip line: what the tool does on the pitch. */
+  description?: string
   shortcut?: string
   /** Pass a boolean for toggle buttons; leave undefined for plain actions. */
   active?: boolean
   children: React.ReactNode
 }
 
-function RailButton({ label, shortcut, active, className, children, ...props }: RailButtonProps) {
+function RailButton({ label, description, shortcut, active, className, children, ...props }: RailButtonProps) {
   return (
     <Tooltip>
       <TooltipTrigger
@@ -75,9 +76,12 @@ function RailButton({ label, shortcut, active, className, children, ...props }: 
       >
         {children}
       </TooltipTrigger>
-      <TooltipContent side="right" sideOffset={10}>
-        {label}
-        {shortcut && <Kbd>{shortcut}</Kbd>}
+      <TooltipContent side="right" sideOffset={10} className={description ? 'flex-col items-start gap-0.5' : undefined}>
+        <span className="flex items-center">
+          {label}
+          {shortcut && <Kbd>{shortcut}</Kbd>}
+        </span>
+        {description && <span className="opacity-70">{description}</span>}
       </TooltipContent>
     </Tooltip>
   )
@@ -85,13 +89,15 @@ function RailButton({ label, shortcut, active, className, children, ...props }: 
 
 function GroupLabel({ children }: { children: string }) {
   return (
-    <h3 className="px-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+    <div aria-hidden className="px-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
       {children}
-    </h3>
+    </div>
   )
 }
 
-export function Toolbar({
+// Memoised: the designer re-renders every animation frame during playback and on
+// every pointer move while drawing, and none of those renders change the rail.
+export const Toolbar = memo(function Toolbar({
   activeTool, onToolChange,
   background, onBackgroundChange,
   pitchFlipped, onFlipPitch,
@@ -125,6 +131,7 @@ export function Toolbar({
                 <RailButton
                   key={tool}
                   label={TOOL_META[tool].label}
+                  description={TOOL_META[tool].description}
                   shortcut={TOOL_SHORTCUTS[tool]}
                   active={activeTool === tool}
                   onClick={() => onToolChange(tool)}
@@ -139,6 +146,15 @@ export function Toolbar({
                 role="radiogroup"
                 aria-label="Player size"
                 className="grid grid-cols-3 gap-0.5 rounded-md bg-muted/50 p-0.5"
+                onKeyDown={(e) => {
+                  const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
+                  if (!step) return
+                  e.preventDefault()
+                  const i = SIZES.findIndex((sz) => sz.id === playerSize)
+                  const next = SIZES[(i + step + SIZES.length) % SIZES.length]
+                  onPlayerSizeChange(next.id)
+                  e.currentTarget.querySelector<HTMLButtonElement>(`[data-size="${next.id}"]`)?.focus()
+                }}
               >
                 {SIZES.map((sz) => (
                   <Tooltip key={sz.id}>
@@ -148,10 +164,12 @@ export function Toolbar({
                           type="button"
                           role="radio"
                           aria-checked={playerSize === sz.id}
+                          tabIndex={playerSize === sz.id ? 0 : -1}
+                          data-size={sz.id}
                           aria-label={sz.name}
                           onClick={() => onPlayerSizeChange(sz.id)}
                           className={cn(
-                            'h-6 rounded-[5px] font-mono text-xs font-medium text-muted-foreground transition-colors',
+                            'h-7 rounded-[5px] font-mono text-xs font-medium text-muted-foreground transition-colors',
                             'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
                             playerSize === sz.id && 'bg-background text-foreground ring-1 ring-inset ring-border',
                           )}
@@ -215,4 +233,4 @@ export function Toolbar({
       </nav>
     </TooltipProvider>
   )
-}
+})

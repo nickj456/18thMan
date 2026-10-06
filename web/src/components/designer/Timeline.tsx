@@ -22,6 +22,7 @@ const HEADER_HEIGHT = 36
 const RULER_HEIGHT = 24
 const ROW_HEIGHT = 28
 const MAX_ROWS = 6
+const OVERFLOW_HEIGHT = 24
 
 function elementLabel(el: CanvasElement): string {
   switch (el.type) {
@@ -92,7 +93,7 @@ export function Timeline({
 
   // Header + ruler + one row per element (at least one, at most six) + the overflow notice
   const rowCount = Math.max(1, Math.min(elements.length, MAX_ROWS))
-  const panelHeight = HEADER_HEIGHT + RULER_HEIGHT + rowCount * ROW_HEIGHT + (elements.length > MAX_ROWS ? RULER_HEIGHT : 0)
+  const panelHeight = HEADER_HEIGHT + RULER_HEIGHT + rowCount * ROW_HEIGHT + (elements.length > MAX_ROWS ? OVERFLOW_HEIGHT : 0)
 
   return (
     <div
@@ -114,7 +115,7 @@ export function Timeline({
         <span className="font-mono text-xs text-muted-foreground tabular-nums">
           {currentSeconds}s / {totalSeconds}s
         </span>
-        <span className="font-mono text-[10px] text-muted-foreground/60 tabular-nums">f{currentFrame}</span>
+        <span className="font-mono text-xs text-muted-foreground tabular-nums">f{currentFrame}</span>
         <div className="mx-1 h-3.5 w-px bg-border" />
         {/* Duration selector */}
         <div className="relative flex items-center">
