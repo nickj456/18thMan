@@ -5,6 +5,7 @@ All notable changes to 18th Man are documented here.
 ## [1.12.2.0] - 2026-10-05
 
 ### Changed
+- Builds and deployments run on Node.js 24. Vercel retired Node.js 20 on 1 October 2026 and every deployment since then had failed before building.
 - **Coach DNA has its own address: `/coach-dna`.** It used to live under `/admin/coach-dna`, which made a feature every coach can use look admin-only. Old links, including ones in emails already sent and announcements already posted, still work and forward to the new address.
 - **Signed-out visitors to Coach DNA are invited to sign up.** Opening a Coach DNA link without an account now lands on the signup page instead of login. Coaches who already have an account can click "Sign in" from there, and either way they end up back on Coach DNA once they're in. The admin dashboard card no longer describes Coach DNA as "admin only".
 - **Coach DNA emails take you straight back in.** The "View your full results" and "View your feedback requests" buttons now go through sign-in, so a coach whose session has expired can sign in and land on the right page. A coach who is still signed in skips the login form entirely.
