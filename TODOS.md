@@ -179,3 +179,20 @@ Fixed by `/qa` on 2026-07-12, `feat/landing-page-redesign` (commit c2e2ee4).
 Escaped the trailing hyphen in `[a-z0-9_-]+` → `[a-z0-9_\-]+`, which
 Chromium's stricter `pattern`-attribute validation was rejecting, silently
 disabling native client-side validation on the signup form.
+
+## Drill designer — deferred from /design-review (2026-10-06)
+
+Design review on `feat/designer-toolbar-revamp` fixed 12 findings (toolbar rebuilt
+as a grouped palette, one ember accent, semantic tokens, collapsible details
+panel, timeline/command bar on shared buttons, undo-history crash). Left for
+later, all low impact:
+
+- **Player-size S/M/L buttons are 22×24px** (Toolbar.tsx). Desktop-only control,
+  but under the 28px comfort line; widening the rail or stacking them would fix it.
+- **Timeline ruler seeking is mouse-only** (Timeline.tsx). Keyframe markers are
+  now keyboard-reachable buttons; the ruler/track still seek via onMouseDown only.
+- **Clear canvas uses `window.confirm`** (DrillDesigner.tsx). Swap for the shadcn
+  AlertDialog and add a test for both confirm/cancel paths.
+- **PNG export and the saved preview include selection handles** if a piece is
+  selected at save time (DrillDesigner.tsx handleSave/handleDownloadPng). Clear the
+  selection before `toDataURL`, or render handles on a non-exported layer.
