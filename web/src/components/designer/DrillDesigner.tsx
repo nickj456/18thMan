@@ -15,7 +15,7 @@ import type { DrillCategory, DrillVisibility } from '@/lib/supabase/types'
 import { saveDrillDesign, updateDrillDesign } from '@/app/(discover)/drills/designer-actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, Monitor, Clapperboard, Video, ImageDown, Maximize2, Minimize2 } from 'lucide-react'
+import { Loader2, Save, Monitor, Clapperboard, Video, ImageDown, Maximize2, Minimize2, Globe, Users, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { UpgradePrompt, useUpgradePrompt } from '@/components/ui/UpgradePrompt'
 
@@ -299,10 +299,17 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
   }
 
   // ── Shared form fields ──────────────────────────────────────
+  const visibilityOptions: Record<DrillVisibility, { label: string; Icon: typeof Globe }> = {
+    public:  { label: 'Public', Icon: Globe },
+    club:    { label: canUseClub ? `${userClubName ?? 'My club'} only` : 'Club only', Icon: Users },
+    private: { label: 'Only me', Icon: Lock },
+  }
+  const { label: visibilityLabel, Icon: VisibilityIcon } = visibilityOptions[visibility]
+
   const formFields = (
     <div className="flex flex-col gap-4 p-4 flex-1">
       <div className="space-y-1.5">
-        <Label htmlFor="title" className="text-xs">Title <span className="text-red-400">*</span></Label>
+        <Label htmlFor="title" className="text-xs">Title <span className="text-destructive">*</span></Label>
         <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. 3v2 Attack Drill" className="h-8 text-sm" />
       </div>
@@ -387,15 +394,26 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
             setVisibility(v as DrillVisibility)
           }}
         >
-          <SelectTrigger className="h-8 text-sm w-full">
-            <SelectValue />
+          <SelectTrigger className="h-8 w-full text-sm" aria-label="Visibility">
+            {/* Base UI's SelectValue echoes the raw value ("public"), so render the label ourselves */}
+            <span className="flex items-center gap-1.5 text-sm">
+              <VisibilityIcon className="size-3.5 text-muted-foreground" aria-hidden />
+              {visibilityLabel}
+            </span>
           </SelectTrigger>
-          <SelectContent className="min-w-[var(--radix-select-trigger-width)]">
-            <SelectItem value="public">🌐 Public</SelectItem>
-            <SelectItem value="club" className={!canUseClub ? 'text-muted-foreground' : undefined}>
-              {canUseClub ? `🔒 ${userClubName ?? 'My Club'} only` : '🔒 Club only'}
+          <SelectContent>
+            <SelectItem value="public">
+              <Globe aria-hidden />
+              {visibilityOptions.public.label}
             </SelectItem>
-            <SelectItem value="private">👁 Only me</SelectItem>
+            <SelectItem value="club" className={!canUseClub ? 'text-muted-foreground' : undefined}>
+              <Users aria-hidden />
+              {visibilityOptions.club.label}
+            </SelectItem>
+            <SelectItem value="private">
+              <Lock aria-hidden />
+              {visibilityOptions.private.label}
+            </SelectItem>
           </SelectContent>
         </Select>
         {visibility === 'club' && (
