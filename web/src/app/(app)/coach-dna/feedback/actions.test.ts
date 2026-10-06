@@ -1,4 +1,4 @@
-// web/src/app/(app)/admin/coach-dna/feedback/actions.test.ts
+// web/src/app/(app)/coach-dna/feedback/actions.test.ts
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
@@ -157,7 +157,7 @@ describe('createFeedbackRequest', () => {
   })
 
   it('creates a peer_observation request without any team or consent check', async () => {
-    await expect(createFeedbackRequest(formData({ feedbackType: 'peer_observation' }))).rejects.toThrow('REDIRECT:/admin/coach-dna/feedback')
+    await expect(createFeedbackRequest(formData({ feedbackType: 'peer_observation' }))).rejects.toThrow('REDIRECT:/coach-dna/feedback')
     expect(insertMock).toHaveBeenCalledWith(
       expect.objectContaining({
         coach_id: 'coach-1',
@@ -187,7 +187,7 @@ describe('createFeedbackRequest', () => {
     state.consentRow = { id: 'consent-1' }
     await expect(
       createFeedbackRequest(formData({ feedbackType: 'player_voice', teamId: 'team-1' })),
-    ).rejects.toThrow('REDIRECT:/admin/coach-dna/feedback')
+    ).rejects.toThrow('REDIRECT:/coach-dna/feedback')
     expect(insertMock).toHaveBeenCalled()
   })
 
@@ -196,7 +196,7 @@ describe('createFeedbackRequest', () => {
     state.consentRow = null
     await expect(
       createFeedbackRequest(formData({ feedbackType: 'player_voice', teamId: 'team-1' })),
-    ).rejects.toThrow('REDIRECT:/admin/coach-dna/feedback/new?error=consent-required')
+    ).rejects.toThrow('REDIRECT:/coach-dna/feedback/new?error=consent-required')
     expect(insertMock).not.toHaveBeenCalled()
   })
 
@@ -219,7 +219,7 @@ describe('createFeedbackRequest', () => {
     state.consentRow = { id: 'consent-1' }
     await expect(
       createFeedbackRequest(formData({ feedbackType: 'player_voice', teamId: 'team-1' })),
-    ).rejects.toThrow('REDIRECT:/admin/coach-dna/feedback')
+    ).rejects.toThrow('REDIRECT:/coach-dna/feedback')
     expect(insertMock).toHaveBeenCalledWith(
       expect.objectContaining({ feedback_type: 'player_voice', team_id: 'team-1' }),
     )
@@ -284,7 +284,7 @@ describe('deleteFeedbackRequests', () => {
 
   it('revalidates the feedback requests list on success', async () => {
     await deleteFeedbackRequests(['req-1'])
-    expect(revalidatePathMock).toHaveBeenCalledWith('/admin/coach-dna/feedback')
+    expect(revalidatePathMock).toHaveBeenCalledWith('/coach-dna/feedback')
   })
 
   it('warns when fewer rows were deleted than requested (some ids not owned by the caller, or already gone)', async () => {

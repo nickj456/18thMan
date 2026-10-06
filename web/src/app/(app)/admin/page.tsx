@@ -113,10 +113,10 @@ export default async function AdminPage() {
       colour: 'border-teal-500/20 hover:border-teal-500/40 text-teal-400',
     },
     {
-      href: '/admin/coach-dna',
+      href: '/coach-dna',
       icon: Brain,
       label: 'Coach DNA',
-      description: 'Self-assessment preview (admin only)',
+      description: 'Coaching self-assessment and 360 feedback',
       colour: 'border-orange-500/20 hover:border-orange-500/40 text-orange-400',
     },
   ]

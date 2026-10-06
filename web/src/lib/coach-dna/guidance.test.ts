@@ -7,7 +7,7 @@ describe('buildGuidance', () => {
   it('suggests requesting feedback when none has ever been requested', () => {
     const steps = buildGuidance(BASE)
     expect(steps).toHaveLength(1)
-    expect(steps[0].href).toBe('/admin/coach-dna/feedback')
+    expect(steps[0].href).toBe('/coach-dna/feedback')
     expect(steps[0].linkLabel).toBe('Request feedback')
   })
 
@@ -35,7 +35,7 @@ describe('buildGuidance', () => {
 
   it('prioritizes "request feedback" over "blended" if both booleans are somehow true (defensive ordering)', () => {
     const steps = buildGuidance({ ...BASE, hasAnyFeedbackRequest: false, hasBlendedFeedback: true, focusCategories: ['teacher'] })
-    expect(steps[0].href).toBe('/admin/coach-dna/feedback')
+    expect(steps[0].href).toBe('/coach-dna/feedback')
   })
 
   it('falls back to a single generic step when no rule matches (defensive)', () => {
@@ -43,7 +43,7 @@ describe('buildGuidance', () => {
     // outside the 3 documented states (no request / below threshold / blended).
     const steps = buildGuidance({ ...BASE, hasAnyFeedbackRequest: true })
     expect(steps).toHaveLength(1)
-    expect(steps[0].href).toBe('/admin/coach-dna')
+    expect(steps[0].href).toBe('/coach-dna')
   })
 
   it('returns blended guidance when both below-threshold and blended are true (realistic overlap)', () => {

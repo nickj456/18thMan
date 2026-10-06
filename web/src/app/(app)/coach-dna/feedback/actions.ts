@@ -1,4 +1,4 @@
-// web/src/app/(app)/admin/coach-dna/feedback/actions.ts
+// web/src/app/(app)/coach-dna/feedback/actions.ts
 'use server'
 
 import { redirect } from 'next/navigation'
@@ -77,7 +77,7 @@ export async function createFeedbackRequest(formData: FormData) {
       .eq('club_id', teamClubId)
       .eq('season_label', getCurrentSeasonLabel())
       .maybeSingle()
-    if (!consent) redirect('/admin/coach-dna/feedback/new?error=consent-required')
+    if (!consent) redirect('/coach-dna/feedback/new?error=consent-required')
   }
 
   const expiresInDays = Number(formData.get('expiresInDays')) || 14
@@ -96,7 +96,7 @@ export async function createFeedbackRequest(formData: FormData) {
   })
   if (error) throw new Error(error.message)
 
-  redirect('/admin/coach-dna/feedback')
+  redirect('/coach-dna/feedback')
 }
 
 /** Bulk-deletes feedback requests belonging to the calling coach. Deleting a
@@ -115,7 +115,7 @@ export async function deleteFeedbackRequests(ids: string[]) {
     .eq('coach_id', userId)
   if (error) return { error: error.message }
 
-  revalidatePath('/admin/coach-dna/feedback')
+  revalidatePath('/coach-dna/feedback')
 
   const deletedCount = count ?? ids.length
   if (deletedCount < ids.length) return { success: true as const, deletedCount, partial: true as const }

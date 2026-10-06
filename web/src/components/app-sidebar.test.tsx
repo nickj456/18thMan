@@ -73,7 +73,7 @@ describe('AppSidebar', () => {
   })
 
   it('expands the group containing the current route by default, leaves others closed', () => {
-    renderSidebar('admin', '/admin/coach-dna')
+    renderSidebar('admin', '/coach-dna')
 
     expect(screen.getByRole('button', { name: /Analysis & Development/i })).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('button', { name: /Coaching Tools/i })).toHaveAttribute('aria-expanded', 'false')
@@ -81,7 +81,7 @@ describe('AppSidebar', () => {
   })
 
   it('marks the active route link so it can be styled distinctly from inactive links', () => {
-    renderSidebar('admin', '/admin/coach-dna')
+    renderSidebar('admin', '/coach-dna')
 
     const activeLink = screen.getByRole('link', { name: /Coach DNA/i })
     const inactiveLink = screen.getByRole('link', { name: /Match Analysis/i })

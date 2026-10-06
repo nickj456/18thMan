@@ -3,11 +3,11 @@ import { isSafeRedirectPath } from './redirect-safety'
 
 describe('isSafeRedirectPath', () => {
   it('accepts a plain relative path', () => {
-    expect(isSafeRedirectPath('/admin/coach-dna')).toBe(true)
+    expect(isSafeRedirectPath('/coach-dna')).toBe(true)
   })
 
   it('accepts a relative path with a query string', () => {
-    expect(isSafeRedirectPath('/admin/coach-dna/assessment/abc-123?q=5')).toBe(true)
+    expect(isSafeRedirectPath('/coach-dna/assessment/abc-123?q=5')).toBe(true)
   })
 
   it('rejects a protocol-relative path (open-redirect vector)', () => {

@@ -17,6 +17,7 @@ export default function robots(): MetadataRoute.Robots {
           '/notifications',
           '/settings',
           '/admin',
+          '/coach-dna',
           '/drills/new',
           '/drills/*/edit',
         ],

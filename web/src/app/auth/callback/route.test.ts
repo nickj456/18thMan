@@ -44,8 +44,8 @@ describe('GET /auth/callback', () => {
   })
 
   it('redirects to a safe next path on success', async () => {
-    const res = (await GET(request('https://app.example.com/auth/callback?code=abc&next=%2Fadmin%2Fcoach-dna'))) as unknown as { __redirectUrl: string }
-    expect(res.__redirectUrl).toBe('https://app.example.com/admin/coach-dna')
+    const res = (await GET(request('https://app.example.com/auth/callback?code=abc&next=%2Fcoach-dna'))) as unknown as { __redirectUrl: string }
+    expect(res.__redirectUrl).toBe('https://app.example.com/coach-dna')
   })
 
   it('falls back to /dashboard when next is missing', async () => {

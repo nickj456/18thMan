@@ -103,7 +103,7 @@ export default async function AdminAnnouncementsPage() {
           <div className="flex gap-2">
             <input
               name="linkUrl"
-              placeholder="Link (optional), e.g. /admin/coach-dna"
+              placeholder="Link (optional), e.g. /coach-dna"
               className="flex-1 text-sm bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
             <input
