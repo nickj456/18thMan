@@ -116,6 +116,8 @@ interface DrillCanvasProps {
   onUndo: () => void
   onClear: () => void
   canUndo: boolean
+  /** True while an animation plays: editing actions are shown disabled, not just ignored. */
+  locked?: boolean
   stageRef: React.RefObject<Konva.Stage | null>
 }
 
@@ -129,6 +131,7 @@ export function DrillCanvas({
   onUndo,
   onClear,
   canUndo,
+  locked = false,
   stageRef,
 }: DrillCanvasProps) {
   const attackerCount = useRef(0)
@@ -368,12 +371,12 @@ export function DrillCanvas({
         onFlipPitch={() => onStateChange({ ...state, pitchFlipped: !state.pitchFlipped })}
         playerSize={defaultPlayerSize}
         onPlayerSizeChange={handlePlayerSizeChange}
-        hasSelection={!!selectedId}
+        hasSelection={!locked && !!selectedId}
         onDelete={handleDelete}
         onUndo={onUndo}
         onClear={onClear}
         canUndo={canUndo}
-        hasElements={state.elements.length > 0}
+        hasElements={!locked && state.elements.length > 0}
       />
 
       <div ref={containerRef} className="relative flex flex-1 items-center justify-center overflow-auto bg-background p-4">

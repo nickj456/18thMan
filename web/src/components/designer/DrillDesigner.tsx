@@ -585,6 +585,7 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
             onUndo={isPlaying ? noop : handleUndo}
             onClear={isPlaying ? noop : handleClear}
             canUndo={!isPlaying && canUndo(history)}
+            locked={isPlaying}
             stageRef={stageRef}
           />
           {isPlaying && (
