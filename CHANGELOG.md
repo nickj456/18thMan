@@ -2,6 +2,16 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.13.1.0] - 2026-10-07
+
+### Fixed
+- **Every coach's profile page opens.** Profiles whose username has a space, an `&` or an `@` in it returned "not found" to everyone, and their owners were bounced off their own Edit profile page. Five coaches were affected, and Google flagged the broken pages in Search Console.
+- **Email addresses are no longer published as usernames.** Two coaches had signed up with their email address as their username, which was then shown on their public profile and listed in the sitemap sent to Google. Those usernames are now the part before the `@`, stray spaces are trimmed from others, and existing notifications show and link to the new names.
+- **Signup checks the username properly.** The "lowercase letters, numbers, hyphens and underscores" rule was only checked by the browser, so it could be bypassed. It's now enforced when the account is created, and surrounding spaces are trimmed.
+
+### Changed
+- The sitemap only lists profiles whose username works as a clean web address, and search engines are told not to crawl `/api/` addresses. Those addresses aren't pages, and Google had reported one as "Blocked due to other 4xx issue".
+
 ## [1.13.0.0] - 2026-10-06
 
 ### Added
