@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import { isSitemapSafeUsername } from '@/lib/username'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
 
@@ -29,7 +30,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   const profileUrls: MetadataRoute.Sitemap = (profilesResult.data ?? [])
-    .filter(p => p.username)
+    // Skips usernames that aren't clean URL segments — including ones that are email addresses.
+    .filter(p => p.username && isSitemapSafeUsername(p.username))
     .map(profile => ({
       url: `${siteUrl}/profile/${profile.username}`,
       lastModified: profile.updated_at ? new Date(profile.updated_at) : new Date(),

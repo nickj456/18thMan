@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { decodeUsernameParam } from '@/lib/username'
 import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { ProfileForm } from '@/components/profile/ProfileForm'
 import { ArrowLeft } from 'lucide-react'
@@ -13,7 +14,7 @@ export default async function EditProfilePage({
 }: {
   params: Promise<{ username: string }>
 }) {
-  const { username } = await params
+  const username = decodeUsernameParam((await params).username)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -27,12 +28,12 @@ export default async function EditProfilePage({
   const socials = Object.fromEntries((socialLinks ?? []).map(s => [s.platform, s.url])) as Record<string, string>
 
   // Only allow editing your own profile
-  if (profile?.username !== username) redirect(`/profile/${username}`)
+  if (profile?.username !== username) redirect(`/profile/${encodeURIComponent(username)}`)
 
   return (
     <div className="space-y-8 max-w-xl">
       <Link
-        href={`/profile/${username}`}
+        href={`/profile/${encodeURIComponent(username)}`}
         className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white transition-colors"
       >
         <ArrowLeft size={12} /> Back to profile
