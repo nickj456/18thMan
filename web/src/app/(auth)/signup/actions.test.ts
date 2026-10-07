@@ -99,4 +99,31 @@ describe('signup', () => {
       }),
     )
   })
+
+  it.each([
+    ['an email address', 'coach@example.com'],
+    ['an ampersand', 'Smith&co'],
+    ['capitals', 'Coach'],
+  ])('rejects a username containing %s without calling signUp', async (_label, username) => {
+    await expect(
+      signup(formData({ email: 'coach@example.com', password: 'secret123', username })),
+    ).rejects.toThrow('REDIRECT:/signup?error=Username+can+only+use')
+    expect(signUpMock).not.toHaveBeenCalled()
+  })
+
+  it('trims surrounding whitespace before saving the username', async () => {
+    await expect(
+      signup(formData({ email: 'coach@example.com', password: 'secret123', username: ' coachsmith ' })),
+    ).rejects.toThrow('REDIRECT:/signup?success=check-email')
+
+    expect(signUpMock).toHaveBeenCalledWith(
+      expect.objectContaining({ options: expect.objectContaining({ data: { username: 'coachsmith' } }) }),
+    )
+  })
+
+  it('treats a whitespace-only username as missing', async () => {
+    await expect(
+      signup(formData({ email: 'coach@example.com', password: 'secret123', username: '   ' })),
+    ).rejects.toThrow('REDIRECT:/signup?error=All+fields+are+required')
+  })
 })

@@ -170,6 +170,43 @@ Found by /ship adversarial review on 2026-10-06 (DrillDesigner.tsx getWideServer
 server snapshot assumes a wide screen, so tablets render the panel for one frame before
 the media query closes it. A cookie or CSS-only default would remove the jump.
 
+## Profiles & usernames
+
+**Enforce the username format in the database, not just the signup action**
+**Priority:** P2
+v1.13.1.0 validates usernames in the signup server action, but a user can still
+call `supabase.auth.signUp` directly with the anon key (the `handle_new_user`
+trigger stores `raw_user_meta_data->>'username'` unchecked), or PATCH their own
+`profiles.username` through the own-row update policy. Either path can store an
+email address, a space or an `&` again. Fix: a `CHECK` constraint (added
+`NOT VALID`, validated once migration 130 has run) or a BEFORE INSERT/UPDATE
+trigger, plus cleaning the value inside `handle_new_user`. Decide first what
+Google OAuth signups should get, because the trigger derives their username from
+the email's local part, which can contain `.` or `+`.
+
+**Make `handle_new_user` collision-safe**
+**Priority:** P3
+A Google OAuth signup whose email local part matches an existing username (for
+example `sam` after migration 130) fails the unique constraint, and the signup
+errors with "Database error saving new user". Append a short suffix when the
+name is taken.
+
+**Encode profile links with one `profilePath(username)` helper**
+**Priority:** P3
+Only the edit page encodes `/profile/${username}`. DrillCard, the drill page,
+DM header, notifications, dashboard, emails and the profile JSON-LD all
+interpolate the raw username. That works for names allowed today, but a legacy
+name containing `#` or `?` would produce a broken link. Add `profilePath()` to
+`lib/username.ts` and use it everywhere.
+
+**Reject case-only lookalike usernames at signup**
+**Priority:** P3
+The unique constraint on `profiles.username` is case-sensitive, so a new coach
+can register `sam` while a legacy `Sam` exists, giving `/profile/sam` and
+`/profile/Sam` to two different people. Migration 130 avoids creating such pairs,
+but signup doesn't check. Add a case-insensitive lookup in the signup action (or
+a unique index on `lower(username)` once existing pairs are resolved).
+
 ## Completed
 
 **Race condition let two concurrent submissions from the same device both pass `feedback_responses` dedup check**

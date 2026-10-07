@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import { decodeUsernameParam } from '@/lib/username'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
@@ -23,7 +24,7 @@ async function unfollowAction(userId: string) {
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
-  const { username } = await params
+  const username = decodeUsernameParam((await params).username)
   const supabase = await createClient()
   const { data: profile } = await supabase
     .from('profiles')
@@ -31,7 +32,10 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
     .eq('username', username)
     .single()
 
-  const displayName = profile?.display_name ?? username
+  // Don't echo an arbitrary URL segment into the title of a page that 404s.
+  if (!profile) return { title: 'Profile not found — 18th Man' }
+
+  const displayName = profile.display_name ?? username
   const description = [
     profile?.bio,
     profile?.coaching_level && `${profile.coaching_level} coach`,
@@ -66,7 +70,7 @@ export default async function PublicProfilePage({
 }: {
   params: Promise<{ username: string }>
 }) {
-  const { username } = await params
+  const username = decodeUsernameParam((await params).username)
   const supabase = await createClient()
 
   const { data: { user: currentUser } } = await supabase.auth.getUser()
