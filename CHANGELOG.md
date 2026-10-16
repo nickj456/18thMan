@@ -2,6 +2,18 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.14.0.0] - 2026-10-16
+
+### Added
+- **Play Designer at `/play-designer`.** Coaches can draw a rugby league play on a whiteboard and watch it animate: add attackers and defenders, draw each player's run, pass the ball between players, and add coaching notes. Plays export as a video clip or a PNG. It opens in its own browser tab from **Coaching Tools → Play Designer** in the sidebar, and works without signing in. Plays are saved in the coach's own browser, not to the drill library; a playlist can be backed up to a file and opened again.
+- **Several moves per player.** A player can run, stop, and run again later (a dummy runner who goes forward and then cuts back). Each move starts where the last one ended and has its own start and end time.
+- **Move a group together.** Drag a box around players, or shift-click them, to move a whole line at once, or give them all one move so they drift up the pitch while keeping their shape.
+- **Zoom and pitch size.** Scroll to zoom in for accurate placement on the full pitch, and right-drag or use the Pan tool to move around. A Pitch size slider makes the full pitch as big as you want on the board.
+
+### Changed
+- The Play Designer fits on one screen on laptops and desktops, so the page never scrolls while you're drawing.
+- The selection ring around a player now shrinks and grows with the player size setting.
+
 ## [1.13.1.0] - 2026-10-07
 
 ### Fixed

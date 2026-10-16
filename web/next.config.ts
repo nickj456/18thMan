@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
     ],
   },
   serverExternalPackages: ['@remotion/bundler', '@remotion/renderer', '@remotion/compositor-win32-x64-msvc'],
+  async rewrites() {
+    return [
+      // Standalone Play Designer (static HTML in public/play-designer/).
+      { source: '/play-designer', destination: '/play-designer/index.html' },
+    ]
+  },
   async headers() {
     return [
       {

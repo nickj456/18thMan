@@ -80,6 +80,19 @@ describe('AppSidebar', () => {
     expect(screen.getByRole('link', { name: /Coach DNA/i })).toBeInTheDocument()
   })
 
+  it('opens Play Designer in a new tab and keeps in-app links in the same tab', async () => {
+    const user = userEvent.setup()
+    renderSidebar('coach')
+    await user.click(screen.getByRole('button', { name: /Coaching Tools/i }))
+
+    const playDesigner = screen.getByRole('link', { name: /Play Designer/i })
+    expect(playDesigner).toHaveAttribute('href', '/play-designer')
+    expect(playDesigner).toHaveAttribute('target', '_blank')
+    expect(playDesigner).toHaveAttribute('rel', 'noopener noreferrer')
+
+    expect(screen.getByRole('link', { name: /Drill Designer/i })).not.toHaveAttribute('target')
+  })
+
   it('marks the active route link so it can be styled distinctly from inactive links', () => {
     renderSidebar('admin', '/coach-dna')
 

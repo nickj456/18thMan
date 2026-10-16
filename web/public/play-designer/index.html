@@ -1,0 +1,1231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>18thMan Play Designer</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/play-designer/logo.png">
+<style>
+@font-face { font-family: "Permanent Marker"; src: url("/play-designer/fonts/PermanentMarker-Regular.ttf"); }
+@font-face { font-family: "Kalam"; font-weight: 400; src: url("/play-designer/fonts/Kalam-Regular.ttf"); }
+@font-face { font-family: "Kalam"; font-weight: 700; src: url("/play-designer/fonts/Kalam-Bold.ttf"); }
+@font-face { font-family: "Barlow Semi Condensed"; font-weight: 500; src: url("/play-designer/fonts/BarlowSemiCondensed-Medium.ttf"); }
+@font-face { font-family: "Barlow Semi Condensed"; font-weight: 600; src: url("/play-designer/fonts/BarlowSemiCondensed-SemiBold.ttf"); }
+@font-face { font-family: "Barlow Semi Condensed"; font-weight: 700; src: url("/play-designer/fonts/BarlowSemiCondensed-Bold.ttf"); }
+</style>
+<style>
+/* Layout: playlist rail | whiteboard canvas | inspector. Stacks to one column on phones. Board itself is always whiteboard white. */
+:root {
+  --bg: #e4e6e8;
+  --panel: #f6f7f8;
+  --line: #c9cdd1;
+  --ink: #17191b;
+  --muted: #5d636a;
+  --orange: #f2620f;
+  --orange-soft: #fde6d6;
+  --blue: #1c5fd0;
+  --warn: #c62828;
+  --ui: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --hand: "Kalam", "Comic Sans MS", cursive;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #16191c; --panel: #1f2327; --line: #343a40; --ink: #eef0f2; --muted: #9aa2aa; --orange-soft: #3a2416; --warn: #ff6b6b; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #16191c; --panel: #1f2327; --line: #343a40; --ink: #eef0f2; --muted: #9aa2aa; --orange-soft: #3a2416; --warn: #ff6b6b; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--ui); font-size: 16px; }
+.app {
+  display: grid; grid-template-columns: 210px minmax(0, 1fr) 280px; gap: 16px;
+  max-width: 1400px; margin: 0 auto;
+  padding-block: 16px 32px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  align-items: start;
+}
+@media (min-width: 1001px) {
+  .rail, .inspector {
+    position: sticky; top: calc(16px + env(safe-area-inset-top, 0px));
+    max-height: calc(100vh - 32px); overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+  }
+  .board { max-width: min(620px, calc((100vh - 150px) * 0.8)); }
+  .transport { max-width: min(620px, calc((100vh - 150px) * 0.8)); }
+}
+@media (max-width: 1000px) { .app { grid-template-columns: minmax(0, 1fr); } .rail { order: 2; } .inspector { order: 3; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 700; }
+.plays { display: flex; flex-direction: column; gap: 4px; }
+.plays button { text-align: left; }
+.plays button.on { background: var(--orange-soft); border-color: var(--orange); }
+.row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+button {
+  font: 600 15px var(--ui); color: var(--ink); background: transparent;
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer;
+}
+button:hover { border-color: var(--orange); }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--orange); outline-offset: 1px; }
+button.primary { background: var(--orange); border-color: var(--orange); color: #fff; }
+button.danger { color: var(--warn); }
+button:disabled { opacity: .45; cursor: default; }
+.stage { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tools { display: flex; gap: 6px; flex-wrap: wrap; }
+.tools button { display: flex; gap: 6px; align-items: center; }
+.tools button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tools .k { font-size: 12px; opacity: .6; }
+.hint { font-size: 15px; color: var(--muted); min-height: 1.4em; }
+.board { background: #c9ced3; border-radius: 4px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.18); max-width: 620px; width: 100%; margin: 0 auto; touch-action: none; }
+canvas { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; cursor: crosshair; }
+.transport { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; max-width: 620px; width: 100%; margin: 0 auto; }
+.transport input[type=range] { flex: 1 1 180px; min-width: 0; accent-color: var(--orange); }
+.time { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 92px; }
+label { font-size: 14px; color: var(--muted); display: flex; flex-direction: column; gap: 3px; }
+label.inline { flex-direction: row; align-items: center; gap: 6px; color: var(--ink); }
+input[type=text], input[type=number], textarea, select {
+  font: 500 15px var(--ui); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; width: 100%; box-sizing: border-box;
+}
+textarea { font-family: var(--hand); font-size: 17px; resize: vertical; min-height: 70px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.warn { color: var(--warn); font-weight: 600; font-size: 14px; }
+.status { font-size: 14px; color: var(--muted); }
+.passItem { border-top: 1px solid var(--line); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.help { font-size: 14px; color: var(--muted); line-height: 1.45; margin: 0; padding-left: 18px; }
+/* Desktop and landscape tablet: the whole editor fits in one screen with no page scroll.
+   The board takes whatever height is left and keeps its 4:5 shape; side panels scroll on their own. */
+@media (min-width: 1001px) {
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  .app { height: 100vh; box-sizing: border-box; padding-block: 12px; }
+  .rail, .inspector { position: static; max-height: calc(100vh - 24px); }
+  .stage { height: calc(100vh - 24px); min-height: 0; gap: 8px; }
+  .tools button { padding: 5px 8px; font-size: 14px; }
+  .hint { height: 2.8em; overflow: hidden; font-size: 14px; }
+  .boardWrap { flex: 1 1 auto; min-height: 0; container-type: size; display: flex; justify-content: center; align-items: center; }
+  .board, .boardWrap .board { width: min(100cqw, 80cqh); max-width: none; margin: 0; }
+  .transport { max-width: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="panel rail">
+    <h2>Playlist</h2>
+    <div class="plays" id="plays"></div>
+    <div class="row">
+      <button id="newPlay" type="button">New play</button>
+      <button id="dupPlay" type="button">Duplicate</button>
+    </div>
+    <button id="delPlay" type="button" class="danger">Delete play</button>
+    <h2 style="margin-top:8px">Save</h2>
+    <button id="save" type="button" class="primary">Save playlist</button>
+    <div class="status" id="status">Loading…</div>
+    <button id="exportPlaylist" type="button">Back up playlist (.json)</button>
+    <button id="importPlaylist" type="button">Open playlist file</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+    <h2 style="margin-top:8px">Export</h2>
+    <button id="exportVideo" type="button">Export video</button>
+    <button id="exportPng" type="button">Save still (PNG)</button>
+    <div class="status" id="exportStatus"></div>
+  </aside>
+
+  <main class="stage">
+    <div class="tools" id="tools">
+      <button type="button" data-tool="select">Move <span class="k">V</span></button>
+      <button type="button" data-tool="x">Add X <span class="k">X</span></button>
+      <button type="button" data-tool="o">Add O <span class="k">O</span></button>
+      <button type="button" data-tool="run">Draw run <span class="k">R</span></button>
+      <button type="button" data-tool="pass">Pass <span class="k">P</span></button>
+      <button type="button" data-tool="note">Note <span class="k">N</span></button>
+      <button type="button" data-tool="circle">Circle <span class="k">C</span></button>
+      <button type="button" data-tool="pan">Pan <span class="k">H</span></button>
+      <button type="button" id="undo">Undo</button>
+      <button type="button" id="zoomOut" aria-label="Zoom out">−</button>
+      <span class="time" id="zoomLbl" style="min-width:48px;text-align:center">100%</span>
+      <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
+      <button type="button" id="zoomFit">Fit</button>
+    </div>
+    <div class="hint" id="hint"></div>
+    <div class="boardWrap"><div class="board"><canvas id="cv" width="1080" height="1350" aria-label="Whiteboard play editor"></canvas></div></div>
+    <div class="transport">
+      <button id="play" type="button" class="primary">Play</button>
+      <button id="toStart" type="button">Start</button>
+      <input id="scrub" type="range" min="0" max="15" step="0.05" value="0" aria-label="Timeline">
+      <span class="time" id="time">0.0 / 15s</span>
+      <label class="inline"><input type="checkbox" id="loop" checked> Loop</label>
+      <label class="inline"><input type="checkbox" id="ghost" checked> Show plan</label>
+    </div>
+  </main>
+
+  <aside class="panel inspector" id="inspector"></aside>
+</div>
+
+<script type="application/json" id="seed">{"savedAt": 0, "plays": [{"id": "pkuqclz", "title": "Unders / Good Line", "subtitle": "", "duration": 12, "ballStart": "a77aea7", "players": [{"id": "djv4ve9", "team": "D", "x": 913, "y": 779, "path": [{"x": 856, "y": 766}, {"x": 834, "y": 721}], "t0": 1, "t1": 9, "highlight": false}, {"id": "dxtnbni", "team": "D", "x": 914, "y": 829, "path": [{"x": 928, "y": 836}, {"x": 968, "y": 871}], "t0": 1, "t1": 9, "highlight": false}, {"id": "a77aea7", "team": "A", "x": 912, "y": 867, "path": [], "t0": 1, "t1": 9, "highlight": false}, {"id": "a6shcyk", "team": "A", "x": 914, "y": 920, "path": [], "t0": 1, "t1": 9, "highlight": false}, {"id": "acuclgu", "team": "A", "x": 767, "y": 979, "path": [{"x": 750, "y": 946}, {"x": 715, "y": 793}, {"x": 746, "y": 712}, {"x": 818, "y": 646}], "t0": 1, "t1": 9, "highlight": false}, {"id": "a9d6dka", "team": "A", "x": 604, "y": 1024, "path": [{"x": 581, "y": 951}, {"x": 546, "y": 864}, {"x": 572, "y": 751}, {"x": 661, "y": 641}], "t0": 1, "t1": 9, "highlight": false}, {"id": "a7wyj29", "team": "A", "x": 408, "y": 1071, "path": [{"x": 384, "y": 958}, {"x": 379, "y": 817}, {"x": 473, "y": 686}], "t0": 1, "t1": 9, "highlight": false}, {"id": "a0a8nrs", "team": "A", "x": 192, "y": 1080, "path": [{"x": 192, "y": 951}, {"x": 208, "y": 807}, {"x": 341, "y": 686}], "t0": 1, "t1": 9, "highlight": false}, {"id": "d4xcwhb", "team": "D", "x": 721, "y": 639, "path": [{"x": 736, "y": 702}, {"x": 755, "y": 709}], "t0": 1, "t1": 9, "highlight": false}, {"id": "d449ai7", "team": "D", "x": 584, "y": 638, "path": [{"x": 586, "y": 667}, {"x": 565, "y": 699}, {"x": 584, "y": 721}], "t0": 1, "t1": 9, "highlight": false}, {"id": "d2jfb1r", "team": "D", "x": 442, "y": 638, "path": [{"x": 445, "y": 672}], "t0": 1, "t1": 9, "highlight": false}, {"id": "d1xps16", "team": "D", "x": 310, "y": 639, "path": [{"x": 311, "y": 662}, {"x": 314, "y": 690}], "t0": 1, "t1": 9, "highlight": false}], "passes": [{"id": "pssjmnp6", "from": "a77aea7", "to": "a6shcyk", "t": 0.5, "dur": 1.2}, {"id": "pshu22r6", "from": "a6shcyk", "to": "acuclgu", "t": 1.4, "dur": 1.2}], "notes": [], "logoSize": 100, "logoPos": {"x": 829, "y": 1191}, "titlePos": {"x": 125, "y": 139}, "iconScale": 0.65}]}</script>
+<script>
+(() => {
+  const W = 1080, H = 1350;
+  const PITCH = { l: 90, r: 990, t: 280, b: 1180 };
+  const C = { ink: "#1b1d21", blue: "#1d56c4", orange: "#f2620f", board: "#f7f8f6", grey: "#5b6168", warn: "#c62828" };
+  const MARKER = '"Permanent Marker", "Comic Sans MS", cursive';
+  const HAND = '"Kalam", "Comic Sans MS", cursive';
+  const DRAFT_KEY = "18thman-play-designer-draft";
+
+  const $ = id => document.getElementById(id);
+  const cv = $("cv"), mainCtx = cv.getContext("2d");
+  let ctx = mainCtx;
+  const uid = p => p + Math.random().toString(36).slice(2, 8);
+  const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+  const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  let state = { plays: [], savedAt: 0 };
+  let cur = 0;
+  let time = 0, playing = false, last = null;
+  let tool = "select", sel = null, runFor = null, passFrom = null;
+  let drag = null, dirty = false, undoStack = [];
+  let recording = false;
+  let view = { s: 1, x: 0, y: 0 }; // editor zoom: scale and top-left corner in board coords
+
+  const play = () => state.plays[cur];
+  const LOGO = new Image(); LOGO.src = "/play-designer/logo.png";
+
+  // ---------- geometry ----------
+  function spline(pts) {
+    if (pts.length < 2) return { pts: pts.slice(), lens: [0], total: 0 };
+    const out = [];
+    const P = [pts[0], ...pts, pts[pts.length - 1]];
+    for (let i = 1; i < P.length - 2; i++) {
+      const p0 = P[i - 1], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2];
+      for (let s = 0; s < 16; s++) {
+        const t = s / 16, t2 = t * t, t3 = t2 * t;
+        out.push({
+          x: .5 * (2 * p1.x + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
+          y: .5 * (2 * p1.y + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3)
+        });
+      }
+    }
+    out.push(pts[pts.length - 1]);
+    const lens = [0];
+    for (let i = 1; i < out.length; i++) lens.push(lens[i - 1] + Math.hypot(out[i].x - out[i - 1].x, out[i].y - out[i - 1].y));
+    return { pts: out, lens, total: lens[lens.length - 1] };
+  }
+  function pointAt(sp, d) {
+    if (sp.pts.length === 1) return { ...sp.pts[0] };
+    d = clamp(d, 0, sp.total);
+    let i = 1; while (i < sp.lens.length - 1 && sp.lens[i] < d) i++;
+    const a = sp.pts[i - 1], b = sp.pts[i], seg = sp.lens[i] - sp.lens[i - 1] || 1;
+    const t = (d - sp.lens[i - 1]) / seg;
+    return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) };
+  }
+  // A player's movement is a list of moves in time order. Each move starts where the previous one ended,
+  // and the player stands still between moves.
+  // Also normalises loaded data: ids and numbers end up in the inspector's innerHTML, so a crafted
+  // playlist file must not be able to smuggle markup in through them.
+  const safeId = (v, prefix) => /^[a-z0-9]{1,24}$/i.test(String(v)) ? String(v) : uid(prefix);
+  const safeNum = (v, d, lo = 0, hi = 9999) => { const n = Number(v); return Number.isFinite(n) ? clamp(n, lo, hi) : d; };
+  const safePt = w => ({ x: safeNum(w && w.x, 0, -W, 2 * W), y: safeNum(w && w.y, 0, -H, 2 * H) });
+  function migrate(pl) {
+    if (!pl || typeof pl !== "object") throw new Error("not a play");
+    pl.id = safeId(pl.id, "p");
+    pl.title = String(pl.title ?? ""); pl.subtitle = String(pl.subtitle ?? "");
+    pl.duration = safeNum(pl.duration, 15, 3, 60);
+    ["iconScale", "titleSize", "subSize", "logoSize", "pitchScale"].forEach(k => { if (pl[k] != null) pl[k] = safeNum(pl[k], undefined, 0, 1000); });
+    const ids = new Map();
+    pl.players = (Array.isArray(pl.players) ? pl.players : []).filter(p => p && typeof p === "object").map(p => {
+      if (!p.moves) p.moves = Array.isArray(p.path) && p.path.length ? [{ path: p.path, t0: p.t0 ?? 1, t1: p.t1 ?? 9 }] : [];
+      const id = safeId(p.id, "a"); ids.set(p.id, id);
+      return {
+        id, team: p.team === "D" ? "D" : "A", x: safeNum(p.x, W / 2, -W, 2 * W), y: safeNum(p.y, H / 2, -H, 2 * H), highlight: !!p.highlight,
+        moves: (Array.isArray(p.moves) ? p.moves : []).filter(m => m && typeof m === "object").map(m => ({ path: (Array.isArray(m.path) ? m.path : []).map(safePt), t0: safeNum(m.t0, 1, 0, 60), t1: safeNum(m.t1, 9, 0, 60) }))
+      };
+    });
+    pl.ballStart = ids.get(pl.ballStart) || null;
+    pl.passes = (Array.isArray(pl.passes) ? pl.passes : []).filter(ps => ps && ids.has(ps.from) && ids.has(ps.to))
+      .map(ps => ({ id: safeId(ps.id, "ps"), from: ids.get(ps.from), to: ids.get(ps.to), t: safeNum(ps.t, 1, 0, 60), dur: safeNum(ps.dur, 1.2, .3, 60) }));
+    pl.notes = (Array.isArray(pl.notes) ? pl.notes : []).filter(n => n && typeof n === "object").map(n => ({
+      id: safeId(n.id, "n"), kind: n.kind === "circle" ? "circle" : "text", x: safeNum(n.x, 0, -W, 2 * W), y: safeNum(n.y, 0, -H, 2 * H),
+      text: String(n.text ?? ""), appear: safeNum(n.appear, 0, 0, 60), size: safeNum(n.size, n.kind === "circle" ? 1 : 36, .1, 400)
+    }));
+    return pl;
+  }
+  function moveStart(p, i) {
+    for (let k = i - 1; k >= 0; k--) { const pp = p.moves[k].path; if (pp.length) return pp[pp.length - 1]; }
+    return { x: p.x, y: p.y };
+  }
+  const splineOfMove = (p, i) => spline([moveStart(p, i), ...p.moves[i].path]);
+  const moveProgress = (m, t) => ease(clamp((t - m.t0) / Math.max(0.1, m.t1 - m.t0)));
+  function posAt(p, t) {
+    for (let i = 0; i < p.moves.length; i++) {
+      const m = p.moves[i];
+      if (!m.path.length) continue;
+      if (t < m.t0) return moveStart(p, i);
+      if (t < m.t1) { const sp = splineOfMove(p, i); return pointAt(sp, moveProgress(m, t) * sp.total); }
+    }
+    return moveStart(p, p.moves.length);
+  }
+  const hasMoves = p => p.moves.some(m => m.path.length);
+  const byId = id => play().players.find(p => p.id === id);
+
+  function ballState(t) {
+    const pl = play();
+    let owner = byId(pl.ballStart) ? pl.ballStart : null;
+    const passes = pl.passes.slice().sort((a, b) => a.t - b.t);
+    for (const ps of passes) {
+      const f = byId(ps.from), r = byId(ps.to);
+      if (!f || !r) continue;
+      if (t >= ps.t + ps.dur) { owner = ps.to; continue; }
+      if (t >= ps.t) {
+        const k = ease((t - ps.t) / ps.dur);
+        const a = ballSpot(f, t), b = ballSpot(r, t);
+        return { x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k) - Math.sin(k * Math.PI) * 22 };
+      }
+      break;
+    }
+    if (!owner) return null;
+    return ballSpot(byId(owner), t);
+  }
+  function ballSpot(p, t) { const q = posAt(p, t); return { x: q.x + 28 * ICON, y: q.y + 9 * ICON }; }
+  function isForward(ps) {
+    const f = byId(ps.from), r = byId(ps.to);
+    if (!f || !r) return false;
+    const a = posAt(f, ps.t), b = posAt(r, ps.t + ps.dur);
+    const dir = f.team === "D" ? 1 : -1; // attack goes up the board
+    return (b.y - a.y) * dir > 12;
+  }
+
+  // ---------- drawing ----------
+  function rnd(seed) { let s = seed; return () => (s = (s * 9301 + 49297) % 233280) / 233280; }
+  function markerLine(pts, w, color, dash) {
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    if (dash) ctx.setLineDash(dash);
+    ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke();
+    ctx.globalAlpha = .35; ctx.lineWidth = w * .55;
+    ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x + .8, p.y + .9) : ctx.moveTo(p.x + .8, p.y + .9)); ctx.stroke();
+    ctx.restore();
+  }
+  function arrowHead(x, y, ang, size, color, w) {
+    ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(x - size * Math.cos(ang - .55), y - size * Math.sin(ang - .55));
+    ctx.lineTo(x, y);
+    ctx.lineTo(x - size * Math.cos(ang + .55), y - size * Math.sin(ang + .55));
+    ctx.stroke(); ctx.restore();
+  }
+  function drawBoard(pl, clean) {
+    ctx.textBaseline = "alphabetic";
+    const hb = headerBoxes(pl);
+    if (pl.title) {
+      ctx.fillStyle = C.ink; ctx.font = `${hb.title.size}px ${MARKER}`;
+      ctx.fillText(pl.title, hb.title.x, hb.title.base);
+      const tw = hb.title.w + 20, uy = hb.title.base + hb.title.size * .38;
+      markerLine([{ x: hb.title.x - 6, y: uy }, { x: hb.title.x - 6 + tw / 2, y: uy - 8 }, { x: hb.title.x - 6 + tw, y: uy - 5 }], Math.max(4, hb.title.size * .08), C.orange);
+    }
+    if (pl.subtitle) {
+      ctx.font = `700 ${hb.sub.size}px ${HAND}`; ctx.fillStyle = C.ink;
+      ctx.fillText(pl.subtitle, hb.sub.x, hb.sub.base);
+      const uy = hb.sub.base + hb.sub.size * .35;
+      markerLine([{ x: hb.sub.x - 4, y: uy }, { x: hb.sub.x + 2 + hb.sub.w, y: uy - 5 }], Math.max(3, hb.sub.size * .1), C.ink);
+    }
+
+    if (pl.pitchView === "full") drawFullPitch(pl);
+    else if (pl.pitchView !== "none") drawSectionPitch();
+
+  }
+  function drawBrand(pl) {
+    const hb = headerBoxes(pl);
+    if (pl.showLogo !== false) {
+      const lg = hb.logo;
+      if (LOGO.complete && LOGO.naturalWidth) ctx.drawImage(LOGO, lg.x, lg.y, lg.size, lg.size);
+      ctx.fillStyle = C.grey; ctx.font = `${Math.round(lg.size * .17)}px ${MARKER}`; ctx.textAlign = "center";
+      ctx.fillText("18THMAN.APP", lg.x + lg.size / 2, lg.y + lg.size + lg.size * .27); ctx.textAlign = "left";
+    }
+  }
+  // ---------- whiteboard surface and dry-wipe ink ----------
+  const FRAME = 26;
+  const rand = rnd(7);
+  const surface = (() => {
+    const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+    // melamine surface with soft uneven light
+    const base = g.createLinearGradient(0, 0, W, H);
+    base.addColorStop(0, "#fbfcfb"); base.addColorStop(.55, "#f3f5f4"); base.addColorStop(1, "#e9ecec");
+    g.fillStyle = base; g.fillRect(0, 0, W, H);
+    const vig = g.createRadialGradient(W * .42, H * .38, H * .15, W / 2, H / 2, H * .8);
+    vig.addColorStop(0, "rgba(255,255,255,.35)"); vig.addColorStop(1, "rgba(110,120,130,.14)");
+    g.fillStyle = vig; g.fillRect(0, 0, W, H);
+    // ghosting from old drawings that never fully wiped off
+    g.lineCap = "round";
+    for (let i = 0; i < 16; i++) {
+      g.strokeStyle = `rgba(${rand() < .3 ? "40,80,170" : "60,64,70"},${.012 + rand() * .018})`;
+      g.lineWidth = 6 + rand() * 12;
+      g.beginPath();
+      let x = rand() * W, y = rand() * H; g.moveTo(x, y);
+      for (let k = 0; k < 3; k++) { const nx = x + (rand() - .5) * 320, ny = y + (rand() - .5) * 220; g.quadraticCurveTo((x + nx) / 2 + (rand() - .5) * 120, (y + ny) / 2 + (rand() - .5) * 120, nx, ny); x = nx; y = ny; }
+      g.stroke();
+    }
+    // wipe smears from the eraser
+    for (let i = 0; i < 9; i++) {
+      g.save(); g.translate(rand() * W, rand() * H); g.rotate((rand() - .5) * .6);
+      const sm = g.createLinearGradient(-160, 0, 160, 0);
+      sm.addColorStop(0, "rgba(90,96,104,0)"); sm.addColorStop(.5, `rgba(90,96,104,${.03 + rand() * .03})`); sm.addColorStop(1, "rgba(90,96,104,0)");
+      g.fillStyle = sm; g.beginPath(); g.ellipse(0, 0, 170 + rand() * 120, 22 + rand() * 30, 0, 0, Math.PI * 2); g.fill(); g.restore();
+    }
+    // fine surface grain
+    const img = g.getImageData(0, 0, W, H), d = img.data;
+    for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 7; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
+    g.putImageData(img, 0, 0);
+    return c;
+  })();
+  function drawFrameAndGloss(g) {
+    // gloss reflection across the board
+    const gl = g.createLinearGradient(W * .1, 0, W * .75, H * .55);
+    gl.addColorStop(0, "rgba(255,255,255,0)"); gl.addColorStop(.42, "rgba(255,255,255,0)");
+    gl.addColorStop(.5, "rgba(255,255,255,.28)"); gl.addColorStop(.6, "rgba(255,255,255,0)"); gl.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gl; g.fillRect(0, 0, W, H);
+    // inner shadow where the surface meets the frame
+    g.save(); g.strokeStyle = "rgba(0,0,0,.18)"; g.lineWidth = 10; g.filter = "blur(6px)";
+    g.strokeRect(FRAME + 2, FRAME + 2, W - 2 * FRAME - 4, H - 2 * FRAME - 4); g.restore();
+    // brushed aluminium frame
+    const sides = [
+      [0, 0, W, FRAME, "v"], [0, H - FRAME, W, FRAME, "v"], [0, 0, FRAME, H, "h"], [W - FRAME, 0, FRAME, H, "h"]
+    ];
+    sides.forEach(([x, y, w, h, dir]) => {
+      const al = dir === "v" ? g.createLinearGradient(0, y, 0, y + h) : g.createLinearGradient(x, 0, x + w, 0);
+      al.addColorStop(0, "#c9ced3"); al.addColorStop(.35, "#eef1f3"); al.addColorStop(.55, "#b4bac0"); al.addColorStop(1, "#8f969d");
+      g.fillStyle = al; g.fillRect(x, y, w, h);
+    });
+    g.strokeStyle = "rgba(60,66,72,.55)"; g.lineWidth = 1.5;
+    g.strokeRect(FRAME - .75, FRAME - .75, W - 2 * FRAME + 1.5, H - 2 * FRAME + 1.5);
+    g.strokeRect(.75, .75, W - 1.5, H - 1.5);
+    // grey plastic corner caps
+    [[0, 0], [W - 44, 0], [0, H - 44], [W - 44, H - 44]].forEach(([x, y]) => {
+      const cg = g.createLinearGradient(x, y, x + 44, y + 44); cg.addColorStop(0, "#5d636a"); cg.addColorStop(1, "#3c4147");
+      g.fillStyle = cg; g.beginPath(); g.roundRect ? g.roundRect(x, y, 44, 44, 8) : g.rect(x, y, 44, 44); g.fill();
+    });
+  }
+  const frameLayer = (() => { const c = document.createElement("canvas"); c.width = W; c.height = H; drawFrameAndGloss(c.getContext("2d")); return c; })();
+  // dry-wipe texture: tiny gaps and streaks where the felt tip skips
+  const inkCv = document.createElement("canvas"); inkCv.width = W; inkCv.height = H;
+  const inkCtx = inkCv.getContext("2d");
+  const inkTex = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d");
+    for (let i = 0; i < 2600; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * .5})`; g.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 1.6, 1 + Math.random() * 1.6); }
+    for (let i = 0; i < 70; i++) {
+      g.strokeStyle = `rgba(0,0,0,${.08 + Math.random() * .18})`; g.lineWidth = .6 + Math.random();
+      const x = Math.random() * 256, y = Math.random() * 256, a = (Math.random() - .5) * .8, l = 8 + Math.random() * 26;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
+    }
+    return inkCtx.createPattern(c, "repeat");
+  })();
+
+  function headerBoxes(pl) {
+    const tp = pl.titlePos || { x: 70, y: 125 }, sp = pl.subPos || { x: 90, y: 232 };
+    let ts = pl.titleSize || 86;
+    ctx.font = `${ts}px ${MARKER}`;
+    while (ctx.measureText(pl.title || "").width > W - tp.x - 30 && ts > 30) { ts -= 2; ctx.font = `${ts}px ${MARKER}`; }
+    const tw = ctx.measureText(pl.title || "").width;
+    const ss = pl.subSize || 52; ctx.font = `700 ${ss}px ${HAND}`;
+    const sw = ctx.measureText(pl.subtitle || "").width;
+    const ls = pl.logoSize || 150, lp = pl.logoPos || { x: W - 70 - ls, y: H - 100 - ls };
+    return {
+      title: { x: tp.x, base: tp.y, size: ts, w: tw, box: { x: tp.x, y: tp.y - ts * .85, w: tw, h: ts * 1.25 } },
+      sub: { x: sp.x, base: sp.y, size: ss, w: sw, box: { x: sp.x, y: sp.y - ss * .85, w: sw, h: ss * 1.2 } },
+      logo: { x: lp.x, y: lp.y, size: ls, box: { x: lp.x, y: lp.y, w: ls, h: ls * 1.35 } }
+    };
+  }
+  function drawSectionPitch() {
+    const { l, r, t, b } = PITCH;
+    markerLine([{ x: l, y: t - 70 }, { x: l - 3, y: b + 50 }], 5, C.ink);
+    markerLine([{ x: r, y: t - 80 }, { x: r + 3, y: b + 50 }], 5, C.ink);
+    markerLine([{ x: l, y: t }, { x: r, y: t - 2 }], 5, C.ink);
+    markerLine([{ x: l, y: b }, { x: r, y: b + 2 }], 5, C.ink);
+    [[160, t], [r - 70, t], [155, b], [r - 65, b]].forEach(([x, y]) => markerLine([{ x, y: y - 14 }, { x, y: y + 14 }], 4, C.ink));
+    markerLine([{ x: l, y: 640 }, { x: r, y: 637 }], 3, C.ink, [16, 12]);
+    markerLine([{ x: l, y: 860 }, { x: r, y: 858 }], 3, C.ink, [16, 12]);
+    ctx.font = `30px ${HAND}`; ctx.fillStyle = C.ink;
+    ctx.font = `26px ${HAND}`; ctx.fillText("10m", 36, 648); ctx.fillText("10m", 36, 868);
+  }
+  // Full rugby league field: 100m between try lines, 8m in-goals, 68m wide, drawn to scale.
+  // pitchScale grows the pitch around the middle of the playing area; anything past the frame is cut off.
+  function fullGeom(pl) {
+    const s = pl.pitchScale || 1, m = (1250 - 290) / 116 * s, cy = (290 + 1250) / 2, w = 68 * m, l = (W - w) / 2;
+    return { top: cy - 58 * m, bot: cy + 58 * m, m, l, r: l + w };
+  }
+  function drawFullPitch(pl) {
+    const { top, bot, m, l, r } = fullGeom(pl);
+    const y = metres => top + (8 + metres) * m;
+    markerLine([{ x: l, y: top }, { x: r, y: top }, { x: r, y: bot }, { x: l, y: bot }, { x: l, y: top }], 5, C.ink);
+    for (let d = 0; d <= 100; d += 10) {
+      const yy = y(d), heavy = d === 0 || d === 100 || d === 50;
+      markerLine([{ x: l, y: yy }, { x: r, y: yy }], heavy ? 5 : 3, C.ink, d === 0 || d === 100 || d === 50 || d === 20 || d === 80 || d === 40 || d === 60 ? null : [14, 12]);
+      if (d > 0 && d < 100) {
+        const lab = String(d <= 50 ? d : 100 - d);
+        ctx.font = `26px ${HAND}`; ctx.fillStyle = C.ink; ctx.textAlign = "right";
+        ctx.fillText(lab, l - 10, yy + 9); ctx.textAlign = "left"; ctx.fillText(lab, r + 10, yy + 9);
+      }
+    }
+    // 10m and 20m in-from-touch ticks
+    [10, 20, 30, 40, 60, 70, 80, 90].forEach(d => { const yy = y(d); [l + 10 * m, r - 10 * m].forEach(x => markerLine([{ x: x - 8, y: yy }, { x: x + 8, y: yy }], 3, C.ink)); });
+    // posts
+    [y(0), y(100)].forEach(yy => {
+      const c = (l + r) / 2, half = 2.8 * m;
+      markerLine([{ x: c - half, y: yy }, { x: c + half, y: yy }], 6, C.ink);
+      [c - half, c + half].forEach(px => { ctx.save(); ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(px, yy, 5, 0, Math.PI * 2); ctx.fill(); ctx.restore(); });
+    });
+  }
+  let ICON = 1;
+  function drawX(x, y, color = C.blue) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(ICON, ICON); x = 0; y = 0;
+    markerLine([{ x: x - 21, y: y - 23 }, { x: x + 21, y: y + 23 }], 9, color);
+    markerLine([{ x: x + 20, y: y - 24 }, { x: x - 20, y: y + 23 }], 9, color);
+    ctx.restore();
+  }
+  function drawO(x, y) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(ICON, ICON); x = 0; y = 0; ctx.strokeStyle = C.ink; ctx.lineWidth = 6.5;
+    ctx.beginPath(); ctx.ellipse(x, y, 25, 20, -.05, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = .3; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(x + 1, y + 1, 24, 19, -.08, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+  function drawBall(x, y) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(ICON, ICON); ctx.rotate(-.5);
+    ctx.fillStyle = C.board; ctx.strokeStyle = C.ink; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.ellipse(0, 0, 19, 11, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(10, 0);
+    for (let i = -6; i <= 6; i += 6) { ctx.moveTo(i, -4); ctx.lineTo(i, 4); }
+    ctx.stroke(); ctx.restore();
+  }
+  function textLines(n) { return (n.text || "").split("\n"); }
+  function noteBox(n) {
+    if (n.kind === "circle") { const s = n.size || 1; return { x: n.x - 85 * s, y: n.y - 58 * s, w: 170 * s, h: 116 * s }; }
+    ctx.font = `${n.size || 36}px ${HAND}`;
+    const lines = textLines(n), lh = (n.size || 36) * 1.2;
+    const w = Math.max(40, ...lines.map(l => ctx.measureText(l).width));
+    return { x: n.x, y: n.y - (n.size || 36), w, h: lh * lines.length };
+  }
+  function drawNote(n, alpha) {
+    if (alpha <= 0) return;
+    ctx.save(); ctx.globalAlpha = alpha;
+    if (n.kind === "circle") {
+      const s = n.size || 1;
+      ctx.strokeStyle = C.orange; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.ellipse(n.x, n.y, 82 * s, 54 * s, -.2, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(n.x + 3, n.y - 2, 76 * s, 50 * s, -.12, 0.3, Math.PI * 2.05); ctx.stroke();
+    } else {
+      const sz = n.size || 36; ctx.font = `${sz}px ${HAND}`; ctx.fillStyle = C.ink;
+      textLines(n).forEach((l, i) => ctx.fillText(l, n.x + (i % 2 ? 12 : 0), n.y + i * sz * 1.2));
+    }
+    ctx.restore();
+  }
+
+  function render(t, clean = false) {
+    const pl = play(); if (!pl) return;
+    ICON = pl.iconScale || 1;
+    ctx = inkCtx;
+    ctx.clearRect(0, 0, W, H);
+    drawBoard(pl, clean);
+    const showPlan = !clean && !playing && $("ghost").checked;
+
+    // planned runs and passes
+    if (showPlan) {
+      pl.players.forEach(p => p.moves.forEach((m, i) => {
+        if (!m.path.length) return;
+        const sp = splineOfMove(p, i);
+        const col = p.highlight ? "rgba(242,98,15,.35)" : (p.team === "D" ? "rgba(28,95,208,.3)" : "rgba(20,20,20,.25)");
+        markerLine(sp.pts, 4, col, [10, 10]);
+        const e = sp.pts[sp.pts.length - 1], q = sp.pts[Math.max(0, sp.pts.length - 3)];
+        arrowHead(e.x, e.y, Math.atan2(e.y - q.y, e.x - q.x), 16, col, 4);
+      }));
+      pl.passes.forEach(ps => {
+        const f = byId(ps.from), r = byId(ps.to); if (!f || !r) return;
+        const a = ballSpot(f, ps.t), b = posAt(r, ps.t + ps.dur);
+        const fwd = isForward(ps);
+        const col = fwd ? C.warn : "rgba(20,20,20,.5)";
+        markerLine([a, b], 3, col, [4, 9]);
+        arrowHead(b.x, b.y, Math.atan2(b.y - a.y, b.x - a.x), 14, col, 3);
+        if (fwd) { ctx.fillStyle = C.warn; ctx.font = `700 26px ${HAND}`; ctx.fillText("Forward!", (a.x + b.x) / 2 + 10, (a.y + b.y) / 2 - 10); }
+      });
+    }
+
+    // run lines draw in behind every moving player
+    pl.players.forEach(p => p.moves.forEach((m, mi) => {
+      if (!m.path.length) return;
+      const sp = splineOfMove(p, mi), d = moveProgress(m, t) * sp.total;
+      if (d < 2) return;
+      const pts = [];
+      for (let i = 0; i < sp.pts.length && sp.lens[i] <= d; i++) pts.push(sp.pts[i]);
+      pts.push(pointAt(sp, d));
+      const col = p.highlight ? C.orange : (p.team === "D" ? C.blue : C.ink);
+      const w = p.highlight ? 8 : 4;
+      markerLine(pts, w, col);
+      if (d >= sp.total - 1) {
+        const e = sp.pts[sp.pts.length - 1], q = sp.pts[Math.max(0, sp.pts.length - 4)];
+        arrowHead(e.x, e.y, Math.atan2(e.y - q.y, e.x - q.x), p.highlight ? 20 : 14, col, w);
+      }
+    }));
+
+    // pass lines draw as the ball travels
+    pl.passes.forEach(ps => {
+      const f = byId(ps.from), r = byId(ps.to);
+      if (!f || !r || t < ps.t) return;
+      const k = clamp((t - ps.t) / ps.dur);
+      const a = ballSpot(f, ps.t);
+      const b = ballSpot(r, Math.min(t, ps.t + ps.dur));
+      const e = { x: lerp(a.x, b.x, ease(k)), y: lerp(a.y, b.y, ease(k)) };
+      markerLine([a, e], 4, C.ink, [10, 9]);
+      if (k >= 1) arrowHead(e.x, e.y, Math.atan2(e.y - a.y, e.x - a.x), 14, C.ink, 4);
+    });
+
+    // notes (behind players), circles
+    pl.notes.forEach(n => {
+      const a = clamp((t - n.appear) / .6);
+      const showGhost = showPlan && a < 1 ? .3 : 0;
+      drawNote(n, Math.max(ease(a), showGhost));
+    });
+
+    // players
+    pl.players.forEach(p => {
+      const q = posAt(p, t);
+      if (p.team === "D") {
+        drawX(q.x, q.y);
+        const q2 = posAt(p, t + .15), vx = q2.x - q.x, vy = q2.y - q.y, sp = Math.hypot(vx, vy);
+        if (sp > .6) {
+          const ux = vx / sp, uy = vy / sp, bob = (Math.sin(performance.now() / 140) + 1) * 6;
+          const sx = q.x + ux * (34 + bob * .7) * ICON, sy = q.y + uy * (34 + bob * .7) * ICON;
+          markerLine([{ x: sx, y: sy }, { x: sx + ux * 40 * ICON, y: sy + uy * 40 * ICON }], 5 * ICON, C.blue);
+          arrowHead(sx + ux * 42 * ICON, sy + uy * 42 * ICON, Math.atan2(uy, ux), 13 * ICON, C.blue, 5 * ICON);
+        }
+      } else drawO(q.x, q.y);
+    });
+
+    const b = ballState(t); if (b) drawBall(b.x, b.y);
+
+    // finish the ink: felt-tip texture, then lay it on the board
+    inkCtx.save(); inkCtx.globalCompositeOperation = "destination-out"; inkCtx.fillStyle = inkTex; inkCtx.fillRect(0, 0, W, H); inkCtx.restore();
+    ctx = fullCtx;
+    ctx.drawImage(surface, 0, 0);
+    ctx.save(); ctx.globalAlpha = .94; ctx.drawImage(inkCv, 0, 0); ctx.restore();
+    drawBrand(pl);
+    ctx.drawImage(frameLayer, 0, 0);
+
+    // show the board through the editor zoom (exports always use the whole board)
+    const v = clean ? { s: 1, x: 0, y: 0 } : view;
+    ctx = mainCtx;
+    ctx.drawImage(fullCv, v.x, v.y, W / v.s, H / v.s, 0, 0, W, H);
+    if (clean) return;
+    ctx.save(); ctx.setTransform(v.s, 0, 0, v.s, -v.x * v.s, -v.y * v.s);
+    drawOverlays(pl, t, v.s);
+    ctx.restore();
+  }
+  const fullCv = document.createElement("canvas"); fullCv.width = W; fullCv.height = H;
+  const fullCtx = fullCv.getContext("2d");
+
+  // editor overlays, drawn in board coordinates; line widths divided by zoom so they stay thin
+  function drawOverlays(pl, t, z) {
+    const ring = (q, r, w, dash) => {
+      ctx.save(); ctx.strokeStyle = C.orange; ctx.lineWidth = w / z; if (dash) ctx.setLineDash([6 / z, 6 / z]);
+      ctx.beginPath(); ctx.arc(q.x, q.y, r * ICON, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    };
+    const ids = selIds();
+    ids.forEach(id => { const p = byId(id); if (p) ring(posAt(p, t), 38, 3, true); });
+    const selP = ids.length === 1 ? byId(ids[0]) : null;
+    if (selP && !playing) {
+      ctx.save(); ctx.fillStyle = C.board; ctx.strokeStyle = C.orange; ctx.lineWidth = 3 / z;
+      const hs = 9 / z, wr = 11 / z;
+      ctx.beginPath(); ctx.rect(selP.x - hs, selP.y - hs, hs * 2, hs * 2); ctx.stroke();
+      selP.moves.forEach(m => m.path.forEach(w => { ctx.beginPath(); ctx.arc(w.x, w.y, wr, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }));
+      ctx.restore();
+    }
+    if (sel && ["title", "sub", "logo"].includes(sel.type)) {
+      const bx = headerBoxes(pl)[sel.type].box;
+      ctx.save(); ctx.strokeStyle = C.orange; ctx.lineWidth = 2 / z; ctx.setLineDash([6 / z, 6 / z]); ctx.strokeRect(bx.x - 8, bx.y - 6, bx.w + 16, bx.h + 12); ctx.restore();
+    }
+    if (sel && sel.type === "note") {
+      const n = pl.notes.find(n => n.id === sel.id);
+      if (n) { const bx = noteBox(n); ctx.save(); ctx.strokeStyle = C.orange; ctx.lineWidth = 2 / z; ctx.setLineDash([6 / z, 6 / z]); ctx.strokeRect(bx.x - 8, bx.y - 6, bx.w + 16, bx.h + 12); ctx.restore(); }
+    }
+    (runFor ? runFor.ids : []).concat(passFrom ? [passFrom] : []).forEach(id => {
+      const p = byId(id); if (p) ring(posAt(p, t), 42, 5);
+    });
+    if (drag && drag.kind === "box" && drag.moved) {
+      const x = Math.min(drag.a.x, drag.b.x), y = Math.min(drag.a.y, drag.b.y);
+      ctx.save(); ctx.strokeStyle = C.orange; ctx.fillStyle = "rgba(242,98,15,.08)"; ctx.lineWidth = 2 / z; ctx.setLineDash([6 / z, 6 / z]);
+      ctx.fillRect(x, y, Math.abs(drag.b.x - drag.a.x), Math.abs(drag.b.y - drag.a.y));
+      ctx.strokeRect(x, y, Math.abs(drag.b.x - drag.a.x), Math.abs(drag.b.y - drag.a.y)); ctx.restore();
+    }
+  }
+
+  // ---------- loop ----------
+  function frame(now) {
+    if (last == null) last = now;
+    const dt = (now - last) / 1000; last = now;
+    const pl = play();
+    if (pl && playing && !recording) {
+      time += dt;
+      if (time >= pl.duration + 1.2) { if ($("loop").checked) time = 0; else { time = pl.duration; setPlaying(false); } }
+      syncTime();
+    }
+    if (!recording) render(Math.min(time, pl ? pl.duration : 0));
+    requestAnimationFrame(frame);
+  }
+  function syncTime() {
+    const pl = play(); const t = Math.min(time, pl.duration);
+    $("scrub").value = t; $("time").textContent = `${t.toFixed(1)} / ${pl.duration}s`;
+  }
+  function setPlaying(v) {
+    playing = v; $("play").textContent = v ? "Pause" : "Play";
+    if (v && time >= play().duration) time = 0;
+  }
+
+  // ---------- edits ----------
+  function snapshot() { undoStack.push(JSON.stringify(play())); if (undoStack.length > 80) undoStack.shift(); }
+  function changed(refreshInspector = true) {
+    dirty = true; saveDraft(); setStatus();
+    if (refreshInspector) renderInspector();
+    renderPlaylist();
+  }
+  function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...state, draftAt: Date.now() })); } catch (e) {} }
+  function undo() {
+    if (drag) return; // a drag owns the top snapshot until pointerup
+    const s = undoStack.pop(); if (!s) return;
+    state.plays[cur] = JSON.parse(s); sel = null; runFor = passFrom = null; setHint();
+    changed();
+  }
+
+  // ---------- pointer ----------
+  function toCanvas(e) {
+    const r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
+  }
+  function toBoard(e) { const c = toCanvas(e); return { x: view.x + c.x / view.s, y: view.y + c.y / view.s }; }
+
+  // ---------- zoom (editor only) ----------
+  function clampView() { view.x = clamp(view.x, 0, W - W / view.s); view.y = clamp(view.y, 0, H - H / view.s); }
+  function zoomAt(cx, cy, f) {
+    const bx = view.x + cx / view.s, by = view.y + cy / view.s;
+    view.s = clamp(view.s * f, 1, 4);
+    view.x = bx - cx / view.s; view.y = by - cy / view.s;
+    clampView(); $("zoomLbl").textContent = Math.round(view.s * 100) + "%";
+  }
+  cv.addEventListener("wheel", e => { e.preventDefault(); const c = toCanvas(e); zoomAt(c.x, c.y, Math.exp(-e.deltaY * (e.deltaMode === 1 ? 40 : 1) * .0015)); }, { passive: false });
+  cv.addEventListener("contextmenu", e => e.preventDefault());
+  $("zoomIn").addEventListener("click", () => zoomAt(W / 2, H / 2, 1.25));
+  $("zoomOut").addEventListener("click", () => zoomAt(W / 2, H / 2, .8));
+  $("zoomFit").addEventListener("click", () => zoomAt(W / 2, H / 2, 1 / view.s));
+
+  // ---------- selection ----------
+  const selIds = () => sel && sel.type === "player" ? sel.ids : [];
+  const selectOne = p => { sel = { type: "player", id: p.id, ids: [p.id] }; };
+  function selectInBox(d) {
+    const t = Math.min(time, play().duration);
+    const x0 = Math.min(d.a.x, d.b.x), x1 = Math.max(d.a.x, d.b.x), y0 = Math.min(d.a.y, d.b.y), y1 = Math.max(d.a.y, d.b.y);
+    const hits = play().players.filter(p => { const q = posAt(p, t); return q.x >= x0 && q.x <= x1 && q.y >= y0 && q.y <= y1; }).map(p => p.id);
+    const ids = d.add ? [...new Set([...selIds(), ...hits])] : hits;
+    sel = ids.length ? { type: "player", id: ids[0], ids } : null;
+  }
+
+  // ---------- moves ----------
+  // Starts a new move for each player in ids. With several players, points clicked for the lead
+  // player are copied to the others at the same offset, so the group keeps its shape.
+  function startMove(ids, leadId) {
+    const pl = play(); snapshot();
+    ids.forEach(id => { const p = byId(id); p.moves = p.moves.filter(m => m.path.length); });
+    const first = ids.every(id => !hasMoves(byId(id)));
+    const t0 = first ? 1 : Math.round(Math.max(...ids.map(id => { const ms = byId(id).moves; return ms.length ? ms[ms.length - 1].t1 + .5 : 1; })) * 10) / 10;
+    const t1 = first ? Math.max(t0 + 1, Math.round(pl.duration * .6)) : Math.round((t0 + 2) * 10) / 10;
+    if (t1 + 1 > pl.duration) { pl.duration = Math.min(60, Math.ceil(t1 + 1)); $("scrub").max = pl.duration; }
+    ids.forEach(id => byId(id).moves.push({ path: [], t0, t1 }));
+    runFor = { ids: ids.slice(), lead: leadId };
+    sel = { type: "player", id: leadId, ids: ids.slice() };
+    time = t0; syncTime(); setHint(); changed();
+  }
+  function finishMove() {
+    if (!runFor) return;
+    runFor.ids.forEach(id => { const p = byId(id); if (p && p.moves.length && !p.moves[p.moves.length - 1].path.length) p.moves.pop(); });
+    runFor = null; setHint(); renderInspector();
+  }
+  function hitPlayer(pt) {
+    const pl = play(); const t = Math.min(time, pl.duration);
+    let best = null, bd = 38 * Math.max(.7, ICON);
+    pl.players.forEach(p => { const q = posAt(p, t); const d = Math.hypot(q.x - pt.x, q.y - pt.y); if (d < bd) { bd = d; best = p; } });
+    return best;
+  }
+  function hitNote(pt) {
+    const pl = play();
+    for (let i = pl.notes.length - 1; i >= 0; i--) {
+      const b = noteBox(pl.notes[i]);
+      if (pt.x >= b.x - 10 && pt.x <= b.x + b.w + 10 && pt.y >= b.y - 10 && pt.y <= b.y + b.h + 10) return pl.notes[i];
+    }
+    return null;
+  }
+  function hitHeader(pt) {
+    const pl = play(), hb = headerBoxes(pl);
+    const inBox = b => pt.x >= b.x - 10 && pt.x <= b.x + b.w + 10 && pt.y >= b.y - 10 && pt.y <= b.y + b.h + 10;
+    if (pl.showLogo !== false && inBox(hb.logo.box)) return "logo";
+    if (pl.subtitle && inBox(hb.sub.box)) return "sub";
+    if (pl.title && inBox(hb.title.box)) return "title";
+    return null;
+  }
+  const inPitch = pt => ({ x: clamp(pt.x, 20, W - 20), y: clamp(pt.y, 20, H - 20) });
+
+  cv.addEventListener("pointerdown", e => {
+    if (recording) return;
+    cv.setPointerCapture(e.pointerId);
+    if (e.button === 1 || e.button === 2 || tool === "pan") { drag = { kind: "pan", last: toCanvas(e) }; return; }
+    const pt = toBoard(e); const pl = play();
+    if (playing) setPlaying(false);
+    const t = Math.min(time, pl.duration);
+    const near = 20 / view.s;
+
+    if (tool === "select") {
+      const sp = selIds().length === 1 ? byId(sel.id) : null;
+      if (sp) {
+        for (let mi = 0; mi < sp.moves.length; mi++) {
+          const wi = sp.moves[mi].path.findIndex(w => Math.hypot(w.x - pt.x, w.y - pt.y) < near);
+          if (wi >= 0) { snapshot(); drag = { kind: "way", p: sp, mi, i: wi, moved: false }; return; }
+        }
+        if (Math.hypot(sp.x - pt.x, sp.y - pt.y) < 16 / view.s) { snapshot(); drag = { kind: "start", p: sp, moved: false }; return; }
+      }
+      const p = hitPlayer(pt);
+      if (p) {
+        if (e.shiftKey) {
+          const ids = selIds().slice(), k = ids.indexOf(p.id);
+          if (k >= 0) ids.splice(k, 1); else ids.push(p.id);
+          sel = ids.length ? { type: "player", id: k >= 0 ? ids[ids.length - 1] : p.id, ids } : null;
+          renderInspector(); return;
+        }
+        if (selIds().includes(p.id)) sel.id = p.id; else selectOne(p);
+        snapshot(); drag = { kind: "players", ids: sel.ids.slice(), last: pt, moved: false }; renderInspector(); return;
+      }
+      const hit = hitHeader(pt);
+      if (hit) { sel = { type: hit }; snapshot(); drag = { kind: "header", which: hit, last: pt, moved: false }; renderInspector(); return; }
+      const n = hitNote(pt);
+      if (n) { sel = { type: "note", id: n.id }; snapshot(); drag = { kind: "note", n, last: pt, moved: false }; renderInspector(); return; }
+      if (!e.shiftKey) { sel = null; renderInspector(); }
+      drag = { kind: "box", a: pt, b: pt, add: e.shiftKey, moved: false }; return;
+    }
+    if (tool === "x" || tool === "o") {
+      snapshot();
+      const q = inPitch(pt);
+      const p = { id: uid(tool === "x" ? "d" : "a"), team: tool === "x" ? "D" : "A", x: Math.round(q.x), y: Math.round(q.y), moves: [], highlight: false };
+      pl.players.push(p);
+      if (p.team === "A" && !byId(pl.ballStart)) pl.ballStart = p.id;
+      selectOne(p); changed(); return;
+    }
+    if (tool === "run") {
+      if (!runFor) {
+        const p = hitPlayer(pt);
+        if (p) startMove(selIds().length > 1 && selIds().includes(p.id) ? selIds() : [p.id], p.id);
+        setHint(); return;
+      }
+      const lead = byId(runFor.lead);
+      if (!lead || !lead.moves.length) { finishMove(); return; }
+      const li = lead.moves.length - 1, ls = moveStart(lead, li);
+      if (lead.moves[li].path.length && Math.hypot(ls.x - pt.x, ls.y - pt.y) < 40 * Math.max(.7, ICON)) { finishMove(); return; }
+      const dx = pt.x - ls.x, dy = pt.y - ls.y;
+      runFor.ids.forEach(id => {
+        const p = byId(id), i = p.moves.length - 1, s = moveStart(p, i);
+        const q = inPitch({ x: s.x + dx, y: s.y + dy });
+        p.moves[i].path.push({ x: Math.round(q.x), y: Math.round(q.y) });
+      });
+      changed(); return;
+    }
+    if (tool === "pass") {
+      const p = hitPlayer(pt);
+      if (!p) { passFrom = null; setHint(); return; }
+      if (!passFrom) { passFrom = p.id; setHint(); return; }
+      if (p.id === passFrom) { passFrom = null; setHint(); return; }
+      snapshot();
+      const ps = { id: uid("ps"), from: passFrom, to: p.id, t: Math.round(Math.max(.5, t) * 10) / 10, dur: 1.2 };
+      pl.passes.push(ps); passFrom = null; sel = { type: "pass", id: ps.id }; changed(); setHint(); return;
+    }
+    if (tool === "note" || tool === "circle") {
+      snapshot();
+      const n = tool === "note"
+        ? { id: uid("n"), kind: "text", x: Math.round(pt.x), y: Math.round(pt.y), text: "Coaching point", appear: Math.round(t * 10) / 10, size: 36 }
+        : { id: uid("n"), kind: "circle", x: Math.round(pt.x), y: Math.round(pt.y), appear: Math.round(t * 10) / 10, size: 1 };
+      pl.notes.push(n); sel = { type: "note", id: n.id };
+      setTool("select"); changed();
+      if (n.kind === "text") setTimeout(() => { const ta = $("noteText"); if (ta) { ta.focus(); ta.select(); } }, 0);
+    }
+  });
+  cv.addEventListener("pointermove", e => {
+    if (!drag) return;
+    if (drag.kind === "pan") {
+      const c = toCanvas(e);
+      view.x -= (c.x - drag.last.x) / view.s; view.y -= (c.y - drag.last.y) / view.s; drag.last = c; clampView(); return;
+    }
+    const pt = toBoard(e); const q = inPitch(pt);
+    if (drag.kind === "box") { drag.b = pt; if (Math.hypot(pt.x - drag.a.x, pt.y - drag.a.y) > 6 / view.s) drag.moved = true; return; }
+    drag.moved = true;
+    if (drag.kind === "way") { drag.p.moves[drag.mi].path[drag.i] = { x: Math.round(q.x), y: Math.round(q.y) }; }
+    else if (drag.kind === "start") { drag.p.x = Math.round(q.x); drag.p.y = Math.round(q.y); }
+    else if (drag.kind === "players") {
+      // moving players keeps their runs attached: shift start and every move point together
+      const dx = pt.x - drag.last.x, dy = pt.y - drag.last.y; drag.last = pt;
+      drag.ids.forEach(id => {
+        const p = byId(id); if (!p) return;
+        p.x = Math.round(p.x + dx); p.y = Math.round(p.y + dy);
+        p.moves.forEach(m => m.path.forEach(w => { w.x = Math.round(w.x + dx); w.y = Math.round(w.y + dy); }));
+      });
+    } else if (drag.kind === "header") {
+      const pl = play(), hb = headerBoxes(pl);
+      const dx = pt.x - drag.last.x, dy = pt.y - drag.last.y; drag.last = pt;
+      if (drag.which === "title") pl.titlePos = { x: Math.round(hb.title.x + dx), y: Math.round(hb.title.base + dy) };
+      if (drag.which === "sub") pl.subPos = { x: Math.round(hb.sub.x + dx), y: Math.round(hb.sub.base + dy) };
+      if (drag.which === "logo") pl.logoPos = { x: Math.round(hb.logo.x + dx), y: Math.round(hb.logo.y + dy) };
+    } else if (drag.kind === "note") {
+      const dx = pt.x - drag.last.x, dy = pt.y - drag.last.y; drag.last = pt;
+      drag.n.x = Math.round(drag.n.x + dx); drag.n.y = Math.round(drag.n.y + dy);
+    }
+  });
+  const endPointer = () => {
+    if (drag && drag.kind === "pan") { drag = null; return; }
+    if (drag && drag.kind === "box") { if (drag.moved) selectInBox(drag); drag = null; renderInspector(); return; }
+    if (drag) { if (drag.moved) changed(false); else undoStack.pop(); }
+    drag = null;
+  };
+  cv.addEventListener("pointerup", endPointer);
+  cv.addEventListener("pointercancel", endPointer);
+
+  // ---------- tools ----------
+  function setTool(t) {
+    finishMove(); tool = t; passFrom = null;
+    document.querySelectorAll("#tools [data-tool]").forEach(b => b.classList.toggle("on", b.dataset.tool === t));
+    cv.style.cursor = t === "pan" ? "grab" : "crosshair";
+    setHint();
+  }
+  function setHint() {
+    const n = runFor ? runFor.ids.length : 0;
+    const h = {
+      select: "Drag players or notes. Shift-click or drag a box to select several players. Scroll to zoom, right-drag to pan.",
+      x: "Click the pitch to add a defender.",
+      o: "Click the pitch to add an attacker.",
+      run: runFor
+        ? (n > 1 ? `Click points for the group's move: all ${n} players follow it. Click the highlighted player again or press Enter to finish.` : "Click points along this move. Click the player again or press Enter to finish.")
+        : "Click a player to add a move (it starts where their last move ended). Select several players first to move them together.",
+      pan: "Drag to move around the board. Scroll to zoom.",
+      pass: passFrom ? "Now click the receiver. The pass starts at the current timeline position." : "Click the passer. Move the timeline to when the pass should happen first.",
+      note: "Click where the coaching point goes. It appears at the current timeline position.",
+      circle: "Click to circle a space. It appears at the current timeline position."
+    };
+    $("hint").textContent = h[tool];
+  }
+  $("tools").addEventListener("click", e => { const b = e.target.closest("[data-tool]"); if (b) setTool(b.dataset.tool); });
+  $("undo").addEventListener("click", undo);
+  document.addEventListener("keydown", e => {
+    const tag = (e.target.tagName || "").toLowerCase();
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") { if (tag !== "input" && tag !== "textarea") { e.preventDefault(); undo(); } return; }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); return; }
+    if (tag === "input" || tag === "textarea" || tag === "select") return;
+    const map = { v: "select", x: "x", o: "o", r: "run", p: "pass", n: "note", c: "circle", h: "pan" };
+    if (map[e.key.toLowerCase()]) setTool(map[e.key.toLowerCase()]);
+    if (e.key === " ") { e.preventDefault(); setPlaying(!playing); }
+    if (e.key === "Escape" || e.key === "Enter") { finishMove(); passFrom = null; setHint(); }
+    if ((e.key === "Delete" || e.key === "Backspace") && sel) { e.preventDefault(); deleteSel(); }
+  });
+
+  // ---------- inspector ----------
+  function deleteSel() {
+    const pl = play(); if (!sel) return; finishMove(); passFrom = null; snapshot();
+    if (sel.type === "player") {
+      const gone = new Set(sel.ids);
+      pl.players = pl.players.filter(p => !gone.has(p.id));
+      pl.passes = pl.passes.filter(ps => !gone.has(ps.from) && !gone.has(ps.to));
+      if (gone.has(pl.ballStart)) pl.ballStart = (pl.players.find(p => p.team === "A") || {}).id || null;
+    }
+    if (sel.type === "note") pl.notes = pl.notes.filter(n => n.id !== sel.id);
+    if (sel.type === "pass") pl.passes = pl.passes.filter(ps => ps.id !== sel.id);
+    sel = null; changed();
+  }
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const playerName = p => { const pl = play(); const list = pl.players.filter(q => q.team === p.team); return (p.team === "D" ? "X" : "O") + (list.indexOf(p) + 1); };
+
+  function passEditor(ps) {
+    const pl = play();
+    const opts = sel => pl.players.map(p => `<option value="${p.id}" ${p.id === sel ? "selected" : ""}>${playerName(p)}</option>`).join("");
+    return `<div class="passItem" data-pass="${ps.id}">
+      <div class="two"><label>From<select data-f="from">${opts(ps.from)}</select></label><label>To<select data-f="to">${opts(ps.to)}</select></label></div>
+      <div class="two"><label>Starts at (s)<input type="number" step="0.1" min="0" data-f="t" value="${ps.t}"></label><label>Flight (s)<input type="number" step="0.1" min="0.3" data-f="dur" value="${ps.dur}"></label></div>
+      ${isForward(ps) ? '<div class="warn">This pass goes forward. Move it earlier or later, or change the runs.</div>' : ""}
+      <button type="button" class="danger" data-delpass="${ps.id}">Remove pass</button></div>`;
+  }
+
+  function renderInspector() {
+    const pl = play(), box = $("inspector"); if (!pl) return;
+    let html = `<h2>Play</h2>
+      <label>Title<input type="text" id="fTitle" value="${esc(pl.title)}"></label>
+      <label>Subtitle<input type="text" id="fSub" value="${esc(pl.subtitle || "")}"></label>
+      <label>Length (seconds)<input type="number" id="fDur" min="3" max="60" step="1" value="${pl.duration}"></label>
+      <label>Pitch<select id="fPitch">
+        <option value="section" ${!pl.pitchView || pl.pitchView === "section" ? "selected" : ""}>Close-up (20m section)</option>
+        <option value="full" ${pl.pitchView === "full" ? "selected" : ""}>Full pitch</option>
+        <option value="none" ${pl.pitchView === "none" ? "selected" : ""}>No pitch lines</option></select></label>
+      ${pl.pitchView === "full" ? `<label>Pitch size <span id="vPitch">${Math.round((pl.pitchScale || 1) * 100)}%</span><input type="range" id="fPitchSize" min="0.6" max="3" step="0.05" value="${pl.pitchScale || 1}"></label>` : ""}
+      <label>Player size <span id="vIcon">${Math.round((pl.iconScale || 1) * 100)}%</span><input type="range" id="fIcon" min="0.4" max="1.8" step="0.05" value="${pl.iconScale || 1}"></label>
+      <label>Heading size<input type="range" id="fTitleSize" min="30" max="140" step="2" value="${pl.titleSize || 86}"></label>
+      <label>Subheading size<input type="range" id="fSubSize" min="20" max="100" step="2" value="${pl.subSize || 52}"></label>
+      <label class="inline"><input type="checkbox" id="fLogo" ${pl.showLogo !== false ? "checked" : ""}> Show 18thMan logo</label>
+      <label>Logo size<input type="range" id="fLogoSize" min="60" max="400" step="5" value="${pl.logoSize || 150}" ${pl.showLogo === false ? "disabled" : ""}></label>
+      <p class="help" style="padding:0">Drag the heading, subheading and logo on the board to move them.</p>`;
+    const fwd = pl.passes.filter(isForward).length;
+    if (fwd) html += `<div class="warn">${fwd} forward pass${fwd > 1 ? "es" : ""} in this play.</div>`;
+
+    if (sel && sel.type === "player" && sel.ids.length > 1) {
+      const n = sel.ids.length;
+      html += `<h2 style="margin-top:8px">${n} players selected</h2>
+        <p class="help" style="padding:0">Add a move to draw one run that all ${n} follow, keeping their spacing. Drag any of them to move the group.</p>
+        <button type="button" id="addMove">Add a move for all ${n}</button>
+        <button type="button" class="danger" id="delSel">Delete ${n} players</button>`;
+    } else if (sel && sel.type === "player") {
+      const p = byId(sel.id);
+      const moves = p ? p.moves.map((m, i) => `<div class="passItem" data-move="${i}">
+          <div class="two"><label>Move ${i + 1} starts (s)<input type="number" step="0.1" min="0" data-mf="t0" value="${m.t0}"></label>
+          <label>Ends (s)<input type="number" step="0.1" min="0" data-mf="t1" value="${m.t1}"></label></div>
+          <button type="button" class="danger" data-delmove="${i}">Remove move ${i + 1}</button></div>`).join("") : "";
+      if (p) html += `<h2 style="margin-top:8px">${p.team === "D" ? "Defender" : "Attacker"} ${playerName(p)}</h2>
+        <label class="inline"><input type="checkbox" id="fHi" ${p.highlight ? "checked" : ""}> Highlight runs in orange</label>
+        ${p.team === "A" ? `<label class="inline"><input type="checkbox" id="fBall" ${pl.ballStart === p.id ? "checked" : ""}> Starts with the ball</label>` : ""}
+        ${moves || `<p class="help" style="padding:0">No moves yet.</p>`}
+        <div class="row"><button type="button" id="addMove">${p.moves.length ? "Add another move" : "Add a move"}</button>
+        <button type="button" id="clearRun" ${p.moves.length ? "" : "disabled"}>Clear all moves</button></div>
+        <button type="button" class="danger" id="delSel">Delete player</button>`;
+    } else if (sel && sel.type === "note") {
+      const n = pl.notes.find(n => n.id === sel.id);
+      if (n) html += `<h2 style="margin-top:8px">${n.kind === "circle" ? "Circle" : "Note"}</h2>
+        ${n.kind === "text" ? `<label>Text (new line for each line)<textarea id="noteText">${esc(n.text)}</textarea></label>` : ""}
+        <div class="two"><label>Appears at (s)<input type="number" step="0.1" min="0" id="fAppear" value="${n.appear}"></label>
+        <label>Size<input type="number" step="${n.kind === "circle" ? 0.1 : 2}" min="${n.kind === "circle" ? 0.4 : 20}" id="fSize" value="${n.size}"></label></div>
+        <button type="button" class="danger" id="delSel">Delete ${n.kind === "circle" ? "circle" : "note"}</button>`;
+    }
+    html += `<h2 style="margin-top:8px">Passes</h2>`;
+    html += pl.passes.length ? pl.passes.slice().sort((a, b) => a.t - b.t).map(passEditor).join("") : `<p class="help" style="padding:0">No passes yet. Use the Pass tool.</p>`;
+    html += `<h2 style="margin-top:8px">How to build a play</h2>
+      <ol class="help"><li>Add X's and O's.</li><li>Add a move for each player that moves. Add more moves to make them run, stop and run again.</li><li>Select several players to give them one move together.</li><li>Set when each move starts and ends.</li><li>Scrub to the moment of the pass, then use Pass.</li><li>Add notes and circles for the coaching points.</li></ol>`;
+    box.innerHTML = html;
+  }
+
+  $("inspector").addEventListener("change", e => {
+    const pl = play(), el = e.target, id = el.id;
+    const num = v => Math.max(0, Math.round(parseFloat(v) * 10) / 10 || 0);
+    if (["fIcon", "fTitleSize", "fSubSize", "fLogoSize", "fPitchSize"].includes(id)) { sliderSnap = false; changed(); return; }
+    snapshot();
+    if (id === "fTitle") pl.title = el.value;
+    else if (id === "fSub") pl.subtitle = el.value;
+    else if (id === "fLogo") pl.showLogo = el.checked;
+    else if (id === "fPitch") pl.pitchView = el.value;
+    else if (["fIcon", "fTitleSize", "fSubSize", "fLogoSize"].includes(id)) { /* saved live on input */ }
+    else if (id === "fDur") { pl.duration = clamp(parseInt(el.value) || 15, 3, 60); $("scrub").max = pl.duration; syncTime(); }
+    else if (sel && sel.type === "player" && byId(sel.id)) {
+      const p = byId(sel.id);
+      const mv = el.closest("[data-move]");
+      if (mv && el.dataset.mf) {
+        // keep moves in order with no overlap: a move can't start before the previous one ends
+        const i = +mv.dataset.move, m = p.moves[i], prev = p.moves[i - 1], next = p.moves[i + 1];
+        const v = num(el.value);
+        if (el.dataset.mf === "t0") m.t0 = clamp(v, prev ? prev.t1 : 0, m.t1 - .2);
+        else m.t1 = clamp(v, m.t0 + .2, next ? next.t0 : 60);
+        if (m.t1 + 1 > pl.duration) { pl.duration = Math.min(60, Math.ceil(m.t1 + 1)); $("scrub").max = pl.duration; syncTime(); }
+      }
+      if (id === "fHi") p.highlight = el.checked;
+      if (id === "fBall") pl.ballStart = el.checked ? p.id : null;
+    } else if (sel && sel.type === "note") {
+      const n = pl.notes.find(n => n.id === sel.id);
+      if (n && id === "fAppear") n.appear = num(el.value);
+      if (n && id === "fSize") n.size = parseFloat(el.value) || n.size;
+    }
+    const pi = el.closest("[data-pass]");
+    if (pi && el.dataset.f) {
+      const ps = pl.passes.find(p => p.id === pi.dataset.pass);
+      if (ps) { const f = el.dataset.f; ps[f] = (f === "t" || f === "dur") ? Math.max(f === "dur" ? .3 : 0, num(el.value)) : el.value; }
+    }
+    changed();
+  });
+  let sliderSnap = false;
+  $("inspector").addEventListener("input", e => {
+    const id = e.target.id, pl = play();
+    const map = { fIcon: "iconScale", fTitleSize: "titleSize", fSubSize: "subSize", fLogoSize: "logoSize", fPitchSize: "pitchScale" };
+    if (map[id]) {
+      if (!sliderSnap) { snapshot(); sliderSnap = true; }
+      const v = parseFloat(e.target.value);
+      if (id === "fLogoSize" && pl.logoPos) { const old = pl.logoSize || 150; pl.logoPos = { x: Math.round(pl.logoPos.x + old - v), y: Math.round(pl.logoPos.y + old - v) }; }
+      if (id === "fLogoSize" && !pl.logoPos) { /* default anchors to bottom right */ }
+      pl[map[id]] = v;
+      if (id === "fIcon") $("vIcon").textContent = Math.round(v * 100) + "%";
+      if (id === "fPitchSize") $("vPitch").textContent = Math.round(v * 100) + "%";
+      dirty = true; saveDraft(); setStatus(); return;
+    }
+    if (id !== "noteText") return;
+    const n = play().notes.find(n => sel && n.id === sel.id);
+    if (n) { n.text = e.target.value; dirty = true; saveDraft(); setStatus(); }
+  });
+  $("inspector").addEventListener("click", e => {
+    const pl = play(), t = e.target;
+    if (t.id === "delSel") deleteSel();
+    if (t.id === "clearRun") { finishMove(); snapshot(); byId(sel.id).moves = []; changed(); }
+    if (t.id === "addMove") { const ids = sel.ids.slice(), lead = sel.id; setTool("run"); startMove(ids, lead); }
+    if (t.dataset.delmove) { finishMove(); snapshot(); byId(sel.id).moves.splice(+t.dataset.delmove, 1); changed(); }
+    if (t.dataset.delpass) { snapshot(); pl.passes = pl.passes.filter(p => p.id !== t.dataset.delpass); changed(); }
+  });
+
+  // ---------- playlist ----------
+  function renderPlaylist() {
+    $("plays").innerHTML = state.plays.map((p, i) => `<button type="button" data-i="${i}" class="${i === cur ? "on" : ""}">${esc(p.title || "Untitled")}</button>`).join("");
+    $("delPlay").disabled = state.plays.length < 2;
+  }
+  function openPlay(i) {
+    cur = i; sel = null; runFor = passFrom = null; undoStack = []; time = 0; setPlaying(false);
+    $("scrub").max = play().duration; syncTime(); renderPlaylist(); renderInspector();
+  }
+  $("plays").addEventListener("click", e => { const b = e.target.closest("[data-i]"); if (b) openPlay(+b.dataset.i); });
+  $("newPlay").addEventListener("click", () => {
+    state.plays.push({ id: uid("p"), title: "NEW PLAY", subtitle: "", duration: 15, ballStart: null, players: [], passes: [], notes: [] });
+    openPlay(state.plays.length - 1); setTool("x"); changed();
+  });
+  $("dupPlay").addEventListener("click", () => {
+    const c = JSON.parse(JSON.stringify(play())); c.id = uid("p"); c.title = c.title + " (copy)";
+    state.plays.splice(cur + 1, 0, c); openPlay(cur + 1); changed();
+  });
+  let delArmed = false;
+  $("delPlay").addEventListener("click", () => {
+    if (state.plays.length < 2) return;
+    if (!delArmed) { delArmed = true; $("delPlay").textContent = "Click again to delete"; setTimeout(() => { delArmed = false; $("delPlay").textContent = "Delete play"; }, 3000); return; }
+    delArmed = false; $("delPlay").textContent = "Delete play";
+    state.plays.splice(cur, 1); openPlay(Math.max(0, cur - 1)); changed();
+  });
+
+  // ---------- transport ----------
+  $("play").addEventListener("click", () => setPlaying(!playing));
+  $("toStart").addEventListener("click", () => { time = 0; syncTime(); });
+  $("scrub").addEventListener("input", e => { setPlaying(false); time = parseFloat(e.target.value); syncTime(); });
+
+  // ---------- save ----------
+  let artifactCap = null, canSave = true;
+  const DESKTOP = !(window.claude && window.claude.use);
+  function setStatus(msg) {
+    if (msg) { $("status").textContent = msg; return; }
+    $("status").textContent = dirty ? "Unsaved changes" : "All changes saved";
+  }
+  const STORE_KEY = "18thman-playlist";
+  async function save() {
+    if (DESKTOP) {
+      state.savedAt = Date.now();
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify({ savedAt: state.savedAt, plays: state.plays }));
+        localStorage.removeItem(DRAFT_KEY); dirty = false; setStatus("Saved on this computer");
+      } catch (e) { setStatus("Couldn't save. Back up the playlist to a file instead."); }
+      return;
+    }
+    if (!artifactCap) { setStatus("Saving isn't available here. Your work is kept in this browser."); return; }
+    if (!canSave) { setStatus("You can view this playlist but not save it."); return; }
+    $("save").disabled = true; setStatus("Saving…");
+    state.savedAt = Date.now();
+    try {
+      await artifactCap.publish({ "plays.json": JSON.stringify({ savedAt: state.savedAt, plays: state.plays }) });
+      dirty = false; try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+      setStatus();
+    } catch (err) {
+      const c = err && err.code;
+      if (c === "not_writer" || c === "not_granted") { canSave = false; setStatus("You can view this playlist but not save it."); }
+      else if (c === "conflict") setStatus("Someone else saved first. Reloading their version.");
+      else if (c === "capability_disabled") setStatus("Saving isn't available in this view. Your work is kept in this browser.");
+      else setStatus("Couldn't save. Try again in a moment.");
+    }
+    $("save").disabled = false;
+  }
+  $("save").addEventListener("click", save);
+
+  // ---------- export ----------
+  let downloadsCap = null;
+  const slug = () => (play().title || "play").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "play";
+  function exportMsg(m) { $("exportStatus").textContent = m; }
+  async function saveFile(filename, data) {
+    if (!downloadsCap) {
+      const blob = data instanceof Blob ? data : new Blob([data]);
+      const url = URL.createObjectURL(blob), a = document.createElement("a");
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      exportMsg("Saved " + filename); return;
+    }
+    try { await downloadsCap.save({ filename, data }); exportMsg("Saved " + filename); }
+    catch (err) { exportMsg(err && err.code === "declined" ? "Save cancelled." : "Couldn't save the file."); }
+  }
+  $("exportPng").addEventListener("click", () => {
+    render(Math.min(time, play().duration), true);
+    cv.toBlob(b => { if (b) saveFile(slug() + ".png", b); });
+  });
+  $("exportVideo").addEventListener("click", async () => {
+    if (recording) return;
+    if (!window.MediaRecorder || !cv.captureStream) { exportMsg("This browser can't record video. Try Chrome or Safari on a computer."); return; }
+    const types = ["video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm"];
+    const mime = types.find(t => MediaRecorder.isTypeSupported(t));
+    if (!mime) { exportMsg("This browser can't record video."); return; }
+    const ext = mime.startsWith("video/mp4") ? "mp4" : "webm";
+    setPlaying(false); sel = null; renderInspector();
+    recording = true; document.querySelectorAll("button").forEach(b => b.disabled = true);
+    const stream = cv.captureStream(30);
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
+    const chunks = []; rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+    const done = new Promise(r => rec.onstop = r);
+    const total = play().duration + 1.5;
+    rec.start(250);
+    const t0 = performance.now();
+    await new Promise(resolve => {
+      const step = now => {
+        const t = (now - t0) / 1000;
+        render(Math.min(t, play().duration), true);
+        exportMsg(`Recording… ${Math.min(t, total).toFixed(0)} / ${total.toFixed(0)}s`);
+        if (t < total) requestAnimationFrame(step); else resolve();
+      };
+      requestAnimationFrame(step);
+    });
+    rec.stop(); await done;
+    recording = false; document.querySelectorAll("button").forEach(b => b.disabled = false); renderPlaylist();
+    const blob = new Blob(chunks, { type: mime.split(";")[0] });
+    exportMsg("Video ready.");
+    await saveFile(slug() + "." + ext, blob);
+    if (ext === "webm") exportMsg($("exportStatus").textContent + " (WebM: convert to MP4 if your app needs it.)");
+  });
+
+  // ---------- playlist files ----------
+  $("exportPlaylist").addEventListener("click", () => {
+    saveFile("18thman-playlist.json", JSON.stringify({ savedAt: Date.now(), plays: state.plays }, null, 1));
+  });
+  $("importPlaylist").addEventListener("click", () => $("importFile").click());
+  $("importFile").addEventListener("change", async e => {
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      if (!d || !Array.isArray(d.plays) || !d.plays.length) throw new Error("empty");
+      const ids = new Set(state.plays.map(p => p.id));
+      const incoming = d.plays.map(migrate); // throws on a bad entry before anything is added
+      incoming.forEach(p => { if (ids.has(p.id)) p.id = uid("p"); state.plays.push(p); });
+      openPlay(state.plays.length - d.plays.length); changed();
+      exportMsg(`Added ${d.plays.length} play${d.plays.length > 1 ? "s" : ""} from ${f.name}.`);
+    } catch (err) { exportMsg("That file isn't a playlist backup from this app."); }
+  });
+
+  // ---------- boot ----------
+  async function boot() {
+    let data = null;
+    if (DESKTOP) { try { data = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) {} }
+    else { try { const r = await fetch("plays.json", { cache: "no-store" }); if (r.ok) data = await r.json(); } catch (e) {} }
+    if (!data || !data.plays || !data.plays.length) data = JSON.parse($("seed").textContent);
+    let draft = null; try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) {}
+    if (draft && draft.plays && draft.plays.length && (draft.savedAt || 0) >= (data.savedAt || 0) && draft.draftAt) {
+      state = { plays: draft.plays, savedAt: draft.savedAt || 0 }; dirty = true;
+    } else state = { plays: data.plays, savedAt: data.savedAt || 0 };
+    if (!state.plays.length) state.plays.push({ id: uid("p"), title: "NEW PLAY", subtitle: "", duration: 15, ballStart: null, players: [], passes: [], notes: [] });
+    try { state.plays = state.plays.map(migrate); }
+    catch (e) { state = { plays: JSON.parse($("seed").textContent).plays.map(migrate), savedAt: 0 }; dirty = false; }
+    openPlay(0); setStatus(); setTool("select");
+    try { await document.fonts.load(`86px ${MARKER}`); await document.fonts.load(`36px ${HAND}`); } catch (e) {}
+    requestAnimationFrame(frame);
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) setPlaying(true);
+  }
+  boot();
+
+  if (window.claude && window.claude.use) {
+    window.claude.use("artifact").then(a => { artifactCap = a; if (!a) setStatus(dirty ? "Unsaved changes (kept in this browser)" : "Saving isn't available here"); });
+    window.claude.use("downloads").then(d => { downloadsCap = d; if (!d) { $("exportVideo").hidden = true; $("exportPng").hidden = true; exportMsg("Exports aren't available in this view."); } });
+  }
+})();
+</script>
+
+</body>
+</html>

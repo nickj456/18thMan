@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   BookOpen,
   PenTool,
+  Clapperboard,
   CalendarDays,
   MessageSquare,
   User,
@@ -72,6 +73,9 @@ type NavItem = {
   icon: LucideIcon
   isActive: (pathname: string) => boolean
   roles?: UserRole[]
+  // Opens in a new browser tab. For standalone pages outside the app shell
+  // (no sidebar), so the coach keeps their place in 18th Man.
+  newTab?: boolean
 }
 
 const overviewItems: NavItem[] = [
@@ -83,6 +87,7 @@ const overviewItems: NavItem[] = [
 const coachingToolItems: NavItem[] = [
   { href: '/drills', label: 'Drill Library', icon: BookOpen, isActive: (p) => p === '/drills' },
   { href: '/drills/new', label: 'Drill Designer', icon: PenTool, isActive: (p) => p === '/drills/new' },
+  { href: '/play-designer', label: 'Play Designer', icon: Clapperboard, isActive: () => false, newTab: true },
   { href: '/sessions', label: 'Session Planner', icon: CalendarDays, isActive: (p) => p === '/sessions' },
   { href: '/weekly-focus', label: 'Weekly Focus', icon: Target, isActive: (p) => p === '/weekly-focus' },
 ]
@@ -149,6 +154,13 @@ function containsActiveRoute(items: NavItem[], pathname: string) {
   return items.some((item) => item.isActive(pathname))
 }
 
+function navLink(href: string, newTab: boolean | undefined, closeMobile: () => void) {
+  if (newTab) {
+    return <a href={href} target="_blank" rel="noopener noreferrer" onClick={closeMobile} />
+  }
+  return <Link href={href} onClick={closeMobile} />
+}
+
 function NavMenuItems({
   items,
   role,
@@ -162,9 +174,9 @@ function NavMenuItems({
 }) {
   return (
     <>
-      {visibleFor(items, role).map(({ href, label, icon: Icon, isActive }) => (
+      {visibleFor(items, role).map(({ href, label, icon: Icon, isActive, newTab }) => (
         <SidebarMenuItem key={href}>
-          <SidebarMenuButton isActive={isActive(pathname)} render={<Link href={href} onClick={closeMobile} />}>
+          <SidebarMenuButton isActive={isActive(pathname)} render={navLink(href, newTab, closeMobile)}>
             <Icon className="size-4" />
             <span>{label}</span>
           </SidebarMenuButton>
@@ -212,9 +224,9 @@ export function CollapsibleNavGroup({
       </CollapsibleTrigger>
       <CollapsibleContent>
         <SidebarMenuSub>
-          {visibleItems.map(({ href, label: itemLabel, icon: Icon, isActive }) => (
+          {visibleItems.map(({ href, label: itemLabel, icon: Icon, isActive, newTab }) => (
             <SidebarMenuSubItem key={href}>
-              <SidebarMenuSubButton isActive={isActive(pathname)} render={<Link href={href} onClick={closeMobile} />}>
+              <SidebarMenuSubButton isActive={isActive(pathname)} render={navLink(href, newTab, closeMobile)}>
                 <Icon className="size-4" />
                 <span>{itemLabel}</span>
               </SidebarMenuSubButton>
