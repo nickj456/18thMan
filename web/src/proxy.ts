@@ -7,6 +7,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // play-designer/ is a public static page; its fonts and logo don't need a session check.
+    '/((?!_next/static|_next/image|favicon.ico|play-designer/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
