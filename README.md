@@ -1,87 +1,91 @@
-# 18thMan Match Analyst
+# 18th Man
 
-Desktop video analysis application for rugby league coaches.
+A coaching platform built for rugby league coaches, by a former professional player with 20+ years of coaching experience.
 
-## Requirements
+**Live:** [18thman.app](https://18thman.app)
 
-- Node.js 18+
-- Windows 10/11 (for `.exe` packaging; dev mode works on Mac/Linux too)
+18th Man has two parts:
 
-## Setup
+1. **The web platform** for designing drills, planning sessions, analysing players and connecting with other coaches.
+2. **Match Analyst**, a desktop app for tagging match video and capturing player stats.
+
+## Web platform
+
+- **Drill Library**: browse, search and rate drills. Paste a YouTube link and AI turns the video into a structured coaching guide.
+- **Drill Designer**: draw drills on a rugby league pitch with players, runs, equipment and zones. Export as PNG or PDF.
+- **Play Designer**: draw a play and watch it animate. Export as a video clip or image.
+- **Session Planner**: build a timed session from the drill library and export it as a PDF.
+- **Coach Chat**: an AI rugby league assistant, direct messages, and community discussions.
+- **Coach DNA**: a coaching style assessment with a shareable profile card.
+- **Clubs and groups**: manage squads and share content across a club.
+
+Built with Next.js, TypeScript, Supabase (auth, Postgres, realtime, edge functions), the Vercel AI SDK, React Konva and Remotion. Deployed on Vercel.
+
+```bash
+cd web
+npm install
+npm run dev
+npm test
+```
+
+You'll need a `.env.local` with your own Supabase project URL and keys.
+
+## Match Analyst (desktop)
+
+An Electron app for coaches to tag live or recorded match video with keyboard shortcuts.
+
+- Streams video from disk, so 2GB+ files work fine.
+- Everything stays local. Nothing is uploaded.
+- Auto-saves every 500 ms and offers to restore your last session.
+- Exports stats to CSV and PDF, and clips with ffmpeg (bundled, no separate install).
+
+Requires Node.js 18+. Windows 10/11 for the installer; dev mode also runs on Mac and Linux.
 
 ```bash
 npm install
+npm run dev     # Vite + Electron in parallel
+npm run build   # builds the Windows installer into dist/
 ```
 
-## Development
+Installers are published to [Releases](https://github.com/nickj456/18thMan/releases) when a version tag is pushed.
 
-```bash
-npm run dev
-```
+### Keyboard shortcuts
 
-Starts the Vite dev server (port 5173) and Electron in parallel. DevTools open automatically in a detached window.
+**Player selection**
 
-## Build installer
+| Key | Player |
+|---|---|
+| 1 to 9 | Players 1 to 9 |
+| 0 | Player 10 |
+| - | Player 11 |
+| = | Player 12 |
+| Backspace | Player 13 |
 
-```bash
-npm run build
-```
+**Stat capture**
 
-Runs `vite build` (outputs to `dist-react/`) then `electron-builder` (outputs NSIS `.exe` to `dist/`).
+| Key | Stat | Key | Stat |
+|---|---|---|---|
+| T | Try | K | Kick |
+| A | Tackle | P | Penalty won |
+| M | Missed tackle | N | Penalty conceded |
+| C | Carry | E | Error |
+| L | Line break | I | Intercept |
+| S | Support | O | Offload |
+
+Shortcuts are disabled while a text box is focused.
 
 ## Project structure
 
 ```
-src/
-  main/
-    main.js       — Electron main process, IPC handlers, ffmpeg export
-    preload.js    — contextBridge API exposed to renderer
-  renderer/
-    App.jsx       — Root component + global state
-    components/   — All UI components
-    utils/
-      export.js   — CSV download + PDF HTML generator
-  assets/
-    logo.png      — Drop your logo here (displayed in header)
-    icon.ico      — App icon used by Windows installer
+web/        Next.js web platform
+src/        Match Analyst desktop app (Electron + React)
+remotion/   Animated drill and play videos
+supabase/   Edge functions
+docs/       Design plans and specs
 ```
 
-## Adding your logo
+See [CHANGELOG.md](CHANGELOG.md) for release history.
 
-Drop `logo.png` into `src/assets/`. The header displays it automatically; if the file is missing it falls back to the "18thMAN" amber text.
+## Author
 
-## Keyboard shortcuts
-
-### Player selection
-| Key | Player |
-|-----|--------|
-| `1`–`9` | Players 1–9 |
-| `0` | Player 10 |
-| `-` | Player 11 |
-| `=` | Player 12 |
-| `Backspace` | Player 13 |
-
-### Stat capture
-| Key | Stat |
-|-----|------|
-| `T` | Try |
-| `A` | Tackle |
-| `M` | Missed tackle |
-| `C` | Carry |
-| `L` | Line break |
-| `S` | Support |
-| `O` | Offload |
-| `K` | Kick |
-| `P` | Penalty won |
-| `N` | Penalty conceded |
-| `E` | Error |
-| `I` | Intercept |
-
-Shortcuts are disabled when a text input is focused.
-
-## Notes
-
-- Video files are streamed from disk via `file://` — no memory loading. Works with 2GB+ files.
-- All processing is local. Nothing is uploaded.
-- Session auto-saves every 500 ms via `electron-store`. On next launch you'll be offered to restore it.
-- `ffmpeg-static` is bundled in `app.asar.unpacked` so users need no separate install.
+Built by [Nick Johnson](https://github.com/nickj456).

@@ -6,3 +6,11 @@ dist-react/
 .env
 .gstack/
 .worktrees/
+
+# Personal working notes and local tool files (kept on your machine, not in the repo)
+18th-Man-Social-Media-Launch.md
+social-media-claude-instructions.md
+IDEAS.md
+TODOS.md
+.claude/settings.local.json
+.superpowers/
