@@ -748,3 +748,34 @@ ipcMain.handle('email:send', async (_, { to, subject, html, text }) => {
     return { success: false, error: err.message }
   }
 })
+
+// ── IPC: Engine Room link (match stats) ───────────────────────────────────────
+
+ipcMain.handle('engineRoom:load', async () => {
+  const store = await getStore()
+  return store.get('engineRoom', null)
+})
+
+ipcMain.handle('engineRoom:save', async (_, settings) => {
+  const store = await getStore()
+  store.set('engineRoom', settings)
+  return true
+})
+
+ipcMain.handle('engineRoom:getSquad', async () => {
+  try {
+    const store = await getStore()
+    return await require('./engineRoomClient').getSquad(store.get('engineRoom', null) || {})
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
+})
+
+ipcMain.handle('engineRoom:sendMatch', async (_, payload) => {
+  try {
+    const store = await getStore()
+    return await require('./engineRoomClient').sendMatch(store.get('engineRoom', null) || {}, payload)
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
+})

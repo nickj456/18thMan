@@ -48,6 +48,11 @@ contextBridge.exposeInMainWorld('electron', {
   saveEmailSettings: (s) => ipcRenderer.invoke('emailSettings:save', s),
   sendEmail: (args) => ipcRenderer.invoke('email:send', args),
 
+  loadEngineRoomSettings: () => ipcRenderer.invoke('engineRoom:load'),
+  saveEngineRoomSettings: (s) => ipcRenderer.invoke('engineRoom:save', s),
+  getEngineRoomSquad: () => ipcRenderer.invoke('engineRoom:getSquad'),
+  sendToEngineRoom: (payload) => ipcRenderer.invoke('engineRoom:sendMatch', payload),
+
   onUpdateAvailable: (cb) => ipcRenderer.on('update:available', (_, data) => cb(data)),
   onUpdateReady: (cb) => ipcRenderer.on('update:ready', () => cb()),
   onUpdateInstallError: (cb) => ipcRenderer.on('update:install-error', (_, msg) => cb(msg)),
