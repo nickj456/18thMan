@@ -38,6 +38,16 @@ describe('squadToPlayers', () => {
   it('returns an empty list when nobody is picked', () => {
     expect(squadToPlayers(squad, [])).toEqual([])
   })
+  it('keeps the (F)/(B) label as the name so same-name lads stay distinct on the cards', () => {
+    const twins = [
+      { id: 'f', name: 'Sam', position: 'forward', sameName: true },
+      { id: 'b', name: 'Sam', position: 'back', sameName: true },
+      { id: 'x', name: 'Leo', position: 'back', sameName: false },
+    ]
+    expect(squadToPlayers(twins, ['f', 'b', 'x']).map((p) => [p.name, p.engineRoomId])).toEqual([
+      ['Sam (F)', 'f'], ['Sam (B)', 'b'], ['Leo', 'x'],
+    ])
+  })
 })
 
 describe('canReplaceSquad', () => {
@@ -204,5 +214,33 @@ describe('sendSuccessMessage', () => {
   })
   it('appends a plural count', () => {
     expect(sendSuccessMessage({ message: 'Sent.', unknown: 3 })).toBe('Sent. 3 players without an Engine Room link: a coach will match them up.')
+  })
+})
+
+import { renameUpdate, RENAME_LINKED_MESSAGE } from './engineRoom'
+
+describe('renameUpdate', () => {
+  const linked = { id: 1, name: 'Sam (F)', engineRoomId: 'u1' }
+  const unlinked = { id: 2, name: 'Player 2', engineRoomId: null }
+  const never = () => { throw new Error('should not ask') }
+
+  it('renames an unlinked player without asking', () => {
+    expect(renameUpdate(unlinked, ' Jo ', never)).toEqual({ name: 'Jo' })
+  })
+  it('does nothing for a blank or unchanged name, and does not ask', () => {
+    expect(renameUpdate(linked, '   ', never)).toBeNull()
+    expect(renameUpdate(linked, ' Sam (F) ', never)).toBeNull()
+  })
+  it('asks the agreed question for a linked player and keeps the link on OK', () => {
+    let asked = null
+    const out = renameUpdate(linked, 'Sammy', (msg) => { asked = msg; return true })
+    expect(asked).toBe(RENAME_LINKED_MESSAGE)
+    expect(out).toEqual({ name: 'Sammy' })
+  })
+  it('unlinks him on Cancel', () => {
+    expect(renameUpdate(linked, 'Sammy', () => false)).toEqual({ name: 'Sammy', engineRoomId: null })
+  })
+  it('uses the agreed question text', () => {
+    expect(RENAME_LINKED_MESSAGE).toBe('Is this still the same player from Engine Room? Cancel unlinks him, and a coach will match him up in Engine Room.')
   })
 })

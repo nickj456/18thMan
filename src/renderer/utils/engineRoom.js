@@ -12,6 +12,7 @@ const MAX_METRES = 2000
 
 const MATCH_INFO_MESSAGE = 'Add the opposition and date in Match Info first.'
 
+// The card name keeps the (F)/(B) label, so two lads called Sam stay distinct after the squad is confirmed.
 export function squadToPlayers(squad, pickedIds) {
   const picked = new Set(pickedIds)
   return squad
@@ -19,7 +20,7 @@ export function squadToPlayers(squad, pickedIds) {
     .map((s, i) => ({
       id: i + 1,
       number: i + 1,
-      name: s.name,
+      name: squadRowLabel(s).text,
       engineRoomId: s.id,
       comments: '',
       coachScore: null,
@@ -46,6 +47,17 @@ export function templatePlayers(players) {
   return players
     .filter((p) => !p.isOpposition)
     .map((p) => ({ id: p.id, number: p.number, name: p.name, engineRoomId: p.engineRoomId ?? null }))
+}
+
+export const RENAME_LINKED_MESSAGE = 'Is this still the same player from Engine Room? Cancel unlinks him, and a coach will match him up in Engine Room.'
+
+// The updates for renaming a player, or null when nothing changes. A linked player's rename asks
+// `ask(RENAME_LINKED_MESSAGE)`; a false answer also drops his engineRoomId.
+export function renameUpdate(player, newName, ask) {
+  const name = String(newName ?? '').trim()
+  if (!name || name === player.name) return null
+  if (!player.engineRoomId) return { name }
+  return ask(RENAME_LINKED_MESSAGE) ? { name } : { name, engineRoomId: null }
 }
 
 // A hand-added player: full default shape, no engineRoomId (Engine Room will ask who he is).

@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { squadToPlayers, canReplaceSquad, squadRowLabel, templatePlayers, newPlayer, REPLACE_SQUAD_MESSAGE } from '../utils/engineRoom'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { squadToPlayers, canReplaceSquad, squadRowLabel, templatePlayers, newPlayer, renameUpdate, REPLACE_SQUAD_MESSAGE } from '../utils/engineRoom'
 
 const KEY_MAP = {
   '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6,
   '7': 7, '8': 8, '9': 9, '0': 10, '-': 11, '=': 12, 'Backspace': 13,
 }
 
-export default function PlayerSelector({ players, setPlayers, updatePlayer, selectedPlayer, setSelectedPlayer, onPlayerCardClick, onNotesClick, events }) {
+// replaceSquad swaps the whole squad (and clears Undo in App); setPlayers is for edits within the squad.
+export default function PlayerSelector({ players, setPlayers, replaceSquad, updatePlayer, selectedPlayer, setSelectedPlayer, onPlayerCardClick, onNotesClick, events }) {
   const [editing, setEditing]         = useState(null)
   const [editName, setEditName]       = useState('')
+  const editingRef                    = useRef(null) // guards against Enter and blur both committing
   const [newNum, setNewNum]           = useState('')
   const [newName, setNewName]         = useState('')
   const [templates, setTemplates]     = useState([])
@@ -18,6 +20,7 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
   const [pickedIds, setPickedIds]     = useState([])
   const [squadMsg, setSquadMsg]       = useState(null)
   const [squadLoading, setSquadLoading] = useState(false)
+  const [tmplMsg, setTmplMsg]         = useState(null)
 
   const openSquadPicker = async () => {
     setShowTemplates(false)
@@ -35,7 +38,7 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
 
   const confirmSquad = () => {
     if (!canReplaceSquad(events)) { setSquadMsg(REPLACE_SQUAD_MESSAGE); return }
-    setPlayers(squadToPlayers(squad, pickedIds))
+    replaceSquad(squadToPlayers(squad, pickedIds))
     setSelectedPlayer(null)
     setShowSquad(false)
   }
@@ -56,10 +59,12 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
   }
 
   const applyTemplate = (template) => {
+    if (!canReplaceSquad(events)) { setTmplMsg(REPLACE_SQUAD_MESSAGE); return }
     const newPlayers = template.players.map(p => ({
       ...p, comments: '', coachScore: null, parentEmail: '', isOpposition: false
     }))
-    setPlayers(newPlayers)
+    replaceSquad(newPlayers)
+    setSelectedPlayer(null)
     setShowTemplates(false)
   }
 
@@ -79,13 +84,16 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
     return () => window.removeEventListener('keydown', handler)
   }, [players, select])
 
-  const startRename = (player) => { setEditing(player.id); setEditName(player.name) }
-  const commitRename = (id) => {
-    const trimmed = editName.trim()
-    if (trimmed) {
+  const startRename = (player) => { editingRef.current = player.id; setEditing(player.id); setEditName(player.name) }
+  const cancelRename = () => { editingRef.current = null; setEditing(null) }
+  const commitRename = (player) => {
+    if (editingRef.current !== player.id) return
+    editingRef.current = null
+    const updates = renameUpdate(player, editName, (msg) => window.confirm(msg))
+    if (updates) {
       // Route through updatePlayer so existing events get the new name too
-      if (updatePlayer) updatePlayer(id, { name: trimmed })
-      else setPlayers((p) => p.map((pl) => pl.id === id ? { ...pl, name: trimmed } : pl))
+      if (updatePlayer) updatePlayer(player.id, updates)
+      else setPlayers((p) => p.map((pl) => pl.id === player.id ? { ...pl, ...updates } : pl))
     }
     setEditing(null)
   }
@@ -136,8 +144,8 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
                   autoFocus
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  onBlur={() => commitRename(player.id)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') commitRename(player.id); if (e.key === 'Escape') setEditing(null) }}
+                  onBlur={() => commitRename(player)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') commitRename(player); if (e.key === 'Escape') cancelRename() }}
                   onClick={(e) => e.stopPropagation()}
                   style={{ width: '100%', textAlign: 'center', fontSize: 10, padding: '1px 2px' }}
                 />
@@ -149,6 +157,13 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
                 }}>
                   {player.name}
                 </span>
+              )}
+              {player.engineRoomId && (
+                <span title="Linked to Engine Room" style={{
+                  fontFamily: 'var(--font-ui)', fontSize: 7, fontWeight: 800, letterSpacing: 0.5,
+                  color: 'var(--muted-2)', border: '1px solid var(--border)', borderRadius: 2,
+                  padding: '0 3px', lineHeight: '10px',
+                }}>ER</span>
               )}
               {/* Notes icon — only show for non-opposition players */}
               {!player.isOpposition && onNotesClick && (
@@ -182,6 +197,7 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
           <div style={{ padding: '5px 8px', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 800, letterSpacing: 1, color: 'var(--muted)', textTransform: 'uppercase' }}>
             Load Squad Template
           </div>
+          {tmplMsg && <div style={{ padding: '8px', fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--red)' }}>{tmplMsg}</div>}
           {templates.length === 0 ? (
             <div style={{ padding: '10px 8px', fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--muted)' }}>
               No templates saved yet. Rename your players then click "Save Template".
@@ -263,7 +279,7 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
         </div>
         <div style={{ display: 'flex', gap: 4, padding: '3px 6px 5px', borderTop: '1px solid var(--border)' }}>
           <button onClick={saveAsTemplate} style={tmplBtn} title="Save squad as reusable template">SAVE TEMPLATE</button>
-          <button onClick={() => { loadTemplates(); setShowSquad(false); setShowTemplates(s => !s) }} style={tmplBtn}>LOAD TEMPLATE</button>
+          <button onClick={() => { loadTemplates(); setTmplMsg(null); setShowSquad(false); setShowTemplates(s => !s) }} style={tmplBtn}>LOAD TEMPLATE</button>
           <button onClick={openSquadPicker} style={tmplBtn} title="Pick today's players from Engine Room">FROM ENGINE ROOM</button>
         </div>
       </div>

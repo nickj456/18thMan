@@ -238,6 +238,7 @@ export default function App() {
     setVideoFile(vf || null)
     setPlayers(data.players?.map(p => ({ comments:'', coachScore:null, parentEmail:'', isOpposition:false, ...p })) || makeDefaultSquad())
     setEvents(data.events || [])
+    setUndoStack([]) // a deleted tag from the previous session must not land in this one
     setClips(data.clips || [])
     setOutputFolder(data.outputFolder || null)
     setHalf(data.half || 1)
@@ -389,6 +390,12 @@ export default function App() {
   }, [])
 
   // ── Player management ─────────────────────────────────────────────────────
+  // A new squad means new players behind the same ids, so a deleted tag must not come back via Undo.
+  const replaceSquad = useCallback((newPlayers) => {
+    setPlayers(newPlayers)
+    setUndoStack([])
+  }, [])
+
   const updatePlayer = useCallback((playerId, updates) => {
     setPlayers(prev => prev.map(p => p.id === playerId ? { ...p, ...updates } : p))
     setSelectedPlayer(prev => prev?.id === playerId ? { ...prev, ...updates } : prev)
@@ -527,7 +534,7 @@ export default function App() {
         <LeftPanel
           style={leftStyle}
           videoRef={videoRef} videoFile={videoFile} setVideoFile={setVideoFile}
-          players={effectivePlayers} setPlayers={setPlayers} updatePlayer={updatePlayer}
+          players={effectivePlayers} setPlayers={setPlayers} replaceSquad={replaceSquad} updatePlayer={updatePlayer}
           selectedPlayer={selectedPlayer} setSelectedPlayer={setSelectedPlayer}
           onPlayerCardClick={handlePlayerCardClick}
           onNotesClick={(player) => setNotesPlayer(player)}
