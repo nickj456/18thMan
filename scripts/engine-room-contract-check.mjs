@@ -1,7 +1,13 @@
 // Contract smoke test: build a match payload the way the app does, then run it through Engine Room's real parser.
-// Read-only towards er-matches. Run: npx tsx scripts/engine-room-contract-check.mjs
+// Read-only towards the Engine Room repo. Run: npx tsx scripts/engine-room-contract-check.mjs
+// The Engine Room repo path comes from the ENGINE_ROOM_DIR env var (default C:/Users/nickj/er-matches), e.g.
+//   ENGINE_ROOM_DIR=/path/to/er-matches npx tsx scripts/engine-room-contract-check.mjs
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { buildMatchPayload } from '../src/renderer/utils/engineRoom.js'
-import { parseAnalystMatch } from 'file:///C:/Users/nickj/er-matches/lib/analyst.ts'
+
+const engineRoomDir = process.env.ENGINE_ROOM_DIR || 'C:/Users/nickj/er-matches'
+const { parseAnalystMatch } = await import(pathToFileURL(join(engineRoomDir, 'lib', 'analyst.ts')).href)
 
 const today = new Date().toISOString().slice(0, 10)
 const players = [
