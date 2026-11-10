@@ -55,7 +55,7 @@ export default async function ShopLibraryPage() {
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="text-5xl mb-4">📚</div>
           <p className="font-medium">Your library is empty</p>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="hide-in-app text-sm text-muted-foreground mt-1">
             Browse the <Link href="/shop" className="text-indigo-400 hover:underline">shop</Link> to find coaching resources
           </p>
         </div>

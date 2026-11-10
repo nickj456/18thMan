@@ -78,7 +78,7 @@ export default async function GameStatsListPage({
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-4">
           <p className="text-sm text-amber-300 font-medium">Upgrade required</p>
           <p className="text-xs text-amber-400/70 mt-1">
-            Game Stats is available on the Club plan. Ask your club admin to upgrade.
+            Game Stats is available on the Club plan.<span className="hide-in-app"> Ask your club admin to upgrade.</span>
           </p>
         </div>
       )}

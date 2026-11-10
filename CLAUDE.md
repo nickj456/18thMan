@@ -76,6 +76,12 @@ When Groq retires a model: add the id to `DECOMMISSIONED_GROQ_MODELS`, repoint t
 - Tool palette data lives in `components/designer/tools.tsx` (`TOOL_META`, `TOOL_GROUPS`, `TOOL_SHORTCUTS`, the glyphs) — `Toolbar.tsx` only renders it. To add a tool: extend `ToolType` in `types.ts` (the exhaustive `TOOL_META` record then fails typecheck until it has a label), put it in exactly one `TOOL_GROUPS` entry, give it a glyph, and add it to `ALL_TOOLS` in `tools.test.ts`, which checks grouping and shortcut uniqueness only for the tools in that list
 - Undo history is the pure reducer in `components/designer/history.ts` (`pushHistory` / `undoHistory` / `currentState`): entries and cursor are one value. Never split them into separate `useState` slots — two pushes in one tick (a Konva drag-end plus a draw-tool mouse-up) desynced them and crashed the page (fixed in v1.13.0.0)
 
+### Android app (Play Store)
+- The Android app is a Trusted Web Activity wrapping 18thman.app — no separate codebase. It is **consumption-only**: Play policy bars selling subscriptions through Stripe in-app, so all purchase UI is hidden there. Release steps: [docs/android-release.md](docs/android-release.md).
+- Detection lives in `web/src/lib/app-shell.ts` (sets `<html data-app-shell="twa">` before paint). Any new purchase surface — checkout, billing portal, prices, "upgrade" copy — needs `className="hide-in-app"` (or `<AndroidAppNotice>` for an in-app replacement). Links to `/pricing` (relative or `https://18thman.app/pricing`) are hidden automatically by href; `router.push('/pricing')`, prices and upgrade copy are not. Text built in JS (toasts) uses `isInAndroidApp()` at event time; AI prompts keep prices inside `<!-- plans:start/end -->` blocks (`lib/ai/app-shell-prompt.ts`, guarded by its test).
+- The flag lives in per-tab sessionStorage, so pages opened with `target="_blank"` lose it — never put purchase UI on a page that's only reached in a new tab.
+- `ANDROID_PACKAGE_NAME` is permanent once published. Never commit a keystore — the repo is public.
+
 ### Security
 - **Never fetch a user-supplied URL directly.** Any server-side fetch of a URL a user gave us (link previews, etc.) must go through `web/src/lib/ssrf.ts`, which validates the resolved IP — and every redirect hop — against private/internal ranges (including IPv4-mapped IPv6). See [TESTING.md](TESTING.md) for the guard's test coverage.
 - **Club billing routes require `isClubAdmin()`.** Stripe checkout and portal routes (`web/src/app/api/stripe/`) must verify the caller administers the club before starting or managing a subscription — never trust a `clubId` from the request body alone.
@@ -128,6 +134,7 @@ This is separate from `profiles.role` (admin/coach/viewer, above) — a tier is 
 - `web/src/lib/subscription-limits.ts` (the actual enforced numbers) and `web/src/lib/subscription.ts` (tier resolution).
 - `web/src/app/pricing/page.tsx` (reads the limit constants directly — don't hardcode numbers there; if a bullet can't reference the constant, update it by hand).
 - `web/src/app/api/chat/route.ts`'s `SYSTEM_PROMPT` (the AI coach describes tiers/prices in plain text — it drifted out of sync with the real Club price and was missing Coach Pro entirely before this table existed, so treat this as a known drift risk, not a one-time fix).
+- `web/src/lib/help/platform-guide.md` (the help widget quotes it). Prices and upgrade directions go inside its `<!-- plans:start/end -->` blocks so the Android app can strip them.
 
 **Client-import rule:** `subscription.ts` also exports server-only DB functions (`getEffectiveTier`, `canCreateDrill`, etc.) that depend on `next/headers` via the Supabase server client. A `'use client'` component that imports *anything* from `subscription.ts` — even just a constant — pulls that server-only code into the client bundle and breaks `next build` (dev mode won't catch it). Client components must import limits from `subscription-limits.ts` directly, never from `subscription.ts`.
 

@@ -129,16 +129,32 @@ is not a runtime boundary and a server action argument is client-controlled.
 one-liner. Pre-existing, deliberately left out of the v1.11.0.1 diff to keep
 that change scoped to the model outage.
 
+## Android app
+
+**Self-service account deletion (blocks the Play Store release)**
+**Priority:** P1
+Google Play requires apps with sign-up to let users delete their account in the app
+and through a web link. Only admins can delete users today (`admin/users/actions.ts`),
+but the privacy policy says coaches can do it "from your profile settings". Needs a
+design decision on clubs the coach owns and active Stripe subscriptions. See
+`docs/android-release.md`.
+
+**Let coaches upgrade inside the Android app**
+**Priority:** P3
+The app is consumption-only (v1.15.0.0), so new subscriptions happen on the website. If
+Android installs matter, look at UK user-choice billing or Play Billing (Digital Goods
+API), which means a second billing source feeding `getEffectiveTier`.
+
+**Landscape on Android tablets**
+**Priority:** P3
+`manifest.ts` locks `orientation: 'portrait'`, and PWABuilder carries that into the
+Android app unless it's overridden when generating it. The drill designer wants
+landscape on tablets. Decide whether to switch the manifest to `'any'`; that also
+changes installed PWAs on phones.
+
 ## Help widget
 
-**Help-widget knowledge base quotes stale prices and tier limits**
-**Priority:** P1
-Found during the 1.13.0.0 docs sync (2026-10-06). `web/src/lib/help/platform-guide.md`
-is read at runtime by `api/help-chat/route.ts` and quoted to users. It says Club is
-£19.99/mo (pricing page: £24.99), that the free tier has unlimited session plans
-(`FREE_SESSION_LIMIT = 1`), that PDF export needs Club (Coach Pro has it), and it does
-not mention Coach Pro at all. Bring it in line with the tier table in CLAUDE.md and add
-it to the "keep in sync" list there alongside the chat SYSTEM_PROMPT.
+_No open items._
 
 ## Drill designer
 
@@ -208,6 +224,16 @@ but signup doesn't check. Add a case-insensitive lookup in the signup action (or
 a unique index on `lower(username)` once existing pairs are resolved).
 
 ## Completed
+
+**Help-widget knowledge base quotes stale prices and tier limits**
+**Priority:** P1
+Found during the 1.13.0.0 docs sync (2026-10-06). `web/src/lib/help/platform-guide.md`
+is read at runtime by `api/help-chat/route.ts` and quoted to users. It says Club is
+£19.99/mo (pricing page: £24.99), that the free tier has unlimited session plans
+(`FREE_SESSION_LIMIT = 1`), that PDF export needs Club (Coach Pro has it), and it does
+not mention Coach Pro at all. Bring it in line with the tier table in CLAUDE.md and add
+it to the "keep in sync" list there alongside the chat SYSTEM_PROMPT.
+**Completed:** v1.15.0.0 (2026-11-10)
 
 **Race condition let two concurrent submissions from the same device both pass `feedback_responses` dedup check**
 Fixed in `worktree-feedback-public-submission` (migration `119_feedback_responses_dedup_unique.sql`).

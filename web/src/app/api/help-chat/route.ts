@@ -4,6 +4,7 @@ import { streamText } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { isAndroidAppRequest, promptForShell } from '@/lib/ai/app-shell-prompt'
 
 const HOURLY_LIMIT = 20
 const DAILY_LIMIT = 50
@@ -111,7 +112,8 @@ export async function POST(req: Request) {
       : false
     const tier = profile?.subscription_tier ?? 'free'
 
-    const systemPrompt = `You are the 18th Man support assistant. You help coaches and users with:
+    // Android app: plan blocks in the guide are dropped (lib/ai/app-shell-prompt.ts).
+    const systemPrompt = promptForShell(`You are the 18th Man support assistant. You help coaches and users with:
 - How to use the 18th Man platform (features, navigation, account)
 - Their account and subscription (personalised based on context below)
 - The GameSenseRL coaching methodology
@@ -139,7 +141,7 @@ User context:
 ${platformGuide}
 
 --- GAMESENSERL METHODOLOGY ---
-${gameSenseRL}`
+${gameSenseRL}`, isAndroidAppRequest(body))
 
     const history = (messages as { role: string; content?: string; parts?: { type: string; text?: string }[] }[])
       .filter(m => m.role === 'user' || m.role === 'assistant')

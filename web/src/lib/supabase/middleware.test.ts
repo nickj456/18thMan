@@ -54,6 +54,19 @@ describe('updateSession', () => {
       const res = await updateSession(req('/drills'))
       expect(res.headers.get('location')).toBeNull()
     })
+
+    it('keeps the Android app marker on the login URL so the app is detected there', async () => {
+      const res = await updateSession(req('/dashboard?source=twa'))
+      const location = new URL(res.headers.get('location')!)
+      expect(location.pathname).toBe('/login')
+      expect(location.searchParams.get('source')).toBe('twa')
+      expect(location.searchParams.get('next')).toBe('/dashboard?source=twa')
+    })
+
+    it('only carries the exact Android marker', async () => {
+      const res = await updateSession(req('/dashboard?source=email'))
+      expect(new URL(res.headers.get('location')!).searchParams.has('source')).toBe(false)
+    })
   })
 
   it('lets signed-in coaches into Coach DNA', async () => {

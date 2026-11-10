@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2, Save, Monitor, Clapperboard, Video, ImageDown, Maximize2, Minimize2, Globe, Users, Lock, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { UpgradePrompt, useUpgradePrompt } from '@/components/ui/UpgradePrompt'
+import { isInAndroidApp } from '@/lib/app-shell'
 
 const AGE_GROUPS = [
   'Mini (U6–U8)',
@@ -423,7 +424,9 @@ export function DrillDesigner({ categories, initialDrill, userClubId, userClubNa
               toast.error(
                 hasClubAccess
                   ? 'Join or create a club to make drills club-private.'
-                  : 'Upgrade to Club to make drills club-private.'
+                  : isInAndroidApp()
+                    ? "Club-private drills aren't included in your current plan."
+                    : 'Upgrade to Club to make drills club-private.'
               )
               return
             }

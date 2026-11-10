@@ -6,3 +6,12 @@ dist-react/
 .env
 .gstack/
 .worktrees/
+
+# Android app signing keys and build output (docs/android-release.md).
+# The repo is public: a committed keystore lets anyone sign updates as 18th Man.
+*.keystore
+*.jks
+signing-key-info.txt
+*.aab
+*.apk
+android-app/

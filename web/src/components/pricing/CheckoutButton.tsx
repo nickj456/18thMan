@@ -44,7 +44,8 @@ export function CheckoutButton({ plan, clubId, label, variant }: CheckoutButtonP
   }
 
   return (
-    <div>
+    // hide-in-app: the Android app is consumption-only (lib/app-shell.ts).
+    <div className="hide-in-app">
       <button
         onClick={handleClick}
         disabled={loading}

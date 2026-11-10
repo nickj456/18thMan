@@ -8,6 +8,7 @@ import { GuardianConsentToggle } from './GuardianConsentToggle'
 import { getCurrentSeasonLabel } from '@/lib/season'
 import { CheckoutButton } from '@/components/pricing/CheckoutButton'
 import { ClubCheckoutButton } from '@/components/pricing/ClubCheckoutButton'
+import { AndroidAppNotice } from '@/components/AndroidAppNotice'
 
 export const metadata = { title: 'My Club — 18th Man' }
 export const dynamic = 'force-dynamic'
@@ -189,10 +190,13 @@ export default async function ClubPage({
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <Building2 size={28} className="text-zinc-700" />
           <p className="text-sm text-zinc-500">You&apos;re not a member of any club yet.</p>
-          <p className="text-xs text-zinc-600">Ask your club admin to share their invite link with you — or get started below.</p>
+          <p className="text-xs text-zinc-600">Ask your club admin to share their invite link with you<span className="hide-in-app"> — or get started below</span>.</p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <AndroidAppNotice>Creating a club or upgrading isn&rsquo;t available in the Android app.</AndroidAppNotice>
+
+        {/* hide-in-app: the Android app is consumption-only (lib/app-shell.ts). */}
+        <div className="hide-in-app grid gap-4 sm:grid-cols-2">
           <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-3">
             <div className="flex items-center gap-2">
               <Building2 size={16} className="text-amber-400" />
@@ -216,7 +220,7 @@ export default async function ClubPage({
           </div>
         </div>
 
-        <p className="text-xs text-zinc-600 text-center">
+        <p className="hide-in-app text-xs text-zinc-600 text-center">
           <Link href="/pricing" className="text-indigo-400 hover:text-indigo-300">See full plans, annual pricing, and savings →</Link>
         </p>
       </div>

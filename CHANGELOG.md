@@ -2,6 +2,18 @@
 
 All notable changes to 18th Man are documented here.
 
+## [1.15.0.0] - 2026-11-10
+
+### Added
+- **18th Man is ready to ship as an Android app on Google Play.** The app opens 18thman.app full-screen, so every website update reaches it straight away. `docs/android-release.md` walks through generating the app, uploading it to Play Console and linking it to the site.
+- **The Android app follows Google Play's payment rules.** Inside the app, plans, prices, checkout, billing, shop purchases, Coaching Eye requests and upgrade buttons are hidden. Coaches who already pay sign in and keep everything they have, and new subscriptions happen on the website. Upgrade prompts still explain what isn't on a coach's plan, and the sidebar's Shop becomes **My Library** for resources they already own.
+- **The AI coach and help assistant don't quote prices or push upgrades inside the Android app.**
+- **An offline screen.** If a coach loses signal and opens a page, they see a "You're offline" screen with a Try again button instead of the browser's error page.
+
+### Changed
+- The help assistant now has the right prices and limits. It quoted the Club plan at £19.99 instead of £24.99, said the free plan had unlimited session plans, and didn't know Coach Pro existed.
+- The site's app manifest now has a stable ID, a scope and separate standard and maskable icons, as app-store packaging tools expect.
+
 ## [1.14.0.0] - 2026-10-16
 
 ### Added

@@ -93,6 +93,17 @@ describe('AppSidebar', () => {
     expect(screen.getByRole('link', { name: /Drill Designer/i })).not.toHaveAttribute('target')
   })
 
+  it('swaps Shop for My Library in the Android app (consumption-only, lib/app-shell.ts)', () => {
+    renderSidebar('coach')
+    // Visibility itself is CSS (tested in app-shell-ui.test.tsx); here, the right class on the right item.
+    const shopItem = screen.getByRole('link', { name: 'Shop' }).closest('li')
+    const libraryItem = screen.getByRole('link', { name: 'My Library' }).closest('li')
+    expect(shopItem).toHaveClass('hide-in-app')
+    expect(libraryItem).toHaveClass('only-in-app')
+    expect(screen.getByRole('link', { name: 'My Library' })).toHaveAttribute('href', '/shop/library')
+    expect(screen.getByRole('link', { name: /Dashboard/i }).closest('li')).not.toHaveClass('hide-in-app')
+  })
+
   it('marks the active route link so it can be styled distinctly from inactive links', () => {
     renderSidebar('admin', '/coach-dna')
 

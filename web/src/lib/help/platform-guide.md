@@ -26,7 +26,7 @@ Build and manage training sessions.
 - Add drills by searching the library, set duration for each, drag to reorder.
 - Total session time is calculated automatically.
 - Share a session via a private link — no login required for the recipient.
-- Export as PDF (Club tier required).
+- Export as PDF (Coach Pro or Club required).
 - Generate an AI summary of any session from its detail page.
 - Deliver mode (`/sessions/[id]/deliver`) walks you through each drill in sequence.
 
@@ -41,7 +41,9 @@ Three chat modes:
 Each user belongs to one club. Club admins manage membership, invite users, and configure the club.
 - Club-tier benefits: unlimited drills, club-private drills, coaching groups, collaborative sessions, AI guidance, PDF export, unlimited AI chat.
 - New users get a 48-hour full-access trial the first time they save a drill.
-- Pricing: £19.99/month per club.
+<!-- plans:start -->
+- Pricing: £24.99/month or £219/year per club, covering every coach in it.
+<!-- plans:end -->
 
 ## My Groups (`/groups`)
 Coaching groups are sub-teams within your club (e.g. Forwards Unit, Attack Group). Requires club membership.
@@ -74,10 +76,14 @@ Update account preferences, notification settings, and connected accounts.
 Edit your public coaching profile — display name, bio, club, coaching level, avatar, and social links.
 
 ## Subscriptions & Billing
-- Free tier: unlimited drill designer use (saving starts a one-time 48h trial), unlimited sessions, 5 AI messages/day, community access.
-- Club tier (£19.99/month): everything unlimited, coaching groups, collaborative sessions, AI guidance, PDF export.
+- Free tier: unlimited drill designer use (saving starts a one-time 48h trial), 1 session plan, 5 AI messages/day, community access.
+- Coach Pro: unlimited drills, PDF export, unlimited AI chat for one coach. No club features.
+- Club tier: everything in Coach Pro for every coach in the club, plus club-private drills, coaching groups (up to 5), collaborative sessions and AI guidance.
 - Trial: 48-hour full Club access, triggered automatically the first time a free-tier coach tries to save a drill.
-- To upgrade: visit `/clubs` and ask your club admin, or go to `/settings`.
+<!-- plans:start -->
+- Prices: Coach Pro £9.99/month or £89/year; Club £24.99/month or £219/year per club.
+- To upgrade: see [Plans](/pricing), or ask your club admin.
+<!-- plans:end -->
 
 ## Resources
 Static reference pages available to all users from the sidebar:

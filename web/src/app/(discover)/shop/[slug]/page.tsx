@@ -7,6 +7,7 @@ import { getEffectiveTier } from '@/lib/subscription'
 import { canAccessProduct, tierMeetsRequirement } from '@/lib/shop'
 import { BuyButton } from '@/components/shop/BuyButton'
 import { DownloadButton } from '@/components/shop/DownloadButton'
+import { AndroidAppNotice } from '@/components/AndroidAppNotice'
 import type { Product } from '@/lib/supabase/types'
 
 const CONTENT_ICON = { pdf: FileText, video: Video, bundle: Package } as const
@@ -111,7 +112,8 @@ export default async function ProductPage({
             ) : price ? (
               <>
                 <BuyButton productId={p.id} priceLabel={price} />
-                <p className="text-xs text-zinc-600 text-center">
+                <AndroidAppNotice>This resource can&rsquo;t be bought in the Android app.</AndroidAppNotice>
+                <p className="hide-in-app text-xs text-zinc-600 text-center">
                   {user
                     ? "You'll be able to download it instantly from your library."
                     : "We'll email you a download link once payment goes through."}
@@ -119,8 +121,9 @@ export default async function ProductPage({
               </>
             ) : user ? (
               <p className="text-sm text-zinc-500">
-                This content is included with a subscription. Visit{' '}
-                <Link href="/settings" className="text-indigo-400 hover:underline">Settings</Link> to upgrade.
+                This content is included with a subscription.
+                <span className="hide-in-app">{' '}Visit{' '}
+                <Link href="/settings" className="text-indigo-400 hover:underline">Settings</Link> to upgrade.</span>
               </p>
             ) : (
               <p className="text-sm text-zinc-500">

@@ -316,3 +316,25 @@ html:not(.dark) {
 
 .ai-prose > *:first-child { margin-top: 0; }
 .ai-prose > *:last-child { margin-bottom: 0; }
+/* ── Android app (Trusted Web Activity) ──────────────────────────────────────
+ * <html data-app-shell="twa"> is set before first paint by APP_SHELL_BOOTSTRAP_SCRIPT
+ * (lib/app-shell.ts). The Play Store app is consumption-only, so every way to buy
+ * is hidden there. Links to /pricing are caught here by href, so new upgrade CTAs
+ * are covered automatically; wrap any surrounding sales copy in .hide-in-app. */
+html[data-app-shell="twa"] .hide-in-app,
+html[data-app-shell="twa"] a[href="/pricing"],
+html[data-app-shell="twa"] a[href="/pricing/"],
+html[data-app-shell="twa"] a[href^="/pricing?"],
+html[data-app-shell="twa"] a[href^="/pricing#"],
+html[data-app-shell="twa"] a[href$="18thman.app/pricing"],
+html[data-app-shell="twa"] a[href*="18thman.app/pricing?"],
+html[data-app-shell="twa"] a[href="#pricing"],
+html[data-app-shell="twa"] [id="pricing"],
+/* Landing page Coaching Eye section: a paid service, also hidden in the app. */
+html[data-app-shell="twa"] a[href="#services"],
+html[data-app-shell="twa"] [id="services"] {
+  display: none !important;
+}
+html:not([data-app-shell="twa"]) .only-in-app {
+  display: none !important;
+}
