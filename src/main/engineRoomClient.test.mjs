@@ -74,3 +74,58 @@ describe('sendMatch', () => {
     expect(res.error).toMatch(/^Couldn't reach Engine Room/)
   })
 })
+
+describe('address checks', () => {
+  const HTTPS_ONLY = 'Use the https:// address for Engine Room.'
+  it('refuses http:// and sends nothing', async () => {
+    const fetchImpl = vi.fn()
+    expect(await getSquad({ url: 'http://er.example.com', code: 'x' }, fetchImpl)).toEqual({ success: false, error: HTTPS_ONLY })
+    expect(await sendMatch({ url: 'http://er.example.com', code: 'x' }, {}, fetchImpl)).toEqual({ success: false, error: HTTPS_ONLY })
+    expect(fetchImpl).not.toHaveBeenCalled()
+  })
+  it('refuses an address that is not a URL or uses another scheme', async () => {
+    const fetchImpl = vi.fn()
+    expect(await getSquad({ url: 'er.example.com', code: 'x' }, fetchImpl)).toEqual({ success: false, error: HTTPS_ONLY })
+    expect(await getSquad({ url: 'ftp://er.example.com', code: 'x' }, fetchImpl)).toEqual({ success: false, error: HTTPS_ONLY })
+    expect(await getSquad({ url: 'http://localhost.evil.com', code: 'x' }, fetchImpl)).toEqual({ success: false, error: HTTPS_ONLY })
+    expect(fetchImpl).not.toHaveBeenCalled()
+  })
+  it('allows plain http for localhost and 127.0.0.1', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(okResponse({ players: [] }))
+    expect((await getSquad({ url: 'http://localhost:3000', code: 'x' }, fetchImpl)).success).toBe(true)
+    expect((await getSquad({ url: 'http://127.0.0.1:3000/', code: 'x' }, fetchImpl)).success).toBe(true)
+    expect(fetchImpl.mock.calls.map((c) => c[0])).toEqual([
+      'http://localhost:3000/api/analyst/squad',
+      'http://127.0.0.1:3000/api/analyst/squad',
+    ])
+  })
+  it('refuses to follow redirects', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(okResponse({ players: [] }))
+    await getSquad(settings, fetchImpl)
+    await sendMatch(settings, {}, fetchImpl)
+    expect(fetchImpl.mock.calls.map((c) => c[1].redirect)).toEqual(['error', 'error'])
+  })
+})
+
+describe('a 2xx reply that is not from Engine Room', () => {
+  const NOT_ER = "That address isn't Engine Room. Check it in ⚙ Settings → Engine Room."
+  const htmlResponse = { ok: true, status: 200, json: async () => { throw new SyntaxError('Unexpected token <') } }
+
+  it('getSquad refuses a 200 HTML page', async () => {
+    expect(await getSquad(settings, vi.fn().mockResolvedValue(htmlResponse))).toEqual({ success: false, error: NOT_ER })
+  })
+  it('getSquad refuses JSON without a players array', async () => {
+    expect(await getSquad(settings, vi.fn().mockResolvedValue(okResponse({ ok: true })))).toEqual({ success: false, error: NOT_ER })
+    expect(await getSquad(settings, vi.fn().mockResolvedValue(okResponse({ players: 'x' })))).toEqual({ success: false, error: NOT_ER })
+  })
+  it('getSquad accepts an empty players array', async () => {
+    expect(await getSquad(settings, vi.fn().mockResolvedValue(okResponse({ players: [] })))).toEqual({ success: true, players: [] })
+  })
+  it('sendMatch refuses a 200 HTML page', async () => {
+    expect(await sendMatch(settings, {}, vi.fn().mockResolvedValue(htmlResponse))).toEqual({ success: false, error: NOT_ER })
+  })
+  it('sendMatch refuses JSON without a string matchId', async () => {
+    expect(await sendMatch(settings, {}, vi.fn().mockResolvedValue(okResponse({ message: 'ok' })))).toEqual({ success: false, error: NOT_ER })
+    expect(await sendMatch(settings, {}, vi.fn().mockResolvedValue(okResponse({ matchId: 5, message: 'ok' })))).toEqual({ success: false, error: NOT_ER })
+  })
+})
