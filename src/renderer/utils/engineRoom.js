@@ -98,3 +98,20 @@ export function buildMatchPayload(sessionId, matchInfo, players, events) {
       }),
   }
 }
+
+export const UNSAVED_MESSAGE = 'Save the session first (💾) so Engine Room can recognise it if you send it again.'
+export const SEND_CONFIRM_MESSAGE = 'Send to Engine Room? This replaces anything already sent for this match, including any changes a coach made there. A coach checks it and releases it to the players.'
+
+// Decides whether the Send button may go ahead: { ok: false, message } to show, or { ok: true, confirm } to ask.
+export function sendCheck(sessionId, matchInfo) {
+  if (!sessionId) return { ok: false, message: UNSAVED_MESSAGE }
+  const problem = matchInfoProblem(matchInfo)
+  if (problem) return { ok: false, message: problem }
+  return { ok: true, confirm: SEND_CONFIRM_MESSAGE }
+}
+
+// The notice after a good send; `unknown` is how many players had no Engine Room link.
+export function sendSuccessMessage({ message, unknown }) {
+  if (!(unknown > 0)) return message
+  return `${message} ${unknown} ${unknown === 1 ? 'player' : 'players'} without an Engine Room link: a coach will match them up.`
+}

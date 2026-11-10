@@ -507,6 +507,7 @@ export default function App() {
         sharedReports={sharedReports}
         onSaveSession={handleSaveSession}
         isDirty={isDirty}
+        currentSessionId={currentSessionId}
         onCheckForUpdates={async () => { setUpdateChecking(true); setUpToDate(false); await window.electron?.checkForUpdates() }}
         updateChecking={updateChecking}
         upToDate={upToDate}

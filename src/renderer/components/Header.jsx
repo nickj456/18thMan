@@ -3,13 +3,14 @@ import { exportCsv, generatePdfHtml } from '../utils/export'
 import EmailSettings from './EmailSettings'
 import EngineRoomSettings from './EngineRoomSettings'
 import ExportModal from './ExportModal'
+import { buildMatchPayload, sendCheck, sendSuccessMessage } from '../utils/engineRoom'
 
 export default function Header({
   videoFile, events, clips, players, outputFolder, showNotification,
   matchInfo, setMatchInfo, sharedReports,
   onSaveSession, onOpenLibrary, onPresent, sessionName,
   authProfile, isTrial, trialDaysLeft, onSignOut,
-  isDirty,
+  isDirty, currentSessionId,
   onCheckForUpdates, updateChecking, upToDate,
 }) {
   const [showInfo, setShowInfo]                   = useState(false)
@@ -49,6 +50,19 @@ export default function Header({
       showNotification(`PDF saved: match-report-${ts}.pdf`)
     } catch {
       showNotification('PDF export failed', 'error')
+    }
+  }
+
+  const handleSendToEngineRoom = async () => {
+    const check = sendCheck(currentSessionId, matchInfo)
+    if (!check.ok) { showNotification(check.message, 'error'); return }
+    if (!window.confirm(check.confirm)) return
+    try {
+      const res = await window.electron.sendToEngineRoom(buildMatchPayload(currentSessionId, matchInfo, players, events))
+      if (res?.success) showNotification(sendSuccessMessage(res))
+      else showNotification(res?.error || "Couldn't reach Engine Room. Check the address and your internet.", 'error')
+    } catch {
+      showNotification("Couldn't reach Engine Room. Check the address and your internet.", 'error')
     }
   }
 
@@ -165,6 +179,9 @@ export default function Header({
 
         {/* Export — opens configurable modal */}
         <Btn onClick={() => setShowExportModal(true)}>Export</Btn>
+
+        {/* Send the tagged session to Engine Room as a match */}
+        <Btn onClick={handleSendToEngineRoom}>SEND TO ENGINE ROOM</Btn>
 
         {/* Present */}
         <Btn onClick={onPresent} style={{ background: 'rgba(83,74,183,0.15)', borderColor: 'var(--purple)', color: 'var(--purple)' }}>

@@ -171,3 +171,38 @@ describe('REPLACE_SQUAD_MESSAGE', () => {
     expect(REPLACE_SQUAD_MESSAGE).toBe('Get the squad before you start tagging. Your tags are linked to the current players.')
   })
 })
+
+import { sendCheck, sendSuccessMessage, UNSAVED_MESSAGE, SEND_CONFIRM_MESSAGE } from './engineRoom'
+
+describe('sendCheck', () => {
+  const info = { opposition: 'Hunslet', date: '2026-11-07' }
+  it('refuses an unsaved session', () => {
+    expect(sendCheck(null, info)).toEqual({ ok: false, message: UNSAVED_MESSAGE })
+    expect(UNSAVED_MESSAGE).toBe('Save the session first (💾) so Engine Room can recognise it if you send it again.')
+  })
+  it('refuses match info with a problem', () => {
+    expect(sendCheck('lx2abc', { opposition: '', date: '2026-11-07' })).toEqual({
+      ok: false, message: 'Add the opposition and date in Match Info first.',
+    })
+  })
+  it('checks the save before the match info', () => {
+    expect(sendCheck(null, {}).message).toBe(UNSAVED_MESSAGE)
+  })
+  it('otherwise returns the confirm text', () => {
+    expect(sendCheck('lx2abc', info)).toEqual({ ok: true, confirm: SEND_CONFIRM_MESSAGE })
+    expect(SEND_CONFIRM_MESSAGE).toBe('Send to Engine Room? This replaces anything already sent for this match, including any changes a coach made there. A coach checks it and releases it to the players.')
+  })
+})
+
+describe('sendSuccessMessage', () => {
+  it('uses the message alone when every player is linked', () => {
+    expect(sendSuccessMessage({ message: 'Sent.', unknown: 0 })).toBe('Sent.')
+    expect(sendSuccessMessage({ message: 'Sent.' })).toBe('Sent.')
+  })
+  it('appends a singular count', () => {
+    expect(sendSuccessMessage({ message: 'Sent.', unknown: 1 })).toBe('Sent. 1 player without an Engine Room link: a coach will match them up.')
+  })
+  it('appends a plural count', () => {
+    expect(sendSuccessMessage({ message: 'Sent.', unknown: 3 })).toBe('Sent. 3 players without an Engine Room link: a coach will match them up.')
+  })
+})
