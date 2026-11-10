@@ -5,6 +5,11 @@ import {
   canReplaceSquad,
   matchInfoProblem,
   buildMatchPayload,
+  squadRowLabel,
+  templatePlayers,
+  newPlayer,
+  REPLACE_SQUAD_MESSAGE,
+  SAME_NAME_WARNING,
 } from './engineRoom.js'
 
 const info = { club: 'X', opposition: ' Rivals ', date: '2026-11-07', ourScore: '24', oppScore: '10' }
@@ -119,5 +124,50 @@ describe('buildMatchPayload', () => {
     const p = buildMatchPayload('s', info, [players[0]], [...many, ...far])
     expect(p.players[0].counts.tackle).toBe(200)
     expect(p.players[0].counts.metres).toBe(2000)
+  })
+})
+
+describe('squadRowLabel', () => {
+  it('adds (F) or (B) and a warning only for same-name players', () => {
+    expect(squadRowLabel({ name: 'Sam Lee', position: 'forward', sameName: true }))
+      .toEqual({ text: 'Sam Lee (F)', warning: SAME_NAME_WARNING })
+    expect(squadRowLabel({ name: 'Sam Lee', position: 'back', sameName: true }))
+      .toEqual({ text: 'Sam Lee (B)', warning: SAME_NAME_WARNING })
+  })
+  it('leaves unique names plain', () => {
+    expect(squadRowLabel({ name: 'Al Ray', position: 'back', sameName: false }))
+      .toEqual({ text: 'Al Ray', warning: null })
+  })
+  it('uses the agreed warning text', () => {
+    expect(SAME_NAME_WARNING).toBe('Same name as another player: check the nickname in Engine Room')
+  })
+})
+
+describe('templatePlayers', () => {
+  it('keeps id, number, name and engineRoomId and drops opposition and extras', () => {
+    const out = templatePlayers([
+      { id: 1, number: 1, name: 'A', engineRoomId: 'u1', comments: 'x', coachScore: 5, isOpposition: false },
+      { id: 'opp', number: 'OPP', name: 'Opposition', isOpposition: true },
+      { id: 2, number: 2, name: 'B' },
+    ])
+    expect(out).toEqual([
+      { id: 1, number: 1, name: 'A', engineRoomId: 'u1' },
+      { id: 2, number: 2, name: 'B', engineRoomId: null },
+    ])
+  })
+})
+
+describe('newPlayer', () => {
+  it('builds the full default shape with no engineRoomId', () => {
+    expect(newPlayer(7, ' Jo ', 123)).toEqual({
+      id: 123, number: 7, name: 'Jo', engineRoomId: null,
+      comments: '', coachScore: null, parentEmail: '', isOpposition: false,
+    })
+  })
+})
+
+describe('REPLACE_SQUAD_MESSAGE', () => {
+  it('is the Review Focus 1 message', () => {
+    expect(REPLACE_SQUAD_MESSAGE).toBe('Get the squad before you start tagging. Your tags are linked to the current players.')
   })
 })

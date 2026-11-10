@@ -32,6 +32,30 @@ export function canReplaceSquad(events) {
   return !(events || []).some((e) => e.playerId !== 'opp')
 }
 
+export const REPLACE_SQUAD_MESSAGE = 'Get the squad before you start tagging. Your tags are linked to the current players.'
+export const SAME_NAME_WARNING = 'Same name as another player: check the nickname in Engine Room'
+
+// Display label for one row of the "From Engine Room" picker.
+export function squadRowLabel({ name, position, sameName }) {
+  if (!sameName) return { text: name, warning: null }
+  return { text: `${name} (${position === 'forward' ? 'F' : 'B'})`, warning: SAME_NAME_WARNING }
+}
+
+// What a saved squad template keeps. engineRoomId must survive so a reloaded squad stays linked.
+export function templatePlayers(players) {
+  return players
+    .filter((p) => !p.isOpposition)
+    .map((p) => ({ id: p.id, number: p.number, name: p.name, engineRoomId: p.engineRoomId ?? null }))
+}
+
+// A hand-added player: full default shape, no engineRoomId (Engine Room will ask who he is).
+export function newPlayer(number, name, id) {
+  return {
+    id, number, name: String(name).trim(), engineRoomId: null,
+    comments: '', coachScore: null, parentEmail: '', isOpposition: false,
+  }
+}
+
 export function matchInfoProblem(matchInfo) {
   const opposition = String(matchInfo?.opposition ?? '').trim()
   const date = String(matchInfo?.date ?? '').trim()

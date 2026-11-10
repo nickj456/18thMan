@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { exportCsv, generatePdfHtml } from '../utils/export'
 import EmailSettings from './EmailSettings'
+import EngineRoomSettings from './EngineRoomSettings'
 import ExportModal from './ExportModal'
 
 export default function Header({
@@ -13,6 +14,7 @@ export default function Header({
 }) {
   const [showInfo, setShowInfo]                   = useState(false)
   const [showEmailSettings, setShowEmailSettings] = useState(false)
+  const [showEngineRoom, setShowEngineRoom] = useState(false)
   const [showExportModal, setShowExportModal]     = useState(false)
   const [showSettings, setShowSettings]           = useState(false)
   const settingsRef = useRef(null)
@@ -206,6 +208,20 @@ export default function Header({
                 Email Settings
               </button>
               <button
+                onClick={() => { setShowEngineRoom(true); setShowSettings(false) }}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  background: 'transparent', border: 'none',
+                  borderBottom: '1px solid var(--border)',
+                  color: 'var(--text)', padding: '9px 14px', cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(232,86,10,0.08)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                Engine Room
+              </button>
+              <button
                 onClick={() => { onCheckForUpdates?.(); setShowSettings(false) }}
                 disabled={updateChecking}
                 style={{
@@ -332,6 +348,7 @@ export default function Header({
       )}
 
       {showEmailSettings && <EmailSettings onClose={() => setShowEmailSettings(false)} />}
+      {showEngineRoom && <EngineRoomSettings onClose={() => setShowEngineRoom(false)} />}
 
       {showExportModal && (
         <ExportModal

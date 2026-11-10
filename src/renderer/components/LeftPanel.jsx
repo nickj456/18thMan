@@ -75,6 +75,7 @@ export default function LeftPanel({
         setSelectedPlayer={setSelectedPlayer}
         onPlayerCardClick={onPlayerCardClick}
         onNotesClick={onNotesClick}
+        events={events}
       />
     </div>
   )

@@ -1,17 +1,44 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { squadToPlayers, canReplaceSquad, squadRowLabel, templatePlayers, newPlayer, REPLACE_SQUAD_MESSAGE } from '../utils/engineRoom'
 
 const KEY_MAP = {
   '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6,
   '7': 7, '8': 8, '9': 9, '0': 10, '-': 11, '=': 12, 'Backspace': 13,
 }
 
-export default function PlayerSelector({ players, setPlayers, updatePlayer, selectedPlayer, setSelectedPlayer, onPlayerCardClick, onNotesClick }) {
+export default function PlayerSelector({ players, setPlayers, updatePlayer, selectedPlayer, setSelectedPlayer, onPlayerCardClick, onNotesClick, events }) {
   const [editing, setEditing]         = useState(null)
   const [editName, setEditName]       = useState('')
   const [newNum, setNewNum]           = useState('')
   const [newName, setNewName]         = useState('')
   const [templates, setTemplates]     = useState([])
   const [showTemplates, setShowTemplates] = useState(false)
+  const [showSquad, setShowSquad]     = useState(false)
+  const [squad, setSquad]             = useState([])
+  const [pickedIds, setPickedIds]     = useState([])
+  const [squadMsg, setSquadMsg]       = useState(null)
+  const [squadLoading, setSquadLoading] = useState(false)
+
+  const openSquadPicker = async () => {
+    setShowTemplates(false)
+    setShowSquad(true)
+    setSquadMsg(null)
+    setPickedIds([])
+    setSquadLoading(true)
+    const r = await window.electron?.getEngineRoomSquad()
+    setSquadLoading(false)
+    if (r?.success) setSquad(r.players)
+    else { setSquad([]); setSquadMsg(r?.error || "Couldn't reach Engine Room. Check the address and your internet.") }
+  }
+
+  const togglePicked = (id) => setPickedIds((ids) => ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id])
+
+  const confirmSquad = () => {
+    if (!canReplaceSquad(events)) { setSquadMsg(REPLACE_SQUAD_MESSAGE); return }
+    setPlayers(squadToPlayers(squad, pickedIds))
+    setSelectedPlayer(null)
+    setShowSquad(false)
+  }
 
   const loadTemplates = async () => {
     const t = await window.electron?.listSquads() || []
@@ -24,7 +51,7 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
     const tmplName = players.find(p => p.number === 1)?.name !== 'Player 1'
       ? `Squad (${new Date().toLocaleDateString('en-GB')})`
       : `Squad template`
-    await window.electron?.saveSquad({ id, name: tmplName, players: players.filter(p => !p.isOpposition).map(({ id, number, name }) => ({ id, number, name })) })
+    await window.electron?.saveSquad({ id, name: tmplName, players: templatePlayers(players) })
     alert(`Squad saved as template: "${tmplName}"`)
   }
 
@@ -65,7 +92,7 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
   const addPlayer = () => {
     const num = parseInt(newNum)
     if (!num || !newName.trim() || players.find((p) => p.number === num)) return
-    setPlayers((p) => [...p, { id: Date.now(), number: num, name: newName.trim() }].sort((a, b) => a.number - b.number))
+    setPlayers((p) => [...p, newPlayer(num, newName, Date.now())].sort((a, b) => a.number - b.number))
     setNewNum(''); setNewName('')
   }
 
@@ -179,6 +206,37 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
         </div>
       )}
 
+      {/* Engine Room squad picker */}
+      {showSquad && (
+        <div style={{
+          position: 'absolute', bottom: '100%', left: 0, right: 0, zIndex: 200,
+          background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 3,
+          maxHeight: 260, overflowY: 'auto', boxShadow: '0 -4px 20px rgba(0,0,0,0.5)',
+        }}>
+          <div style={{ padding: '5px 8px', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 800, letterSpacing: 1, color: 'var(--muted)', textTransform: 'uppercase' }}>
+            Who is playing today?
+          </div>
+          {squadLoading && <div style={{ padding: '10px 8px', fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--muted)' }}>Loading…</div>}
+          {squadMsg && <div style={{ padding: '8px', fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--red)' }}>{squadMsg}</div>}
+          {squad.map((s) => {
+            const label = squadRowLabel(s)
+            return (
+              <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderBottom: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--text)' }}>
+                <input type="checkbox" checked={pickedIds.includes(s.id)} onChange={() => togglePicked(s.id)} />
+                <span>{label.text}</span>
+                {label.warning && <span title={label.warning} style={{ color: 'var(--brand)' }}>⚠</span>}
+              </label>
+            )
+          })}
+          <div style={{ padding: '6px 8px', display: 'flex', gap: 6, alignItems: 'center' }}>
+            <button onClick={() => setShowSquad(false)} style={tmplBtn}>CANCEL</button>
+            <button onClick={confirmSquad} disabled={pickedIds.length === 0} style={{ ...tmplBtn, color: pickedIds.length ? 'var(--brand)' : 'var(--muted)' }}>
+              {pickedIds.length} picked · Use this squad
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Add player + hint */}
       <div style={{ borderTop: '1px solid var(--border)', flexShrink: 0, position: 'relative' }}>
         <div style={{ display: 'flex', gap: 4, padding: '5px 6px' }}>
@@ -206,6 +264,7 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
         <div style={{ display: 'flex', gap: 4, padding: '3px 6px 5px', borderTop: '1px solid var(--border)' }}>
           <button onClick={saveAsTemplate} style={tmplBtn} title="Save squad as reusable template">SAVE TEMPLATE</button>
           <button onClick={() => { loadTemplates(); setShowTemplates(s => !s) }} style={tmplBtn}>LOAD TEMPLATE</button>
+          <button onClick={openSquadPicker} style={tmplBtn} title="Pick today's players from Engine Room">FROM ENGINE ROOM</button>
         </div>
       </div>
     </div>
