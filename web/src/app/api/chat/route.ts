@@ -5,6 +5,7 @@ import { GROQ_TEXT_HEAVY } from '@/lib/ai/groq-models'
 import { createClient } from '@/lib/supabase/server'
 import { canSendAiMessage, FREE_AI_CHAT_DAILY_LIMIT } from '@/lib/subscription'
 import { sendUpgradeNudgeEmail } from '@/lib/email'
+import { isAndroidAppRequest, promptForShell } from '@/lib/ai/app-shell-prompt'
 
 const groq = createGroq()
 
@@ -84,11 +85,13 @@ You also know how to use 18th Man itself. If a user asks how the app works, answ
 **Strength & Conditioning**
 - S&C specialist chat at /chat/sc. Generate gym sessions, build training blocks, and get in-season maintenance programs tailored to rugby league.
 
+<!-- plans:start -->
 **Plans — see /pricing for the full comparison**
 - Free: unlimited drill designer use (saving starts a one-time 48h trial), 1 session plan, 5 AI messages/day, full community access.
 - Coach Pro (£9.99/month, £89/year): unlimited drills, PDF export, unlimited AI chat. No club features.
 - Club (£24.99/month per club, £219/year): everything in Coach Pro plus unlimited coaches in the club, club-private drills, coaching groups (up to 5), collaborative session plans, and AI session guidance (GameSense).
 - New free-tier users automatically get a 48-hour full-access trial (same access as Club) when attempting to save their first drill.
+<!-- plans:end -->
 
 **Resources**
 The app has a growing library of rugby league coaching resources, all available in the sidebar under "Resources":
@@ -253,7 +256,8 @@ export async function POST(req: Request) {
 
     const result = streamText({
       model: groq(GROQ_TEXT_HEAVY),
-      system: getSystemPrompt(context),
+      // Android app: no prices or upgrade directions (lib/ai/app-shell-prompt.ts).
+      system: promptForShell(getSystemPrompt(context), isAndroidAppRequest(body)),
       messages: history,
       onFinish: async ({ text }) => {
         if (conversationId && text) {

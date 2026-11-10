@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
+import { appShellRequestBody } from '@/lib/app-shell'
 import { HelpCircle, X, Send, Bot } from 'lucide-react'
 
 const DISMISSED_KEY = 'helpWidgetDismissed'
@@ -82,7 +83,8 @@ export function HelpWidget() {
   }, [])
 
   const { messages, status, sendMessage } = useChat({
-    transport: new DefaultChatTransport({ api: '/api/help-chat' }),
+    // body is a function so the Android-app flag is read per request (lib/ai/app-shell-prompt.ts).
+    transport: new DefaultChatTransport({ api: '/api/help-chat', body: () => appShellRequestBody() }),
     onError: (error) => {
       const msg = error?.message ?? ''
       // Parse rate limit info if embedded in error message
