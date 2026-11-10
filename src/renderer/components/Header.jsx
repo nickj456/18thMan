@@ -54,7 +54,7 @@ export default function Header({
   }
 
   const handleSendToEngineRoom = async () => {
-    const check = sendCheck(currentSessionId, matchInfo)
+    const check = sendCheck(currentSessionId, matchInfo, { players, events, isDirty })
     if (!check.ok) { showNotification(check.message, 'error'); return }
     if (!window.confirm(check.confirm)) return
     try {

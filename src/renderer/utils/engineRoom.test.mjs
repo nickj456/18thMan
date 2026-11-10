@@ -217,7 +217,7 @@ describe('sendSuccessMessage', () => {
   })
 })
 
-import { renameUpdate, RENAME_LINKED_MESSAGE } from './engineRoom'
+import { renameUpdate, RENAME_LINKED_MESSAGE, untaggedLinkedPlayers } from './engineRoom'
 
 describe('renameUpdate', () => {
   const linked = { id: 1, name: 'Sam (F)', engineRoomId: 'u1' }
@@ -242,5 +242,50 @@ describe('renameUpdate', () => {
   })
   it('uses the agreed question text', () => {
     expect(RENAME_LINKED_MESSAGE).toBe('Is this still the same player from Engine Room? Cancel unlinks him, and a coach will match him up in Engine Room.')
+  })
+})
+
+describe('untaggedLinkedPlayers', () => {
+  const players = [
+    { id: 1, name: 'Leo', engineRoomId: 'a' },
+    { id: 2, name: 'Sam', engineRoomId: 'b' },
+    { id: 3, name: 'Joe', engineRoomId: null },
+    { id: 4, name: 'Al', engineRoomId: 'd' },
+    { id: 'opp', name: 'Opposition', isOpposition: true, engineRoomId: 'z' },
+  ]
+  it('lists linked home players with no events, in squad order', () => {
+    const events = [{ playerId: 1, statKey: 'tackle' }, { playerId: 'opp', statKey: 'try' }]
+    expect(untaggedLinkedPlayers(players, events)).toEqual(['Sam', 'Al'])
+  })
+  it('is empty when every linked player has a tag', () => {
+    const events = [1, 2, 4].map((playerId) => ({ playerId, statKey: 'carry' }))
+    expect(untaggedLinkedPlayers(players, events)).toEqual([])
+  })
+  it('copes with missing events', () => {
+    expect(untaggedLinkedPlayers(players, undefined)).toEqual(['Leo', 'Sam', 'Al'])
+  })
+})
+
+describe('sendCheck warnings', () => {
+  const info = { opposition: 'Hunslet', date: '2026-11-07' }
+  const players = [{ id: 1, name: 'Leo', engineRoomId: 'a' }, { id: 2, name: 'Sam', engineRoomId: 'b' }]
+  const NO_TAGS = '\n\nThese players have no tags and will be sent as 0: Sam. If they didn\'t play, cancel: a coach can untick them in Engine Room.'
+  const UNSAVED_NOTE = '\n\n(This includes changes you haven\'t saved yet.)'
+
+  it('appends the no-tags list', () => {
+    const res = sendCheck('lx2abc', info, { players, events: [{ playerId: 1 }], isDirty: false })
+    expect(res).toEqual({ ok: true, confirm: SEND_CONFIRM_MESSAGE + NO_TAGS })
+  })
+  it('joins several names with commas', () => {
+    const res = sendCheck('lx2abc', info, { players, events: [], isDirty: false })
+    expect(res.confirm).toContain('will be sent as 0: Leo, Sam.')
+  })
+  it('appends the unsaved-changes note when dirty', () => {
+    const res = sendCheck('lx2abc', info, { players, events: [{ playerId: 1 }, { playerId: 2 }], isDirty: true })
+    expect(res.confirm).toBe(SEND_CONFIRM_MESSAGE + UNSAVED_NOTE)
+  })
+  it('puts the no-tags list before the unsaved note', () => {
+    const res = sendCheck('lx2abc', info, { players, events: [{ playerId: 1 }], isDirty: true })
+    expect(res.confirm).toBe(SEND_CONFIRM_MESSAGE + NO_TAGS + UNSAVED_NOTE)
   })
 })

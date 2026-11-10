@@ -114,12 +114,29 @@ export function buildMatchPayload(sessionId, matchInfo, players, events) {
 export const UNSAVED_MESSAGE = 'Save the session first (💾) so Engine Room can recognise it if you send it again.'
 export const SEND_CONFIRM_MESSAGE = 'Send to Engine Room? This replaces anything already sent for this match, including any changes a coach made there. A coach checks it and releases it to the players.'
 
+// Names of picked (linked) home players with no tags at all: they'd be sent as all zeros.
+export function untaggedLinkedPlayers(players, events) {
+  const tagged = new Set((events || []).map((e) => e.playerId))
+  return (players || [])
+    .filter((p) => !p.isOpposition && p.engineRoomId && !tagged.has(p.id))
+    .map((p) => p.name)
+}
+
+// Re-picking the squad is blocked once anyone is tagged, so the advice points at Engine Room instead.
+const noTagsWarning = (names) =>
+  `\n\nThese players have no tags and will be sent as 0: ${names.join(', ')}. If they didn't play, cancel: a coach can untick them in Engine Room.`
+const UNSAVED_CHANGES_NOTE = "\n\n(This includes changes you haven't saved yet.)"
+
 // Decides whether the Send button may go ahead: { ok: false, message } to show, or { ok: true, confirm } to ask.
-export function sendCheck(sessionId, matchInfo) {
+export function sendCheck(sessionId, matchInfo, { players = [], events = [], isDirty = false } = {}) {
   if (!sessionId) return { ok: false, message: UNSAVED_MESSAGE }
   const problem = matchInfoProblem(matchInfo)
   if (problem) return { ok: false, message: problem }
-  return { ok: true, confirm: SEND_CONFIRM_MESSAGE }
+  const untagged = untaggedLinkedPlayers(players, events)
+  let confirm = SEND_CONFIRM_MESSAGE
+  if (untagged.length) confirm += noTagsWarning(untagged)
+  if (isDirty) confirm += UNSAVED_CHANGES_NOTE
+  return { ok: true, confirm }
 }
 
 // The notice after a good send; `unknown` is how many players had no Engine Room link.
