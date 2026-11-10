@@ -71,13 +71,14 @@ export default async function SessionsPage() {
             <p className="text-sm font-medium text-amber-300">
               You&apos;ve used all {FREE_SESSION_LIMIT} free session plans
             </p>
-            <p className="text-xs text-zinc-400">
+            {/* hide-in-app: sales copy — the Android app is consumption-only (lib/app-shell.ts). */}
+            <p className="hide-in-app text-xs text-zinc-400">
               Upgrade to a club subscription for unlimited sessions, PDF export, coaching groups, and more.
             </p>
           </div>
           <Link
             href="mailto:hello@18thman.app?subject=Club subscription"
-            className="shrink-0 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-4 py-2 rounded-lg transition-colors text-center"
+            className="hide-in-app shrink-0 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-black px-4 py-2 rounded-lg transition-colors text-center"
           >
             Upgrade your club
           </Link>

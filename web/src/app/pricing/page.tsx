@@ -4,6 +4,7 @@ import { getEffectiveTier, hasClubAccess, FREE_SESSION_LIMIT, FREE_AI_CHAT_DAILY
 import { Check, Lock } from 'lucide-react'
 import { CheckoutButton } from '@/components/pricing/CheckoutButton'
 import { ClubCheckoutButton } from '@/components/pricing/ClubCheckoutButton'
+import { AndroidAppNotice } from '@/components/AndroidAppNotice'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://18thman.app'
 
@@ -90,11 +91,15 @@ export default async function PricingPage() {
           <h1 style={{ fontSize: 32, fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>
             Plans &amp; Pricing
           </h1>
-          <p style={{ fontSize: 15, color: '#71717a', margin: 0 }}>
+          <p className="hide-in-app" style={{ fontSize: 15, color: '#71717a', margin: 0 }}>
             Start free. Upgrade when you need more.
           </p>
         </div>
 
+        <AndroidAppNotice />
+
+        {/* Everything below is sales — hidden in the consumption-only Android app (lib/app-shell.ts). */}
+        <div className="hide-in-app">
         {tier === 'trial' && (
           <div style={{ padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.05)', marginBottom: 32, fontSize: 14, color: '#fbbf24' }}>
             <span style={{ fontWeight: 600 }}>Your 48-hour trial is active.</span> You have full club access right now — upgrade before it expires to keep it.
@@ -230,6 +235,7 @@ export default async function PricingPage() {
         <p style={{ fontSize: 12, color: '#3f3f46', margin: 0 }}>
           Prices in GBP. Club plan covers all coaches in one club — no per-seat fees. Cancel anytime via the Stripe billing portal.
         </p>
+        </div>
       </div>
     </div>
   )

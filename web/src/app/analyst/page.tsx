@@ -388,7 +388,8 @@ export default async function AnalystPage() {
                 </div>
 
                 <p
-                  className="reveal-4"
+                  // Prices are sales copy — hidden in the consumption-only Android app (lib/app-shell.ts).
+                  className={canDownload ? 'reveal-4' : 'reveal-4 hide-in-app'}
                   style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--text-dim)', letterSpacing: '0.04em' }}
                 >
                   {canDownload
@@ -772,7 +773,7 @@ export default async function AnalystPage() {
               Get Match Analyst<br />
               <span style={{ color: 'var(--ember)' }}>with your plan.</span>
             </h2>
-            <p style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, marginBottom: '2.5rem' }}>
+            <p className="hide-in-app" style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, marginBottom: '2.5rem' }}>
               Included with Coach Pro and Club subscriptions. Sign up or upgrade to download.
             </p>
 
@@ -944,7 +945,7 @@ export default async function AnalystPage() {
                 <>Unlock Match<br /><span style={{ color: 'var(--ember)' }}>Analyst.</span></>
               )}
             </h2>
-            <p style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.7, marginBottom: '2rem' }}>
+            <p className={canDownload ? undefined : 'hide-in-app'} style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 300, lineHeight: 1.7, marginBottom: '2rem' }}>
               {canDownload
                 ? 'Download below. Runs entirely on your computer — no internet required after install.'
                 : user
@@ -960,7 +961,7 @@ export default async function AnalystPage() {
                 {user ? 'Upgrade My Account' : 'Sign Up to Get Access'}
               </Link>
             )}
-            <p style={{ marginTop: '1.25rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
+            <p className={canDownload ? undefined : 'hide-in-app'} style={{ marginTop: '1.25rem', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
               {canDownload
                 ? `Version ${APP_VERSION} · Windows 10 / 11 · 64-bit`
                 : user

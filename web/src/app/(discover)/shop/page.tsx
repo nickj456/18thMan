@@ -5,6 +5,7 @@ import { getEffectiveTier } from '@/lib/subscription'
 import { tierMeetsRequirement, getPurchasedProductIds } from '@/lib/shop'
 import { BuyButton } from '@/components/shop/BuyButton'
 import { DownloadButton } from '@/components/shop/DownloadButton'
+import { AndroidAppNotice } from '@/components/AndroidAppNotice'
 import { Badge } from '@/components/ui/badge'
 import { FileText, Video, Package } from 'lucide-react'
 import type { EffectiveTier, Product } from '@/lib/supabase/types'
@@ -43,6 +44,13 @@ export default async function ShopPage() {
         </p>
       </div>
 
+      <AndroidAppNotice>
+        The shop isn&rsquo;t available in the Android app. Anything you already own is in{' '}
+        <Link href="/shop/library" className="text-indigo-400 hover:underline">your library</Link>.
+      </AndroidAppNotice>
+
+      {/* hide-in-app: the Android app is consumption-only (lib/app-shell.ts). */}
+      <div className="hide-in-app">
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="text-5xl mb-4">🛒</div>
@@ -125,6 +133,7 @@ export default async function ShopPage() {
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }

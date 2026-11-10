@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Send, Loader2, Bot, Copy, Check, BookOpen, Mic, MicOff, CalendarPlus, Users } from 'lucide-react'
 import { MessageResponse } from '@/components/ai-elements/message'
 import { UpgradePrompt } from '@/components/ui/UpgradePrompt'
+import { appShellRequestBody, isInAndroidApp } from '@/lib/app-shell'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
@@ -185,7 +186,8 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
   const { messages: liveMessages, status, sendMessage } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
-      body: { conversationId, ...(context ? { context } : {}) },
+      // A function, so the Android-app flag is read per request, never during render.
+      body: () => ({ conversationId, ...(context ? { context } : {}), ...appShellRequestBody() }),
     }),
     onError: (err) => {
       if (err.message?.includes('Daily limit') || err.message?.includes('Upgrade')) {
@@ -253,7 +255,8 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
       const result = await saveSessionFromChat(content)
       setSavingMsgId(null)
       if ('error' in result) {
-        setSaveError(result.error)
+        // The server's limit message ends with an upgrade nudge; the Android app can't sell.
+        setSaveError(isInAndroidApp() ? result.error.replace(/\s*Upgrade[^.]*\.?$/, '') : result.error)
       } else {
         setSavedMsgIds(prev => new Set(prev).add(msgId))
         router.push(`/sessions/${result.id}`)
@@ -400,6 +403,7 @@ export function AiChat({ conversationId, initialMessages, userAvatar, userName, 
           <UpgradePrompt
             feature="AI coaching chat"
             description="You've reached the 5 messages/day limit on the free plan. Upgrade your club for unlimited AI chat."
+            appDescription="You've reached today's 5-message limit on your plan. It resets tomorrow."
           />
         )}
         {squadGroups && squadGroups.length > 0 && !squadInjected && (

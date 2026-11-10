@@ -29,7 +29,8 @@ export function ManageSubscriptionButton({ clubId }: ManageSubscriptionButtonPro
     <button
       onClick={handleClick}
       disabled={loading}
-      className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+      // hide-in-app: the Stripe billing portal is a purchase flow (lib/app-shell.ts).
+      className="hide-in-app inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
     >
       {loading ? <Loader2 size={12} className="animate-spin" /> : <ExternalLink size={12} />}
       Manage billing

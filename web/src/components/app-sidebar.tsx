@@ -38,6 +38,7 @@ import {
   Sparkles,
   TrendingUp,
   ShoppingBag,
+  Library,
   ShieldAlert,
   Gavel,
   ChevronDown,
@@ -76,11 +77,20 @@ type NavItem = {
   // Opens in a new browser tab. For standalone pages outside the app shell
   // (no sidebar), so the coach keeps their place in 18th Man.
   newTab?: boolean
+  // Show only on the website ('hide') or only in the Android app ('only'),
+  // which is consumption-only — see lib/app-shell.ts.
+  appShell?: 'hide' | 'only'
+}
+
+function appShellClass(appShell: NavItem['appShell']) {
+  return appShell === 'hide' ? 'hide-in-app' : appShell === 'only' ? 'only-in-app' : undefined
 }
 
 const overviewItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, isActive: (p) => p === '/dashboard' },
-  { href: '/shop', label: 'Shop', icon: ShoppingBag, isActive: (p) => p === '/shop' || p.startsWith('/shop') },
+  { href: '/shop', label: 'Shop', icon: ShoppingBag, isActive: (p) => p === '/shop' || p.startsWith('/shop'), appShell: 'hide' },
+  // The Android app can't sell, so its Shop entry becomes the coach's library of owned resources.
+  { href: '/shop/library', label: 'My Library', icon: Library, isActive: (p) => p === '/shop/library', appShell: 'only' },
   { href: '/analysis', label: 'Coaching Eye', icon: Video, isActive: (p) => p === '/analysis' },
 ]
 
@@ -174,8 +184,8 @@ function NavMenuItems({
 }) {
   return (
     <>
-      {visibleFor(items, role).map(({ href, label, icon: Icon, isActive, newTab }) => (
-        <SidebarMenuItem key={href}>
+      {visibleFor(items, role).map(({ href, label, icon: Icon, isActive, newTab, appShell }) => (
+        <SidebarMenuItem key={href} className={appShellClass(appShell)}>
           <SidebarMenuButton isActive={isActive(pathname)} render={navLink(href, newTab, closeMobile)}>
             <Icon className="size-4" />
             <span>{label}</span>
@@ -224,8 +234,8 @@ export function CollapsibleNavGroup({
       </CollapsibleTrigger>
       <CollapsibleContent>
         <SidebarMenuSub>
-          {visibleItems.map(({ href, label: itemLabel, icon: Icon, isActive, newTab }) => (
-            <SidebarMenuSubItem key={href}>
+          {visibleItems.map(({ href, label: itemLabel, icon: Icon, isActive, newTab, appShell }) => (
+            <SidebarMenuSubItem key={href} className={appShellClass(appShell)}>
               <SidebarMenuSubButton isActive={isActive(pathname)} render={navLink(href, newTab, closeMobile)}>
                 <Icon className="size-4" />
                 <span>{itemLabel}</span>

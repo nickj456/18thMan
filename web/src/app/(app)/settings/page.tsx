@@ -24,16 +24,19 @@ import {
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Settings — 18th Man' }
 
-const TIER_CONFIG: Record<string, { label: string; description: string; color: string; icon: typeof Zap }> = {
+// appDescription: shown instead in the consumption-only Android app (lib/app-shell.ts).
+const TIER_CONFIG: Record<string, { label: string; description: string; appDescription?: string; color: string; icon: typeof Zap }> = {
   free: {
     label: 'Free',
     description: 'Basic access — upgrade to unlock more features',
+    appDescription: 'Basic access',
     color: 'text-zinc-400 bg-zinc-800 border-zinc-700',
     icon: User,
   },
   trial: {
     label: 'Trial',
     description: '48-hour full access trial — upgrade to keep access',
+    appDescription: '48-hour full access trial',
     color: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
     icon: Zap,
   },
@@ -164,7 +167,14 @@ export default async function SettingsPage({
               </div>
               <div>
                 <p className="text-sm font-semibold text-white">{tierConfig.label}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">{tierConfig.description}</p>
+                {tierConfig.appDescription ? (
+                  <>
+                    <p className="hide-in-app text-xs text-zinc-500 mt-0.5">{tierConfig.description}</p>
+                    <p className="only-in-app text-xs text-zinc-500 mt-0.5">{tierConfig.appDescription}</p>
+                  </>
+                ) : (
+                  <p className="text-xs text-zinc-500 mt-0.5">{tierConfig.description}</p>
+                )}
               </div>
             </div>
             {(hasIndividualSub || isClub) && (
@@ -173,7 +183,8 @@ export default async function SettingsPage({
           </div>
 
           {(tier === 'free' || tier === 'trial') && (
-            <div className="pt-2 border-t border-zinc-800 flex items-center justify-between">
+            // hide-in-app: the Android app is consumption-only (lib/app-shell.ts).
+            <div className="hide-in-app pt-2 border-t border-zinc-800 flex items-center justify-between">
               <p className="text-xs text-zinc-500">Unlock unlimited drills, AI chat, PDF export and more</p>
               <Link
                 href="/pricing"

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { AnalysisForm } from './AnalysisForm'
+import { AndroidAppNotice } from '@/components/AndroidAppNotice'
 
 export const metadata = { title: 'Coaching Eye — 18th Man' }
 
@@ -31,13 +32,17 @@ export default async function AnalysisPage({ searchParams }: PageProps) {
           Twenty years in professional rugby league as a player and coach. I watch footage the way I used to study tape before a big game — picking apart the patterns, spotting the gaps, finding what actually matters. Send me your footage and I&apos;ll come back with a straight-talking report you can take straight onto the training field.
         </p>
         {isMember && (
-          <div className="mt-4 flex items-center gap-2 text-sm text-[#e8560a] bg-[rgba(232,86,10,0.08)] border border-[rgba(232,86,10,0.25)] rounded-lg px-4 py-2.5">
+          <div className="hide-in-app mt-4 flex items-center gap-2 text-sm text-[#e8560a] bg-[rgba(232,86,10,0.08)] border border-[rgba(232,86,10,0.25)] rounded-lg px-4 py-2.5">
             <span className="font-bold">★</span>
             <span>Member discount applied — £10 off your request</span>
           </div>
         )}
       </div>
 
+      <AndroidAppNotice>Coaching Eye requests can&rsquo;t be placed in the Android app.</AndroidAppNotice>
+
+      {/* Paid service (Stripe checkout) — hidden in the consumption-only Android app (lib/app-shell.ts). */}
+      <div className="hide-in-app">
       <AnalysisForm isMember={isMember} isLoggedIn={!!user} paid={paid === '1'} />
 
       {!paid && (
@@ -65,6 +70,7 @@ export default async function AnalysisPage({ searchParams }: PageProps) {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
