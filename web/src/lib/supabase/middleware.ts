@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { isSafeRedirectPath } from '@/lib/redirect-safety'
+import { APP_SHELL_QUERY_PARAM, APP_SHELL_TWA } from '@/lib/app-shell'
 
 const COACH_DNA_PREFIX = '/coach-dna'
 
@@ -65,6 +66,12 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = SIGNUP_FIRST_PREFIXES.some(p => matchesPrefix(pathname, p)) ? '/signup' : '/login'
     url.search = `?next=${encodeURIComponent(next)}`
+    // The Android app launches /dashboard?source=twa. Signed out, that lands here, and
+    // login then soft-navigates onward, so the inline detector would only ever see the
+    // marker buried inside `next`. Keep it on the login URL itself (lib/app-shell.ts).
+    if (request.nextUrl.searchParams.get(APP_SHELL_QUERY_PARAM) === APP_SHELL_TWA) {
+      url.searchParams.set(APP_SHELL_QUERY_PARAM, APP_SHELL_TWA)
+    }
     return NextResponse.redirect(url)
   }
 

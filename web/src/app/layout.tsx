@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Analytics } from "@vercel/analytics/react";
 import { cookies } from "next/headers";
+import { APP_SHELL_BOOTSTRAP_SCRIPT } from "@/lib/app-shell";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -102,7 +104,13 @@ export default async function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable} h-full antialiased ${defaultTheme === 'dark' ? 'dark' : ''}`}
+      // The app-shell script below adds data-app-shell before React hydrates.
+      suppressHydrationWarning
     >
+      <head>
+        {/* Marks the Android app before first paint so purchase UI never flashes — see lib/app-shell.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: APP_SHELL_BOOTSTRAP_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <script
           type="application/ld+json"
@@ -113,6 +121,7 @@ export default async function RootLayout({
             {children}
             <Toaster />
             <Analytics />
+            <ServiceWorkerRegister />
           </TooltipProvider>
         </ThemeProvider>
       </body>
