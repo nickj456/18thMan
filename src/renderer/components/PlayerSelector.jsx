@@ -170,6 +170,8 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
         })}
       </div>
 
+      {/* Add player + hint */}
+      <div style={{ borderTop: '1px solid var(--border)', flexShrink: 0, position: 'relative' }}>
       {/* Template picker */}
       {showTemplates && (
         <div style={{
@@ -237,8 +239,6 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
         </div>
       )}
 
-      {/* Add player + hint */}
-      <div style={{ borderTop: '1px solid var(--border)', flexShrink: 0, position: 'relative' }}>
         <div style={{ display: 'flex', gap: 4, padding: '5px 6px' }}>
           <input
             value={newNum} onChange={(e) => setNewNum(e.target.value)}
@@ -263,7 +263,7 @@ export default function PlayerSelector({ players, setPlayers, updatePlayer, sele
         </div>
         <div style={{ display: 'flex', gap: 4, padding: '3px 6px 5px', borderTop: '1px solid var(--border)' }}>
           <button onClick={saveAsTemplate} style={tmplBtn} title="Save squad as reusable template">SAVE TEMPLATE</button>
-          <button onClick={() => { loadTemplates(); setShowTemplates(s => !s) }} style={tmplBtn}>LOAD TEMPLATE</button>
+          <button onClick={() => { loadTemplates(); setShowSquad(false); setShowTemplates(s => !s) }} style={tmplBtn}>LOAD TEMPLATE</button>
           <button onClick={openSquadPicker} style={tmplBtn} title="Pick today's players from Engine Room">FROM ENGINE ROOM</button>
         </div>
       </div>
