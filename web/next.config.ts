@@ -39,6 +39,12 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), geolocation=(), browsing-topics=()' },
         ],
       },
+      {
+        // Browsers must always revalidate the service worker script, or a broken
+        // worker could outlive the deploy that fixes it.
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, max-age=0, must-revalidate' }],
+      },
     ]
   },
 };
