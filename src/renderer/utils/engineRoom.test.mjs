@@ -289,3 +289,18 @@ describe('sendCheck warnings', () => {
     expect(res.confirm).toBe(SEND_CONFIRM_MESSAGE + NO_TAGS + UNSAVED_NOTE)
   })
 })
+
+describe('engineRoomEnabled', async () => {
+  const { engineRoomEnabled } = await import('./engineRoom.js')
+  it('is off until an Engine Room address is saved', () => {
+    expect(engineRoomEnabled(null)).toBe(false)
+    expect(engineRoomEnabled(undefined)).toBe(false)
+    expect(engineRoomEnabled({})).toBe(false)
+    expect(engineRoomEnabled({ url: '', code: 'abc' })).toBe(false)
+    expect(engineRoomEnabled({ url: '   ', code: 'abc' })).toBe(false)
+  })
+  it('is on once an address is saved, code or not', () => {
+    expect(engineRoomEnabled({ url: 'https://er.example', code: '' })).toBe(true)
+    expect(engineRoomEnabled({ url: 'https://er.example', code: 'abc' })).toBe(true)
+  })
+})

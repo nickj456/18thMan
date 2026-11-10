@@ -11,6 +11,7 @@ import { initSupabase } from './utils/supabase'
 import { authClient, checkAuth, signOut, trialDaysLeft } from './utils/authClient'
 import { STAT_CLASSIFICATION } from './utils/stats'
 import { generateParentEmail } from './utils/export'
+import { engineRoomEnabled } from './utils/engineRoom'
 import LoginScreen from './components/LoginScreen'
 
 
@@ -58,6 +59,11 @@ export default function App() {
   const [showLibrary, setShowLibrary]               = useState(true)
   const [crashRecoverySession, setCrashRecoverySession] = useState(null)
   const [isDirty, setIsDirty]                       = useState(false)
+  // Engine Room buttons only show for clubs that have set it up in ⚙ Settings.
+  const [engineRoomOn, setEngineRoomOn]             = useState(false)
+  useEffect(() => {
+    window.electron?.loadEngineRoomSettings?.().then((s) => setEngineRoomOn(engineRoomEnabled(s))).catch(() => {})
+  }, [])
   const [notesPlayer, setNotesPlayer]               = useState(null)
   const loadingRef = useRef(false)
 
@@ -515,6 +521,8 @@ export default function App() {
         onSaveSession={handleSaveSession}
         isDirty={isDirty}
         currentSessionId={currentSessionId}
+        engineRoomOn={engineRoomOn}
+        onEngineRoomSaved={(s) => setEngineRoomOn(engineRoomEnabled(s))}
         onCheckForUpdates={async () => { setUpdateChecking(true); setUpToDate(false); await window.electron?.checkForUpdates() }}
         updateChecking={updateChecking}
         upToDate={upToDate}
@@ -542,6 +550,7 @@ export default function App() {
           clips={clips} addClip={addClip} updateClipStatus={updateClipStatus}
           deleteClip={deleteClip} outputFolder={outputFolder} setOutputFolder={setOutputFolder}
           showNotification={showNotification} events={events}
+          engineRoomOn={engineRoomOn}
         />
         <div className={`resize-handle-h${draggingH ? ' active' : ''}`} onMouseDown={onDividerMouseDown} />
         <RightPanel

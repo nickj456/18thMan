@@ -144,3 +144,9 @@ export function sendSuccessMessage({ message, unknown }) {
   if (!(unknown > 0)) return message
   return `${message} ${unknown} ${unknown === 1 ? 'player' : 'players'} without an Engine Room link: a coach will match them up.`
 }
+
+// Engine Room is a per-club add-on. Its buttons only show once an address is saved in ⚙ Settings → Engine Room,
+// so clubs that don't use it never see them.
+export function engineRoomEnabled(settings) {
+  return typeof settings?.url === 'string' && settings.url.trim() !== ''
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 
-export default function EngineRoomSettings({ onClose }) {
+export default function EngineRoomSettings({ onClose, onSaved }) {
   const [settings, setSettings] = useState({ url: '', code: '' })
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
@@ -17,6 +17,7 @@ export default function EngineRoomSettings({ onClose }) {
   const handleSave = async () => {
     setSaving(true)
     await window.electron?.saveEngineRoomSettings(settings)
+    onSaved?.(settings)
     setSaving(false)
     setMsg({ type: 'success', text: 'Settings saved.' })
     setTimeout(() => setMsg(null), 2500)
@@ -27,6 +28,7 @@ export default function EngineRoomSettings({ onClose }) {
     setTesting(true)
     setMsg(null)
     await window.electron?.saveEngineRoomSettings(settings)
+    onSaved?.(settings)
     const result = await window.electron?.getEngineRoomSquad()
     setTesting(false)
     if (result?.success) {

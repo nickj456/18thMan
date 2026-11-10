@@ -7,7 +7,7 @@ const KEY_MAP = {
 }
 
 // replaceSquad swaps the whole squad (and clears Undo in App); setPlayers is for edits within the squad.
-export default function PlayerSelector({ players, setPlayers, replaceSquad, updatePlayer, selectedPlayer, setSelectedPlayer, onPlayerCardClick, onNotesClick, events }) {
+export default function PlayerSelector({ players, setPlayers, replaceSquad, updatePlayer, selectedPlayer, setSelectedPlayer, onPlayerCardClick, onNotesClick, events, engineRoomOn }) {
   const [editing, setEditing]         = useState(null)
   const [editName, setEditName]       = useState('')
   const editingRef                    = useRef(null) // guards against Enter and blur both committing
@@ -280,7 +280,7 @@ export default function PlayerSelector({ players, setPlayers, replaceSquad, upda
         <div style={{ display: 'flex', gap: 4, padding: '3px 6px 5px', borderTop: '1px solid var(--border)' }}>
           <button onClick={saveAsTemplate} style={tmplBtn} title="Save squad as reusable template">SAVE TEMPLATE</button>
           <button onClick={() => { loadTemplates(); setTmplMsg(null); setShowSquad(false); setShowTemplates(s => !s) }} style={tmplBtn}>LOAD TEMPLATE</button>
-          <button onClick={openSquadPicker} style={tmplBtn} title="Pick today's players from Engine Room">FROM ENGINE ROOM</button>
+          {engineRoomOn && <button onClick={openSquadPicker} style={tmplBtn} title="Pick today's players from Engine Room">FROM ENGINE ROOM</button>}
         </div>
       </div>
     </div>

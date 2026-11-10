@@ -10,7 +10,7 @@ export default function Header({
   matchInfo, setMatchInfo, sharedReports,
   onSaveSession, onOpenLibrary, onPresent, sessionName,
   authProfile, isTrial, trialDaysLeft, onSignOut,
-  isDirty, currentSessionId,
+  isDirty, currentSessionId, engineRoomOn, onEngineRoomSaved,
   onCheckForUpdates, updateChecking, upToDate,
 }) {
   const [showInfo, setShowInfo]                   = useState(false)
@@ -181,7 +181,7 @@ export default function Header({
         <Btn onClick={() => setShowExportModal(true)}>Export</Btn>
 
         {/* Send the tagged session to Engine Room as a match */}
-        <Btn onClick={handleSendToEngineRoom}>SEND TO ENGINE ROOM</Btn>
+        {engineRoomOn && <Btn onClick={handleSendToEngineRoom}>SEND TO ENGINE ROOM</Btn>}
 
         {/* Present */}
         <Btn onClick={onPresent} style={{ background: 'rgba(83,74,183,0.15)', borderColor: 'var(--purple)', color: 'var(--purple)' }}>
@@ -365,7 +365,7 @@ export default function Header({
       )}
 
       {showEmailSettings && <EmailSettings onClose={() => setShowEmailSettings(false)} />}
-      {showEngineRoom && <EngineRoomSettings onClose={() => setShowEngineRoom(false)} />}
+      {showEngineRoom && <EngineRoomSettings onClose={() => setShowEngineRoom(false)} onSaved={onEngineRoomSaved} />}
 
       {showExportModal && (
         <ExportModal

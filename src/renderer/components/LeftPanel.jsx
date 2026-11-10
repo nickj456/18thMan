@@ -8,7 +8,7 @@ export default function LeftPanel({
   videoRef, videoFile, setVideoFile,
   players, setPlayers, replaceSquad, updatePlayer, selectedPlayer, setSelectedPlayer, onPlayerCardClick, onNotesClick,
   half, setHalf, clips, addClip, updateClipStatus, deleteClip,
-  outputFolder, setOutputFolder, showNotification, events,
+  outputFolder, setOutputFolder, showNotification, events, engineRoomOn,
 }) {
   const [videoHeight, setVideoHeight] = useState(320)
   const [dragging, setDragging] = useState(false)
@@ -77,6 +77,7 @@ export default function LeftPanel({
         onPlayerCardClick={onPlayerCardClick}
         onNotesClick={onNotesClick}
         events={events}
+        engineRoomOn={engineRoomOn}
       />
     </div>
   )
